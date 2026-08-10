@@ -1095,6 +1095,9 @@ export function processActionSequence(
                 activeCardForSkills._pendingSimSkills.push({
                   id: sk.id,
                   value: sk.value,
+                  targetLanes: action.cardTokenLanes
+                    ? [...action.cardTokenLanes]
+                    : null,
                 });
               } else {
                 applyActiveSkillLogic(

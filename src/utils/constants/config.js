@@ -3,7 +3,7 @@
  */
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.2.5';
+export const GAME_VERSION = '0.3.3';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -36,7 +36,10 @@ export const TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS = [
 ];
 export const AI_THINKING_DURATION = 800; // 敵AIが対象を選択する際の思考ウェイト時間 (ms)
 export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出時のウェイト時間 (ms)
+export const PLACEMENT_CONFIRM_DELAY_MS = 300; // カード配置完了時の自動確定遅延時間 (ms)
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
+/** ドロー処理を行える手札枚数の上限（ターン中の一時的な上限） */
+export const MAX_HAND_SIZE_DURING_TURN = 4;
 export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)
 export const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
 export const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
@@ -57,6 +60,18 @@ export const DEFENSE_POINTS_KEY = 'mini_card_battle_defense_points';
 export const DEFENSE_TOTAL_POINTS_KEY = 'mini_card_battle_defense_total_points';
 export const DEFENSE_WINS_KEY = 'mini_card_battle_defense_wins';
 export const DEFENSE_HISTORY_KEY = 'mini_card_battle_defense_history';
+export const DEFENSE_TARGETS_KEY = 'mini_card_battle_defense_targets';
+
+/** prepareBattle の二重呼び出しロック強制解除タイムアウト（ミリ秒） */
+export const PREPARE_BATTLE_LOCK_TIMEOUT_MS = 15000;
+/** バトルアセット読み込みの強制完了タイムアウト（ミリ秒） */
+export const BATTLE_ASSET_LOAD_TIMEOUT_MS = 5000;
+/** マッチング画面の強制完了タイムアウト（ミリ秒） */
+export const MATCHING_SCREEN_TIMEOUT_MS = 7000;
+/** BattleScreen のマウント完了待ちタイムアウト（ミリ秒） */
+export const BATTLE_SCREEN_READY_TIMEOUT_MS = 4000;
+/** マウント完了から先攻決定演出を開始するまでの待機時間（ミリ秒） */
+export const TURN_ORDER_START_DELAY_MS = 1000;
 export const FORTUNE_POINTS_KEY = 'mini_card_battle_fortune_points';
 export const FORTUNE_TOTAL_POINTS_KEY = 'mini_card_battle_fortune_total_points';
 export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';

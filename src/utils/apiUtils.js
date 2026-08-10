@@ -77,18 +77,23 @@ export function savePointsToServer(
       }),
       keepalive: true,
     })
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) {
           console.error(
             `サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`
           );
           return false;
-        } else {
-          console.log(
-            `サーバーへのポイント同期（${endpoint}）に成功しました。`
-          );
-          return true;
         }
+        const result = await res.json().catch(() => null);
+        if (!result || !result.success) {
+          console.error(
+            `サーバーへのポイント同期（${endpoint}）をサーバーが拒否または失敗しました:`,
+            result?.error || 'Unknown error'
+          );
+          return false;
+        }
+        console.log(`サーバーへのポイント同期（${endpoint}）に成功しました。`);
+        return true;
       })
       .catch((err) => {
         if (err.name === 'AbortError') {

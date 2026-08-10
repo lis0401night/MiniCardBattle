@@ -19,16 +19,16 @@
   }
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
+.chara-assetmaker-container {
   font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
   background: var(--bg);
   color: var(--text);
   padding: 16px 20px 60px;
+  min-height: 100vh;
+}
+
+.chara-assetmaker-container * {
+  box-sizing: border-box;
 }
 
 .chara-assetmaker-container h1 {
@@ -188,7 +188,7 @@ main.grid {
   min-width: 80px;
 }
 
-button {
+.chara-assetmaker-container button {
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 6px;
@@ -198,17 +198,17 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+.chara-assetmaker-container button:hover {
   border-color: var(--accent);
 }
 
-.download-btn {
+.chara-assetmaker-container .download-btn {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
 }
 
-.link-row {
+.chara-assetmaker-container .link-row {
   margin-top: 8px;
   font-size: 12px;
   display: flex;
@@ -217,12 +217,12 @@ button:hover {
   color: var(--muted);
 }
 
-footer {
+.chara-assetmaker-container footer {
   margin-top: 24px;
   text-align: center;
 }
 
-footer button {
+.chara-assetmaker-container footer button {
   font-size: 14px;
   padding: 10px 22px;
 }

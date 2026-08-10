@@ -28,7 +28,10 @@ import {
   updateCardDetail,
 } from '../../services/uiBattle.js';
 import { sendOnlineAction } from '../../services/multiplayer.js';
-import { AI_THINKING_DURATION } from '../../utils/constants/config.js';
+import {
+  AI_THINKING_DURATION,
+  PLACEMENT_CONFIRM_DELAY_MS,
+} from '../../utils/constants/config.js';
 import { showAlertModal, showConfirmModal } from '../../services/uiModals.js';
 import { consumeAIAction } from './battleCombat.js';
 import { setPendingChoiceResolver } from './battleQueue.js';
@@ -335,7 +338,14 @@ export async function waitPlayerLaneSelection(
     GameState.selectedCardIndex = null; // 配置モード開始時に手札の選択解除
     updateCardDetail(null);
 
+    // 【多重実行防止】カウント到達時の setTimeout と「配置終了」ボタンの
+    // 両方から cleanUp が呼ばれうるため、実行済みフラグで再入を防ぐ。
+    // 2回目の実行を許すと、空の選択結果がオンライン相手へ再送信される。
+    let isCleanedUp = false;
+
     const cleanUp = async () => {
+      if (isCleanedUp) return [];
+      isCleanedUp = true;
       GameState.isPlacementMode = false;
       GameState.placementCount = 0;
       GameState.placementToken = null;
@@ -454,9 +464,9 @@ export async function waitPlayerLaneSelection(
       if (updateBattleUIHook) updateBattleUIHook();
 
       if (GameState.placementSelectedLanes.length >= count) {
-        setTimeout(() => {
-          resolve(cleanUp());
-        }, 300);
+        setTimeout(async () => {
+          resolve(await cleanUp());
+        }, PLACEMENT_CONFIRM_DELAY_MS);
       }
     };
 
@@ -660,28 +670,17 @@ export async function waitPlayerEnemyLaneSelection(
     return resultLanes.slice(0, count);
   }
 
-  // AIの場合：判定済みのシミュレーション結果があれば優先
-  if (owner === 'red' || owner === 'blue') {
-    if (
-      owner === 'red' &&
-      typeof GameState.aiDecision !== 'undefined' &&
-      GameState.aiDecision
-    ) {
-      if (
-        GameState.aiDecision.cardTokenLanes &&
-        GameState.aiDecision.cardTokenLanes.length > 0
-      ) {
-        const decidedLanes = GameState.aiDecision.cardTokenLanes.splice(
-          0,
-          count
-        );
-        if (GameState.aiDecision.cardTokenLanes.length === 0) {
-          delete GameState.aiDecision.cardTokenLanes;
-        }
-        return decidedLanes;
+  // AIの場合：判定済みのシミュレーション結果があれば優先する
+  if (owner === 'red') {
+    if (GameState.aiDecision?.cardTokenLanes?.length > 0) {
+      const decidedLanes = GameState.aiDecision.cardTokenLanes.splice(0, count);
+      if (GameState.aiDecision.cardTokenLanes.length === 0) {
+        delete GameState.aiDecision.cardTokenLanes;
       }
+      return decidedLanes;
     }
 
+    // シミュレーション結果が無い場合はパワーが高いカードを優先して狙う
     const sortedLanes = [...validLanes].sort((a, b) => {
       const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
       const pB = targetBoard[b] ? targetBoard[b].currentPower : -1;
@@ -689,8 +688,7 @@ export async function waitPlayerEnemyLaneSelection(
       if (diff !== 0) return diff;
       return a - b; // インデックスが小さい方（左）を優先
     });
-    if (owner === 'red') return sortedLanes.slice(0, count);
-    // プレイヤー側で自動選択が必要な場合（現状は手動だが、一貫性のため）
+    return sortedLanes.slice(0, count);
   }
 
   return new Promise((resolve) => {
@@ -1296,7 +1294,8 @@ export async function waitPlayerDualDiscardSelection(
     GameState.gameMode !== 'pvp'
   ) {
     // 回帰など: デッキ切れを防ぐため、相手の墓地からは選ばず自分の墓地（redCards）からのみランダムに選ぶ
-    const ownCards = [...redCards].sort(() => Math.random() - 0.5);
+    // 【重要】シード付き乱数を使い、同一シードでの再現性を保証する
+    const ownCards = shuffleArray([...redCards]);
     return ownCards.slice(0, maxChoices);
   }
 
@@ -1404,9 +1403,9 @@ export async function waitSkillChoice(
     }
 
     // 意図的な重複選択（拡散と拡散など）を許容するため、SeenKeyによる一律の重複除去を廃止
-    const uniqueResults = results.filter(Boolean);
+    const validResults = results.filter(Boolean);
 
-    if (uniqueResults.length === 0 && choices.length > 0) {
+    if (validResults.length === 0 && choices.length > 0) {
       if (isForce) {
         throw new Error(
           'Invalid online action: Forced skill choice result cannot be empty.'
@@ -1414,7 +1413,7 @@ export async function waitSkillChoice(
       }
       return [choices[0]];
     }
-    return uniqueResults.slice(0, maxChoices);
+    return validResults.slice(0, maxChoices);
   }
 
   // AIの場合

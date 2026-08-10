@@ -482,20 +482,32 @@ function guessGrid(width, height) {
  * @param {HTMLCanvasElement} props.frameCanvas 表示対象のフレームCanvas
  * @return {JSX.Element} サムネイルCanvas要素
  */
+// サムネイルCanvasの一辺のサイズ(px)。CSSの .thumb-item canvas と一致させる
+const THUMB_SIZE = 80;
+
 function ThumbCanvas({ frameCanvas }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const thumbCanvas = canvasRef.current;
     if (!thumbCanvas || !frameCanvas) return;
-    thumbCanvas.width = 80;
-    thumbCanvas.height = 80;
+    thumbCanvas.width = THUMB_SIZE;
+    thumbCanvas.height = THUMB_SIZE;
     const ctx = thumbCanvas.getContext('2d');
-    ctx.clearRect(0, 0, 80, 80);
-    const scale = Math.min(80 / frameCanvas.width, 80 / frameCanvas.height);
+    ctx.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE);
+    const scale = Math.min(
+      THUMB_SIZE / frameCanvas.width,
+      THUMB_SIZE / frameCanvas.height
+    );
     const w = frameCanvas.width * scale;
     const h = frameCanvas.height * scale;
-    ctx.drawImage(frameCanvas, (80 - w) / 2, (80 - h) / 2, w, h);
+    ctx.drawImage(
+      frameCanvas,
+      (THUMB_SIZE - w) / 2,
+      (THUMB_SIZE - h) / 2,
+      w,
+      h
+    );
   }, [frameCanvas]);
 
   return <canvas ref={canvasRef} />;
@@ -568,6 +580,9 @@ export default function VfxSpritesheetTool() {
     return { bgMode, bgColor: color, cellWidth };
   }, [bgMode, bgCustomColor, cellWidthInput]);
 
+  // プレビュー再合成の遅延時間(ms)。連続入力時の再計算を抑制する
+  const PREVIEW_DEBOUNCE_MS = 150;
+
   /**
    * 間引き処理の適用
    */
@@ -578,9 +593,15 @@ export default function VfxSpritesheetTool() {
     setFrames(result);
   }, [rawFrames, maxFramesInput]);
 
+  // 最新の間引き処理を保持する。入力途中の再実行を避けるためRefを使う
+  const applyThinningRef = useRef(applyThinning);
+  applyThinningRef.current = applyThinning;
+
+  // 新しい素材を読み込んだときだけ間引きを自動適用する。
+  // 手動の並び替え・削除結果を維持するため、設定変更では再適用しない
   useEffect(() => {
-    applyThinning();
-  }, [rawFrames, applyThinning]);
+    applyThinningRef.current();
+  }, [rawFrames]);
 
   /**
    * スプライトシート全体プレビューのレンダリング
@@ -600,7 +621,8 @@ export default function VfxSpritesheetTool() {
   }, [frames, getComposeOptions]);
 
   useEffect(() => {
-    renderPreview();
+    const timerId = setTimeout(renderPreview, PREVIEW_DEBOUNCE_MS);
+    return () => clearTimeout(timerId);
   }, [renderPreview]);
 
   /**
@@ -628,8 +650,11 @@ export default function VfxSpritesheetTool() {
       } else if (isVideo) {
         const extracted = await extractVideoFrames(first, videoFps);
         setRawFrames(extracted);
+        const effectiveFps = (
+          extracted.length / Math.max(0.1, extracted.length / videoFps)
+        ).toFixed(1);
         setStatus(
-          `動画から ${extracted.length} フレームを抽出しました(${videoFps}fps)`,
+          `動画から ${extracted.length} フレームを抽出しました (指定: ${videoFps}fps / 実効: ${effectiveFps}fps)`,
           'ok'
         );
       } else {
@@ -728,8 +753,10 @@ export default function VfxSpritesheetTool() {
     const img = animState.img;
     const cols = Math.max(1, animState.cols);
     const rows = Math.max(1, animState.rows);
-    const cellW = img.naturalWidth / cols;
-    const cellH = img.naturalHeight / rows;
+    // Canvasの寸法は整数のみ有効。描画のずれを防ぐため切り捨てで統一する
+    const cellW = Math.floor(img.naturalWidth / cols);
+    const cellH = Math.floor(img.naturalHeight / rows);
+    if (cellW < 1 || cellH < 1) return;
     const total = cols * rows;
     const curIndex = animState.frameIndex >= total ? 0 : animState.frameIndex;
     const col = curIndex % cols;
@@ -773,8 +800,12 @@ export default function VfxSpritesheetTool() {
    */
   const startAnimPlayback = useCallback(() => {
     if (!animState.img) return;
-    stopAnimPlayback();
     setAnimState((prev) => ({ ...prev, playing: true }));
+  }, [animState.img]);
+
+  // アニメーション再生タイマーの動的更新（FPS変更のリアルタイム反映）
+  useEffect(() => {
+    if (!animState.playing || !animState.img) return;
     const interval = 1000 / Math.max(1, animState.fps);
     animTimerRef.current = setInterval(() => {
       setAnimState((prev) => {
@@ -782,33 +813,39 @@ export default function VfxSpritesheetTool() {
         return { ...prev, frameIndex: (prev.frameIndex + 1) % total };
       });
     }, interval);
-  }, [animState.img, animState.fps, stopAnimPlayback]);
 
-  // アニメーションのクリーンアップ
-  useEffect(() => {
     return () => {
-      if (animTimerRef.current) clearInterval(animTimerRef.current);
+      if (animTimerRef.current) {
+        clearInterval(animTimerRef.current);
+        animTimerRef.current = null;
+      }
     };
-  }, []);
+  }, [animState.playing, animState.img, animState.fps]);
 
   /**
-   * スプライトシート画像ファイルの個別ロード
+   * スプライトシート画像ファイルのロード（JSONのメタデータ優先連動対応）
    */
-  const loadSpriteSheetFile = (file) => {
+  const loadSpriteSheetFile = (imgFile, jsonMeta = null) => {
     stopAnimPlayback();
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(imgFile);
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const guess = guessGrid(img.naturalWidth, img.naturalHeight);
+      const cols =
+        jsonMeta?.columns ||
+        guessGrid(img.naturalWidth, img.naturalHeight).cols;
+      const rows =
+        jsonMeta?.rows || guessGrid(img.naturalWidth, img.naturalHeight).rows;
       setAnimState({
         img,
         frameIndex: 0,
         playing: false,
-        cols: guess.cols,
-        rows: guess.rows,
+        cols,
+        rows,
         fps: 12,
-        statusText: `${img.naturalWidth}×${img.naturalHeight}px / 推定 ${guess.cols}列×${guess.rows}行(手動調整可)`,
+        statusText: jsonMeta
+          ? `${img.naturalWidth}×${img.naturalHeight}px / JSONメタデータ適用 (${cols}列×${rows}行)`
+          : `${img.naturalWidth}×${img.naturalHeight}px / 推定 ${cols}列×${rows}行(手動調整可)`,
       });
     };
     img.onerror = () => {

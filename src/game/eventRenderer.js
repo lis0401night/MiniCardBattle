@@ -138,15 +138,7 @@ export async function playEvents(events) {
         if (cEl) {
           createDamagePopup(cEl, '無効', '#94a3b8');
         }
-        if (
-          ![
-            'snipe',
-            'snipe_void',
-            'spread',
-            'spread_void',
-            'intercept',
-          ].includes(ev.source)
-        ) {
+        if (!SNIPE_SKILLS.includes(ev.source)) {
           playSound(SOUNDS.seSkill);
         }
         await sleep(200);
@@ -167,10 +159,16 @@ export async function playEvents(events) {
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
+
+        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
+        await triggerSnipeVfx(ev.source, ev.side, ev.lane);
+
         if (cEl) {
           createDamagePopup(cEl, '回避', '#38bdf8');
         }
-        playSound(SOUNDS.seSkill);
+        if (!SNIPE_SKILLS.includes(ev.source)) {
+          playSound(SOUNDS.seSkill);
+        }
         await sleep(200);
         break;
       }

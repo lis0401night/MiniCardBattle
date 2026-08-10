@@ -1727,10 +1727,7 @@ export async function resolveActiveSkillEffect(
 
       for (let t of targets) {
         const targetCard = t.card;
-        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-        const tgtEl = document.querySelector(
-          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-        );
+        let targetCardDiscarded = false;
 
         if (t.isHost) {
           // 1. 装着されている装備カードを全て解除し、墓地（捨て札）へ送る
@@ -1756,12 +1753,6 @@ export async function resolveActiveSkillEffect(
           }
 
           // 2. 装備解除によるステータス（パワー）の減算処理
-          if (tgtEl) {
-            tgtEl.classList.remove('anim-shake');
-            void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-            tgtEl.classList.add('anim-shake');
-            createDamagePopup(tgtEl, `-${totalPowerLoss} 解除`, '#94a3b8');
-          }
           targetCard.equippedCards = [];
           targetCard.power -= totalPowerLoss;
           targetCard.currentPower -= totalPowerLoss;
@@ -1769,9 +1760,6 @@ export async function resolveActiveSkillEffect(
 
           // 装備脱着の結果としてパワーが0以下になった場合は、ステータス低下による消滅（墓地送り）処理を行う
           if (targetCard.currentPower <= 0) {
-            if (tgtEl) {
-              tgtEl.classList.add('anim-card-destroy');
-            }
             playCardVoice(targetCard, 'death');
             playSound(SOUNDS.seDestroy);
             await sleep(400);
@@ -1781,11 +1769,13 @@ export async function resolveActiveSkillEffect(
             if (!(await discardCard(t.side, targetCard, t.lane, true))) {
               eB[t.lane] = null;
             }
+            targetCardDiscarded = true;
           }
         }
 
         // 3. 自身が「装備」スキルを持つカードは、粉砕・叛逆等と同様に共通破壊対象としてリストアップ
-        if (t.isSelf) {
+        // （装備解除で既にパワー0以下となり墓地へ送られたカードの二重登録・二重破棄を防止）
+        if (t.isSelf && !targetCardDiscarded) {
           destroyTargets.push({ lane: t.lane, card: targetCard, side: t.side });
         }
       }

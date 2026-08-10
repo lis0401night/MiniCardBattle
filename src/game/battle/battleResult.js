@@ -52,6 +52,9 @@ import {
 } from '../../services/uiModals.js';
 import { showDefenseBattleList } from '../../services/uiMainCore.js';
 import {
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+  DEFENSE_TARGETS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
 } from '../../utils/constants/config.js';
@@ -63,20 +66,45 @@ import {
 import { ENEMY_DECKS } from '../../utils/constants/enemy_decks.js';
 import { simulateTournamentRound } from '../tournament.js';
 
+/** フィニッシュ演出から endBattle 起動までの待機時間 (ms) */
+const FINISH_VISUAL_DURATION_MS = 2000;
+
+/** バトル終了から結果処理開始までの待機時間 (ms) */
+const BATTLE_RESULT_DELAY_MS = 1500;
+
+/** 防衛戦の獲得ポイント配点 */
+const DEFENSE_WIN_POINTS = {
+  /** 格下または同格の相手に勝利 */
+  EQUAL_OR_LOWER: 1,
+  /** 格上の相手に勝利 */
+  HIGHER: 3,
+  /** 総ポイントが2倍以上の相手に勝利 */
+  FAR_HIGHER: 5,
+};
+
+/** 「格上」判定を強化する総ポイント倍率 */
+const DEFENSE_FAR_HIGHER_RATIO = 2;
+
+/** 防衛成功時に防衛側へ付与するポイント */
+const DEFENSE_SUCCESS_POINTS = 3;
+
 /**
  * カード配列（文字列またはオブジェクト）を { id, isPremium } の配列に正規化する共通ヘルパー
  */
 function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
   if (!Array.isArray(cards)) return [];
   const list = premiumCardsList || [];
-  return cards.map((c) => {
-    const cId = typeof c === 'string' ? c : c?.baseId || c?.id || c;
-    const isPrem =
-      typeof c === 'object' && c?.isPremium !== undefined
-        ? !!c.isPremium
-        : list.includes(cId);
-    return { id: cId, isPremium: isPrem };
-  });
+  return cards
+    .map((c) => {
+      const cId = typeof c === 'string' ? c : c?.baseId || c?.id;
+      if (typeof cId !== 'string' || !cId) return null;
+      const isPrem =
+        typeof c === 'object' && c?.isPremium !== undefined
+          ? !!c.isPremium
+          : list.includes(cId);
+      return { id: cId, isPremium: isPrem };
+    })
+    .filter(Boolean);
 }
 
 /**
@@ -90,7 +118,7 @@ export function checkWinCondition() {
   if (GameState.playerHP <= 0 || GameState.enemyHP <= 0) {
     GameState.isBattleEnded = true;
     triggerFinishVisuals();
-    setTimeout(endBattle, 2000);
+    setTimeout(endBattle, FINISH_VISUAL_DURATION_MS);
     return true;
   }
   return false;
@@ -121,14 +149,17 @@ export function endBattle() {
     window.setSlowMotionReact(false);
   }
   stopAllBGM();
-  GameState.lastBattleResult =
-    GameState.playerHP > 0
-      ? GameState.enemyHP <= 0
-        ? 'win'
-        : 'draw'
-      : GameState.enemyHP > 0
-        ? 'lose'
-        : 'draw';
+  // プレイヤーと敵の生存状況から勝敗を確定する（相打ちは引き分け）
+  const isPlayerAlive = GameState.playerHP > 0;
+  const isEnemyAlive = GameState.enemyHP > 0;
+  if (isPlayerAlive && !isEnemyAlive) {
+    GameState.lastBattleResult = 'win';
+  } else if (!isPlayerAlive && isEnemyAlive) {
+    GameState.lastBattleResult = 'lose';
+  } else {
+    GameState.lastBattleResult = 'draw';
+  }
+
   GameState.currentTurn = null;
   if (updateBattleUIHook) updateBattleUIHook();
   GameState.isProcessing = false; // バトル結果表示と同時にフラグをリセット
@@ -141,6 +172,7 @@ export function endBattle() {
   }
 
   // 全モード共通：実績用の勝利カウントアップ
+  // ※キー名は freeBattleWins ですが、実績システム上の仕様として「累計勝利数（練習・チュートリアル以外の全バトルモードの勝利）」を全般的にカウントします
   if (
     GameState.lastBattleResult === 'win' &&
     typeof incrementStat === 'function' &&
@@ -195,10 +227,9 @@ export function endBattle() {
       // 敗絶掛け合い4行の取得
       let postDialogs = [];
       const isLate = battleCount >= STORY_LATE_DIALOGUE_BATTLE;
-      if (STORY_DIALOGUES[playerId] && STORY_DIALOGUES[playerId][enemyId]) {
-        const dialogueSource = isLate
-          ? STORY_DIALOGUES[playerId][enemyId].late
-          : STORY_DIALOGUES[playerId][enemyId].early;
+      const dialogueSource =
+        STORY_DIALOGUES[playerId]?.[enemyId]?.[isLate ? 'late' : 'early'];
+      if (dialogueSource?.post && Array.isArray(dialogueSource.post)) {
         // ディープコピーして副作用を防止
         postDialogs = dialogueSource.post.map((line) => ({ ...line }));
       } else {
@@ -313,16 +344,19 @@ export function endBattle() {
         opp
       );
       const dialogueObj = opp.dialogue || dialogueData?.dialogue || {};
-      let endText =
+      const endText =
         GameState.lastBattleResult === 'win'
-          ? dialogueObj.lose?.default ||
+          ? dialogueObj?.lose?.default ||
             dialogueData?.dialogue?.lose?.default ||
             ''
-          : dialogueObj.win?.default ||
+          : dialogueObj?.win?.default ||
             dialogueData?.dialogue?.win?.default ||
             '';
 
-      GameState.dialogueQueue = [{ speaker: 'enemy', text: endText }];
+      // セリフが未定義の場合は空の吹き出しを出さない
+      GameState.dialogueQueue = endText
+        ? [{ speaker: 'enemy', text: endText }]
+        : [];
       setupDialogueScreen();
       return;
     }
@@ -372,23 +406,24 @@ export function endBattle() {
       if (GameState.lastBattleResult === 'win') {
         // ポイント計算（総ポイント基準）
         const myCurrentPoints =
-          parseInt(localStorage.getItem('mini_card_battle_defense_points')) ||
-          0;
+          parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
         const myTotalPoints =
-          parseInt(
-            localStorage.getItem('mini_card_battle_defense_total_points')
-          ) || myCurrentPoints;
+          parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) ||
+          myCurrentPoints;
         const enemyTotalPoints =
           GameState.enemyConfig.total_points ||
           GameState.enemyConfig.points ||
           0;
 
-        let winPoints = 1;
+        let winPoints = DEFENSE_WIN_POINTS.EQUAL_OR_LOWER;
         if (enemyTotalPoints > myTotalPoints) {
-          if (enemyTotalPoints >= myTotalPoints * 2 && myTotalPoints > 0) {
-            winPoints = 5;
+          if (
+            enemyTotalPoints >= myTotalPoints * DEFENSE_FAR_HIGHER_RATIO &&
+            myTotalPoints > 0
+          ) {
+            winPoints = DEFENSE_WIN_POINTS.FAR_HIGHER;
           } else {
-            winPoints = 3;
+            winPoints = DEFENSE_WIN_POINTS.HIGHER;
           }
         }
 
@@ -401,31 +436,40 @@ export function endBattle() {
         const newTotalPoints = myTotalPoints + winPoints;
 
         // ローカルの保存
-        localStorage.setItem(
-          'mini_card_battle_defense_points',
-          newCurrentPoints
-        );
-        localStorage.setItem(
-          'mini_card_battle_defense_total_points',
-          newTotalPoints
-        );
+        localStorage.setItem(DEFENSE_POINTS_KEY, String(newCurrentPoints));
+        localStorage.setItem(DEFENSE_TOTAL_POINTS_KEY, String(newTotalPoints));
 
         // サーバーへの送信
-        const uuid = getOrCreateUUID();
-        fetch('api/update_points.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            uuid: uuid,
-            points: newCurrentPoints,
-            total_points: newTotalPoints,
-          }),
-          keepalive: true,
-        }).catch((err) => console.error('Failed to update points:', err));
+        savePointsToServer(
+          'update_defense_points.php',
+          newCurrentPoints,
+          newTotalPoints
+        );
 
         // 自身が攻撃して勝利した場合も実績「防衛戦勝利数」としてカウントする
         if (typeof incrementStat === 'function') {
           incrementStat('defenseAttackWins');
+        }
+
+        // 相手プレイヤーの全勝・全敗判定用の対戦結果を保存
+        const defenseTargetsRaw = localStorage.getItem(DEFENSE_TARGETS_KEY);
+        let defenseTargets = [];
+        try {
+          if (defenseTargetsRaw) defenseTargets = JSON.parse(defenseTargetsRaw);
+        } catch (e) {
+          console.warn('防衛ターゲットの読み込みに失敗しました:', e);
+        }
+        if (Array.isArray(defenseTargets)) {
+          const targetItem = defenseTargets.find(
+            (t) => t.uuid === GameState.enemyConfig?.uuid
+          );
+          if (targetItem) {
+            targetItem.isWon = true;
+            localStorage.setItem(
+              DEFENSE_TARGETS_KEY,
+              JSON.stringify(defenseTargets)
+            );
+          }
         }
 
         // ポイント獲得のアラートを出してから、会話へ進む
@@ -441,20 +485,20 @@ export function endBattle() {
         // 負けた場合は敵に3ポイントと防衛回数を付与する
         const enemyUuid = GameState.enemyConfig.uuid;
         if (enemyUuid) {
-          fetch('api/update_points.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          try {
+            savePointsToServer('update_defense_points.php', 0, 0, {
               uuid: enemyUuid,
-              points: 3,
-              total_points: 3, // 総ポイントも加算
+              points: DEFENSE_SUCCESS_POINTS,
+              total_points: DEFENSE_SUCCESS_POINTS, // 総ポイントも加算
               increment: true,
               defense_wins: 1,
-            }),
-            keepalive: true,
-          }).catch((err) =>
-            console.error('Failed to update enemy points:', err)
-          );
+            });
+          } catch (err) {
+            console.error(
+              '防衛側プレイヤーへのポイント加算送信に失敗しました:',
+              err
+            );
+          }
         }
 
         showDefenseBattleList();
@@ -549,38 +593,39 @@ export function endBattle() {
           maxTotalCost
         );
 
+        // 現在のポイントを読み込み、獲得分があれば加算して保存
+        let currentPts =
+          parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
+        let totalPts =
+          parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
         if (result.totalEarned > 0) {
-          // ポイントをローカルストレージに保存
-          let currentPts =
-            parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
-          let totalPts =
-            parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
           currentPts += result.totalEarned;
           totalPts += result.totalEarned;
           localStorage.setItem(FORTUNE_POINTS_KEY, String(currentPts));
           localStorage.setItem(FORTUNE_TOTAL_POINTS_KEY, String(totalPts));
+        }
 
-          // 達成済み情報と最大等級をローカルストレージに保存
-          saveFortuneClearedData(
-            fortuneCharId,
-            result.newClearedHandicaps,
-            result.newMaxGradeLevel,
-            result.newMaxTotalCost
-          );
+        // 達成済み情報と最大等級をローカルストレージに保存（ポイント0でも更新）
+        saveFortuneClearedData(
+          fortuneCharId,
+          result.newClearedHandicaps,
+          result.newMaxGradeLevel,
+          result.newMaxTotalCost
+        );
 
-          // サーバーへポイントと達成情報を同期（対戦キャラクターごとの合計目標値も送信）
-          const fortuneSyncExtra = buildFortuneSyncExtra(fortuneCharId, result);
+        // サーバーへポイントと達成情報を同期（対戦キャラクターごとの合計目標値も送信）
+        const fortuneSyncExtra = buildFortuneSyncExtra(fortuneCharId, result);
+        savePointsToServer(
+          'update_fortune_points.php',
+          currentPts,
+          totalPts,
+          fortuneSyncExtra
+        );
 
-          savePointsToServer(
-            'update_fortune_points.php',
-            currentPts,
-            totalPts,
-            fortuneSyncExtra
-          );
+        // 達成情報更新に伴い実績チェックをトリガー
+        checkFortuneAchievements();
 
-          // 運命の邂逅の実績チェックをトリガー
-          checkFortuneAchievements();
-
+        if (result.totalEarned > 0) {
           // ポイント内訳メッセージを構築
           let breakdownText = '';
           result.breakdown.forEach((item) => {
@@ -608,35 +653,6 @@ export function endBattle() {
           });
           return;
         } else {
-          // ポイント0でも達成情報は更新する
-          saveFortuneClearedData(
-            fortuneCharId,
-            result.newClearedHandicaps,
-            result.newMaxGradeLevel,
-            result.newMaxTotalCost
-          );
-
-          // サーバーにも現在のポイント情報と共に達成情報を同期
-          let currentPts =
-            parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
-          let totalPts =
-            parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
-
-          const fortuneSyncExtraZero = buildFortuneSyncExtra(
-            fortuneCharId,
-            result
-          );
-
-          savePointsToServer(
-            'update_fortune_points.php',
-            currentPts,
-            totalPts,
-            fortuneSyncExtraZero
-          );
-
-          // 達成情報が更新されたため、ポイント0でも実績チェックをトリガーする
-          checkFortuneAchievements();
-
           // 運命の邂逅イベントではカード報酬はドロップせず直接会話画面へ
           GameState.appState = 'post_dialogue';
           setupDialogueScreen();
@@ -742,6 +758,12 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'tournament') {
+      // トーナメント状態が失われている場合は会話画面へ退避する
+      if (!GameState.tournament) {
+        console.error('Tournament state is missing at endBattle.');
+        setupDialogueScreen();
+        return;
+      }
       if (GameState.lastBattleResult === 'win') {
         // トーナメント各ラウンド勝利の実績を記録
         const wonRound = GameState.tournament.round;
@@ -756,7 +778,7 @@ export function endBattle() {
 
     // ドロップがない、全所持、または敗北/引き分けの場合
     setupDialogueScreen();
-  }, 1500);
+  }, BATTLE_RESULT_DELAY_MS);
 }
 
 /**

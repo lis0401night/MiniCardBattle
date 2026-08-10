@@ -27,7 +27,7 @@
       .analysis-container {
         display: flex;
         gap: 1.5rem;
-        height: calc(100vh - 140px);
+        height: calc(100dvh - 140px);
         min-height: 500px;
       }
 
@@ -502,8 +502,8 @@
               Number(pickCount) * Number(selfBaseSkillP.multiplier || 0);
 
             const avgScore = (choiceTotal / choicesArr.length) * pickCount;
-            // 命令の場合は -1 の補正
-            const penalty = sk.id === 'force' ? -1 : 0;
+            // 選択は +1、命令は -1 の固定補正
+            const penalty = sk.id === 'force' ? -1 : 1;
             score += avgScore + penalty + selfScore;
           } else {
             // baseは1回分のみ、value*multiplierは個数(count)分加算
@@ -535,14 +535,20 @@
 
       function renderCards() {
         const tbody = document.getElementById('card-table-body');
+        // 描画1回につきスコアと使用状況を1度だけ計算する (Map化)
+        const scoreMap = new Map(
+          cardData.map((c) => [c.id, calculateScore(c)])
+        );
+        const usageMap = new Map(cardData.map((c) => [c.id, getUsage(c.id)]));
+
         const sorted = [...cardData].sort((a, b) => {
           let av =
             currentSort.key === 'score'
-              ? calculateScore(a)
+              ? scoreMap.get(a.id)
               : a[currentSort.key];
           let bv =
             currentSort.key === 'score'
-              ? calculateScore(b)
+              ? scoreMap.get(b.id)
               : b[currentSort.key];
           if (typeof av === 'string')
             return currentSort.dir === 'desc'
@@ -556,8 +562,8 @@
 
         tbody.innerHTML = sorted
           .map((c, idx) => {
-            const score = calculateScore(c);
-            const usage = getUsage(c.id);
+            const score = scoreMap.get(c.id);
+            const usage = usageMap.get(c.id);
 
             return `
                 <tr class="hover:bg-indigo-50/30 transition-all border-b border-slate-100 last:border-0 group">
@@ -748,6 +754,11 @@
 
       function renderDecks() {
         const container = document.getElementById('decks-container');
+        // デッキ再描画時もスコアを一括計算して参照する
+        const scoreMap = new Map(
+          cardData.map((c) => [c.id, calculateScore(c)])
+        );
+
         container.innerHTML = Object.entries(deckData)
           .map(
             ([char, diffs]) => `
@@ -771,7 +782,7 @@
                                 }
                             );
                             const total = dCards.reduce(
-                              (acc, c) => acc + calculateScore(c),
+                              (acc, c) => acc + (scoreMap.get(c.id) || 0),
                               0
                             );
                             return `
@@ -792,7 +803,7 @@
                                                     <span class="font-black text-slate-700 block truncate">${c.name}</span>
                                                     <span class="text-[7px] md:text-[8px] font-black text-amber-500">★${c.rarity || 1}</span>
                                                 </div>
-                                                <span class="font-black text-indigo-600 bg-indigo-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg border border-indigo-100">${calculateScore(c).toFixed(1)}</span>
+                                                <span class="font-black text-indigo-600 bg-indigo-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg border border-indigo-100">${(scoreMap.get(c.id) || 0).toFixed(1)}</span>
                                             </div>`
                                           )
                                           .join('')}
@@ -828,7 +839,7 @@
                     <div class="text-[9px] md:text-[10px] font-black text-slate-800 truncate mb-2">${c.name}</div>
                     <div class="flex justify-between items-center">
                         <span class="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest">力: ${c.power}</span>
-                        <span class="text-[9px] md:text-[10px] font-black text-indigo-400">${calculateScore(c).toFixed(1)}</span>
+                        <span class="text-[9px] md:text-[10px] font-black text-indigo-400">${(scoreMap.get(c.id) || 0).toFixed(1)}</span>
                     </div>
                 </div>`
                 )
@@ -861,7 +872,9 @@
         if (!pointSettings[skillId])
           pointSettings[skillId] = { base: 0, multiplier: 0 };
         pointSettings[skillId][field] = parseFloat(value) || 0;
-        renderAll();
+        // 入力欄の再生成を避けるため、ポイント設定パネルは再描画しない
+        renderCards();
+        renderDecks();
       }
 
       function resort(key) {
@@ -882,6 +895,8 @@
         a.href = url;
         a.download = 'skill_points.js';
         a.click();
+        // Blob URL を解放する
+        URL.revokeObjectURL(url);
       }
 
       window.onload = init;

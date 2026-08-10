@@ -27,7 +27,7 @@
       .main-container {
         display: flex;
         gap: 1.5rem;
-        height: calc(100vh - 140px);
+        height: calc(100dvh - 140px);
         min-height: 500px;
       }
 
@@ -485,8 +485,11 @@
         return '/' + path;
       };
 
-      // アイコンパス生成ヘルパー
-      const getIconPath = (id) => fixAssetPath(`assets/icons/icon_${id}.webp`);
+      // アイコンIDはURLエンコードしてから埋め込む（属性破壊とスクリプト注入を防ぐ）
+      const getIconPath = (id) =>
+        fixAssetPath(
+          `assets/icons/icon_${encodeURIComponent(String(id))}.webp`
+        );
 
       // =============================
       // 日本語名変換ヘルパー
@@ -1236,6 +1239,9 @@
           });
         });
 
+        // 定義順インデックスを事前計算する（ソート内の線形探索を排除）
+        const orderMap = new Map(CARD_MASTER.map((c, i) => [c.id, i]));
+
         // ソート処理
         cards.sort((a, b) => {
           const defA = defenseUsageCounts[a.id] || 0;
@@ -1254,8 +1260,8 @@
           }
 
           // タイブレイカー: CARD_MASTER定義インデックス順
-          const idxA = CARD_MASTER.findIndex((c) => c.id === a.id);
-          const idxB = CARD_MASTER.findIndex((c) => c.id === b.id);
+          const idxA = orderMap.get(a.id) ?? 999;
+          const idxB = orderMap.get(b.id) ?? 999;
           return idxA - idxB;
         });
 

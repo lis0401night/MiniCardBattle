@@ -28,6 +28,8 @@ import {
   AI_THINKING_DURATION,
   MAX_HP,
   PLACE_ANIMATION_DURATION,
+  PREPARE_BATTLE_LOCK_TIMEOUT_MS,
+  MATCHING_SCREEN_TIMEOUT_MS,
 } from '../../utils/constants/config.js';
 import {
   CHAR_FORTUNE_HANDICAPS,
@@ -89,6 +91,76 @@ function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
   });
 }
 
+/** リーダー固有の最大HP定義。未定義のキャラクターは MAX_HP を使用する */
+const LEADER_MAX_HP_OVERRIDES = {
+  satan: 40,
+  void: 30,
+  succubus: 30,
+  warlock: 30,
+};
+
+/**
+ * 現在のゲームモードから、使用するステージIDとBGMキーを決定する。
+ * プリロード処理とBGM再生処理の両方が同じ結果を使うように一元化する（DRY徹底）。
+ * @returns {{ stageId: string, bgmKey: string }} ステージIDとBGMキー
+ */
+function resolveStageAndBgm() {
+  let stageId =
+    GameState.gameMode === 'story'
+      ? GameState.enemyConfig?.stageId || 'android'
+      : GameState.selectedStageId || 'android';
+  if (GameState.gameMode === 'battle_dungeon') {
+    stageId = 'dungeon';
+  } else if (GameState.gameMode === 'tournament') {
+    stageId = 'practice';
+  }
+
+  const stageData = STAGES[stageId];
+  let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
+  if (GameState.gameMode === 'story' && GameState.enemyConfig?.id === 'satan') {
+    bgmKey = 'bgmLastBattle';
+  } else if (GameState.gameMode === 'tournament') {
+    bgmKey = 'bgmTournament2';
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
+  ) {
+    bgmKey = 'bgmStageHighDifficulty';
+  }
+
+  return { stageId, bgmKey };
+}
+
+/**
+ * 指定した対戦者のConfigへ、選択中スキンの画像・敗北画像・アイコンを適用する。
+ * @param {object} config - GameState.playerConfig または GameState.enemyConfig
+ * @param {object} skinMap - GameState.playerSkins または GameState.enemySkins
+ */
+function applySkinToConfig(config, skinMap) {
+  if (!config || !skinMap || !skinMap[config.id]) return;
+  if (typeof getSkinImage !== 'function') return;
+
+  const selSkin = skinMap[config.id];
+  const charObj = CHARACTERS[config.id] || config;
+  config.image = getSkinImage(charObj, selSkin, 'image') || charObj.image;
+  config.imageLose =
+    getSkinImage(charObj, selSkin, 'imageLose') ||
+    charObj.imageLose ||
+    charObj.image;
+  config.icon = getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
+}
+
+/**
+ * 現在のゲームモードに応じて、プレイヤーと敵のスキンを同期する。
+ * フリーバトル・ストーリー・チュートリアルは標準キャラクター画像を使うため、敵スキンを適用しない。
+ */
+function syncConfigSkins() {
+  if (checkIsTutorialMode()) return;
+  applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
+  if (checkIsStoryMode() || checkIsFreeMode()) return;
+  applySkinToConfig(GameState.enemyConfig, GameState.enemySkins);
+}
+
 // ==========================================
 // バトル進行とスキルロジック
 // ==========================================
@@ -102,52 +174,18 @@ export function prepareBattle() {
   if (isBattleLoading) return;
   isBattleLoading = true;
 
-  // 0. 最新のスキン情報でConfigを同期（対戦相手のスキンなどが確実に反映されるようにする）
-  // チュートリアル時は常にデフォルトスキンに固定するため適用をスキップする
-  if (
-    !checkIsTutorialMode() &&
-    GameState.playerConfig &&
-    GameState.playerSkins &&
-    GameState.playerSkins[GameState.playerConfig.id]
-  ) {
-    const selSkin = GameState.playerSkins[GameState.playerConfig.id];
-    const charObj =
-      CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
-    if (typeof getSkinImage === 'function') {
-      GameState.playerConfig.image =
-        getSkinImage(charObj, selSkin, 'image') || charObj.image;
-      GameState.playerConfig.imageLose =
-        getSkinImage(charObj, selSkin, 'imageLose') ||
-        charObj.imageLose ||
-        charObj.image;
-      GameState.playerConfig.icon =
-        getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
+  // 想定外の例外等で initBattleState へ到達しなかった場合でも、一定時間後にロックを解除してデッドロックを防ぐ
+  setTimeout(() => {
+    if (isBattleLoading) {
+      console.warn(
+        'prepareBattle: セーフティタイマーによりローディングロックを解除します'
+      );
+      isBattleLoading = false;
     }
-  }
+  }, PREPARE_BATTLE_LOCK_TIMEOUT_MS);
 
-  // フリーバトル・ストーリー・チュートリアルは標準キャラクター画像を使用するため敵スキン自動同期を適用しない
-  if (
-    !checkIsTutorialMode() &&
-    !checkIsStoryMode() &&
-    !checkIsFreeMode() &&
-    GameState.enemyConfig &&
-    GameState.enemySkins &&
-    GameState.enemySkins[GameState.enemyConfig.id]
-  ) {
-    const selSkin = GameState.enemySkins[GameState.enemyConfig.id];
-    const charObj =
-      CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
-    if (typeof getSkinImage === 'function') {
-      GameState.enemyConfig.image =
-        getSkinImage(charObj, selSkin, 'image') || charObj.image;
-      GameState.enemyConfig.imageLose =
-        getSkinImage(charObj, selSkin, 'imageLose') ||
-        charObj.imageLose ||
-        charObj.image;
-      GameState.enemyConfig.icon =
-        getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
-    }
-  }
+  // 0. 最新のスキン情報でConfigを同期（対戦相手のスキンなどが確実に反映されるようにする）
+  syncConfigSkins();
 
   // 1. 以前のBGMを強制停止
   stopAllBGM();
@@ -336,32 +374,7 @@ export function prepareBattle() {
     };
 
     // --- BGMのロードとデコード処理 ---
-    // ステージ情報の取得
-    let stageId =
-      GameState.gameMode === 'story'
-        ? GameState.enemyConfig.stageId || 'android'
-        : GameState.selectedStageId || 'android';
-    if (GameState.gameMode === 'battle_dungeon') {
-      stageId = 'dungeon';
-    } else if (GameState.gameMode === 'tournament') {
-      stageId = 'practice';
-    }
-    const stageData = STAGES[stageId];
-    let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
-    if (
-      GameState.gameMode === 'story' &&
-      GameState.enemyConfig?.id === 'satan'
-    ) {
-      bgmKey = 'bgmLastBattle'; // ストーリーのラストボス決戦
-    } else if (GameState.gameMode === 'tournament') {
-      bgmKey = 'bgmTournament2'; // トーナメントバトル
-    } else if (
-      GameState.gameMode &&
-      GameState.gameMode.startsWith('event_') &&
-      GameState.gameMode.endsWith('_high')
-    ) {
-      bgmKey = 'bgmStageHighDifficulty';
-    }
+    const { bgmKey } = resolveStageAndBgm();
 
     const bgmAudio = AUDIO_INSTANCES[bgmKey];
     if (bgmAudio && bgmAudio.src) {
@@ -428,7 +441,7 @@ export function prepareBattle() {
           matchingDone = true;
           tryInit();
         }
-      }, 7000);
+      }, MATCHING_SCREEN_TIMEOUT_MS);
 
       window.showMatchingScreen(() => {
         clearTimeout(matchingSafetyTimeout);
@@ -472,33 +485,8 @@ export function initBattleState() {
     // 全てのBGMを停止
     stopAllBGM();
 
-    // ステージ情報の取得
-    let stageId =
-      GameState.gameMode === 'story'
-        ? GameState.enemyConfig.stageId || 'android'
-        : GameState.selectedStageId || 'android';
-    if (GameState.gameMode === 'battle_dungeon') {
-      stageId = 'dungeon';
-    } else if (GameState.gameMode === 'tournament') {
-      stageId = 'practice';
-    }
-    const stageData = STAGES[stageId];
-    // BGMの再生
-    let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
-    if (
-      GameState.gameMode === 'story' &&
-      GameState.enemyConfig?.id === 'satan'
-    ) {
-      bgmKey = 'bgmLastBattle'; // ストーリーのラストボス（サタン）決戦専用BGM
-    } else if (GameState.gameMode === 'tournament') {
-      bgmKey = 'bgmTournament2'; // トーナメントバトル専用BGM
-    } else if (
-      GameState.gameMode &&
-      GameState.gameMode.startsWith('event_') &&
-      GameState.gameMode.endsWith('_high')
-    ) {
-      bgmKey = 'bgmStageHighDifficulty';
-    }
+    // ステージ情報とBGMの再生
+    const { bgmKey } = resolveStageAndBgm();
     playSound(SOUNDS[bgmKey]);
 
     // 既存のplayerConfig/enemyConfigをベースキャラクター定義からディープコピーして初期化する（コンティニュー時の二重適用バグ対策）
@@ -697,17 +685,16 @@ export function initBattleState() {
     }
 
     GameState.playerMaxHP = MAX_HP + fortuneHPPlayerMod;
-    GameState.enemyMaxHP =
-      (GameState.enemyConfig.hp ||
-        (GameState.enemyConfig.id === 'satan'
-          ? 40
-          : ['void', 'succubus', 'warlock'].includes(GameState.enemyConfig.id)
-            ? 30
-            : MAX_HP)) + fortuneHPEnemyMod;
+    // 敵の最大HPは、個別設定 > リーダー固有定義 > 既定値 の優先順位で決定する
+    const enemyBaseHP =
+      GameState.enemyConfig.hp ||
+      LEADER_MAX_HP_OVERRIDES[GameState.enemyConfig.id] ||
+      MAX_HP;
+    GameState.enemyMaxHP = enemyBaseHP + fortuneHPEnemyMod;
 
     if (
-      GameState.gameMode.startsWith('event_') &&
-      GameState.gameMode.endsWith('_high')
+      GameState.gameMode?.startsWith('event_') &&
+      GameState.gameMode?.endsWith('_high')
     )
       GameState.aiLevel = 3; // 念のため再セット
 
@@ -1229,7 +1216,11 @@ export async function startMulliganPhase() {
     }
   };
 
-  if (getIsHost()) {
+  // 乱数消費順の整合はオンライン対戦でのみ必要。
+  // オフラインは常に blue → red の固定順で処理し、シードによる再現性を保証する。
+  const processRedFirst = GameState.gameMode === 'online' && !getIsHost();
+
+  if (!processRedFirst) {
     if (playerMulliganIndices && playerMulliganIndices.length > 0) {
       processMulligan('blue', playerMulliganIndices);
     }

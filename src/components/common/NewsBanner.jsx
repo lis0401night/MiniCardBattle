@@ -409,8 +409,10 @@ export default function NewsBanner() {
                   typeof selectedNews.content === 'string'
                     ? selectedNews.content.replace(
                         /src=["'](https?:\/\/[^"']+\/)?assets\/([^"']+)["']/gi,
-                        (m, p1, p2) =>
-                          `src="${resolveAssetUrl('assets/' + p2)}"`
+                        (m, p1, p2) => {
+                          const sourceUrl = `${p1 || ''}assets/${p2}`;
+                          return `src="${resolveAssetUrl(sourceUrl)}"`;
+                        }
                       )
                     : selectedNews.content
                 ),

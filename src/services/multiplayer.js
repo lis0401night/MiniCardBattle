@@ -590,22 +590,17 @@ export async function leaveRoom() {
 
   try {
     if (wasHost) {
-      // ホストが抜ける場合はルームおよびコードインデックスを原子的に同時削除
-      await removeRoomAndCode(roomId, roomCode);
-      // 手動削除成功後に正常退室のための切断時予約解除を実行
-      await onDisconnect(roomRef)
-        .cancel()
-        .catch((e) => console.warn('onDisconnect cancel failed:', e));
+      // 1. コードとルームの切断時自動削除予約を先に解除する（エラーは握りつぶさず伝播させる）
+      await onDisconnect(roomRef).cancel();
       if (codeRef) {
-        await onDisconnect(codeRef)
-          .cancel()
-          .catch((e) =>
-            console.warn('onDisconnect code index cancel failed:', e)
-          );
+        await onDisconnect(codeRef).cancel();
       }
+      // 2. 切断予約が安全に解除された後、DBからルームおよびコードインデックスを原子的に同時削除
+      await removeRoomAndCode(roomId, roomCode);
     } else {
-      // クライアントが抜ける場合は、他の操作との競合によるルームの再作成を防ぐため
-      // トランザクションを使用してデータが存在する間だけステータスとクライアントを更新する
+      // 1. 切断時の自動更新予約を先に解除する
+      await onDisconnect(roomRef).cancel();
+      // 2. トランザクションを使用して、データが存在する間だけステータスとクライアントを更新する
       await runTransaction(roomRef, (room) => {
         if (!room) return undefined; // ルームが既に削除されている場合は書き込みせず中断
         return {
@@ -614,9 +609,6 @@ export async function leaveRoom() {
           client: null,
         };
       });
-      await onDisconnect(roomRef)
-        .cancel()
-        .catch((e) => console.warn('onDisconnect cancel failed:', e));
     }
   } catch (e) {
     console.error('leaveRoom failed:', e);

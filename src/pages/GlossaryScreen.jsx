@@ -73,6 +73,17 @@ export default function GlossaryScreen() {
   const scrollTimerRef = useRef(null);
 
   /**
+   * 保留中の自動スクロールタイマーを安全にキャンセルする
+   * @returns {void}
+   */
+  const cancelPendingScroll = useCallback(() => {
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = null;
+    }
+  }, []);
+
+  /**
    * 指定された要素をビューポート内に滑らかにスクロールする
    * アコーディオンの展開アニメーション完了後に実行する。
    * @param {string} refKey - headerRefs に格納されたキー
@@ -81,9 +92,7 @@ export default function GlossaryScreen() {
    */
   const scrollIntoViewSmooth = useCallback(
     (refKey, blockPosition = 'start') => {
-      if (scrollTimerRef.current) {
-        clearTimeout(scrollTimerRef.current);
-      }
+      cancelPendingScroll();
       scrollTimerRef.current = setTimeout(() => {
         const el = headerRefs.current[refKey];
         if (el) {
@@ -92,20 +101,19 @@ export default function GlossaryScreen() {
         scrollTimerRef.current = null;
       }, ACCORDION_DURATION_MS + SCROLL_DELAY_MS);
     },
-    []
+    [cancelPendingScroll]
   );
 
   useEffect(() => {
     return () => {
-      if (scrollTimerRef.current) {
-        clearTimeout(scrollTimerRef.current);
-      }
+      cancelPendingScroll();
     };
-  }, []);
+  }, [cancelPendingScroll]);
 
   /**
    * 大項目のアコーディオン開閉をトグルする
    * 他の大項目および展開中の中項目を閉じた上で、選択された大項目のみを展開しスクロールする。
+   * 閉じる操作時は進行中の自動スクロールタイマーを即座にキャンセルする。
    * @param {number} categoryIndex - 大項目のインデックス
    * @returns {void}
    */
@@ -115,17 +123,20 @@ export default function GlossaryScreen() {
         const isOpening = !prev.has(categoryIndex);
         if (isOpening) {
           scrollIntoViewSmooth(`cat-${categoryIndex}`);
+        } else {
+          cancelPendingScroll();
         }
         return isOpening ? new Set([categoryIndex]) : new Set();
       });
       setOpenTerms(new Set());
     },
-    [scrollIntoViewSmooth]
+    [scrollIntoViewSmooth, cancelPendingScroll]
   );
 
   /**
    * 中項目のアコーディオン開閉をトグルする
    * 他の中項目を閉じた上で、選択された中項目のみを展開し滑らかに自動スクロールする。
+   * 閉じる操作時は進行中の自動スクロールタイマーを即座にキャンセルする。
    * @param {string} termKey - 中項目の一意キー（"カテゴリIndex-用語Index"）
    * @returns {void}
    */
@@ -135,11 +146,13 @@ export default function GlossaryScreen() {
         const isOpening = !prev.has(termKey);
         if (isOpening) {
           scrollIntoViewSmooth(`term-${termKey}`);
+        } else {
+          cancelPendingScroll();
         }
         return isOpening ? new Set([termKey]) : new Set();
       });
     },
-    [scrollIntoViewSmooth]
+    [scrollIntoViewSmooth, cancelPendingScroll]
   );
 
   return (

@@ -37,6 +37,12 @@ export const TURN_SUB_PHASE = Object.freeze({
   SP_INCREMENT: 'SP_INCREMENT',
   /** 戦闘フェーズ（全レーンの自動攻撃・相討ち・直接攻撃）の実行処理 */
   COMBAT: 'COMBAT',
+  /** ターン数の加算処理 */
+  INCREMENT_TURN_COUNT: 'INCREMENT_TURN_COUNT',
+  /** チュートリアル: 敵ターン開始前の一時停止 */
+  TUTORIAL_PAUSE_BEFORE_ENEMY_TURN: 'TUTORIAL_PAUSE_BEFORE_ENEMY_TURN',
+  /** チュートリアル: 戦闘フェーズ前の一時停止 */
+  TUTORIAL_PAUSE_BEFORE_COMBAT: 'TUTORIAL_PAUSE_BEFORE_COMBAT',
   /** カードドロー処理 */
   DRAW: 'DRAW',
   /** ターン開始処理完了後のメイン操作または敵行動への遷移処理 */

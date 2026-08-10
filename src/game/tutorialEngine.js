@@ -19,9 +19,9 @@ import { prepareBattle } from './battle/index.js';
 import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 
-// ============================
-// チュートリアルステップ定義
-// ============================
+// チュートリアル進行制御用の定数
+/** 演出完了後にメッセージを表示するまでの待機時間(ms) */
+const TUTORIAL_IDLE_MESSAGE_DELAY_MS = 1000;
 
 // ステップ内のアクションタイプ:
 // 'message'       - メッセージ表示のみ（タップで次へ）
@@ -1743,7 +1743,7 @@ export function startTutorial(tutorialId) {
   GameState.appState = 'battle';
   GameState.selectedStageId = config.stageId || 'practice';
 
-  // プレイマットの他モードからの残存キャッシュを初期化（スキンはbattle.jsで適用がスキップされます）
+  // プレイマットの他モードからの残存キャッシュを初期化（スキンはbattleInit.jsで適用がスキップされます）
   GameState.selectedPlaymatId = null;
   GameState.enemySkins = {};
 
@@ -1822,13 +1822,16 @@ export async function runTutorialFlow() {
               !GameState.isProcessing &&
               (!GameState.tutorial ||
                 step.resumeEnemyTurnAfter ||
-                !GameState.tutorial.enemyTurnResumeResolver),
+                !GameState.tutorial.enemyTurnResumeResolver) &&
+              (!GameState.tutorial ||
+                step.resumeCombatAfter ||
+                !GameState.tutorial.combatResumeResolver),
             TUTORIAL_POLL_INTERVAL_MS,
             null
           );
           if (!GameState.tutorial) break;
           // 演出完了を待ってからメッセージ表示
-          await sleep(1000);
+          await sleep(TUTORIAL_IDLE_MESSAGE_DELAY_MS);
         }
         if (!GameState.tutorial) break;
         // メッセージを表示して、タップを待つ

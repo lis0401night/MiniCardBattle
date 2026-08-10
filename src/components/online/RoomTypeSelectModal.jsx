@@ -29,6 +29,7 @@ export default function RoomTypeSelectModal({
 
   /**
    * モーダル表示時に最初のフォーカス可能要素へフォーカスを割り当てるエフェクト
+   * また、フォーカス位置に関わらず Escape キーで即座にモーダルを閉じられるようグローバルリスナーを登録します。
    * モーダルを閉じる際は、開く直前の要素へフォーカスを戻します。
    */
   useEffect(() => {
@@ -49,22 +50,31 @@ export default function RoomTypeSelectModal({
       }
     }, FOCUS_DELAY_MS);
 
+    // モーダル外フォーカス時やタイマー待機中にも Escape キーで確実に閉じられるようグローバルリスナーを追加
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        playSound?.(SOUNDS?.seClick);
+        if (onCancel) onCancel();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+
     return () => {
       clearTimeout(timer);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
       previousFocusRef.current?.focus?.();
     };
-  }, [isOpen]);
+  }, [isOpen, onCancel]);
 
   /**
-   * モーダル内でのキーボード操作（Escape によるキャンセル、Tab によるフォーカストラップ）ハンドラ
+   * モーダル内でのキーボード操作（Tab によるフォーカストラップ）ハンドラ
    * @param {React.KeyboardEvent} e - キーボードイベント
    * @returns {void}
    */
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
-      e.preventDefault();
-      playSound?.(SOUNDS?.seClick);
-      if (onCancel) onCancel();
+      // グローバルイベントで処理されるため、重複発動を防止
       return;
     }
 

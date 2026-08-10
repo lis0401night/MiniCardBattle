@@ -44,6 +44,120 @@ import {
   canEquipCard,
 } from './battleSelection.js';
 import { dispatchBattleAction, getIsQueueProcessing } from './battleQueue.js';
+import { TURN_SUB_PHASE } from './phases/phaseTypes.js';
+import { runPhases } from './phases/PhaseRunner.js';
+import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
+
+/**
+ * 移動先レーンに既存カードがある場合の解決処理を行う。
+ * 起動消滅 > 合体 > 装備 > 通常の破棄配置 の優先順位で判定する。
+ * AI とプレイヤーの両経路から呼び出し、挙動の非対称を防ぐ。
+ * @param {string} owner - 移動を行う側 ('blue' | 'red')
+ * @param {Array} board - 対象陣営の盤面
+ * @param {number} fromLane - 移動元レーン
+ * @param {number} toLane - 移動先レーン
+ * @param {Set} [movedIds] - 同一ターン内の再移動を防ぐためのID集合
+ * @returns {Promise<boolean>} 処理が完了した場合は true
+ */
+async function resolveMoveDestination(
+  owner,
+  board,
+  fromLane,
+  toLane,
+  movedIds
+) {
+  const movingCard = board[fromLane];
+  const existingCard = board[toLane];
+  if (!movingCard) return false;
+
+  // 1. 起動消滅 (startup) スキルの判定
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    existingCard.skills = existingCard.skills.filter(
+      (s) => s.id !== 'startup' && s.id !== 'defender'
+    );
+    await discardCard(owner, movingCard, fromLane, false);
+
+    const targetEl = document.querySelector(
+      `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${toLane}"] .card`
+    );
+    if (targetEl) {
+      createDamagePopup(targetEl, '起動', '#38bdf8');
+    }
+    board[fromLane] = null;
+    return true;
+  }
+
+  // 2. 合体 (union) スキルの判定
+  if (existingCard && hasSkill(movingCard, 'union')) {
+    const unionSkill = movingCard.skills.find((s) => s.id === 'union');
+    if (
+      unionSkill &&
+      (existingCard.id === unionSkill.target ||
+        existingCard.baseId === unionSkill.target)
+    ) {
+      const mergedCard = CARD_MASTER.find((mc) => mc.id === unionSkill.into);
+      if (mergedCard) {
+        const targetEl = document.querySelector(
+          `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${toLane}"] .card`
+        );
+        if (targetEl) {
+          createDamagePopup(targetEl, '合体！', '#a855f7');
+        }
+        playSound(SOUNDS.seSummon);
+
+        const newInstance = {
+          ...mergedCard,
+          uid: `${mergedCard.id}_union_${Date.now()}`,
+          currentPower: mergedCard.power,
+          skills: mergeCardSkills(mergedCard),
+          isPremium: !!movingCard.isPremium || !!existingCard.isPremium,
+        };
+
+        board[toLane] = newInstance;
+        board[fromLane] = null;
+        if (movedIds) movedIds.add(newInstance.uid);
+
+        await sleep(PLACE_ANIMATION_DURATION);
+        renderBoard();
+        return true;
+      }
+    }
+  }
+
+  // 3. 装備 (equip) スキルの判定
+  if (existingCard && canEquipCard(movingCard, existingCard)) {
+    const targetEl = document.querySelector(
+      `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${toLane}"] .card`
+    );
+    if (targetEl) {
+      createDamagePopup(targetEl, '装備！', '#eab308');
+    }
+    playSound(SOUNDS.sePlace);
+
+    const equipPower = movingCard.power || 0;
+    existingCard.currentPower =
+      (existingCard.currentPower || existingCard.power || 0) + equipPower;
+    existingCard.power = (existingCard.power || 0) + equipPower;
+
+    consumeArmSelf(existingCard);
+
+    board[fromLane] = null;
+    await discardCard(owner, movingCard, fromLane, false);
+
+    await sleep(PLACE_ANIMATION_DURATION);
+    renderBoard();
+    return true;
+  }
+
+  // 4. 通常の移動（移動先に既存カードがあれば破棄して上書き移動）
+  if (existingCard) {
+    await discardCard(owner, existingCard, toLane, false);
+  }
+  board[toLane] = movingCard;
+  board[fromLane] = null;
+  if (movedIds) movedIds.add(movingCard.uid || movingCard.id);
+  return true;
+}
 
 /**
  * ターン開始時における移動関連スキル（神出・移動・起動消滅等）の移動処理を非同期で解決する。
@@ -117,33 +231,7 @@ export async function handleMoveSkills(owner) {
           await sleep(250);
         }
 
-        const existingCard = b[move.to];
-        if (existingCard && hasSkill(existingCard, 'startup')) {
-          // 起動消滅の特別処理
-          existingCard.skills = existingCard.skills.filter(
-            (s) => s.id !== 'startup' && s.id !== 'defender'
-          );
-
-          // 移動しようとしたカードを墓地に送る
-          const movingCard = b[move.from];
-          await discardCard(owner, movingCard, move.from, false);
-
-          const targetEl = document.querySelector(
-            `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${move.to}"] .card`
-          );
-          if (targetEl) {
-            createDamagePopup(targetEl, '起動', '#38bdf8');
-          }
-
-          b[move.from] = null;
-        } else {
-          if (existingCard) {
-            // 移動先にすでにカードがある場合は墓地に送る
-            await discardCard(owner, existingCard, move.to, false);
-          }
-          b[move.to] = b[move.from];
-          b[move.from] = null;
-        }
+        await resolveMoveDestination(owner, b, move.from, move.to, new Set());
         playSound(SOUNDS.seClick);
         await sleep(PLACE_ANIMATION_DURATION);
         renderBoard();
@@ -342,8 +430,6 @@ export async function handleMoveSkills(owner) {
   }
 }
 
-import { TURN_SUB_PHASE } from './phases/phaseTypes.js';
-
 /**
  * ターン開始時におけるユニットの状態異常（スタン・攻撃不能）カウントを減算する。
  * @param {string} owner - プレイヤー種別 ('blue' | 'red')
@@ -400,7 +486,8 @@ async function tutorialPauseIfNeeded(owner, pausePoint) {
 
 /**
  * ターン開始時にプレイヤー/敵のSPを1加算する。
- * （※先攻の1ターン目や追加ターン・攻撃スキップ時は加算されない）
+ * 先攻の1ターン目（turnCount が 1）と、攻撃スキップが残っている間は加算しない。
+ * 追加ターンでは turnCount が加算されるため、SPも加算される。
  * @param {string} owner - プレイヤー種別 ('blue' | 'red')
  */
 function incrementSP(owner) {
@@ -443,21 +530,6 @@ async function executeCombatIfPossible(owner) {
     }
   }
 
-  // 【デバッグ】プレイヤー攻撃終了後の盤面状態をログ出力
-  if (owner === 'blue') {
-    const dumpBoard = (b) =>
-      b
-        .map((c) =>
-          c
-            ? `${c.name}(${c.currentPower !== undefined ? c.currentPower : c.power})`
-            : 'EMPTY'
-        )
-        .join(' | ');
-    console.log(
-      `[Player Turn End] Board: [Player] ${dumpBoard(GameState.playerBoard)} vs [AI] ${dumpBoard(GameState.enemyBoard)}`
-    );
-  }
-
   return false;
 }
 
@@ -488,8 +560,6 @@ function transitionAfterTurnStart(owner) {
   }
 }
 
-import { runPhases } from './phases/PhaseRunner.js';
-
 /**
  * ターン開始シーケンスを構成するサブフェイズ定義配列。
  * PhaseRunner エンジンによりデータ駆動で順次実行される。
@@ -501,12 +571,12 @@ const TURN_PHASES = [
     execute: (ctx) => decrementStatusCounters(ctx.owner),
   },
   {
-    id: 'TUTORIAL_PAUSE_BEFORE_ENEMY_TURN',
+    id: TURN_SUB_PHASE.TUTORIAL_PAUSE_BEFORE_ENEMY_TURN,
     execute: (ctx) => tutorialPauseIfNeeded(ctx.owner, 'beforeEnemyTurn'),
     shouldSkip: (ctx) => ctx.owner !== 'red',
   },
   {
-    id: 'INCREMENT_TURN_COUNT',
+    id: TURN_SUB_PHASE.INCREMENT_TURN_COUNT,
     execute: () => {
       GameState.turnCount++;
     },
@@ -528,7 +598,7 @@ const TURN_PHASES = [
     execute: (ctx) => incrementSP(ctx.owner),
   },
   {
-    id: 'TUTORIAL_PAUSE_BEFORE_COMBAT',
+    id: TURN_SUB_PHASE.TUTORIAL_PAUSE_BEFORE_COMBAT,
     execute: (ctx) => tutorialPauseIfNeeded(ctx.owner, 'beforeCombat'),
     shouldSkip: (ctx) => ctx.owner !== 'blue',
   },
@@ -575,13 +645,13 @@ export async function endPlayerTurn() {
     );
   });
   if (!confirmed) return;
-  document
-    .querySelectorAll('.cell')
-    .forEach((c) => c.classList.remove('highlight'));
   GameState.selectedCardIndex = null;
+  GameState.selectedBoardLaneIndex = null;
+  GameState.selectedBoardSide = null;
   updateCardDetail(null);
   renderHand();
   renderBoard();
+  if (updateBattleUIHook) updateBattleUIHook();
   // processActionQueue内でロックするため、ここは解除しておく（または最初からセットしない）
   if (!getIsQueueProcessing()) {
     GameState.isProcessing = false;
@@ -638,15 +708,10 @@ export async function endTurnLogic(o) {
             await discardCard('red', dropped, undefined, false);
           }
         } else {
-          let candidates = GameState.enemyHand.map((c, i) => ({
-            idx: i,
-            power: c.power || 0,
-          }));
-          candidates.sort((a, b) => b.power - a.power);
-          const sortedIndices = candidates
-            .slice(0, discardCount)
-            .map((c) => c.idx)
-            .sort((a, b) => b - a);
+          // AIの破棄選択は共通ロジックへ統一する
+          const sortedIndices = [
+            ...getAIDiscardIndices(GameState.enemyHand, discardCount),
+          ].sort((a, b) => b - a);
           for (const idx of sortedIndices) {
             const dropped = GameState.enemyHand.splice(idx, 1)[0];
             await discardCard('red', dropped, undefined, false);

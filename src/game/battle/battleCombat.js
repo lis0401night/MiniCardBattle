@@ -1,5 +1,5 @@
 /**
- * src/game/battleCombat.js
+ * src/game/battle/battleCombat.js
  * カードの破棄、プレイ、戦闘フェーズの実行など、
  * バトル中の主要なアクションと戦闘ロジックを管理するモジュール。
  */
@@ -10,7 +10,12 @@ import { ACTIVE_SKILLS } from '../../utils/constants/skills.js';
 import {
   PLACE_ANIMATION_DURATION,
   VALKYRIA_GUARD_POPUP_COLOR,
+  MAX_HAND_SIZE_DURING_TURN,
 } from '../../utils/constants/config.js';
+import {
+  checkIsFortuneMode,
+  getFortuneEnemyCharId,
+} from '../../utils/gameUtils.js';
 import {
   updateDeckDisplay,
   renderBoard,
@@ -52,6 +57,55 @@ import {
 } from '../../utils/constants/fortuneHandicaps.js';
 
 /**
+ * カードをマスターデータから初期状態に復元し、傀儡の返却先所有者を確定する。
+ * @param {object} card - 復元対象のカード
+ * @param {string} fallbackOwner - puppetOriginalOwner/owner が無い場合の所有者
+ * @returns {{ card: object, owner: string }} 復元済みカードと返却先所有者
+ */
+export function restoreCardForDiscard(card, fallbackOwner) {
+  const owner = card.puppetOriginalOwner || card.owner || fallbackOwner;
+  const master = CARD_MASTER.find((m) => m.id === (card.baseId || card.id));
+  let restored;
+  if (master) {
+    restored = JSON.parse(JSON.stringify(master));
+    restored.uid = card.uid;
+    restored.baseId = card.baseId || card.id;
+    if (card.isPremium !== undefined) restored.isPremium = card.isPremium;
+    restored.basePower = restored.power;
+    restored.currentPower = restored.power;
+  } else {
+    restored = { ...card };
+    if ('basePower' in restored) restored.power = restored.basePower;
+    restored.currentPower = restored.power;
+    restored.skills = [];
+  }
+  restored.owner = owner;
+  delete restored.puppetOriginalOwner;
+  return { card: restored, owner };
+}
+
+/**
+ * 戦闘シミュレーション (Engine) へ渡す state スナップショットを生成する。
+ * GameState の盤面・手札・墓地をディープコピーし、副作用が本体へ及ばないようにする。
+ * @returns {object} Engine 用の state オブジェクト
+ */
+function createCombatSnapshot() {
+  const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
+  return {
+    playerBoard: GameState.playerBoard.map(cloneCard),
+    enemyBoard: GameState.enemyBoard.map(cloneCard),
+    playerHP: GameState.playerHP,
+    enemyHP: GameState.enemyHP,
+    playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
+    enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
+    playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
+    enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
+    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
+  };
+}
+
+/**
  * カードを墓地に送り、破棄アニメーション・音声・変身解除・ミッション進捗（生贄カウント）等を処理する。
  * @param {string} owner - カード所有者 ('blue' | 'red')
  * @param {object} card - 破棄対象のカードオブジェクト
@@ -67,27 +121,15 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
     );
     return;
   }
+  // 付属物（装備・合体素材・変身元）の墓地返却処理（restoreCardForDiscard で共通化）
   if (card.equippedCards && card.equippedCards.length > 0) {
     for (const eqCard of card.equippedCards) {
-      let restoredEq;
-      // 【傀儡対応】装備カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-      const eqOwner = eqCard.puppetOriginalOwner || eqCard.owner || owner;
+      const { card: restoredEq, owner: eqOwner } = restoreCardForDiscard(
+        eqCard,
+        owner
+      );
       const discardPile =
         eqOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-      const eqMaster = CARD_MASTER.find(
-        (m) => m.id === (eqCard.baseId || eqCard.id)
-      );
-      if (eqMaster) {
-        restoredEq = JSON.parse(JSON.stringify(eqMaster));
-        restoredEq.uid = eqCard.uid;
-        restoredEq.owner = eqOwner;
-        restoredEq.baseId = eqCard.baseId || eqCard.id;
-        restoredEq.basePower = restoredEq.power;
-        restoredEq.currentPower = restoredEq.power;
-      } else {
-        restoredEq = { ...eqCard };
-      }
-      if (restoredEq.puppetOriginalOwner) delete restoredEq.puppetOriginalOwner;
       if (!restoredEq.isToken) {
         if (typeof window.stripEphemeralSkills === 'function') {
           window.stripEphemeralSkills(restoredEq);
@@ -100,26 +142,12 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
   if (card.unionMaterials && card.unionMaterials.length > 0) {
     for (const matCard of card.unionMaterials) {
-      let restoredMat;
-      // 【傀儡対応】合体素材に puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-      const matOwner = matCard.puppetOriginalOwner || matCard.owner || owner;
+      const { card: restoredMat, owner: matOwner } = restoreCardForDiscard(
+        matCard,
+        owner
+      );
       const discardPile =
         matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
-      const matMaster = CARD_MASTER.find(
-        (m) => m.id === (matCard.baseId || matCard.id)
-      );
-      if (matMaster) {
-        restoredMat = JSON.parse(JSON.stringify(matMaster));
-        restoredMat.uid = matCard.uid;
-        restoredMat.owner = matOwner;
-        restoredMat.baseId = matCard.baseId || matCard.id;
-        restoredMat.basePower = restoredMat.power;
-        restoredMat.currentPower = restoredMat.power;
-      } else {
-        restoredMat = { ...matCard };
-      }
-      if (restoredMat.puppetOriginalOwner)
-        delete restoredMat.puppetOriginalOwner;
       if (!restoredMat.isToken) {
         discardPile.push(restoredMat);
       }
@@ -128,28 +156,10 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
   }
 
   if (card.originalRevertTarget) {
-    const rvTarget = card.originalRevertTarget;
-    // 【傀儡対応】石化された元カードに puppetOriginalOwner がある場合は元の持ち主の墓地に返却
-    const rvOwner = rvTarget.puppetOriginalOwner || owner;
-    const masterData = CARD_MASTER.find(
-      (m) => m.id === (rvTarget.baseId || rvTarget.id)
+    const { card: restoredCard, owner: rvOwner } = restoreCardForDiscard(
+      card.originalRevertTarget,
+      owner
     );
-    let restoredCard;
-    if (masterData) {
-      restoredCard = JSON.parse(JSON.stringify(masterData));
-      restoredCard.uid = rvTarget.uid;
-      restoredCard.owner = rvOwner;
-      restoredCard.baseId = rvTarget.baseId || rvTarget.id;
-      if (rvTarget.isPremium !== undefined)
-        restoredCard.isPremium = rvTarget.isPremium;
-      restoredCard.basePower = restoredCard.power;
-      restoredCard.currentPower = restoredCard.power;
-    } else {
-      restoredCard = { ...rvTarget };
-      restoredCard.equippedCards = [];
-    }
-    if (restoredCard.puppetOriginalOwner)
-      delete restoredCard.puppetOriginalOwner;
     if (!restoredCard.isToken) {
       (rvOwner === 'blue'
         ? GameState.playerDiscard
@@ -414,7 +424,8 @@ export async function triggerExplodeSkill(owner, lane, card) {
   adj.forEach((j) => {
     if (board[j]) {
       targetsFound = true;
-      if (canTakeDamage(board[j], val)) {
+      // 【加護対応】state(GameState) と所有者を渡し、戦乙女の加護・無効・回避を正しく判定する
+      if (canTakeDamage(board[j], val, true, GameState, owner)) {
         board[j].currentPower -= val;
         damagedLanes.push(j);
       } else {
@@ -487,7 +498,7 @@ export function drawCard(owner) {
     ds = owner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
 
   // 手札がいっぱいの場合は何もしない
-  if (h.length >= 4) {
+  if (h.length >= MAX_HAND_SIZE_DURING_TURN) {
     updateDeckDisplay(owner);
     return;
   }
@@ -566,19 +577,18 @@ export async function playCard(o, hI, l) {
   if (!playingCard) return false;
 
   // 特級目標によるカードプレイ制限（プレイヤーのみ）
-  const isFortuneMode =
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune');
-
-  if (o === 'blue' && isFortuneMode && GameState.fortuneHandicaps) {
-    const enemyCharId = GameState.gameMode
-      .replace('event_', '')
-      .replace('_fortune', '');
+  if (
+    o === 'blue' &&
+    checkIsFortuneMode(GameState.gameMode) &&
+    GameState.fortuneHandicaps
+  ) {
+    const enemyCharId = getFortuneEnemyCharId(GameState.gameMode);
     const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
     const activeBanRules = handicapsList.filter(
-      (h) =>
-        h.type === HANDICAP_TYPES.BAN_SKILL && GameState.fortuneHandicaps[h.id]
+      (rule) =>
+        rule.type === HANDICAP_TYPES.BAN_SKILL &&
+        GameState.fortuneHandicaps[rule.id]
     );
 
     if (activeBanRules.length > 0) {
@@ -851,10 +861,8 @@ export async function playCard(o, hI, l) {
     await resolveOnPlaySkill(o, l, c);
   }
 
-  // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認
-  await cleanupDestroyedCards();
-
-  // 召喚効果解決後などにパワー0以下のカードがあれば破壊する
+  // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認する。
+  // cleanupDestroyedCards は内部で破壊対象が無くなるまでループするため、1回で十分。
   await cleanupDestroyedCards();
   return true;
 }
@@ -919,22 +927,7 @@ export async function resolveOnPlaySkill(o, l, c) {
  */
 export async function executeSingleCombat(atk, l) {
   // quick スキル等での単発攻撃に対応するための簡易ラッパー
-  const state = {
-    playerBoard: GameState.playerBoard.map((c) =>
-      c ? JSON.parse(JSON.stringify(c)) : null
-    ),
-    enemyBoard: GameState.enemyBoard.map((c) =>
-      c ? JSON.parse(JSON.stringify(c)) : null
-    ),
-    playerHP: GameState.playerHP,
-    enemyHP: GameState.enemyHP,
-    playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-    enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-    playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-    enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
-    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
-    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
-  };
+  const state = createCombatSnapshot();
 
   // 特定のレーンだけ発火させるための個別処理
   const events = [];
@@ -956,22 +949,7 @@ export async function executeCombatPhase(atk) {
   if (!b.some((x) => x !== null)) return;
 
   // --- ロジックの実行 (Engineの呼び出し) ---
-  const currentState = {
-    playerBoard: GameState.playerBoard.map((c) =>
-      c ? JSON.parse(JSON.stringify(c)) : null
-    ),
-    enemyBoard: GameState.enemyBoard.map((c) =>
-      c ? JSON.parse(JSON.stringify(c)) : null
-    ),
-    playerHP: GameState.playerHP,
-    enemyHP: GameState.enemyHP,
-    playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-    enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-    playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-    enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
-    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
-    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
-  };
+  const currentState = createCombatSnapshot();
 
   // Engineで全レーンの戦闘結果をシミュレートし、イベントログを受け取る
   const events = calculateCombatPhase(currentState, atk, []);
@@ -988,8 +966,6 @@ export async function executeCombatPhase(atk) {
 
   // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
   await cleanupDestroyedCards();
-
-  // 勝敗判定
   checkWinCondition();
 }
 

@@ -23,6 +23,7 @@ import { SOUNDS } from '../../utils/sounds.js';
 import { executeEnemyAI } from '../ai.js';
 import { activateLeaderSkill } from '../leaderSkills.js';
 import { cleanupTutorial } from '../tutorialEngine.js';
+import { showAlertModal } from '../../services/uiModals.js';
 
 // ==========================================
 // 循環参照回避のための関数注入レジストリ
@@ -53,6 +54,21 @@ export function registerQueueDependencies(deps) {
   if (deps.checkWinCondition) _checkWinCondition = deps.checkWinCondition;
   if (deps.executeTutorialEnemyTurn)
     _executeTutorialEnemyTurn = deps.executeTutorialEnemyTurn;
+}
+
+/**
+ * 依存関数が注入済みかを検証し取得する。未注入の場合は特定可能なエラーを投げる。
+ * @param {Function|null} fn - 検証対象の関数
+ * @param {string} name - 依存関数名（エラーメッセージ用）
+ * @returns {Function} 注入済みの関数
+ */
+function requireDependency(fn, name) {
+  if (typeof fn !== 'function') {
+    throw new Error(
+      `[battleQueue] 依存関数 "${name}" が未注入です。battle/index.js の registerQueueDependencies が実行される前に呼び出されました。`
+    );
+  }
+  return fn;
 }
 
 // ==========================================
@@ -136,7 +152,7 @@ export async function dispatchBattleAction(action, isRemote = false) {
     }
     playSound(SOUNDS.seDamage);
     if (updateBattleUIHook) updateBattleUIHook();
-    _checkWinCondition();
+    requireDependency(_checkWinCondition, 'checkWinCondition')();
     return;
   }
 
@@ -160,29 +176,33 @@ export async function processActionQueue() {
       const action = GameState.actionQueue.shift();
 
       if (action.type === 'playCard') {
-        const played = await _playCard(
+        const played = await requireDependency(_playCard, 'playCard')(
           action.owner,
           action.handIndex,
           action.lane
         );
         if (played) {
-          if (_checkWinCondition()) break;
+          if (requireDependency(_checkWinCondition, 'checkWinCondition')())
+            break;
           GameState.selectedCardIndex = null;
           if (window.updateCardDetail) window.updateCardDetail(null);
           await sleep(PLACE_ANIMATION_DURATION);
-          await _endTurnLogic(action.owner);
+          await requireDependency(_endTurnLogic, 'endTurnLogic')(action.owner);
         }
         // 【CodeRabbit指摘反映】無効プレイ時（playedがfalse）でも、オンライン対戦での状態ズレを防ぐため、
         // ループ後段の updateBattleUIHook() や syncState 送信をスキップせずに通す
       } else if (action.type === 'endTurn') {
-        await _endTurnLogic(action.owner);
+        await requireDependency(_endTurnLogic, 'endTurnLogic')(action.owner);
       } else if (action.type === 'leaderSkill') {
         await activateLeaderSkill(action.owner);
       } else if (action.type === 'enemyTurn') {
         if (GameState.gameMode === 'tutorial') {
           // チュートリアルモード: スクリプト行動を実行
           await sleep(AI_THINKING_DURATION);
-          await _executeTutorialEnemyTurn();
+          await requireDependency(
+            _executeTutorialEnemyTurn,
+            'executeTutorialEnemyTurn'
+          )();
         } else if (GameState.gameMode !== 'online') {
           await sleep(AI_THINKING_DURATION);
           await executeEnemyAI();
@@ -201,12 +221,21 @@ export async function processActionQueue() {
         action.type !== 'enemyTurn' &&
         action.type !== 'submitChoice'
       ) {
-        await sendOnlineAction({
-          type: 'syncState',
-          state: generateSyncState(),
-        });
+        // 同期送信の単発失敗でローカルバトル処理を中断させないよう内部保護
+        try {
+          await sendOnlineAction({
+            type: 'syncState',
+            state: generateSyncState(),
+          });
+        } catch (syncErr) {
+          console.error('状態同期の送信に失敗しました:', syncErr);
+        }
       }
     }
+  } catch (e) {
+    console.error('バトルアクションの処理中にエラーが発生しました:', e);
+    GameState.actionQueue = [];
+    showAlertModal('バトル処理中にエラーが発生しました。処理を中断します。');
   } finally {
     isQueueProcessing = false;
     GameState.isProcessing = false;

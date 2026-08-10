@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TOOL_NAV_ITEMS } from './toolNavData';
 import './toolNav.css';
 
@@ -10,6 +10,8 @@ import './toolNav.css';
 export default function ToolNavigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
+  const menuButtonRef = useRef(null);
+  const drawerRef = useRef(null);
 
   // 現在のページURLパスを取得
   useEffect(() => {
@@ -17,6 +19,20 @@ export default function ToolNavigation() {
       setCurrentPath(window.location.pathname);
     }
   }, []);
+
+  // メニュー開閉時のフォーカス移動制御
+  const isInitialRender = useRef(true);
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+    if (isOpen) {
+      drawerRef.current?.focus();
+    } else {
+      menuButtonRef.current?.focus();
+    }
+  }, [isOpen]);
 
   // キーボードEscキー押下でメニューを閉じる処理
   useEffect(() => {
@@ -51,10 +67,13 @@ export default function ToolNavigation() {
     <>
       {/* フローティング ハンバーガーボタン */}
       <button
+        ref={menuButtonRef}
         type="button"
         className="tool-nav-btn"
         onClick={toggleMenu}
         aria-label="ツールメニューを開く"
+        aria-expanded={isOpen}
+        aria-controls="tool-navigation-drawer"
         title="ツール切り替えメニュー"
       >
         ☰
@@ -67,7 +86,14 @@ export default function ToolNavigation() {
       />
 
       {/* サイドスライド ドロワーメニュー */}
-      <aside className={`tool-nav-drawer ${isOpen ? 'open' : ''}`}>
+      <aside
+        id="tool-navigation-drawer"
+        ref={drawerRef}
+        tabIndex={-1}
+        className={`tool-nav-drawer ${isOpen ? 'open' : ''}`}
+        aria-hidden={!isOpen}
+        inert={!isOpen ? '' : undefined}
+      >
         <div className="tool-nav-header">
           <h3 className="tool-nav-title">
             <span>🛠️</span> 開発・管理ツール一覧

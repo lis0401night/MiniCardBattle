@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import pica from 'pica';
-import '../common/toolNavStandalone.js';
+import ToolNavigation from '../common/ToolNavigation.jsx';
 import './CharaAssetMaker.css';
 
 /**
@@ -23,6 +23,50 @@ const PICA_DEFAULTS = {
   unsharpRadius: 0.5,
   unsharpThreshold: 0,
 };
+
+/** Picaフィルタとして許可される文字列リスト */
+const PICA_FILTERS = ['box', 'hamming', 'lanczos2', 'lanczos3', 'mks2013'];
+
+/** ブラウザ互換性を考慮した中間キャンバスの一辺の最大値（px） */
+const MAX_INTERMEDIATE_CANVAS_SIZE = 8192;
+
+/** 連続ダウンロード時のブラウザ抑制回避用の待機時間（ミリ秒） */
+const DOWNLOAD_INTERVAL_MS = 150;
+
+/** ObjectURLを解放するまでの待機時間（ミリ秒） */
+const OBJECT_URL_REVOKE_DELAY_MS = 1000;
+
+/** WebP書き出し時の圧縮品質 */
+const WEBP_QUALITY = 0.92;
+
+/** ホイール1単位あたりのズーム倍率係数 */
+const WHEEL_ZOOM_FACTOR = 1.0015;
+
+/** 一括書き出し対象のレイヤーID順 */
+const EXPORT_ORDER = ['char', 'board', 'icon', 'iconDamage'];
+
+/**
+ * 保存済みPica設定を検証し、不正値をデフォルトへ戻す
+ * @param {Object} raw 保存されていた設定値
+ * @return {Object} 検証済みの設定値
+ */
+const sanitizePicaOptions = (raw) => {
+  const merged = { ...PICA_DEFAULTS, ...raw };
+  if (!PICA_FILTERS.includes(merged.filter))
+    merged.filter = PICA_DEFAULTS.filter;
+  if (!Number.isFinite(merged.quality)) merged.quality = PICA_DEFAULTS.quality;
+  return merged;
+};
+
+/**
+ * 出力ファイル名を生成する
+ * @param {Object} spec レイヤー仕様
+ * @param {string} slug 出力名
+ * @param {string} format 出力形式
+ * @return {string} ファイル名
+ */
+const buildFileName = (spec, slug, format) =>
+  `${spec.label}${slug}${spec.suffix || ''}.${format}`;
 
 /**
  * 出力ターゲットの解像度および切り出し仕様定義
@@ -109,11 +153,20 @@ export default function CharaAssetMaker() {
     try {
       const raw = localStorage.getItem(PICA_OPTIONS_KEY);
       if (!raw) return { ...PICA_DEFAULTS };
-      return { ...PICA_DEFAULTS, ...JSON.parse(raw) };
+      return sanitizePicaOptions(JSON.parse(raw));
     } catch {
       return { ...PICA_DEFAULTS };
     }
   });
+
+  // Pica設定の永続化（書き込み失敗時もUIは継続動作させる）
+  useEffect(() => {
+    try {
+      localStorage.setItem(PICA_OPTIONS_KEY, JSON.stringify(picaOptions));
+    } catch (e) {
+      console.warn('localStorageへの保存に失敗しました:', e);
+    }
+  }, [picaOptions]);
 
   // 各レイヤー（char, board, icon, iconDamage）の変換パラメータ状態
   const [transforms, setTransforms] = useState({
@@ -151,29 +204,19 @@ export default function CharaAssetMaker() {
     },
   });
 
-  // 各キャンバスのDOM参照
-  const canvasRefs = {
-    char: useRef(null),
-    board: useRef(null),
-    icon: useRef(null),
-    iconDamage: useRef(null),
-  };
+  // 各キャンバスのDOM参照（レイヤーIDをキーとする単一のRefマップ）
+  const canvasRefs = useRef({});
 
   // ドラッグ操作の一時記憶Ref
   const dragStartRef = useRef(null);
 
   /**
-   * Picaの設定変更およびローカルストレージ更新
-   *
+   * Picaの設定変更
    * @param {string} key 設定項目のキー
    * @param {string|number} value 変更後の値
    */
   const handlePicaOptionChange = (key, value) => {
-    setPicaOptions((prev) => {
-      const next = { ...prev, [key]: value };
-      localStorage.setItem(PICA_OPTIONS_KEY, JSON.stringify(next));
-      return next;
-    });
+    setPicaOptions((prev) => ({ ...prev, [key]: value }));
   };
 
   /**
@@ -181,7 +224,6 @@ export default function CharaAssetMaker() {
    */
   const handleResetPicaOptions = () => {
     setPicaOptions({ ...PICA_DEFAULTS });
-    localStorage.setItem(PICA_OPTIONS_KEY, JSON.stringify(PICA_DEFAULTS));
   };
 
   /**
@@ -278,13 +320,12 @@ export default function CharaAssetMaker() {
 
   /**
    * キャンバスへの画像描画レンダリング処理
-   *
    * @param {string} id レイヤーID
    */
   const renderCanvas = useCallback(
     (id) => {
       const spec = TARGET_SPECS[id];
-      const canvas = canvasRefs[id].current;
+      const canvas = canvasRefs.current[id];
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, spec.w, spec.h);
@@ -331,7 +372,7 @@ export default function CharaAssetMaker() {
         ctx.restore();
       }
     },
-    [canvasRefs, images, transforms]
+    [images, transforms]
   );
 
   // 画像・変換値の更新に伴うキャンバスの再描画
@@ -342,8 +383,34 @@ export default function CharaAssetMaker() {
   }, [renderCanvas]);
 
   /**
+   * 通常アイコンの変換値をダメージアイコンへ同期する（共通関数化・DRY徹底）
+   * @param {Object} sourceTransform 通常アイコンの変換値
+   * @param {Object} dmgCur ダメージアイコンの現在状態
+   * @return {Object|null} 同期後のダメージアイコン状態
+   */
+  const syncDamageIcon = useCallback(
+    (sourceTransform, dmgCur) => {
+      if (!isLinked || !images.B) return null;
+      const dmgSpec = TARGET_SPECS.iconDamage;
+      const clampedDmg = clampTransform(
+        dmgSpec,
+        images.B,
+        { ...sourceTransform },
+        dmgCur.minScale,
+        dmgCur.maxScale
+      );
+      return {
+        ...clampedDmg,
+        minScale: dmgCur.minScale,
+        maxScale: dmgCur.maxScale,
+        sliderValue: computeSliderFromScale(clampedDmg.scale, dmgCur.minScale),
+      };
+    },
+    [images.B, isLinked, clampTransform]
+  );
+
+  /**
    * 特定レイヤーの座標・ズームの初期化リセット
-   *
    * @param {string} id レイヤーID
    */
   const resetLayerTransform = useCallback(
@@ -364,28 +431,19 @@ export default function CharaAssetMaker() {
         const nextT = { ...t, minScale, maxScale, sliderValue: 0 };
         const nextTransforms = { ...prev, [id]: nextT };
 
-        // iconDamageがリンク状態の場合、iconの変換状態を反映
         if (id === 'icon' && isLinked && images.B) {
-          const dmgSpec = TARGET_SPECS.iconDamage;
           const dmgImg = images.B;
+          const dmgSpec = TARGET_SPECS.iconDamage;
           const dmgMin = Math.max(
             dmgSpec.w / dmgImg.naturalWidth,
             dmgSpec.h / dmgImg.naturalHeight
           );
           const dmgMax = dmgMin * MAX_ZOOM_MULTIPLIER;
-          const clampedDmg = clampTransform(
-            dmgSpec,
-            dmgImg,
-            { ...t },
-            dmgMin,
-            dmgMax
-          );
-          nextTransforms.iconDamage = {
-            ...clampedDmg,
+          const synced = syncDamageIcon(nextT, {
             minScale: dmgMin,
             maxScale: dmgMax,
-            sliderValue: computeSliderFromScale(clampedDmg.scale, dmgMin),
-          };
+          });
+          if (synced) nextTransforms.iconDamage = synced;
         }
         return nextTransforms;
       });
@@ -395,7 +453,7 @@ export default function CharaAssetMaker() {
       isLinked,
       computeCoverRect,
       computeInitialTransform,
-      clampTransform,
+      syncDamageIcon,
     ]
   );
 
@@ -417,26 +475,31 @@ export default function CharaAssetMaker() {
       URL.revokeObjectURL(url);
     };
     img.onerror = () => {
-      alert('画像の読み込みに失敗しました。別のファイルをお試しぐださい。');
+      alert('画像の読み込みに失敗しました。別のファイルをお試しください。');
       URL.revokeObjectURL(url);
     };
     img.src = url;
   };
 
-  // 画像ロード完了時の初期変換の設定
+  // 常に最新のリセット関数を保持する（effectの依存から除外して画像切替時の不要リセットを防ぐ）
+  const resetLayerTransformRef = useRef(resetLayerTransform);
+  resetLayerTransformRef.current = resetLayerTransform;
+
+  // 画像Aロード完了時の初期変換の設定
   useEffect(() => {
     if (images.A) {
-      resetLayerTransform('char');
-      resetLayerTransform('board');
-      resetLayerTransform('icon');
+      resetLayerTransformRef.current('char');
+      resetLayerTransformRef.current('board');
+      resetLayerTransformRef.current('icon');
     }
-  }, [images.A, resetLayerTransform]);
+  }, [images.A]);
 
+  // 画像Bロード完了時の初期変換の設定
   useEffect(() => {
     if (images.B) {
-      resetLayerTransform('iconDamage');
+      resetLayerTransformRef.current('iconDamage');
     }
-  }, [images.B, resetLayerTransform]);
+  }, [images.B]);
 
   /**
    * 特定の点を中心としたズーム処理
@@ -485,32 +548,14 @@ export default function CharaAssetMaker() {
         };
 
         if (id === 'icon' && isLinked && images.B) {
-          const dmgSpec = TARGET_SPECS.iconDamage;
-          const dmgImg = images.B;
-          const dmgCur = prev.iconDamage;
-          const clampedDmg = clampTransform(
-            dmgSpec,
-            dmgImg,
-            { ...clamped },
-            dmgCur.minScale,
-            dmgCur.maxScale
-          );
-          const dmgSliderVal = computeSliderFromScale(
-            clampedDmg.scale,
-            dmgCur.minScale
-          );
-          nextState.iconDamage = {
-            ...clampedDmg,
-            minScale: dmgCur.minScale,
-            maxScale: dmgCur.maxScale,
-            sliderValue: dmgSliderVal,
-          };
+          const synced = syncDamageIcon(clamped, prev.iconDamage);
+          if (synced) nextState.iconDamage = synced;
         }
 
         return nextState;
       });
     },
-    [images, isLinked, clampTransform]
+    [images, isLinked, clampTransform, syncDamageIcon]
   );
 
   /**
@@ -548,21 +593,22 @@ export default function CharaAssetMaker() {
    * ポインター移動（ドラッグ中）
    */
   const handlePointerMove = (id, e) => {
-    if (!dragStartRef.current || dragStartRef.current.id !== id) return;
+    const dragStart = dragStartRef.current;
+    if (!dragStart || dragStart.id !== id) return;
     const spec = TARGET_SPECS[id];
     const img = images[spec.sourceOf];
     const rect = e.target.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (spec.w / rect.width);
     const y = (e.clientY - rect.top) * (spec.h / rect.height);
-    const dx = x - dragStartRef.current.x;
-    const dy = y - dragStartRef.current.y;
+    const dx = x - dragStart.x;
+    const dy = y - dragStart.y;
 
     setTransforms((prev) => {
       const cur = prev[id];
       const rawT = {
         scale: cur.scale,
-        offsetX: dragStartRef.current.offsetX + dx,
-        offsetY: dragStartRef.current.offsetY + dy,
+        offsetX: dragStart.offsetX + dx,
+        offsetY: dragStart.offsetY + dy,
       };
       const clamped = clampTransform(
         spec,
@@ -577,17 +623,8 @@ export default function CharaAssetMaker() {
       };
 
       if (id === 'icon' && isLinked && images.B) {
-        const dmgSpec = TARGET_SPECS.iconDamage;
-        const dmgImg = images.B;
-        const dmgCur = prev.iconDamage;
-        const clampedDmg = clampTransform(
-          dmgSpec,
-          dmgImg,
-          { ...clamped },
-          dmgCur.minScale,
-          dmgCur.maxScale
-        );
-        nextState.iconDamage = { ...dmgCur, ...clampedDmg };
+        const synced = syncDamageIcon(clamped, prev.iconDamage);
+        if (synced) nextState.iconDamage = synced;
       }
       return nextState;
     });
@@ -603,17 +640,35 @@ export default function CharaAssetMaker() {
   /**
    * マウスホイールでのズーム操作
    */
-  const handleWheel = (id, e) => {
-    const spec = TARGET_SPECS[id];
-    if (!images[spec.sourceOf]) return;
-    e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - rect.left) * (spec.w / rect.width);
-    const py = (e.clientY - rect.top) * (spec.h / rect.height);
-    const cur = transforms[id];
-    const newScale = cur.scale * Math.pow(1.0015, -e.deltaY);
-    setScaleAround(id, px, py, newScale);
-  };
+  const handleWheel = useCallback(
+    (id, e) => {
+      const spec = TARGET_SPECS[id];
+      if (!images[spec.sourceOf]) return;
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const px = (e.clientX - rect.left) * (spec.w / rect.width);
+      const py = (e.clientY - rect.top) * (spec.h / rect.height);
+      const cur = transforms[id];
+      const newScale = cur.scale * Math.pow(WHEEL_ZOOM_FACTOR, -e.deltaY);
+      setScaleAround(id, px, py, newScale);
+    },
+    [images, transforms, setScaleAround]
+  );
+
+  const handleWheelRef = useRef(handleWheel);
+  handleWheelRef.current = handleWheel;
+
+  // ホイールズーム用に非パッシブなネイティブリスナーを登録する
+  useEffect(() => {
+    const disposers = Object.keys(TARGET_SPECS).map((id) => {
+      const canvas = canvasRefs.current[id];
+      if (!canvas) return () => {};
+      const onWheel = (e) => handleWheelRef.current(id, e);
+      canvas.addEventListener('wheel', onWheel, { passive: false });
+      return () => canvas.removeEventListener('wheel', onWheel);
+    });
+    return () => disposers.forEach((dispose) => dispose());
+  }, []);
 
   /**
    * Pica Lanczosリサンプラーによる画像書き出し用サイズ変換
@@ -634,7 +689,6 @@ export default function CharaAssetMaker() {
 
   /**
    * 単一レイヤーの書き出し実行
-   *
    * @param {string} id レイヤーID
    */
   const exportLayer = async (id) => {
@@ -646,9 +700,23 @@ export default function CharaAssetMaker() {
     }
 
     const t = transforms[id];
-    const targetW = Math.max(1, Math.round(img.naturalWidth * t.scale));
-    const targetH = Math.max(1, Math.round(img.naturalHeight * t.scale));
-    const resized = await resizeSourceToSize(img, targetW, targetH);
+    const rawW = img.naturalWidth * t.scale;
+    const rawH = img.naturalHeight * t.scale;
+    // 中間キャンバスがブラウザ上限を超えないよう縮小率を求める
+    const limitRatio = Math.min(
+      1,
+      MAX_INTERMEDIATE_CANVAS_SIZE / Math.max(rawW, rawH)
+    );
+    const targetW = Math.max(1, Math.round(rawW * limitRatio));
+    const targetH = Math.max(1, Math.round(rawH * limitRatio));
+    let resized;
+    try {
+      resized = await resizeSourceToSize(img, targetW, targetH);
+    } catch (err) {
+      console.error('リサイズに失敗しました', err);
+      alert(`${id}: リサイズに失敗しました。画像サイズを小さくしてください`);
+      return;
+    }
 
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = spec.w;
@@ -670,12 +738,22 @@ export default function CharaAssetMaker() {
       );
       ctx.clip();
     }
-    ctx.drawImage(resized, t.offsetX, t.offsetY);
+    ctx.drawImage(
+      resized,
+      t.offsetX,
+      t.offsetY,
+      rawW * limitRatio,
+      rawH * limitRatio
+    );
     if (spec.circular) ctx.restore();
 
     const mime = format === 'png' ? 'image/png' : 'image/webp';
     const blob = await new Promise((resolve) =>
-      exportCanvas.toBlob(resolve, mime, format === 'webp' ? 0.92 : undefined)
+      exportCanvas.toBlob(
+        resolve,
+        mime,
+        format === 'webp' ? WEBP_QUALITY : undefined
+      )
     );
 
     if (!blob) {
@@ -686,35 +764,33 @@ export default function CharaAssetMaker() {
     }
 
     const slug = nameSlug.trim() || 'output';
-    const filenameMap = {
-      char: `char_${slug}.${format}`,
-      board: `board_${slug}.${format}`,
-      icon: `icon_${slug}.${format}`,
-      iconDamage: `icon_${slug}_damage.${format}`,
-    };
-
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filenameMap[id];
+    a.download = buildFileName(spec, slug, format);
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), OBJECT_URL_REVOKE_DELAY_MS);
   };
 
   /**
    * 全4ファイルの一括書き出し実行
    */
   const exportAll = async () => {
-    for (const id of ['char', 'board', 'icon', 'iconDamage']) {
-      await exportLayer(id);
-      await new Promise((r) => setTimeout(r, 150));
+    for (const id of EXPORT_ORDER) {
+      try {
+        await exportLayer(id);
+      } catch (err) {
+        console.error(`${id} の書き出しに失敗しました`, err);
+      }
+      await new Promise((r) => setTimeout(r, DOWNLOAD_INTERVAL_MS));
     }
   };
 
   return (
     <div className="chara-assetmaker-container">
+      <ToolNavigation />
       <h1>キャラアセット書き出しツール</h1>
 
       {/* 画像アップロードおよび基本設定バー */}
@@ -868,7 +944,7 @@ export default function CharaAssetMaker() {
         {Object.keys(TARGET_SPECS).map((id) => {
           const spec = TARGET_SPECS[id];
           const slug = nameSlug.trim() || 'output';
-          const titleLabel = `${spec.label}${slug}${spec.suffix || ''}.${format}`;
+          const titleLabel = buildFileName(spec, slug, format);
           const t = transforms[id];
 
           return (
@@ -878,14 +954,15 @@ export default function CharaAssetMaker() {
               </h2>
               <div className="canvas-wrap">
                 <canvas
-                  ref={canvasRefs[id]}
+                  ref={(el) => {
+                    canvasRefs.current[id] = el;
+                  }}
                   width={spec.w}
                   height={spec.h}
                   onPointerDown={(e) => handlePointerDown(id, e)}
                   onPointerMove={(e) => handlePointerMove(id, e)}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
-                  onWheel={(e) => handleWheel(id, e)}
                 />
               </div>
               <div className="controls">

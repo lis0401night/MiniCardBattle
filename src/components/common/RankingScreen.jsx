@@ -197,14 +197,14 @@ export default function RankingScreen({
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
-                await syncModePoints('challenge', null);
-                hasCreated = true;
+                const res = await syncModePoints('challenge', null);
+                hasCreated = Boolean(res);
               } else if (syncMode === 'tournament' && tournamentTotalPts > 0) {
-                await syncModePoints('tournament', null);
-                hasCreated = true;
+                const res = await syncModePoints('tournament', null);
+                hasCreated = Boolean(res);
               } else if (syncMode === 'defense' && defenseTotalPts > 0) {
-                await syncModePoints('defense', null);
-                hasCreated = true;
+                const res = await syncModePoints('defense', null);
+                hasCreated = Boolean(res);
               } else if (
                 syncMode === 'fortune' &&
                 (fortuneTotalPts > 0 ||
@@ -212,8 +212,8 @@ export default function RankingScreen({
                   fortuneTotalCostAutomata > 0 ||
                   fortuneTotalCostValkyria > 0)
               ) {
-                await syncModePoints('fortune', null);
-                hasCreated = true;
+                const res = await syncModePoints('fortune', null);
+                hasCreated = Boolean(res);
               }
 
               // 初回のみ仮想的な自分のレコードをソート用に追加（再読み込みを不要にするため）

@@ -10,18 +10,22 @@
   --text-dim: #9aa0ad;
   --danger: #e05a5a;
   --ok: #55c98a;
+
+  /* 透過表現用の市松模様パラメータ */
+  --checker-color: #3a3d46;
+  --checker-size: 20px;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
+.vfx-spritesheet-container {
   font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
   background: var(--bg);
   color: var(--text);
   padding: 20px;
+  min-height: 100vh;
+}
+
+.vfx-spritesheet-container * {
+  box-sizing: border-box;
 }
 
 .vfx-spritesheet-container h1 {
@@ -154,7 +158,7 @@ body {
   color: var(--text-dim);
 }
 
-button {
+.vfx-spritesheet-container button {
   background: var(--panel-alt);
   border: 1px solid var(--border);
   color: var(--text);
@@ -164,21 +168,21 @@ button {
   font-size: 13px;
 }
 
-button:hover:not(:disabled) {
+.vfx-spritesheet-container button:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
-button:disabled {
+.vfx-spritesheet-container button:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-button.primary {
+.vfx-spritesheet-container button.primary {
   background: var(--accent-dim);
   border-color: var(--accent);
 }
 
-button.primary:hover:not(:disabled) {
+.vfx-spritesheet-container button.primary:hover:not(:disabled) {
   background: var(--accent);
   color: #06101f;
 }
@@ -217,22 +221,30 @@ button.primary:hover:not(:disabled) {
   font-size: 11px;
 }
 
+/* 透過表現用の市松模様グラデーション共通定義 */
+.checker-pattern,
+.checker-bg,
 .thumb-item canvas {
+  background-image:
+    linear-gradient(45deg, var(--checker-color) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-color) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-color) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-color) 75%);
+  background-size: var(--checker-size) var(--checker-size);
+  background-position:
+    0 0,
+    0 calc(var(--checker-size) / 2),
+    calc(var(--checker-size) / 2) calc(var(--checker-size) / -2),
+    calc(var(--checker-size) / -2) 0;
+}
+
+.thumb-item canvas {
+  --checker-color: #444;
+  --checker-size: 10px;
   width: 80px;
   height: 80px;
   display: block;
   margin: 0 auto 4px;
-  background-image:
-    linear-gradient(45deg, #444 25%, transparent 25%),
-    linear-gradient(-45deg, #444 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #444 75%),
-    linear-gradient(-45deg, transparent 75%, #444 75%);
-  background-size: 10px 10px;
-  background-position:
-    0 0,
-    0 5px,
-    5px -5px,
-    -5px 0px;
 }
 
 .thumb-label {
@@ -255,17 +267,6 @@ button.primary:hover:not(:disabled) {
   display: inline-block;
   max-width: 100%;
   overflow: auto;
-  background-image:
-    linear-gradient(45deg, #3a3d46 25%, transparent 25%),
-    linear-gradient(-45deg, #3a3d46 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #3a3d46 75%),
-    linear-gradient(-45deg, transparent 75%, #3a3d46 75%);
-  background-size: 20px 20px;
-  background-position:
-    0 0,
-    0 10px,
-    10px -10px,
-    -10px 0px;
   border: 1px solid var(--border);
   border-radius: 6px;
 }

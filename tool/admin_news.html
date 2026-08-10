@@ -284,12 +284,26 @@
         }
       }
 
+      /**
+       * HTML属性へ安全に埋め込むためのエスケープ処理
+       * @param {*} value - エスケープ対象の値
+       * @returns {string} エスケープ済み文字列
+       */
+      function escapeAttr(value) {
+        return String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
       function addNews() {
         const newId =
           newsItems.length > 0
-            ? Math.max(...newsItems.map((n) => n.id)) + 1
+            ? Math.max(...newsItems.map((n) => Number(n.id) || 0)) + 1
             : 1;
-        const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+        const now = new Date();
+        const today = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
         newsItems.unshift({
           id: newId,
           title: '新しいお知らせ',
@@ -327,9 +341,12 @@
         const item = newsItems.find((n) => n.id === id);
         if (item) {
           item[field] = value;
-          // 画像URLが変更された場合は、フォールバックUIの表示非表示を切り替えるために再描画
+          // 画像URLが変更された場合は、該当のフォールバックUIだけ表示切替する（全体再描画はしない）
           if (field === 'imageUrl') {
-            renderNews();
+            const fallbackEl = document.getElementById(`fallback-${id}`);
+            if (fallbackEl) {
+              fallbackEl.style.display = value ? 'none' : 'flex';
+            }
           }
         }
       }
@@ -386,22 +403,22 @@
           <div class="form-row">
             <div class="form-group" style="flex: 2;">
               <label>タイトル</label>
-              <input type="text" value="${item.title}" oninput="updateField(${item.id}, 'title', this.value)">
+              <input type="text" value="${escapeAttr(item.title)}" oninput="updateField(${item.id}, 'title', this.value)">
             </div>
             <div class="form-group" style="flex: 1;">
               <label>表示用日付 (バナー左上に表示)</label>
-              <input type="text" value="${item.date}" oninput="updateField(${item.id}, 'date', this.value)">
+              <input type="text" value="${escapeAttr(item.date)}" oninput="updateField(${item.id}, 'date', this.value)">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>公開開始日時 <span class="hint-text">※未入力で制限なし</span></label>
-              <input type="datetime-local" value="${item.startDate || ''}" onchange="updateField(${item.id}, 'startDate', this.value)">
+              <input type="datetime-local" value="${escapeAttr(item.startDate || '')}" onchange="updateField(${item.id}, 'startDate', this.value)">
             </div>
             <div class="form-group">
               <label>公開終了日時 <span class="hint-text">※未入力で制限なし</span></label>
-              <input type="datetime-local" value="${item.endDate || ''}" onchange="updateField(${item.id}, 'endDate', this.value)">
+              <input type="datetime-local" value="${escapeAttr(item.endDate || '')}" onchange="updateField(${item.id}, 'endDate', this.value)">
             </div>
             <div class="form-group">
               <label>ショートカット (画面ID)</label>
@@ -427,53 +444,53 @@
           
           <div class="form-group">
             <label>画像URL <span class="hint-text">※最適な画像サイズ：バナー用 720×240px または 1440×480px (3:1の比率)</span></label>
-            <input type="text" value="${item.imageUrl}" placeholder="https://..." oninput="updateField(${item.id}, 'imageUrl', this.value)">
+            <input type="text" value="${escapeAttr(item.imageUrl)}" placeholder="https://..." oninput="updateField(${item.id}, 'imageUrl', this.value)">
           </div>
           
-          <div class="fallback-group form-row" style="${fallbackDisplay}">
+          <div class="fallback-group form-row" id="fallback-${item.id}" style="${fallbackDisplay}">
             <div class="form-group">
               <label>グラデーション色1</label>
-              <input type="color" value="${item.color1}" onchange="updateField(${item.id}, 'color1', this.value)">
+              <input type="color" value="${escapeAttr(item.color1)}" onchange="updateField(${item.id}, 'color1', this.value)">
             </div>
             <div class="form-group">
               <label>グラデーション色2</label>
-              <input type="color" value="${item.color2}" onchange="updateField(${item.id}, 'color2', this.value)">
+              <input type="color" value="${escapeAttr(item.color2)}" onchange="updateField(${item.id}, 'color2', this.value)">
             </div>
             <div class="form-group">
               <label>アイコン (絵文字等)</label>
-              <input type="text" value="${item.icon}" oninput="updateField(${item.id}, 'icon', this.value)">
+              <input type="text" value="${escapeAttr(item.icon)}" oninput="updateField(${item.id}, 'icon', this.value)">
             </div>
           </div>
         `;
           container.appendChild(div);
 
-          // Initialize Quill
+          // Quillリッチテキストエディタを初期化する
           const quill = new Quill(`#editor-${item.id}`, {
             theme: 'snow',
             modules: {
               toolbar: [
-                ['bold', 'italic', 'underline', 'strike'], // toggled buttons
-                [{ color: [] }, { background: [] }], // dropdown with defaults from theme
+                ['bold', 'italic', 'underline', 'strike'], // スタイルボタン
+                [{ color: [] }, { background: [] }], // ドロップダウンカラーピッカー
                 [{ list: 'ordered' }, { list: 'bullet' }],
-                [{ size: ['small', false, 'large', 'huge'] }], // custom dropdown
+                [{ size: ['small', false, 'large', 'huge'] }], // 文字サイズ変更
                 [{ header: [1, 2, 3, 4, 5, 6, false] }],
-                ['link'], // link button
-                ['clean'], // remove formatting button
+                ['link'], // リンク挿入ボタン
+                ['clean'], // スタイルクリア
               ],
             },
           });
 
-          // Set initial content
+          // 初期コンテンツを設定する
           quill.root.innerHTML = item.content || '';
 
-          // Listen to changes
+          // 本文のテキスト変更イベントを監視し、データを自動更新する
           quill.on('text-change', function () {
             updateField(item.id, 'content', quill.root.innerHTML);
           });
         });
       }
 
-      // Start
+      // お知らせ管理ツールの初期化を開始する
       loadNews();
     </script>
   </body>

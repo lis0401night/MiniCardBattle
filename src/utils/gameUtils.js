@@ -1396,6 +1396,15 @@ export function getFortuneHandicapsStorageKey(enemyCharId) {
 }
 
 /**
+ * 特級目標モードのゲームモード名から敵キャラクターIDを抽出する。
+ * @param {string} gameMode - ゲームモード名（例: 'event_valkyria_fortune'）
+ * @returns {string} 敵キャラクターID
+ */
+export function getFortuneEnemyCharId(gameMode) {
+  return (gameMode || '').replace('event_', '').replace('_fortune', '');
+}
+
+/**
  * 起動(startup)スキルを持つ既存カードへの上書き失敗時の共通処理
  * 対象カードのstartup/defenderを消費し、演出イベントを積む
  * @param {string} owner - プレイヤー ('blue' | 'red')
@@ -1508,10 +1517,18 @@ export function resolveAssetUrl(url) {
       window.location.hostname.startsWith('192.168.'));
 
   if (isLocal) {
-    // フルURL(https://.../assets/foo.pngなど)や相対URLから assets/ の相対パス部分を抽出してルート絶対パス(/assets/...)化
-    const match = url.match(/assets\/(.+)$/i);
-    if (match) {
-      return `/assets/${match[1]}`;
+    try {
+      const baseUrl =
+        typeof window !== 'undefined' && window.location
+          ? window.location.href
+          : 'http://localhost';
+      const parsedUrl = new URL(url, baseUrl);
+      const match = parsedUrl.pathname.match(/\/assets\/(.+)$/i);
+      if (match) {
+        return `/assets/${match[1]}${parsedUrl.search}${parsedUrl.hash}`;
+      }
+    } catch {
+      // 解析不能な文字列のフォールバック
     }
   }
 
