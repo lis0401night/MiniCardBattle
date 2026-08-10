@@ -373,6 +373,9 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'defense_attack') {
+      // 戦闘終了時に勝ち負けにかかわらず対戦相手5人の選出キャッシュをリセットし、次回訪問時に新しい相手が更新選出されるようにする
+      localStorage.removeItem(DEFENSE_TARGETS_KEY);
+
       // 対象の防衛者宛に防衛履歴（勝敗、攻撃者情報、攻撃デッキ）を送信
       const enemyUuid = GameState.enemyConfig?.uuid;
       if (enemyUuid) {
