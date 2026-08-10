@@ -590,17 +590,10 @@ export async function leaveRoom() {
 
   try {
     if (wasHost) {
-      // 1. コードとルームの切断時自動削除予約を先に解除する（エラーは握りつぶさず伝播させる）
-      await onDisconnect(roomRef).cancel();
-      if (codeRef) {
-        await onDisconnect(codeRef).cancel();
-      }
-      // 2. 切断予約が安全に解除された後、DBからルームおよびコードインデックスを原子的に同時削除
+      // 1. DBからルームおよびコードインデックスを原子的に同時削除（先に明示操作を完了させる）
       await removeRoomAndCode(roomId, roomCode);
     } else {
-      // 1. 切断時の自動更新予約を先に解除する
-      await onDisconnect(roomRef).cancel();
-      // 2. トランザクションを使用して、データが存在する間だけステータスとクライアントを更新する
+      // 1. トランザクションを使用して、データが存在する間だけステータスとクライアントを更新する
       await runTransaction(roomRef, (room) => {
         if (!room) return undefined; // ルームが既に削除されている場合は書き込みせず中断
         return {
@@ -609,6 +602,16 @@ export async function leaveRoom() {
           client: null,
         };
       });
+    }
+
+    // 2. 明示的な退室・解散が完了した後、不要になった切断時自動削除/更新の予約を解除する
+    try {
+      await onDisconnect(roomRef).cancel();
+      if (codeRef) {
+        await onDisconnect(codeRef).cancel();
+      }
+    } catch (disconnectError) {
+      console.warn('切断時予約の解除に失敗しました:', disconnectError);
     }
   } catch (e) {
     console.error('leaveRoom failed:', e);

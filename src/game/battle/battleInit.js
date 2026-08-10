@@ -74,6 +74,8 @@ import { endTurnLogic, startTurn } from './battleTurn.js';
 import { isTutorialMode, runTutorialFlow } from '../tutorialEngine.js';
 
 let isBattleLoading = false;
+/** バトル準備の世代カウンター（先行タイマーによる次回準備の誤解無防止用） */
+let prepareBattleGeneration = 0;
 
 /**
  * カード配列（文字列またはオブジェクト）を { id, isPremium } の配列に正規化する共通ヘルパー
@@ -173,10 +175,11 @@ export function prepareBattle() {
   // ローディング画面連打による二重呼び出し防止
   if (isBattleLoading) return;
   isBattleLoading = true;
+  const currentGeneration = ++prepareBattleGeneration;
 
   // 想定外の例外等で initBattleState へ到達しなかった場合でも、一定時間後にロックを解除してデッドロックを防ぐ
   setTimeout(() => {
-    if (isBattleLoading) {
+    if (isBattleLoading && currentGeneration === prepareBattleGeneration) {
       console.warn(
         'prepareBattle: セーフティタイマーによりローディングロックを解除します'
       );

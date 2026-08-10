@@ -301,7 +301,7 @@ export function endBattle() {
           ),
         },
       ];
-    } else {
+    } else if (GameState.lastBattleResult === 'lose') {
       GameState.dialogueQueue = [
         {
           speaker: 'player',
@@ -321,6 +321,11 @@ export function endBattle() {
             'enemy'
           ),
         },
+      ];
+    } else {
+      // 引き分け（draw）時のナレーション設定
+      GameState.dialogueQueue = [
+        { speaker: 'narrator', text: '引き分けです。' },
       ];
     }
 
@@ -362,8 +367,6 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'defense_attack') {
-      localStorage.removeItem('mini_card_battle_defense_targets');
-
       // 対象の防衛者宛に防衛履歴（勝敗、攻撃者情報、攻撃デッキ）を送信
       const enemyUuid = GameState.enemyConfig?.uuid;
       if (enemyUuid) {

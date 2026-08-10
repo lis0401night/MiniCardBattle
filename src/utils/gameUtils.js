@@ -1401,7 +1401,9 @@ export function getFortuneHandicapsStorageKey(enemyCharId) {
  * @returns {string} 敵キャラクターID
  */
 export function getFortuneEnemyCharId(gameMode) {
-  return (gameMode || '').replace('event_', '').replace('_fortune', '');
+  if (typeof gameMode !== 'string') return '';
+  const match = /^event_(.+)_fortune$/.exec(gameMode);
+  return match?.[1] ?? '';
 }
 
 /**

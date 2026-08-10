@@ -92,10 +92,12 @@ async function resolveMoveDestination(
     const unionSkill = movingCard.skills.find((s) => s.id === 'union');
     if (
       unionSkill &&
-      (existingCard.id === unionSkill.target ||
-        existingCard.baseId === unionSkill.target)
+      (existingCard.id === unionSkill.targetId ||
+        existingCard.baseId === unionSkill.targetId)
     ) {
-      const mergedCard = CARD_MASTER.find((mc) => mc.id === unionSkill.into);
+      const mergedCard = CARD_MASTER.find(
+        (mc) => mc.id === unionSkill.summonId
+      );
       if (mergedCard) {
         const targetEl = document.querySelector(
           `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${toLane}"] .card`
@@ -107,9 +109,13 @@ async function resolveMoveDestination(
 
         const newInstance = {
           ...mergedCard,
-          uid: `${mergedCard.id}_union_${Date.now()}`,
+          uid: `union_${existingCard.uid || existingCard.id}_${movingCard.uid || movingCard.id}`,
+          owner,
+          baseId: mergedCard.id,
+          basePower: mergedCard.power,
           currentPower: mergedCard.power,
           skills: mergeCardSkills(mergedCard),
+          unionMaterials: [existingCard, movingCard],
           isPremium: !!movingCard.isPremium || !!existingCard.isPremium,
         };
 
@@ -138,11 +144,25 @@ async function resolveMoveDestination(
     existingCard.currentPower =
       (existingCard.currentPower || existingCard.power || 0) + equipPower;
     existingCard.power = (existingCard.power || 0) + equipPower;
+    existingCard.basePower = (existingCard.basePower || 0) + equipPower;
 
-    consumeArmSelf(existingCard);
+    // スキルの統合（equipスキルを除く）
+    existingCard.skills = existingCard.skills || [];
+    const equipSkills = (movingCard.skills || []).filter(
+      (s) => s.id !== 'equip'
+    );
+    if (equipSkills.length > 0) {
+      mergeCardSkills(existingCard, equipSkills);
+    }
+
+    // 装備カードリストへの追加
+    existingCard.equippedCards = existingCard.equippedCards || [];
+    existingCard.equippedCards.push(movingCard);
+
+    // 武装（arm_self）消費処理
+    consumeArmSelf(existingCard, movingCard);
 
     board[fromLane] = null;
-    await discardCard(owner, movingCard, fromLane, false);
 
     await sleep(PLACE_ANIMATION_DURATION);
     renderBoard();

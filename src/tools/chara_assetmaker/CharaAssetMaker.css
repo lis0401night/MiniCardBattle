@@ -24,7 +24,7 @@
   background: var(--bg);
   color: var(--text);
   padding: 16px 20px 60px;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .chara-assetmaker-container * {

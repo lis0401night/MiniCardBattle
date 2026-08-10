@@ -46,6 +46,36 @@ export default function ToolNavigation() {
   }, [isOpen]);
 
   /**
+   * ドロワー内部でのキーボードフォーカストラップ処理
+   * Tabキー操作時にドロワー内部のフォーカス可能要素間を循環させる
+   *
+   * @param {React.KeyboardEvent} event キーボードイベント
+   */
+  const handleDrawerKeyDown = (event) => {
+    if (event.key !== 'Tab') return;
+
+    const focusableElements = [
+      ...event.currentTarget.querySelectorAll('a[href], button:not(:disabled)'),
+    ];
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements.at(-1);
+
+    if (!firstElement || !lastElement) {
+      event.preventDefault();
+    } else if (
+      event.shiftKey &&
+      (document.activeElement === event.currentTarget ||
+        document.activeElement === firstElement)
+    ) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
+
+  /**
    * メニューの開閉切り替え
    */
   const toggleMenu = () => {
@@ -90,12 +120,16 @@ export default function ToolNavigation() {
         id="tool-navigation-drawer"
         ref={drawerRef}
         tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tool-navigation-title"
         className={`tool-nav-drawer ${isOpen ? 'open' : ''}`}
         aria-hidden={!isOpen}
         inert={!isOpen ? '' : undefined}
+        onKeyDown={handleDrawerKeyDown}
       >
         <div className="tool-nav-header">
-          <h3 className="tool-nav-title">
+          <h3 id="tool-navigation-title" className="tool-nav-title">
             <span>🛠️</span> 開発・管理ツール一覧
           </h3>
           <button

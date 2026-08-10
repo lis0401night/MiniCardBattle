@@ -46,15 +46,47 @@ const WHEEL_ZOOM_FACTOR = 1.0015;
 const EXPORT_ORDER = ['char', 'board', 'icon', 'iconDamage'];
 
 /**
- * 保存済みPica設定を検証し、不正値をデフォルトへ戻す
+ * 数値を指定の最小値・最大値の範囲内に収める（有限数値でない場合はデフォルト値を返す）
+ * @param {number} value 対象の数値
+ * @param {number} min 最小値
+ * @param {number} max 最大値
+ * @param {number} fallback 有限数値でない場合の代替デフォルト値
+ * @return {number} クランプ後の数値
+ */
+const clampNumber = (value, min, max, fallback) =>
+  Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+
+/**
+ * 保存済みPica設定を検証し、不正値や範囲外の値をデフォルトまたは許容範囲へ補正する
  * @param {Object} raw 保存されていた設定値
  * @return {Object} 検証済みの設定値
  */
 const sanitizePicaOptions = (raw) => {
   const merged = { ...PICA_DEFAULTS, ...raw };
-  if (!PICA_FILTERS.includes(merged.filter))
+  if (!PICA_FILTERS.includes(merged.filter)) {
     merged.filter = PICA_DEFAULTS.filter;
-  if (!Number.isFinite(merged.quality)) merged.quality = PICA_DEFAULTS.quality;
+  }
+  merged.quality = Math.round(
+    clampNumber(merged.quality, 0, 3, PICA_DEFAULTS.quality)
+  );
+  merged.unsharpAmount = clampNumber(
+    merged.unsharpAmount,
+    0,
+    500,
+    PICA_DEFAULTS.unsharpAmount
+  );
+  merged.unsharpRadius = clampNumber(
+    merged.unsharpRadius,
+    0.5,
+    2,
+    PICA_DEFAULTS.unsharpRadius
+  );
+  merged.unsharpThreshold = clampNumber(
+    merged.unsharpThreshold,
+    0,
+    255,
+    PICA_DEFAULTS.unsharpThreshold
+  );
   return merged;
 };
 
@@ -216,7 +248,7 @@ export default function CharaAssetMaker() {
    * @param {string|number} value 変更後の値
    */
   const handlePicaOptionChange = (key, value) => {
-    setPicaOptions((prev) => ({ ...prev, [key]: value }));
+    setPicaOptions((prev) => sanitizePicaOptions({ ...prev, [key]: value }));
   };
 
   /**
@@ -501,6 +533,16 @@ export default function CharaAssetMaker() {
     }
   }, [images.B]);
 
+  // 画像Bロード時、およびリンク有効化時に通常アイコンの変換値をダメージアイコンへ同期する
+  useEffect(() => {
+    if (!images.A || !images.B || !isLinked) return;
+    setTransforms((prev) => {
+      const synced = syncDamageIcon(prev.icon, prev.iconDamage);
+      if (!synced) return prev;
+      return { ...prev, iconDamage: synced };
+    });
+  }, [images.A, images.B, isLinked, syncDamageIcon]);
+
   /**
    * 特定の点を中心としたズーム処理
    *
@@ -738,13 +780,7 @@ export default function CharaAssetMaker() {
       );
       ctx.clip();
     }
-    ctx.drawImage(
-      resized,
-      t.offsetX,
-      t.offsetY,
-      rawW * limitRatio,
-      rawH * limitRatio
-    );
+    ctx.drawImage(resized, t.offsetX, t.offsetY, rawW, rawH);
     if (spec.circular) ctx.restore();
 
     const mime = format === 'png' ? 'image/png' : 'image/webp';

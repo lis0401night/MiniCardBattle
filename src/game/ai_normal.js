@@ -202,7 +202,7 @@ function flushPendingSimSkills(simState, card, lane) {
       pendingSk.id,
       pendingSk.value,
       [],
-      null,
+      pendingSk.targetLanes ? [...pendingSk.targetLanes] : null,
       undefined
     );
   }

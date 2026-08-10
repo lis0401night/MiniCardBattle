@@ -480,8 +480,10 @@
             },
           });
 
-          // 初期コンテンツを設定する
-          quill.root.innerHTML = item.content || '';
+          // 初期コンテンツを設定する（Quillの安全なHTML流し込みを使用）
+          if (item.content) {
+            quill.clipboard.dangerouslyPasteHTML(item.content, 'silent');
+          }
 
           // 本文のテキスト変更イベントを監視し、データを自動更新する
           quill.on('text-change', function () {

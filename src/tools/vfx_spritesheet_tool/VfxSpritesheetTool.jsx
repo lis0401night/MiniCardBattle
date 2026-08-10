@@ -650,11 +650,8 @@ export default function VfxSpritesheetTool() {
       } else if (isVideo) {
         const extracted = await extractVideoFrames(first, videoFps);
         setRawFrames(extracted);
-        const effectiveFps = (
-          extracted.length / Math.max(0.1, extracted.length / videoFps)
-        ).toFixed(1);
         setStatus(
-          `動画から ${extracted.length} フレームを抽出しました (指定: ${videoFps}fps / 実効: ${effectiveFps}fps)`,
+          `動画から ${extracted.length} フレームを抽出しました (指定: ${videoFps}fps)`,
           'ok'
         );
       } else {
@@ -856,6 +853,47 @@ export default function VfxSpritesheetTool() {
       }));
     };
     img.src = url;
+  };
+
+  /**
+   * ドロップまたは選択されたファイル群（画像＋オプションJSON）の解析とロード
+   * @param {FileList|File[]} fileList ファイルリスト
+   */
+  const loadSpriteSheetFiles = async (fileList) => {
+    const files = Array.from(fileList);
+    if (!files || files.length === 0) return;
+    const imgFile = files.find((f) => f.type.startsWith('image/'));
+    const jsonFile = files.find(
+      (f) => f.type === 'application/json' || /\.json$/i.test(f.name)
+    );
+
+    if (!imgFile) {
+      setAnimState((prev) => ({
+        ...prev,
+        statusText: 'エラー: 画像ファイルが見つかりません',
+      }));
+      return;
+    }
+
+    let jsonMeta = null;
+    if (jsonFile) {
+      try {
+        const text = await jsonFile.text();
+        const parsed = JSON.parse(text);
+        if (
+          Number.isInteger(parsed.columns) &&
+          parsed.columns >= 1 &&
+          Number.isInteger(parsed.rows) &&
+          parsed.rows >= 1
+        ) {
+          jsonMeta = parsed;
+        }
+      } catch (e) {
+        console.warn('JSONメタデータの解析に失敗しました:', e);
+      }
+    }
+
+    loadSpriteSheetFile(imgFile, jsonMeta);
   };
 
   const gridInfoText =
@@ -1076,8 +1114,9 @@ export default function VfxSpritesheetTool() {
                 onDrop={(e) => {
                   e.preventDefault();
                   setIsAnimDragOver(false);
-                  const file = e.dataTransfer.files[0];
-                  if (file) loadSpriteSheetFile(file);
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    loadSpriteSheetFiles(e.dataTransfer.files);
+                  }
                 }}
                 onClick={() => animFileInputRef.current?.click()}
               >
@@ -1085,11 +1124,13 @@ export default function VfxSpritesheetTool() {
                 <input
                   ref={animFileInputRef}
                   type="file"
-                  accept="image/*"
+                  multiple
+                  accept="image/*,application/json,.json"
                   style={{ display: 'none' }}
                   onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) loadSpriteSheetFile(file);
+                    if (e.target.files && e.target.files.length > 0) {
+                      loadSpriteSheetFiles(e.target.files);
+                    }
                     e.target.value = '';
                   }}
                 />

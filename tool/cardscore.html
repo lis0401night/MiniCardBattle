@@ -503,7 +503,7 @@
 
             const avgScore = (choiceTotal / choicesArr.length) * pickCount;
             // 選択は +1、命令は -1 の固定補正
-            const penalty = sk.id === 'force' ? -1 : 1;
+            const penalty = sk.id === 'choice' ? 1 : sk.id === 'force' ? -1 : 0;
             score += avgScore + penalty + selfScore;
           } else {
             // baseは1回分のみ、value*multiplierは個数(count)分加算
