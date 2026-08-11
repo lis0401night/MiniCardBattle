@@ -650,6 +650,25 @@ export async function setRoomStatusToBattle() {
 }
 
 /**
+ * 対戦終了時にルームのステータスを 'waiting' に戻し、準備完了状態をクリアする
+ * @returns {Promise<void>}
+ */
+export async function resetRoomStatusToWaiting() {
+  if (!currentRoomId || !database) return;
+  const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+  if (isHost) {
+    await update(roomRef, {
+      status: 'waiting',
+      'host/isReady': false,
+      'client/isReady': false,
+    });
+  } else {
+    const clientRef = ref(database, `${ROOMS_REF}/${currentRoomId}/client`);
+    await update(clientRef, { isReady: false });
+  }
+}
+
+/**
  * リマッチに向けてアクションキューを初期化し、新しいシードをセットする（ホスト専用）
  */
 export async function clearActionQueueAndRegenerateSeed() {

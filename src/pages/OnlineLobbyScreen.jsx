@@ -271,7 +271,12 @@ export default function OnlineLobbyScreen() {
 
       // 1. DB上の status が 'battle' に変更されている場合（追いつき自動同期）
       // 相手またはホスト側で対戦が開始された場合、ローカルタイマーを待たずに即座に対戦画面へ遷移する
-      if (data && data.status === 'battle') {
+      // ※双方の isReady がともに false の場合（対戦終了直後等）は自動開始の誤動作防止のためスキップ
+      if (
+        data &&
+        data.status === 'battle' &&
+        (data.host?.isReady || data.client?.isReady)
+      ) {
         if (GameState.appState !== 'battle') {
           // すでに開始タイマーが動作している場合は、そちらの演出待ちを尊重する
           if (!battleStartTimeoutRef.current) {

@@ -22,6 +22,7 @@ import {
 import {
   clearActionQueueAndRegenerateSeed,
   getIsHost,
+  resetRoomStatusToWaiting,
   setPlayerReadyOnly,
 } from '../../services/multiplayer.js';
 import {
@@ -148,7 +149,9 @@ export function endBattle() {
   GameState.isProcessing = false; // バトル結果表示と同時にフラグをリセット
 
   if (GameState.gameMode === 'online') {
-    setPlayerReadyOnly(false);
+    resetRoomStatusToWaiting().catch((e) =>
+      console.warn('resetRoomStatusToWaiting failed:', e)
+    );
     if (getIsHost()) {
       clearActionQueueAndRegenerateSeed();
     }

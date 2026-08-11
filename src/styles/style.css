@@ -1094,10 +1094,8 @@ h2 {
 
 .cutin-char {
   position: absolute;
-  height: 100vh;
-  max-height: 100vh;
-  max-width: 90vw;
-  bottom: 0;
+  height: 110%;
+  bottom: -5%;
   left: -50%;
   transform: translateX(-50%);
   filter: drop-shadow(0 0 20px #facc15);
