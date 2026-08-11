@@ -298,13 +298,13 @@
       }
 
       /**
-       * ニュースIDを数値として正規化する（インラインハンドラへの安全な埋め込み用）
+       * ニュースIDを安全な正の整数として正規化する（インラインハンドラ・DOM ID用）
        * @param {*} value - 対象のID
-       * @returns {number} 正規化済みの数値ID
+       * @returns {number|null} 正規化済みの数値ID、不正な場合はnull
        */
       function safeId(value) {
         const n = Number(value);
-        return Number.isFinite(n) ? n : 0;
+        return Number.isSafeInteger(n) && n > 0 ? n : null;
       }
 
       function addNews() {
@@ -375,10 +375,16 @@
         container.innerHTML = '';
 
         newsItems.forEach((item, index) => {
+          const itemId = safeId(item.id);
+          if (itemId === null) {
+            console.error(
+              `[AdminNews] 不正なニュースIDが検出されたため描画をスキップしました (Index: ${index}, ID: ${item.id})`
+            );
+            return;
+          }
+
           const div = document.createElement('div');
           div.className = 'news-item';
-
-          const itemId = safeId(item.id);
           const fallbackDisplay = item.imageUrl
             ? 'display: none;'
             : 'display: flex;';

@@ -16,6 +16,8 @@ class BattleEventEmitter {
   constructor() {
     /** @type {Map<string, Set<EventHandler>>} イベント名とハンドラー集合のマップ */
     this.listeners = new Map();
+    /** @type {Set<() => void>} 待機中 (waitFor) のキャンセル関数の集合 */
+    this.pendingCancels = new Set();
   }
 
   /**
@@ -90,6 +92,7 @@ class BattleEventEmitter {
     const promise = new Promise((resolve) => {
       handler = (data) => {
         if (timer) clearTimeout(timer);
+        this.pendingCancels.delete(cancel);
         this.off(event, handler);
         resolve(data);
       };
@@ -99,9 +102,12 @@ class BattleEventEmitter {
       // 呼び出し元がバトル中断時などに待機を中止できるようにする
       cancel = () => {
         if (timer) clearTimeout(timer);
+        this.pendingCancels.delete(cancel);
         if (handler) this.off(event, handler);
         resolve(null);
       };
+
+      this.pendingCancels.add(cancel);
 
       if (timeoutMs > 0) {
         timer = setTimeout(cancel, timeoutMs);
@@ -112,9 +118,23 @@ class BattleEventEmitter {
   }
 
   /**
-   * 登録されているすべてのイベントリスナーを一括解除する（バトル終了・初期化用）。
+   * 登録されているすべてのイベントリスナーを一括解除し、待機中 (waitFor) の Promise を安全にキャンセル・解決する。
    */
   clearAll() {
+    // 1. 待機中のすべての Promise を安全に resolve(null) させて非同期チェーンを完了・解放させる
+    this.pendingCancels.forEach((cancelFn) => {
+      try {
+        cancelFn();
+      } catch (err) {
+        console.error(
+          '[BattleEventEmitter] Error during cancel in clearAll:',
+          err
+        );
+      }
+    });
+    this.pendingCancels.clear();
+
+    // 2. 残りのリスナーをすべて破棄
     this.listeners.clear();
   }
 }

@@ -69,7 +69,7 @@ export const DEFENSE_TARGETS_KEY = 'mini_card_battle_defense_targets';
 /** prepareBattle の二重呼び出しロック強制解除タイムアウト（ミリ秒） */
 export const PREPARE_BATTLE_LOCK_TIMEOUT_MS = 15000;
 /** バトルアセット読み込みの強制完了タイムアウト（ミリ秒） */
-export const BATTLE_ASSET_LOAD_TIMEOUT_MS = 5000;
+export const BATTLE_ASSET_LOAD_TIMEOUT_MS = 15000;
 /** マッチング画面の強制完了タイムアウト（ミリ秒） */
 export const MATCHING_SCREEN_TIMEOUT_MS = 7000;
 /** BattleScreen のマウント完了待ちタイムアウト（ミリ秒） */
@@ -78,6 +78,8 @@ export const BATTLE_SCREEN_READY_TIMEOUT_MS = 4000;
 export const ROOM_HEARTBEAT_INTERVAL_MS = 10000;
 /** マウント完了から先攻決定演出を開始するまでの待機時間（ミリ秒） */
 export const TURN_ORDER_START_DELAY_MS = 1000;
+/** オンライン対戦の両者準備完了からバトルを開始するまでのディレイ時間（ミリ秒） */
+export const ONLINE_BATTLE_START_DELAY_MS = 1000;
 export const FORTUNE_POINTS_KEY = 'mini_card_battle_fortune_points';
 export const FORTUNE_TOTAL_POINTS_KEY = 'mini_card_battle_fortune_total_points';
 export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';

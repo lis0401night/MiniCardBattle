@@ -515,15 +515,9 @@ export function canEquipCard(playingCard, targetCard) {
  * @param {string} owner - 'blue' | 'red'
  * @param {object} tokenCard - 配置しようとしているカード
  * @param {number} laneIndex - 配置先レーン
- * @param {boolean} [_checkConstraints=true] - 未使用。呼び出し元との互換性のために残置。
  * @returns {Promise<boolean>} 配置を続行してよいならtrue、キャンセルされたならfalse
  */
-export async function confirmOverwrittenLane(
-  owner,
-  tokenCard,
-  laneIndex,
-  _checkConstraints = true
-) {
+export async function confirmOverwrittenLane(owner, tokenCard, laneIndex) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   if (board[laneIndex] === null) return true;
 
@@ -1534,8 +1528,11 @@ export async function waitSkillChoice(
     const aiAction = consumeAIAction(['choice', 'force']);
     if (aiAction && aiAction.choices !== undefined) {
       if (GameState.gameMode !== 'online') await sleep(AI_THINKING_DURATION); // AIの思考時間を演出
-      const mapped = mapIndicesToChoices(aiAction.choices);
-      if (mapped.length > 0) return mapped;
+      const rawIndices = Array.isArray(aiAction.choices)
+        ? aiAction.choices
+        : [aiAction.choices];
+      const mapped = mapIndicesToChoices(rawIndices);
+      if (mapped.length > 0) return mapped.slice(0, maxChoices);
     }
 
     // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後 - 親ノード側）
@@ -1548,7 +1545,7 @@ export async function waitSkillChoice(
       if (idx !== undefined) {
         const indices = Array.isArray(idx) ? idx : [idx];
         const mapped = mapIndicesToChoices(indices);
-        if (mapped.length > 0) return mapped;
+        if (mapped.length > 0) return mapped.slice(0, maxChoices);
       }
     } else if (
       typeof GameState.aiDecision !== 'undefined' &&
@@ -1560,7 +1557,7 @@ export async function waitSkillChoice(
       delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
       const indices = Array.isArray(idx) ? idx : [idx];
       const mapped = mapIndicesToChoices(indices);
-      if (mapped.length > 0) return mapped;
+      if (mapped.length > 0) return mapped.slice(0, maxChoices);
     }
 
     // 2. 意思決定時に決定していない場合（Easy or フォールバック）

@@ -1178,10 +1178,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 })()}
               </div>
             </div>
-            {(enemyDeckData.title === 'デッキ確認' ||
-              enemyDeckData.title === '所持カード確認') &&
-              GameState.playerConfig &&
-              GameState.playerConfig.leaderSkill && (
+            {(() => {
+              const targetSkill =
+                enemyDeckData.leaderSkill ||
+                (enemyDeckData.isPlayerDeck
+                  ? GameState.playerConfig?.leaderSkill
+                  : GameState.enemyConfig?.leaderSkill);
+
+              if (!targetSkill) return null;
+
+              return (
                 <button
                   className="btn"
                   style={{
@@ -1196,7 +1202,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     playSound?.(SOUNDS?.seClick);
                     if (window.showSkillConfirmModalReact) {
                       window.showSkillConfirmModalReact({
-                        skill: GameState.playerConfig.leaderSkill,
+                        skill: targetSkill,
                         statusText: '',
                         color: '#94a3b8',
                         canExecute: false,
@@ -1206,41 +1212,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 >
                   リーダースキル
                 </button>
-              )}
-            {!(
-              enemyDeckData.title === 'デッキ確認' ||
-              enemyDeckData.title === '所持カード確認'
-            ) &&
-              (enemyDeckData.leaderSkill ||
-                (GameState.enemyConfig &&
-                  GameState.enemyConfig.leaderSkill)) && (
-                <button
-                  className="btn"
-                  style={{
-                    marginTop: '20px',
-                    width: '100%',
-                    background: '#475569',
-                    fontSize: '1rem',
-                    padding: '8px',
-                    marginBottom: '0',
-                  }}
-                  onClick={() => {
-                    playSound?.(SOUNDS?.seClick);
-                    if (window.showSkillConfirmModalReact) {
-                      window.showSkillConfirmModalReact({
-                        skill:
-                          enemyDeckData.leaderSkill ||
-                          GameState.enemyConfig.leaderSkill,
-                        statusText: '',
-                        color: '#94a3b8',
-                        canExecute: false,
-                      });
-                    }
-                  }}
-                >
-                  リーダースキル
-                </button>
-              )}
+              );
+            })()}
             <button
               className="btn"
               style={{ marginTop: '10px', width: '100%' }}

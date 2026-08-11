@@ -4458,6 +4458,13 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       if (currentDmg <= 0) continue;
 
       let targetCard = defBoard[targetLane];
+      // 位相（phase）の判定: 位相が一致しないカードは「防御」または「気絶(stun)」を持っていない限りすり抜け（直接攻撃扱い）
+      if (targetCard && hasSkill(targetCard, 'phase') !== aHasPhase) {
+        if (!hasSkill(targetCard, 'defender') && !(targetCard.stunTurns > 0)) {
+          targetCard = null;
+        }
+      }
+
       if (targetCard) {
         if (hasDoubleStrike) currentDmg *= 2;
 

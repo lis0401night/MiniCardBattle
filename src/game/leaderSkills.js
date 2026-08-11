@@ -256,7 +256,7 @@ export async function executeLeaderSkillAction(
       );
       if (!selectedLanes || selectedLanes.length === 0) return; // キャンセルされた場合
       const l = selectedLanes[0];
-      const proceed = await confirmOverwrittenLane(owner, token, l, false);
+      const proceed = await confirmOverwrittenLane(owner, token, l);
       if (!proceed) {
         await sleep(200);
         continue;
@@ -283,7 +283,7 @@ export async function executeLeaderSkillAction(
       );
       if (!selectedLanes || selectedLanes.length === 0) return;
       const l = selectedLanes[0];
-      const proceed = await confirmOverwrittenLane(owner, tokenCard, l, false);
+      const proceed = await confirmOverwrittenLane(owner, tokenCard, l);
       if (!proceed) {
         await sleep(200);
         continue;
@@ -435,7 +435,7 @@ export async function executeLeaderSkillAction(
           continue;
         }
         const l = selectedAlliedLanes[0];
-        const proceed = await confirmOverwrittenLane(owner, tSoul, l, false);
+        const proceed = await confirmOverwrittenLane(owner, tSoul, l);
         if (!proceed) {
           await sleep(200);
           continue;
@@ -469,7 +469,7 @@ export async function executeLeaderSkillAction(
     if (!selectedLanes) return;
     const validSelectedLanes = [];
     for (const l of selectedLanes) {
-      const proceed = await confirmOverwrittenLane(owner, tK, l, false);
+      const proceed = await confirmOverwrittenLane(owner, tK, l);
       if (proceed) {
         validSelectedLanes.push(l);
       }
@@ -549,7 +549,7 @@ export async function executeLeaderSkillAction(
           continue;
         }
         l = myLanes[0];
-        const proceed = await confirmOverwrittenLane(owner, token, l, false);
+        const proceed = await confirmOverwrittenLane(owner, token, l);
         if (!proceed) {
           await sleep(200);
           continue;
@@ -634,8 +634,7 @@ export async function executeLeaderSkillAction(
         const proceed = await confirmOverwrittenLane(
           owner,
           selectedCard,
-          targetLane,
-          false
+          targetLane
         );
         if (!proceed) {
           await sleep(200);
@@ -854,8 +853,7 @@ export async function executeLeaderSkillAction(
         const proceed = await confirmOverwrittenLane(
           owner,
           selectedCard,
-          targetLane,
-          false
+          targetLane
         );
         if (!proceed) {
           await sleep(200);
@@ -1452,12 +1450,7 @@ export async function executeLeaderSkillAction(
         );
         if (!selection || selection.length === 0) return; // キャンセルされた場合
         const l = selection[0];
-        const proceed = await confirmOverwrittenLane(
-          owner,
-          skeletonTpl,
-          l,
-          false
-        );
+        const proceed = await confirmOverwrittenLane(owner, skeletonTpl, l);
         if (!proceed) {
           await sleep(200);
           continue;
@@ -1655,7 +1648,7 @@ export async function executeLeaderSkillAction(
           );
           if (!selection || selection.length === 0) return; // キャンセルされた場合
           const l = selection[0];
-          const proceed = await confirmOverwrittenLane(owner, tA, l, false);
+          const proceed = await confirmOverwrittenLane(owner, tA, l);
           if (!proceed) {
             await sleep(200);
             continue;

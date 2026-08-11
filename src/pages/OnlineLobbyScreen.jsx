@@ -30,6 +30,7 @@ import {
   PROFILE_NAME_KEY,
   DEFAULT_PLAYER_NAME,
   ROOM_HEARTBEAT_INTERVAL_MS,
+  ONLINE_BATTLE_START_DELAY_MS,
 } from '../utils/constants/config.js';
 
 async function safeLeaveRoom(errorMessage) {
@@ -136,12 +137,29 @@ export default function OnlineLobbyScreen() {
      * @param {Object} data - 最新のルームデータ
      */
     const executeStartBattle = (data) => {
-      if (!data || !data.host || !data.client) return;
+      if (
+        !data ||
+        !data.host?.leaderConfig?.leaderConfig ||
+        !data.client?.leaderConfig?.leaderConfig
+      ) {
+        return;
+      }
       const isHost = getIsHost();
       const meData = isHost ? data.host : data.client;
       const opData = isHost ? data.client : data.host;
 
-      const bSeed = data.battleSeed || Date.now();
+      const bSeed = data.battleSeed;
+      if (typeof bSeed !== 'number') {
+        console.error(
+          '[executeStartBattle] battleSeed が未確定です。対戦開始を中止します。',
+          { roomId: getCurrentRoomId() }
+        );
+        showAlertModal(
+          '対戦の同期情報を取得できませんでした。もう一度お試しください。'
+        );
+        battleStartTimeoutRef.current = null;
+        return;
+      }
       GameState.battleSeed = bSeed; // 最新のシードをGameStateに記録
       const hostStage = data.host.leaderConfig?.stage || 'plain';
       const clientStage = data.client.leaderConfig?.stage || 'plain';
@@ -255,11 +273,10 @@ export default function OnlineLobbyScreen() {
       // 相手またはホスト側で対戦が開始された場合、ローカルタイマーを待たずに即座に対戦画面へ遷移する
       if (data && data.status === 'battle') {
         if (GameState.appState !== 'battle') {
-          if (battleStartTimeoutRef.current) {
-            clearTimeout(battleStartTimeoutRef.current);
-            battleStartTimeoutRef.current = null;
+          // すでに開始タイマーが動作している場合は、そちらの演出待ちを尊重する
+          if (!battleStartTimeoutRef.current) {
+            executeStartBattle(data);
           }
-          executeStartBattle(data);
         }
         return;
       }
@@ -294,7 +311,7 @@ export default function OnlineLobbyScreen() {
             return;
           }
           executeStartBattle(data);
-        }, 1000);
+        }, ONLINE_BATTLE_START_DELAY_MS);
       }
     };
 

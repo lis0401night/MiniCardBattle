@@ -26,6 +26,7 @@ import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import {
   AI_THINKING_DURATION,
+  BATTLE_ASSET_LOAD_TIMEOUT_MS,
   MAX_HP,
   PLACE_ANIMATION_DURATION,
   PREPARE_BATTLE_LOCK_TIMEOUT_MS,
@@ -346,7 +347,7 @@ export function prepareBattle() {
       }
     };
 
-    // セーフティタイムアウト: 5秒経過したら強制的に開始
+    // セーフティタイムアウト: 設定時間（15秒）経過したら強制的に開始
     setTimeout(() => {
       if (isCurrentPreparation() && !isFinished) {
         console.warn('Battle loading timed out. Forcing start...');
@@ -354,7 +355,7 @@ export function prepareBattle() {
         cardsLoaded = true;
         finishLoading();
       }
-    }, 5000);
+    }, BATTLE_ASSET_LOAD_TIMEOUT_MS);
 
     const updateProgress = () => {
       if (!isCurrentPreparation() || isFinished) return;

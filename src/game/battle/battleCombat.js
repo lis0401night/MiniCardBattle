@@ -57,6 +57,34 @@ import {
 } from '../../utils/constants/fortuneHandicaps.js';
 
 /**
+ * 2枚のカードを合体させた新しいカードインスタンスを生成する共通ヘルパー関数。
+ * DRY原則に基づき、手札からの召喚による合体および移動時の合体の両経路から利用される。
+ *
+ * @param {string} owner - 合体カードの所有者 ('blue' | 'red')
+ * @param {object} existingCard - 盤面に存在する合体対象の土台カード
+ * @param {object} consumedCard - 手札または移動元から重ねられた消費カード
+ * @param {object} masterData - 合体後のマスターデータ
+ * @returns {object} 生成された合体カードオブジェクト
+ */
+export function createUnionCard(owner, existingCard, consumedCard, masterData) {
+  const masterClone = JSON.parse(JSON.stringify(masterData));
+  const unionSkills = JSON.parse(JSON.stringify(masterClone.skills || []));
+  const unionCard = {
+    ...masterClone,
+    uid: `union_${existingCard.uid || existingCard.id}_${consumedCard.uid || consumedCard.id}`,
+    owner,
+    baseId: masterClone.id,
+    basePower: masterClone.power,
+    currentPower: masterClone.power,
+    skills: [],
+    unionMaterials: [existingCard, consumedCard],
+    isPremium: !!consumedCard.isPremium || !!existingCard.isPremium,
+  };
+  mergeCardSkills(unionCard, unionSkills);
+  return unionCard;
+}
+
+/**
  * カードをマスターデータから初期状態に復元し、傀儡の返却先所有者を確定する。
  * @param {object} card - 復元対象のカード
  * @param {string} fallbackOwner - puppetOriginalOwner/owner が無い場合の所有者
@@ -684,37 +712,37 @@ export async function playCard(o, hI, l) {
         console.error(
           `[playCard] 合体先カード "${combineId}" がマスターデータに存在しません。`
         );
-      } else {
-        // BattleScreen 等の UI 側で既に合体確認（または破棄確認等による上書き）が完了しているため
-        // 即座に合体を実行する。
-        const consumedCard = h.splice(hI, 1)[0];
-        let unionCard = JSON.parse(JSON.stringify(masterData));
-        unionCard.uid = `union_${targetCard.uid}_${consumedCard.uid}`;
-        unionCard.owner = o;
-        unionCard.baseId = unionCard.id;
-        unionCard.basePower = unionCard.power;
-        unionCard.currentPower = unionCard.power;
-        unionCard.unionMaterials = [targetCard, consumedCard];
-
-        b[l] = unionCard;
-
-        playSound(SOUNDS.sePlace);
-        playCardVoice(unionCard, 'play');
-
-        if (o === 'blue') {
-          GameState.selectedCardIndex = null;
-          updateCardDetail(null);
-        }
-        renderHand();
-        renderBoard();
-
-        await resolveOnPlaySkill(o, l, unionCard);
-        await cleanupDestroyedCards();
-
-        await sleep(100);
-        renderBoard();
-        return true;
+        return false;
       }
+
+      // BattleScreen 等の UI 側で既に合体確認（または破棄確認等による上書き）が完了しているため
+      // 即座に合体を実行する。
+      const consumedCard = h.splice(hI, 1)[0];
+      const unionCard = createUnionCard(
+        o,
+        targetCard,
+        consumedCard,
+        masterData
+      );
+
+      b[l] = unionCard;
+
+      playSound(SOUNDS.sePlace);
+      playCardVoice(unionCard, 'play');
+
+      if (o === 'blue') {
+        GameState.selectedCardIndex = null;
+        updateCardDetail(null);
+      }
+      renderHand();
+      renderBoard();
+
+      await resolveOnPlaySkill(o, l, unionCard);
+      await cleanupDestroyedCards();
+
+      await sleep(100);
+      renderBoard();
+      return true;
     }
 
     // 2. 装備（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）

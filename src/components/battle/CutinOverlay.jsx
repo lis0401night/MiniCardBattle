@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { getSkinImage } from '../../utils/constants/characters.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 import {
   checkIsTutorialMode,
   checkIsStoryMode,
@@ -63,7 +64,8 @@ export default function CutinOverlay() {
       ? 'default'
       : GameState.enemySkins?.[config.id];
 
-  const charImgSrc = getSkinImage(config, skinId, 'image');
+  const rawImgSrc = getSkinImage(config, skinId, 'image');
+  const charImgSrc = appendVersionQuery(rawImgSrc);
 
   return (
     <div id="screen-cutin" style={{ display: 'flex' }}>

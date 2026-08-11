@@ -17,14 +17,14 @@ export function toDeckObjects(
   premiumCardsList = GameState.premiumCards
 ) {
   if (!Array.isArray(cards)) return [];
-  const list = premiumCardsList || [];
+  const list = Array.isArray(premiumCardsList) ? premiumCardsList : [];
   return cards
     .map((c) => {
       const cId = typeof c === 'string' ? c : c?.baseId || c?.id;
       if (typeof cId !== 'string' || !cId) return null;
       const isPrem =
-        typeof c === 'object' && c?.isPremium !== undefined
-          ? !!c.isPremium
+        c && typeof c === 'object' && typeof c.isPremium === 'boolean'
+          ? c.isPremium
           : list.includes(cId);
       return { id: cId, isPremium: isPrem };
     })

@@ -797,10 +797,13 @@ export default function DeckListScreen({ switchScreen }) {
                               if (window.showEnemyDeckModal) {
                                 const deckTitle =
                                   deck.name || `デッキ${idx + 1}`;
+                                const deckLeaderSkill =
+                                  CHARACTERS[deck.leaderId]?.leaderSkill ||
+                                  null;
                                 window.showEnemyDeckModal(
                                   deck.cards || [],
                                   deckTitle,
-                                  null,
+                                  deckLeaderSkill,
                                   {
                                     premiumCards: deck.premiumCards || [],
                                     isPlayerDeck: true,

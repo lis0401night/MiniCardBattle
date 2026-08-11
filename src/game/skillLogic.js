@@ -570,8 +570,7 @@ export async function resolveActiveSkillEffect(
             const proceed = await confirmOverwrittenLane(
               o,
               pickedCard,
-              lanes[0],
-              true // 招来・詠唱は「召喚」扱いのため、制約チェックは true
+              lanes[0]
             );
             if (!proceed) {
               // React の再レンダリング競合を防止するためディレイを挟む
@@ -1107,8 +1106,7 @@ export async function resolveActiveSkillEffect(
         const proceed = await confirmOverwrittenLane(
           o,
           simulatedToken,
-          targetLane,
-          false
+          targetLane
         );
         if (!proceed) continue;
 
@@ -1311,8 +1309,7 @@ export async function resolveActiveSkillEffect(
       const proceed = await confirmOverwrittenLane(
         o,
         simulatedToken,
-        targetLane,
-        false
+        targetLane
       );
       if (!proceed) continue;
 
@@ -2189,8 +2186,7 @@ export async function resolveActiveSkillEffect(
           const proceed = await confirmOverwrittenLane(
             o,
             selectedCard,
-            targetLane,
-            false
+            targetLane
           );
           if (!proceed) {
             await sleep(200);
@@ -2401,8 +2397,7 @@ export async function resolveActiveSkillEffect(
           const proceed = await confirmOverwrittenLane(
             o,
             selectedCard,
-            targetLane,
-            false
+            targetLane
           );
           if (!proceed) {
             await sleep(200);
@@ -2886,12 +2881,7 @@ export async function resolveActiveSkillEffect(
           targetLane = selectedLanes[0];
 
           // 根本的リファクタリング：上書き確認
-          const proceed = await confirmOverwrittenLane(
-            o,
-            topCard,
-            targetLane,
-            true // 号令は「召喚」扱いのため、制約チェックは true
-          );
+          const proceed = await confirmOverwrittenLane(o, topCard, targetLane);
           if (!proceed) {
             await sleep(200);
             continue; // キャンセル時はレーン選択からやり直す

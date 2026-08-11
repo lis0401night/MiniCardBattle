@@ -279,12 +279,7 @@ export default function BattleScreen() {
 
       // 既存カードがあるレーンへの召喚時の確認モーダル（起動・合体・装備・破棄を共通関数で一元管理）
       if (GameState.playerBoard[lane] !== null) {
-        const confirmed = await confirmOverwrittenLane(
-          'blue',
-          newCard,
-          lane,
-          true
-        );
+        const confirmed = await confirmOverwrittenLane('blue', newCard, lane);
         if (!confirmed) return;
       }
 

@@ -38,6 +38,7 @@ import {
   discardCard,
   cleanupDestroyedCards,
   drawCard,
+  createUnionCard,
 } from './battleCombat.js';
 import {
   waitPlayerLaneSelection,
@@ -140,22 +141,12 @@ async function resolveMoveDestination(
         }
         playSound(SOUNDS.seSummon);
 
-        const masterClone = JSON.parse(JSON.stringify(mergedCard));
-        const unionSkills = JSON.parse(
-          JSON.stringify(masterClone.skills || [])
-        );
-        const newInstance = {
-          ...masterClone,
-          uid: `union_${existingCard.uid || existingCard.id}_${movingCard.uid || movingCard.id}`,
+        const newInstance = createUnionCard(
           owner,
-          baseId: masterClone.id,
-          basePower: masterClone.power,
-          currentPower: masterClone.power,
-          skills: [],
-          unionMaterials: [existingCard, movingCard],
-          isPremium: !!movingCard.isPremium || !!existingCard.isPremium,
-        };
-        mergeCardSkills(newInstance, unionSkills);
+          existingCard,
+          movingCard,
+          mergedCard
+        );
 
         board[toLane] = newInstance;
         board[fromLane] = null;
@@ -322,7 +313,7 @@ export async function handleMoveSkills(owner) {
         const target = targetIdx[0];
         if (target !== i) {
           // 根本的リファクタリング：移動先レーンに既存カードがある場合の上書き確認
-          const proceed = await confirmOverwrittenLane(owner, c, target, false);
+          const proceed = await confirmOverwrittenLane(owner, c, target);
           if (!proceed) {
             await sleep(200);
             continue; // キャンセルされた場合はレーン選択からやり直す
@@ -523,7 +514,10 @@ const TURN_PHASES = [
   },
   {
     id: TURN_SUB_PHASE.DRAW,
-    execute: (ctx) => drawCard(ctx.owner),
+    // drawCard の戻り値を PhaseRunner の中断シグナル（true）と誤認させないよう明示的に遮断
+    execute: async (ctx) => {
+      await drawCard(ctx.owner);
+    },
   },
   {
     id: TURN_SUB_PHASE.TRANSITION,

@@ -18,7 +18,7 @@ import { GameState } from '../../../state/gameState.js';
  * 定義されたフェイズ配列を順番に非同期実行する。
  * @param {Array<PhaseDefinition>} phases - 実行対象のフェイズ定義配列
  * @param {object} context - フェイズ間で共有されるコンテキストオブジェクト (owner 等)
- * @returns {Promise<void>}
+ * @returns {Promise<{ error: Error|null }>}
  */
 export async function runPhases(phases, context = {}) {
   if (!Array.isArray(phases)) return;
@@ -70,6 +70,13 @@ export async function runPhases(phases, context = {}) {
   }
 
   if (firstError) {
-    throw firstError;
+    // 後続フェイズ（TRANSITION）による状態復旧を完了させた上で、失敗はログのみに留める。
+    // ここで throw すると呼び出し元（startTurn 等）に try/catch がないため
+    // 未処理の Promise 拒否となり、復旧の成果が無駄になる。
+    console.error(
+      '[PhaseRunner] フェイズ実行中に発生した最初のエラー (復旧完了):',
+      firstError
+    );
   }
+  return { error: firstError };
 }

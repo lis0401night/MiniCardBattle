@@ -35,6 +35,14 @@ const PICA_RANGES = {
   unsharpThreshold: { min: 0, max: 255, step: 1 },
 };
 
+/** Pica品質設定のUI選択肢定義 */
+const PICA_QUALITY_OPTIONS = [
+  { value: 0, label: '0（最速・粗い）' },
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
+  { value: 3, label: '3（最高品質）' },
+];
+
 /** ブラウザ互換性を考慮した中間キャンバスの一辺の最大値（px） */
 const MAX_INTERMEDIATE_CANVAS_SIZE = 8192;
 
@@ -242,18 +250,22 @@ export default function CharaAssetMaker() {
 
   // 各キャンバスのDOM参照（レイヤーIDをキーとする単一のRefマップ）
   const canvasRefs = useRef({});
+  // レイヤーIDごとのRefコールバックキャッシュ
+  const canvasRefCallbacks = useRef({});
 
   /**
    * レイヤーIDごとの安定したキャンバスRefコールバックを取得する
    * @param {string} id レイヤーID
    * @return {Function} Refコールバック
    */
-  const setCanvasRef = useCallback(
-    (id) => (el) => {
-      canvasRefs.current[id] = el;
-    },
-    []
-  );
+  const setCanvasRef = useCallback((id) => {
+    if (!canvasRefCallbacks.current[id]) {
+      canvasRefCallbacks.current[id] = (el) => {
+        canvasRefs.current[id] = el;
+      };
+    }
+    return canvasRefCallbacks.current[id];
+  }, []);
 
   // ドラッグ操作の一時記憶Ref
   const dragStartRef = useRef(null);
@@ -917,10 +929,11 @@ export default function CharaAssetMaker() {
                 handlePicaOptionChange('quality', parseFloat(e.target.value))
               }
             >
-              <option value="0">0（最速・粗い）</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3（最高品質）</option>
+              {PICA_QUALITY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
           <div className="field">

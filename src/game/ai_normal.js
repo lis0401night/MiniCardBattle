@@ -611,6 +611,8 @@ export function processActionSequence(
           const lanes = [...(action.lanes || [])];
           for (const tLane of lanes) {
             if (sealedLanes[tLane] > 0) continue;
+            const seq = simState._simTokenSequence || 0;
+            simState._simTokenSequence = seq + 1;
             // cloneトークンは元カードのスキルを引き継ぐ（分身含む全スキル）
             // 分身(clone)は召喚時にしか発動しないため、コピーしても影響がない
             let inheritedSkills = [];
@@ -620,7 +622,7 @@ export function processActionSequence(
               }
             }
             const newToken = {
-              id: `sm_sim_${side}_${tokenId}_${tLane}`,
+              id: `sm_sim_${side}_${tokenId}_${tLane}_${seq}`,
               baseId: tokenId,
               name: baseMaster?.name || 'トークン',
               isToken: true,
