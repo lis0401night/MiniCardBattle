@@ -40,6 +40,10 @@ export const PLACEMENT_CONFIRM_DELAY_MS = 300; // カード配置完了時の自
 export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全カードを表示するための最大値
 /** ドロー処理を行える手札枚数の上限（ターン中の一時的な上限） */
 export const MAX_HAND_SIZE_DURING_TURN = 4;
+/** ターン終了時に保持できる手札枚数の上限 */
+export const MAX_HAND_SIZE_END_TURN = 3;
+/** ゲーム開始時の初期ドロー枚数 */
+export const INITIAL_DRAW_COUNT = 3;
 export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)
 export const PROFILE_NAME_KEY = 'mini_card_battle_player_name';
 export const PROFILE_ICON_KEY = 'mini_card_battle_player_icon';
@@ -70,6 +74,8 @@ export const BATTLE_ASSET_LOAD_TIMEOUT_MS = 5000;
 export const MATCHING_SCREEN_TIMEOUT_MS = 7000;
 /** BattleScreen のマウント完了待ちタイムアウト（ミリ秒） */
 export const BATTLE_SCREEN_READY_TIMEOUT_MS = 4000;
+/** オンライン対戦待機ルームのハートビート送信間隔（ミリ秒） */
+export const ROOM_HEARTBEAT_INTERVAL_MS = 10000;
 /** マウント完了から先攻決定演出を開始するまでの待機時間（ミリ秒） */
 export const TURN_ORDER_START_DELAY_MS = 1000;
 export const FORTUNE_POINTS_KEY = 'mini_card_battle_fortune_points';

@@ -485,6 +485,9 @@ function guessGrid(width, height) {
 // サムネイルCanvasの一辺のサイズ(px)。CSSの .thumb-item canvas と一致させる
 const THUMB_SIZE = 80;
 
+// プレビュー再合成の遅延時間(ms)。連続入力時の再計算を抑制する
+const PREVIEW_DEBOUNCE_MS = 150;
+
 function ThumbCanvas({ frameCanvas }) {
   const canvasRef = useRef(null);
 
@@ -579,9 +582,6 @@ export default function VfxSpritesheetTool() {
     const cellWidth = cwRaw ? Math.max(1, parseInt(cwRaw, 10)) : null;
     return { bgMode, bgColor: color, cellWidth };
   }, [bgMode, bgCustomColor, cellWidthInput]);
-
-  // プレビュー再合成の遅延時間(ms)。連続入力時の再計算を抑制する
-  const PREVIEW_DEBOUNCE_MS = 150;
 
   /**
    * 間引き処理の適用
@@ -886,15 +886,8 @@ export default function VfxSpritesheetTool() {
     if (jsonFile) {
       try {
         const text = await jsonFile.text();
-        const parsed = JSON.parse(text);
-        if (
-          Number.isInteger(parsed.columns) &&
-          parsed.columns >= 1 &&
-          Number.isInteger(parsed.rows) &&
-          parsed.rows >= 1
-        ) {
-          jsonMeta = parsed;
-        }
+        // 採否の判定は loadSpriteSheetFile 側の hasUsableMeta に一本化する
+        jsonMeta = JSON.parse(text);
       } catch (e) {
         console.warn('JSONメタデータの解析に失敗しました:', e);
       }

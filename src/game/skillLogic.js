@@ -2655,7 +2655,9 @@ export async function resolveActiveSkillEffect(
         o,
         '探索するカードを選択',
         'デッキからカードを1枚選び、手札に加えます。',
-        true
+        true,
+        1,
+        'explore'
       );
       if (o === 'red' && selectedCard) {
         // AIの思考時間を演出

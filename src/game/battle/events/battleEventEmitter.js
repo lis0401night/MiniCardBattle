@@ -77,16 +77,18 @@ class BattleEventEmitter {
 
   /**
    * 指定されたイベントが発行されるまで非同期で待機するユーティリティ関数。
-   * Promise を返し、イベント発行時にペイロードデータを resolve する。
    * @param {string} event - 待機するイベント名
-   * @param {number} [timeoutMs] - タイムアウト時間（ミリ秒、指定時はタイムアウト時に reject/resolve(null)）
-   * @returns {Promise<any>} イベント発行時のペイロード
+   * @param {number} [timeoutMs=0] - タイムアウト時間（ミリ秒）。0 を指定すると無期限に待機する。
+   *   タイムアウト時は reject せず null で resolve する。
+   * @returns {{ promise: Promise<any>, cancel: () => void }} 待機用 Promise と、待機を中止する関数
    */
   waitFor(event, timeoutMs = 0) {
-    return new Promise((resolve) => {
-      let timer = null;
+    let timer = null;
+    let handler = null;
+    let cancel = () => {};
 
-      const handler = (data) => {
+    const promise = new Promise((resolve) => {
+      handler = (data) => {
         if (timer) clearTimeout(timer);
         this.off(event, handler);
         resolve(data);
@@ -94,13 +96,19 @@ class BattleEventEmitter {
 
       this.on(event, handler);
 
+      // 呼び出し元がバトル中断時などに待機を中止できるようにする
+      cancel = () => {
+        if (timer) clearTimeout(timer);
+        if (handler) this.off(event, handler);
+        resolve(null);
+      };
+
       if (timeoutMs > 0) {
-        timer = setTimeout(() => {
-          this.off(event, handler);
-          resolve(null);
-        }, timeoutMs);
+        timer = setTimeout(cancel, timeoutMs);
       }
     });
+
+    return { promise, cancel };
   }
 
   /**

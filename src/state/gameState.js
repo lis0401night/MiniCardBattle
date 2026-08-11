@@ -11,6 +11,7 @@ import {
 } from '../utils/constants/config.js';
 import { safeParseArray } from '../utils/gameUtils.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
+import { BATTLE_PHASE } from '../game/battle/phases/phaseTypes.js';
 
 const loadUserProfile = () => {
   try {
@@ -100,7 +101,7 @@ export const GameState = {
   isBattleEnded: false,
   firstPlayer: 'blue',
   turnCount: 0,
-  battlePhase: 'INIT',
+  battlePhase: BATTLE_PHASE.INIT,
   turnSubPhase: null, // ターン内サブフェイズの追跡（STATUS_COUNTDOWN, COMBAT, DRAW等）
   actionQueue: [],
   combatStep: 0,

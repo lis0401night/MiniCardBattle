@@ -9,6 +9,7 @@ import {
   listenToRoom,
   multiplayerCallbacks,
   sendChatMessage,
+  setRoomStatusToBattle,
   updatePlayerReady,
   updateRoomHeartbeat,
 } from '../services/multiplayer.js';
@@ -28,6 +29,7 @@ import {
   getScreenBackgroundStyle,
   PROFILE_NAME_KEY,
   DEFAULT_PLAYER_NAME,
+  ROOM_HEARTBEAT_INTERVAL_MS,
 } from '../utils/constants/config.js';
 
 async function safeLeaveRoom(errorMessage) {
@@ -129,10 +131,140 @@ export default function OnlineLobbyScreen() {
 
     window.reloadOnlineLobbyConfig();
 
+    /**
+     * 対戦を開始し、ゲーム状態のセットアップと画面遷移を行う共通ヘルパー関数
+     * @param {Object} data - 最新のルームデータ
+     */
+    const executeStartBattle = (data) => {
+      if (!data || !data.host || !data.client) return;
+      const isHost = getIsHost();
+      const meData = isHost ? data.host : data.client;
+      const opData = isHost ? data.client : data.host;
+
+      const bSeed = data.battleSeed || Date.now();
+      GameState.battleSeed = bSeed; // 最新のシードをGameStateに記録
+      const hostStage = data.host.leaderConfig?.stage || 'plain';
+      const clientStage = data.client.leaderConfig?.stage || 'plain';
+      GameState.selectedStageId = bSeed % 2 === 0 ? hostStage : clientStage;
+
+      GameState.playerConfig = {
+        ...meData.leaderConfig.leaderConfig,
+        deck: meData.leaderConfig.deck,
+      };
+      GameState.enemyConfig = {
+        ...opData.leaderConfig.leaderConfig,
+        deck: opData.leaderConfig.deck,
+      };
+
+      GameState.playerConfig.playmat = meData.leaderConfig.playmat || null;
+      GameState.enemyConfig.playmat = opData.leaderConfig.playmat || null;
+      GameState.selectedPlaymatId = meData.leaderConfig.playmat || null;
+
+      if (!GameState.playerSkins) GameState.playerSkins = {};
+      // 前モードの敵スキン設定をクリアし、漏洩を防ぐ
+      GameState.enemySkins = {};
+
+      if (meData.leaderConfig.skin) {
+        GameState.playerSkins[GameState.playerConfig.id] =
+          meData.leaderConfig.skin;
+      }
+      if (opData.leaderConfig.skin) {
+        GameState.enemySkins[GameState.enemyConfig.id] =
+          opData.leaderConfig.skin;
+      }
+
+      GameState.playerConfig.image = getSkinImage(
+        GameState.playerConfig,
+        meData.leaderConfig.skin || 'default',
+        'image'
+      );
+      GameState.playerConfig.imageLose = getSkinImage(
+        GameState.playerConfig,
+        meData.leaderConfig.skin || 'default',
+        'imageLose'
+      );
+      GameState.playerConfig.icon = meData.leaderConfig.icon
+        ? getPlayerIconPath({ icon: meData.leaderConfig.icon })
+        : getSkinImage(
+            GameState.playerConfig,
+            meData.leaderConfig.skin || 'default',
+            'icon'
+          );
+      GameState.playerConfig.iconDamage = meData.leaderConfig.icon
+        ? getPlayerIconPath({ icon: meData.leaderConfig.icon })
+        : getSkinImage(
+            GameState.playerConfig,
+            meData.leaderConfig.skin || 'default',
+            'iconDamage'
+          ) || GameState.playerConfig.icon;
+
+      GameState.enemyConfig.image = getSkinImage(
+        GameState.enemyConfig,
+        opData.leaderConfig.skin || 'default',
+        'image'
+      );
+      GameState.enemyConfig.imageLose = getSkinImage(
+        GameState.enemyConfig,
+        opData.leaderConfig.skin || 'default',
+        'imageLose'
+      );
+      GameState.enemyConfig.icon = opData.leaderConfig.icon
+        ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
+        : getSkinImage(
+            GameState.enemyConfig,
+            opData.leaderConfig.skin || 'default',
+            'icon'
+          );
+      GameState.enemyConfig.iconDamage = opData.leaderConfig.icon
+        ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
+        : getSkinImage(
+            GameState.enemyConfig,
+            opData.leaderConfig.skin || 'default',
+            'iconDamage'
+          ) || GameState.enemyConfig.icon;
+
+      // enemySkins は上で既にリセット・設定済み
+      GameState.enemySkins[GameState.enemyConfig.id] =
+        opData.leaderConfig.skin || 'default';
+
+      // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
+      multiplayerCallbacks.onRoomClosed = async () => {
+        GameState.isBattleEnded = true;
+        if (typeof window.setSlowMotionReact === 'function') {
+          window.setSlowMotionReact(false);
+        }
+        if (typeof stopAllBGM === 'function') stopAllBGM();
+        await safeLeaveRoom('ルーム解散時の退室処理に失敗しました:');
+        showAlertModal('ルームが解散されました。', () => {
+          showOnlineMenu?.();
+        });
+      };
+
+      GameState.gameMode = 'online';
+      GameState.appState = 'battle';
+
+      window.dispatchEvent(new Event('startOnlineBattle'));
+      if (typeof prepareBattle === 'function') prepareBattle();
+      battleStartTimeoutRef.current = null;
+    };
+
     multiplayerCallbacks.onRoomUpdated = (data) => {
       setRoomData(data);
 
-      // すでに対戦中（appState === 'battle'）の場合は二重対戦開始を防止するためスキップ
+      // 1. DB上の status が 'battle' に変更されている場合（追いつき自動同期）
+      // 相手またはホスト側で対戦が開始された場合、ローカルタイマーを待たずに即座に対戦画面へ遷移する
+      if (data && data.status === 'battle') {
+        if (GameState.appState !== 'battle') {
+          if (battleStartTimeoutRef.current) {
+            clearTimeout(battleStartTimeoutRef.current);
+            battleStartTimeoutRef.current = null;
+          }
+          executeStartBattle(data);
+        }
+        return;
+      }
+
+      // 2. すでに対戦中（appState === 'battle'）の場合は二重対戦開始を防止ためスキップ
       if (GameState.appState === 'battle') {
         if (battleStartTimeoutRef.current) {
           clearTimeout(battleStartTimeoutRef.current);
@@ -141,126 +273,27 @@ export default function OnlineLobbyScreen() {
         return;
       }
 
-      // 両方がReadyかつまだ対戦中ではない場合にバトル開始タイマーをセット
+      // 3. 両方がReadyかつまだ対戦中ではない場合にバトル開始タイマーをセット
       if (data && data.host?.isReady && data.client?.isReady) {
+        // すでにタイマーが起動中の場合は clearTimeout でリセットせず既存タイマーを継続（キャンセル事故防止）
         if (battleStartTimeoutRef.current) {
-          clearTimeout(battleStartTimeoutRef.current);
+          return;
         }
+
+        // ホスト側はDB上のstatusを 'battle' に更新
+        if (getIsHost()) {
+          setRoomStatusToBattle().catch((e) =>
+            console.warn('setRoomStatusToBattle failed:', e)
+          );
+        }
+
         battleStartTimeoutRef.current = setTimeout(() => {
           // タイマー実行時に再度対戦中チェック（二重呼び出し防止）
           if (GameState.appState === 'battle') {
             battleStartTimeoutRef.current = null;
             return;
           }
-          const isHost = getIsHost();
-          const meData = isHost ? data.host : data.client;
-          const opData = isHost ? data.client : data.host;
-
-          const bSeed = data.battleSeed || Date.now();
-          GameState.battleSeed = bSeed; // 最新のシードをGameStateに記録
-          const hostStage = data.host.leaderConfig?.stage || 'plain';
-          const clientStage = data.client.leaderConfig?.stage || 'plain';
-          GameState.selectedStageId = bSeed % 2 === 0 ? hostStage : clientStage;
-
-          GameState.playerConfig = {
-            ...meData.leaderConfig.leaderConfig,
-            deck: meData.leaderConfig.deck,
-          };
-          GameState.enemyConfig = {
-            ...opData.leaderConfig.leaderConfig,
-            deck: opData.leaderConfig.deck,
-          };
-
-          GameState.playerConfig.playmat = meData.leaderConfig.playmat || null;
-          GameState.enemyConfig.playmat = opData.leaderConfig.playmat || null;
-          GameState.selectedPlaymatId = meData.leaderConfig.playmat || null;
-
-          if (!GameState.playerSkins) GameState.playerSkins = {};
-          // 前モードの敵スキン設定をクリアし、漏洩を防ぐ
-          GameState.enemySkins = {};
-
-          if (meData.leaderConfig.skin) {
-            GameState.playerSkins[GameState.playerConfig.id] =
-              meData.leaderConfig.skin;
-          }
-          if (opData.leaderConfig.skin) {
-            GameState.enemySkins[GameState.enemyConfig.id] =
-              opData.leaderConfig.skin;
-          }
-
-          GameState.playerConfig.image = getSkinImage(
-            GameState.playerConfig,
-            meData.leaderConfig.skin || 'default',
-            'image'
-          );
-          GameState.playerConfig.imageLose = getSkinImage(
-            GameState.playerConfig,
-            meData.leaderConfig.skin || 'default',
-            'imageLose'
-          );
-          GameState.playerConfig.icon = meData.leaderConfig.icon
-            ? getPlayerIconPath({ icon: meData.leaderConfig.icon })
-            : getSkinImage(
-                GameState.playerConfig,
-                meData.leaderConfig.skin || 'default',
-                'icon'
-              );
-          GameState.playerConfig.iconDamage = meData.leaderConfig.icon
-            ? getPlayerIconPath({ icon: meData.leaderConfig.icon })
-            : getSkinImage(
-                GameState.playerConfig,
-                meData.leaderConfig.skin || 'default',
-                'iconDamage'
-              ) || GameState.playerConfig.icon;
-
-          GameState.enemyConfig.image = getSkinImage(
-            GameState.enemyConfig,
-            opData.leaderConfig.skin || 'default',
-            'image'
-          );
-          GameState.enemyConfig.imageLose = getSkinImage(
-            GameState.enemyConfig,
-            opData.leaderConfig.skin || 'default',
-            'imageLose'
-          );
-          GameState.enemyConfig.icon = opData.leaderConfig.icon
-            ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
-            : getSkinImage(
-                GameState.enemyConfig,
-                opData.leaderConfig.skin || 'default',
-                'icon'
-              );
-          GameState.enemyConfig.iconDamage = opData.leaderConfig.icon
-            ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
-            : getSkinImage(
-                GameState.enemyConfig,
-                opData.leaderConfig.skin || 'default',
-                'iconDamage'
-              ) || GameState.enemyConfig.icon;
-
-          // enemySkins は上で既にリセット・設定済み
-          GameState.enemySkins[GameState.enemyConfig.id] =
-            opData.leaderConfig.skin || 'default';
-
-          // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
-          multiplayerCallbacks.onRoomClosed = async () => {
-            GameState.isBattleEnded = true;
-            if (typeof window.setSlowMotionReact === 'function') {
-              window.setSlowMotionReact(false);
-            }
-            if (typeof stopAllBGM === 'function') stopAllBGM();
-            await safeLeaveRoom('ルーム解散時の退室処理に失敗しました:');
-            showAlertModal('ルームが解散されました。', () => {
-              showOnlineMenu?.();
-            });
-          };
-
-          GameState.gameMode = 'online';
-          GameState.appState = 'battle';
-
-          window.dispatchEvent(new Event('startOnlineBattle'));
-          if (typeof prepareBattle === 'function') prepareBattle();
-          battleStartTimeoutRef.current = null;
+          executeStartBattle(data);
         }, 1000);
       }
     };
@@ -279,13 +312,13 @@ export default function OnlineLobbyScreen() {
       listenToRoom(roomId);
     }
 
-    // ホストとしてロビーで待機中の間、10秒ごとに生存信号（ハートビート）を送信するタイマー
+    // ホストとしてロビーで待機中の間、一定周期ごとに生存信号（ハートビート）を送信するタイマー
     const heartbeatInterval = setInterval(() => {
       const activeRoomId = getCurrentRoomId();
       if (getIsHost() && activeRoomId && GameState.appState !== 'battle') {
         updateRoomHeartbeat(activeRoomId);
       }
-    }, 10000);
+    }, ROOM_HEARTBEAT_INTERVAL_MS);
 
     return () => {
       clearInterval(heartbeatInterval);

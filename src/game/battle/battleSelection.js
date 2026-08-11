@@ -470,6 +470,9 @@ export async function waitPlayerLaneSelection(
       }
     };
 
+    // 【移行措置】battleEvents への完全移行が完了するまで、旧 window グローバル経由の
+    // 呼び出しも受け付ける。UI 側が両方を発火した場合でも、onPlacementLaneClick の
+    // 重複ガード（L396-397）と cleanUp の isCleanedUp フラグにより二重処理を防ぐ。
     window.finishPlacement = onFinishPlacement;
     window.handlePlacementLaneClick = onPlacementLaneClick;
     battleEvents.on('PLACEMENT_FINISH', onFinishPlacement);
@@ -507,10 +510,12 @@ export function canEquipCard(playingCard, targetCard) {
 /**
  * 既存カードがあるレーンへの配置・移動・召喚時に、合体・装備・破棄の確認モーダルを表示します。
  * 状態の変更（カードの破棄など）は行いません。
+ * 本関数は確認モーダルの表示のみを担当します。「伝説」「生贄」等の配置制約チェックは
+ * 呼び出し元（waitPlayerLaneSelection / playCard）が既に完了させている前提です。
  * @param {string} owner - 'blue' | 'red'
  * @param {object} tokenCard - 配置しようとしているカード
  * @param {number} laneIndex - 配置先レーン
- * @param {boolean} checkConstraints - 制約チェックを行うかどうか（号令や招来などの召喚時はtrue、復活や分身などはfalse）
+ * @param {boolean} [_checkConstraints=true] - 未使用。呼び出し元との互換性のために残置。
  * @returns {Promise<boolean>} 配置を続行してよいならtrue、キャンセルされたならfalse
  */
 export async function confirmOverwrittenLane(
@@ -1031,6 +1036,14 @@ export async function waitPlayerHandSelection(
 
 /**
  * 墓地から選択する共有ユーティリティ（復活、回収等）
+ * @param {Array} validCards - 選択対象のカードリスト
+ * @param {number} maxPow - 選択可能な最大パワー
+ * @param {string} owner - 'blue' | 'red'
+ * @param {string} title - モーダルのタイトル
+ * @param {string} desc - モーダルの説明文
+ * @param {boolean} [canCancel=true] - キャンセル可能か
+ * @param {number} [maxChoices=1] - 最大選択数
+ * @param {string|null} [skillId=null] - 選択を要求しているスキルの英語ID
  */
 export async function waitPlayerDiscardSelection(
   validCards,
@@ -1039,7 +1052,8 @@ export async function waitPlayerDiscardSelection(
   title,
   desc,
   canCancel = true,
-  maxChoices = 1
+  maxChoices = 1,
+  skillId = null
 ) {
   if (!validCards || validCards.length === 0) return maxChoices > 1 ? [] : null;
 
@@ -1143,15 +1157,11 @@ export async function waitPlayerDiscardSelection(
     }
     // フォールバック: ランダムに選択（回収などのシミュレーション除外スキル用）
     if (maxChoices > 1) {
-      const shuffled = [...validCards];
-      for (let i = shuffled.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(getSeededRandom() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
+      const shuffled = shuffleArray([...validCards]);
       return shuffled.slice(0, maxChoices);
     } else {
       // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
-      if (title && title.includes('探索')) {
+      if (skillId === 'explore' || (title && title.includes('探索'))) {
         const maxP = Math.max(...validCards.map((c) => c.power || 0));
         const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
         return bestCards[Math.floor(getSeededRandom() * bestCards.length)];
@@ -1506,11 +1516,26 @@ export async function waitSkillChoice(
         .map((x) => x.choice);
     }
 
+    /** インデックス配列を有効な選択肢配列へ変換する（範囲外は除外） */
+    const mapIndicesToChoices = (indices) =>
+      indices
+        .map((i) => choices[i])
+        .filter((c) => {
+          if (!c) {
+            console.warn(
+              '[waitSkillChoice] AIが範囲外の選択肢インデックスを返しました。',
+              { indices, choicesLength: choices.length }
+            );
+          }
+          return Boolean(c);
+        });
+
     // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoice/forceノード）
     const aiAction = consumeAIAction(['choice', 'force']);
     if (aiAction && aiAction.choices !== undefined) {
       if (GameState.gameMode !== 'online') await sleep(AI_THINKING_DURATION); // AIの思考時間を演出
-      return aiAction.choices.map((i) => choices[i]);
+      const mapped = mapIndicesToChoices(aiAction.choices);
+      if (mapped.length > 0) return mapped;
     }
 
     // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後 - 親ノード側）
@@ -1522,7 +1547,8 @@ export async function waitSkillChoice(
       const idx = GameState.aiDecision.choiceIndexQueue.shift();
       if (idx !== undefined) {
         const indices = Array.isArray(idx) ? idx : [idx];
-        return indices.map((i) => choices[i]);
+        const mapped = mapIndicesToChoices(indices);
+        if (mapped.length > 0) return mapped;
       }
     } else if (
       typeof GameState.aiDecision !== 'undefined' &&
@@ -1533,7 +1559,8 @@ export async function waitSkillChoice(
       const idx = GameState.aiDecision.choiceIndex;
       delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
       const indices = Array.isArray(idx) ? idx : [idx];
-      return indices.map((i) => choices[i]);
+      const mapped = mapIndicesToChoices(indices);
+      if (mapped.length > 0) return mapped;
     }
 
     // 2. 意思決定時に決定していない場合（Easy or フォールバック）

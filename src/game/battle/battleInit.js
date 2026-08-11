@@ -65,33 +65,16 @@ import {
 import { checkWinCondition } from './battleResult.js';
 import { drawCard, playCard } from './battleCombat.js';
 import {
+  dispatchBattleAction,
   resetQueueProcessing,
   setPendingChoiceResolver,
 } from './battleQueue.js';
 import { waitPlayerHandSelection } from './battleSelection.js';
-import { dispatchBattleAction } from './battleQueue.js';
 import { endTurnLogic, startTurn } from './battleTurn.js';
+import { toDeckObjects } from '../../utils/deckUtils.js';
+import { battleEvents } from './events/battleEventEmitter.js';
+import { BATTLE_PHASE } from './phases/phaseTypes.js';
 import { isTutorialMode, runTutorialFlow } from '../tutorialEngine.js';
-
-let isBattleLoading = false;
-/** バトル準備の世代カウンター（先行タイマーによる次回準備の誤解無防止用） */
-let prepareBattleGeneration = 0;
-
-/**
- * カード配列（文字列またはオブジェクト）を { id, isPremium } の配列に正規化する共通ヘルパー
- */
-function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
-  if (!Array.isArray(cards)) return [];
-  const list = premiumCardsList || [];
-  return cards.map((c) => {
-    const cId = typeof c === 'string' ? c : c?.baseId || c?.id || c;
-    const isPrem =
-      typeof c === 'object' && c?.isPremium !== undefined
-        ? !!c.isPremium
-        : list.includes(cId);
-    return { id: cId, isPremium: isPrem };
-  });
-}
 
 /** リーダー固有の最大HP定義。未定義のキャラクターは MAX_HP を使用する */
 const LEADER_MAX_HP_OVERRIDES = {
@@ -100,6 +83,12 @@ const LEADER_MAX_HP_OVERRIDES = {
   succubus: 30,
   warlock: 30,
 };
+
+/** バトル準備の連打防止・二重呼び出しローディングロックフラグ */
+let isBattleLoading = false;
+
+/** prepareBattle の呼び出し世代管理カウンター（競合制御用） */
+let prepareBattleGeneration = 0;
 
 /**
  * 現在のゲームモードから、使用するステージIDとBGMキーを決定する。
@@ -708,10 +697,11 @@ export function initBattleState() {
 
     GameState.playerMaxHP = MAX_HP + fortuneHPPlayerMod;
     // 敵の最大HPは、個別設定 > リーダー固有定義 > 既定値 の優先順位で決定する
+    const configuredEnemyHP = GameState.enemyConfig?.hp;
     const enemyBaseHP =
-      GameState.enemyConfig.hp ||
-      LEADER_MAX_HP_OVERRIDES[GameState.enemyConfig.id] ||
-      MAX_HP;
+      typeof configuredEnemyHP === 'number' && configuredEnemyHP > 0
+        ? configuredEnemyHP
+        : LEADER_MAX_HP_OVERRIDES[GameState.enemyConfig?.id] || MAX_HP;
     GameState.enemyMaxHP = enemyBaseHP + fortuneHPEnemyMod;
 
     if (
@@ -783,7 +773,8 @@ export function initBattleState() {
     GameState.enemySP = 0;
     GameState.turnCount = 0;
     GameState.firstPlayer = 'blue';
-    GameState.battlePhase = 'INIT';
+    GameState.battlePhase = BATTLE_PHASE.INIT;
+    GameState.turnSubPhase = null;
     GameState.combatStep = 0;
     GameState.playerHand = [];
     GameState.enemyHand = [];
@@ -865,6 +856,8 @@ export function initBattleState() {
 
     // --- グローバルコールバック・リゾルバの確実なリセット ---
     setPendingChoiceResolver(null);
+    // 前回バトルの残留リスナー（リタイア・切断・例外で cleanUp に到達しなかった分）を一括解除する
+    battleEvents.clearAll();
     window.finishHandSelection = null;
     window.handlePlacementLaneClick = null;
     window.finishPlacement = null;
@@ -1061,11 +1054,6 @@ function applyBattlePreset(preset) {
  * チュートリアル用: 敵のスクリプト行動
  * ターン数に応じて事前定義されたカードを出す
  */
-
-/**
- * チュートリアル用: 敵のスクリプト行動
- * ターン数に応じて事前定義されたカードを出す
- */
 export async function executeTutorialEnemyTurn() {
   // チュートリアルIDに応じた敵行動スクリプト
   const tutorialId = GameState.tutorial?.id || 'basic_rules';
@@ -1134,7 +1122,7 @@ export async function determineTurnOrder() {
       preset.firstPlayer || (getSeededRandom() < 0.5 ? 'blue' : 'red');
     GameState.isInitializing = false;
     GameState.isProcessing = false;
-    GameState.battlePhase = 'BATTLE';
+    GameState.battlePhase = BATTLE_PHASE.BATTLE;
     renderBoard();
     renderHand();
     updateHPBar();
@@ -1180,7 +1168,7 @@ export async function determineTurnOrder() {
  * プレイヤーおよびAI/オンライン相手の手札引き直し選択を待機し、ドロー・手札更新を行う。
  */
 export async function startMulliganPhase() {
-  GameState.battlePhase = 'MULLIGAN';
+  GameState.battlePhase = BATTLE_PHASE.MULLIGAN;
   GameState.placementMessage = null;
   if (updateBattleUIHook) updateBattleUIHook();
 
@@ -1260,7 +1248,7 @@ export async function startMulliganPhase() {
   }
 
   GameState.placementMessage = null;
-  GameState.battlePhase = 'BATTLE';
+  GameState.battlePhase = BATTLE_PHASE.BATTLE;
 
   await sleep(AI_THINKING_DURATION); // マリガン終了後に少し間をあける
 

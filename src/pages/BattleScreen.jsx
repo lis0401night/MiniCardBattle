@@ -54,6 +54,7 @@ import {
   notifyCardPlaced,
 } from '../game/tutorialEngine.js';
 import { openCardPreview } from '../services/uiGallery.js';
+import { BATTLE_PHASE } from '../game/battle/phases/phaseTypes.js';
 
 export default function BattleScreen() {
   const [_renderVersion, setRenderVersion] = useState(0);
@@ -130,7 +131,7 @@ export default function BattleScreen() {
     };
 
     // マウント時にすでにバトルフェーズが進行している場合のフェイルセーフ
-    if (GameState.battlePhase && GameState.battlePhase !== 'INIT') {
+    if (GameState.battlePhase && GameState.battlePhase !== BATTLE_PHASE.INIT) {
       GameState.isInitializing = false;
       setRenderVersion((v) => v + 1);
     }
@@ -195,7 +196,7 @@ export default function BattleScreen() {
     // 相手ターン中または戦闘中（攻撃アニメーション等）は操作不可
     if (
       GameState.currentTurn !== 'player' ||
-      GameState.battlePhase === 'COMBAT'
+      GameState.battlePhase === BATTLE_PHASE.COMBAT
     )
       return;
 
@@ -336,9 +337,9 @@ export default function BattleScreen() {
     if (!GameState.isDiscardingMode) {
       if (GameState.isProcessing) return;
       if (
-        GameState.battlePhase !== 'MULLIGAN' &&
+        GameState.battlePhase !== BATTLE_PHASE.MULLIGAN &&
         (GameState.currentTurn !== 'player' ||
-          GameState.battlePhase === 'COMBAT')
+          GameState.battlePhase === BATTLE_PHASE.COMBAT)
       ) {
         return;
       }
@@ -455,7 +456,7 @@ export default function BattleScreen() {
           id="turn-status"
           style={{
             color:
-              GameState.battlePhase === 'MULLIGAN'
+              GameState.battlePhase === BATTLE_PHASE.MULLIGAN
                 ? '#fff'
                 : GameState.lastBattleResult === 'win'
                   ? '#facc15'
@@ -469,9 +470,10 @@ export default function BattleScreen() {
             fontSize: '16px',
           }}
         >
-          {GameState.battlePhase === 'MULLIGAN' && GameState.placementMessage
+          {GameState.battlePhase === BATTLE_PHASE.MULLIGAN &&
+          GameState.placementMessage
             ? GameState.placementMessage
-            : GameState.battlePhase === 'MULLIGAN'
+            : GameState.battlePhase === BATTLE_PHASE.MULLIGAN
               ? 'MULLIGAN'
               : GameState.lastBattleResult === 'win'
                 ? 'YOU WIN!'
@@ -542,7 +544,7 @@ export default function BattleScreen() {
             __html:
               cardDetailHtml ||
               (GameState.isDiscardingMode
-                ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === 'MULLIGAN' ? `${GameState.firstPlayer === 'blue' ? '先攻' : '後攻'}：引き直すカードを` : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
+                ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === BATTLE_PHASE.MULLIGAN ? `${GameState.firstPlayer === 'blue' ? '先攻' : '後攻'}：引き直すカードを` : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
                 : ''),
           }}
         ></div>

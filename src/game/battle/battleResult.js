@@ -88,24 +88,7 @@ const DEFENSE_FAR_HIGHER_RATIO = 2;
 /** 防衛成功時に防衛側へ付与するポイント */
 const DEFENSE_SUCCESS_POINTS = 3;
 
-/**
- * カード配列（文字列またはオブジェクト）を { id, isPremium } の配列に正規化する共通ヘルパー
- */
-function toDeckObjects(cards, premiumCardsList = GameState.premiumCards) {
-  if (!Array.isArray(cards)) return [];
-  const list = premiumCardsList || [];
-  return cards
-    .map((c) => {
-      const cId = typeof c === 'string' ? c : c?.baseId || c?.id;
-      if (typeof cId !== 'string' || !cId) return null;
-      const isPrem =
-        typeof c === 'object' && c?.isPremium !== undefined
-          ? !!c.isPremium
-          : list.includes(cId);
-      return { id: cId, isPremium: isPrem };
-    })
-    .filter(Boolean);
-}
+import { toDeckObjects } from '../../utils/deckUtils.js';
 
 /**
  * プレイヤーおよび敵のHPを判定し、勝敗が決したかチェックする。
@@ -373,9 +356,6 @@ export function endBattle() {
     }
 
     if (GameState.gameMode === 'defense_attack') {
-      // 戦闘終了時に勝ち負けにかかわらず対戦相手5人の選出キャッシュをリセットし、次回訪問時に新しい相手が更新選出されるようにする
-      localStorage.removeItem(DEFENSE_TARGETS_KEY);
-
       // 対象の防衛者宛に防衛履歴（勝敗、攻撃者情報、攻撃デッキ）を送信
       const enemyUuid = GameState.enemyConfig?.uuid;
       if (enemyUuid) {
@@ -397,10 +377,7 @@ export function endBattle() {
           (GameState.playerSkins && GameState.playerSkins[playerCharId]) ||
           'default';
         const attackerTotalPoints =
-          parseInt(
-            localStorage.getItem('mini_card_battle_defense_total_points'),
-            10
-          ) || 0;
+          parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
 
         recordDefenseBattleToServer(enemyUuid, {
           attackerUuid: getOrCreateUUID(),
@@ -423,8 +400,8 @@ export function endBattle() {
           parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) ||
           myCurrentPoints;
         const enemyTotalPoints =
-          GameState.enemyConfig.total_points ||
-          GameState.enemyConfig.points ||
+          GameState.enemyConfig?.total_points ||
+          GameState.enemyConfig?.points ||
           0;
 
         let winPoints = DEFENSE_WIN_POINTS.EQUAL_OR_LOWER;
@@ -440,7 +417,7 @@ export function endBattle() {
         }
 
         // UI表示の整合性を優先する場合（もし敵設定に保持されていたらそちらを信頼）
-        if (GameState.enemyConfig.calculatedWinPoints) {
+        if (GameState.enemyConfig?.calculatedWinPoints) {
           winPoints = GameState.enemyConfig.calculatedWinPoints;
         }
 
@@ -456,6 +433,8 @@ export function endBattle() {
           'update_defense_points.php',
           newCurrentPoints,
           newTotalPoints
+        ).catch((err) =>
+          console.error('防衛ポイントの同期送信に失敗しました:', err)
         );
 
         // 自身が攻撃して勝利した場合も実績「防衛戦勝利数」としてカウントする
@@ -495,22 +474,20 @@ export function endBattle() {
         return;
       } else if (GameState.lastBattleResult === 'lose') {
         // 負けた場合は敵に3ポイントと防衛回数を付与する
-        const enemyUuid = GameState.enemyConfig.uuid;
+        const enemyUuid = GameState.enemyConfig?.uuid;
         if (enemyUuid) {
-          try {
-            savePointsToServer('update_defense_points.php', 0, 0, {
-              uuid: enemyUuid,
-              points: DEFENSE_SUCCESS_POINTS,
-              total_points: DEFENSE_SUCCESS_POINTS, // 総ポイントも加算
-              increment: true,
-              defense_wins: 1,
-            });
-          } catch (err) {
+          savePointsToServer('update_defense_points.php', 0, 0, {
+            uuid: enemyUuid,
+            points: DEFENSE_SUCCESS_POINTS,
+            total_points: DEFENSE_SUCCESS_POINTS, // 総ポイントも加算
+            increment: true,
+            defense_wins: 1,
+          }).catch((err) => {
             console.error(
               '防衛側プレイヤーへのポイント加算送信に失敗しました:',
               err
             );
-          }
+          });
         }
 
         showDefenseBattleList();
@@ -553,8 +530,8 @@ export function endBattle() {
         }
       }
       if (
-        GameState.gameMode.startsWith('event_') &&
-        GameState.gameMode.endsWith('_high') &&
+        GameState.gameMode?.startsWith('event_') &&
+        GameState.gameMode?.endsWith('_high') &&
         typeof incrementStat === 'function'
       ) {
         const charId = GameState.gameMode
@@ -584,8 +561,8 @@ export function endBattle() {
 
       // --- 運命の邂逅：特級目標ポイント付与処理 ---
       if (
-        GameState.gameMode.startsWith('event_') &&
-        GameState.gameMode.endsWith('_fortune') &&
+        GameState.gameMode?.startsWith('event_') &&
+        GameState.gameMode?.endsWith('_fortune') &&
         GameState.fortuneHandicaps
       ) {
         const fortuneCharId = GameState.gameMode
@@ -632,6 +609,8 @@ export function endBattle() {
           currentPts,
           totalPts,
           fortuneSyncExtra
+        ).catch((err) =>
+          console.error('運命の邂逅ポイントの同期送信に失敗しました:', err)
         );
 
         // 達成情報更新に伴い実績チェックをトリガー
@@ -673,14 +652,14 @@ export function endBattle() {
       }
 
       // --- カードドロップ抽選・表示処理 ---
-      let recipeId = GameState.enemyConfig.id;
-      if (GameState.gameMode.startsWith('event_')) {
-        if (GameState.gameMode.endsWith('_high')) {
+      let recipeId = GameState.enemyConfig?.id;
+      if (GameState.gameMode?.startsWith('event_')) {
+        if (GameState.gameMode?.endsWith('_high')) {
           const charId = GameState.gameMode
             .replace('event_', '')
             .replace('_high', '');
           if (recipeId === charId) recipeId = `${charId}_high`;
-        } else if (GameState.gameMode.endsWith('_fortune')) {
+        } else if (GameState.gameMode?.endsWith('_fortune')) {
           const charId = GameState.gameMode
             .replace('event_', '')
             .replace('_fortune', '');
@@ -716,7 +695,7 @@ export function endBattle() {
         ];
         // 所持数が4枚未満（4枚以上持っていない）カードのみを抽出
         availableCards = uniqueCards.filter((cid) => {
-          const count = GameState.playerInventory[cid] || 0;
+          const count = GameState.playerInventory?.[cid] || 0;
           return count < 4;
         });
 

@@ -1,13 +1,18 @@
 // ==========================================
-// battle.js — ファサード（Re-export Hub）
+// src/game/battle/index.js — ファサード（Re-export Hub）
 //
-// 元の battle.js (5,296行) を責務単位で6つのサブモジュールに分割し、
+// 元の src/game/battle.js (5,296行) を責務単位で6つのサブモジュールに分割し、
 // このファイルは全サブモジュールからの re-export のみを行うファサードとして機能する。
-// 既存の外部 import (`from './battle.js'`) は一切変更不要。
+// 外部からは本ファイル (`from './game/battle/index.js'`) 経由でのみ import すること。
 // ==========================================
 
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { registerDiscardCard } from '../eventRenderer.js';
+import { registerQueueDependencies } from './battleQueue.js';
+import { playCard, discardCard } from './battleCombat.js';
+import { endTurnLogic } from './battleTurn.js';
+import { checkWinCondition } from './battleResult.js';
+import { executeTutorialEnemyTurn } from './battleInit.js';
 
 // ==========================================
 // サブモジュールからの re-export
@@ -87,23 +92,26 @@ if (typeof window !== 'undefined' && import.meta.env?.DEV) {
 // ==========================================
 // 循環参照解決のための関数注入
 // ==========================================
-import { registerQueueDependencies } from './battleQueue.js';
-import { playCard } from './battleCombat.js';
-import { endTurnLogic } from './battleTurn.js';
-import { checkWinCondition } from './battleResult.js';
-import { executeTutorialEnemyTurn } from './battleInit.js';
 
-// battleQueue.js は playCard, endTurnLogic, checkWinCondition, executeTutorialEnemyTurn を
-// 循環参照の関係で直接importできないため、ファサード初期化時に関数注入で解決する
-registerQueueDependencies({
-  playCard,
-  endTurnLogic,
-  checkWinCondition,
-  executeTutorialEnemyTurn,
-});
+let isWired = false;
 
-// ==========================================
-// eventRenderer.js への discardCard 関数注入（循環参照回避）
-// ==========================================
-import { discardCard } from './battleCombat.js';
-registerDiscardCard(discardCard);
+/**
+ * バトルモジュール間の循環参照を関数注入で解決する。
+ * battleQueue.js は playCard 等を、eventRenderer.js は discardCard を直接 import できないため、
+ * 本関数がファサードとして注入を行う。複数回呼び出しても安全（冪等）。
+ */
+export function initBattleModule() {
+  if (isWired) return;
+  isWired = true;
+
+  registerQueueDependencies({
+    playCard,
+    endTurnLogic,
+    checkWinCondition,
+    executeTutorialEnemyTurn,
+  });
+  registerDiscardCard(discardCard);
+}
+
+// モジュール読み込み時にも安全に初期化を実行する
+initBattleModule();

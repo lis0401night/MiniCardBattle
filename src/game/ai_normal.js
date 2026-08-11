@@ -5,7 +5,6 @@ import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
   consumeArmSelf,
   getCurrentRNG,
-  getSeededRandom,
   getSkillValue,
   hasSkill,
   mergeCardSkills,
@@ -51,7 +50,7 @@ function createSplitSimToken(execCard, tgtLane, owner = 'red') {
   const val = getSkillValue(execCard, 'split') || tL.power || 2;
   return {
     ...JSON.parse(JSON.stringify(tL)),
-    id: `sp_sim_${Math.floor(getSeededRandom() * 1000000000)}_${tgtLane}`,
+    id: `sp_sim_${owner}_${execCard.uid ?? execCard.baseId ?? execCard.id}_${tgtLane}`,
     baseId: tokenId,
     isToken: true,
     owner,
@@ -621,7 +620,7 @@ export function processActionSequence(
               }
             }
             const newToken = {
-              id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+              id: `sm_sim_${side}_${tokenId}_${tLane}`,
               baseId: tokenId,
               name: baseMaster?.name || 'トークン',
               isToken: true,

@@ -1,4 +1,5 @@
 import { GameState } from '../../state/gameState.js';
+import { BATTLE_PHASE } from '../../game/battle/phases/phaseTypes.js';
 import {
   CHALLENGE_MISSIONS,
   MISSION_POINTS_PER_PACK,
@@ -13,7 +14,7 @@ export default function MissionListModal({ onClose }) {
   // （そうしないと前回のバトルの達成状況が次のバトル開始前まで残ってしまう）
   const isInBattle =
     GameState.battlePhase &&
-    GameState.battlePhase !== 'INIT' &&
+    GameState.battlePhase !== BATTLE_PHASE.INIT &&
     !GameState.isBattleEnded;
 
   const handleClose = () => {

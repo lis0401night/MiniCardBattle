@@ -125,7 +125,7 @@ export default function ToolNavigation() {
         aria-labelledby="tool-navigation-title"
         className={`tool-nav-drawer ${isOpen ? 'open' : ''}`}
         aria-hidden={!isOpen}
-        inert={!isOpen ? '' : undefined}
+        inert={!isOpen}
         onKeyDown={handleDrawerKeyDown}
       >
         <div className="tool-nav-header">

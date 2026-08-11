@@ -27,6 +27,14 @@ const PICA_DEFAULTS = {
 /** Picaフィルタとして許可される文字列リスト */
 const PICA_FILTERS = ['box', 'hamming', 'lanczos2', 'lanczos3', 'mks2013'];
 
+/** Pica数値設定の許容範囲定義（UIとサニタイズの唯一の真実） */
+const PICA_RANGES = {
+  quality: { min: 0, max: 3, step: 1 },
+  unsharpAmount: { min: 0, max: 500, step: 1 },
+  unsharpRadius: { min: 0.5, max: 2, step: 0.1 },
+  unsharpThreshold: { min: 0, max: 255, step: 1 },
+};
+
 /** ブラウザ互換性を考慮した中間キャンバスの一辺の最大値（px） */
 const MAX_INTERMEDIATE_CANVAS_SIZE = 8192;
 
@@ -67,26 +75,22 @@ const sanitizePicaOptions = (raw) => {
     merged.filter = PICA_DEFAULTS.filter;
   }
   merged.quality = Math.round(
-    clampNumber(merged.quality, 0, 3, PICA_DEFAULTS.quality)
+    clampNumber(
+      merged.quality,
+      PICA_RANGES.quality.min,
+      PICA_RANGES.quality.max,
+      PICA_DEFAULTS.quality
+    )
   );
-  merged.unsharpAmount = clampNumber(
-    merged.unsharpAmount,
-    0,
-    500,
-    PICA_DEFAULTS.unsharpAmount
-  );
-  merged.unsharpRadius = clampNumber(
-    merged.unsharpRadius,
-    0.5,
-    2,
-    PICA_DEFAULTS.unsharpRadius
-  );
-  merged.unsharpThreshold = clampNumber(
-    merged.unsharpThreshold,
-    0,
-    255,
-    PICA_DEFAULTS.unsharpThreshold
-  );
+  ['unsharpAmount', 'unsharpRadius', 'unsharpThreshold'].forEach((key) => {
+    const range = PICA_RANGES[key];
+    merged[key] = clampNumber(
+      merged[key],
+      range.min,
+      range.max,
+      PICA_DEFAULTS[key]
+    );
+  });
   return merged;
 };
 
@@ -238,6 +242,18 @@ export default function CharaAssetMaker() {
 
   // 各キャンバスのDOM参照（レイヤーIDをキーとする単一のRefマップ）
   const canvasRefs = useRef({});
+
+  /**
+   * レイヤーIDごとの安定したキャンバスRefコールバックを取得する
+   * @param {string} id レイヤーID
+   * @return {Function} Refコールバック
+   */
+  const setCanvasRef = useCallback(
+    (id) => (el) => {
+      canvasRefs.current[id] = el;
+    },
+    []
+  );
 
   // ドラッグ操作の一時記憶Ref
   const dragStartRef = useRef(null);
@@ -704,7 +720,9 @@ export default function CharaAssetMaker() {
   useEffect(() => {
     const disposers = Object.keys(TARGET_SPECS).map((id) => {
       const canvas = canvasRefs.current[id];
-      if (!canvas) return () => {};
+      if (!canvas) {
+        return () => {};
+      }
       const onWheel = (e) => handleWheelRef.current(id, e);
       canvas.addEventListener('wheel', onWheel, { passive: false });
       return () => canvas.removeEventListener('wheel', onWheel);
@@ -889,7 +907,10 @@ export default function CharaAssetMaker() {
         <summary>書き出しリサイズ設定（pica）</summary>
         <div className="settings-grid">
           <div className="field">
-            <label>quality（0〜3・大きいほど高品質）</label>
+            <label>
+              quality（{PICA_RANGES.quality.min}〜{PICA_RANGES.quality.max}
+              ・大きいほど高品質）
+            </label>
             <select
               value={picaOptions.quality}
               onChange={(e) =>
@@ -908,20 +929,23 @@ export default function CharaAssetMaker() {
               value={picaOptions.filter}
               onChange={(e) => handlePicaOptionChange('filter', e.target.value)}
             >
-              <option value="box">box</option>
-              <option value="hamming">hamming</option>
-              <option value="lanczos2">lanczos2</option>
-              <option value="lanczos3">lanczos3</option>
-              <option value="mks2013">mks2013</option>
+              {PICA_FILTERS.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
             </select>
           </div>
           <div className="field">
-            <label>unsharpAmount（0〜500）</label>
+            <label>
+              unsharpAmount（{PICA_RANGES.unsharpAmount.min}〜
+              {PICA_RANGES.unsharpAmount.max}）
+            </label>
             <input
               type="number"
-              min="0"
-              max="500"
-              step="1"
+              min={PICA_RANGES.unsharpAmount.min}
+              max={PICA_RANGES.unsharpAmount.max}
+              step={PICA_RANGES.unsharpAmount.step}
               value={picaOptions.unsharpAmount}
               onChange={(e) =>
                 handlePicaOptionChange(
@@ -932,12 +956,15 @@ export default function CharaAssetMaker() {
             />
           </div>
           <div className="field">
-            <label>unsharpRadius（0.5〜2.0）</label>
+            <label>
+              unsharpRadius（{PICA_RANGES.unsharpRadius.min}〜
+              {PICA_RANGES.unsharpRadius.max}）
+            </label>
             <input
               type="number"
-              min="0.5"
-              max="2"
-              step="0.1"
+              min={PICA_RANGES.unsharpRadius.min}
+              max={PICA_RANGES.unsharpRadius.max}
+              step={PICA_RANGES.unsharpRadius.step}
               value={picaOptions.unsharpRadius}
               onChange={(e) =>
                 handlePicaOptionChange(
@@ -948,12 +975,15 @@ export default function CharaAssetMaker() {
             />
           </div>
           <div className="field">
-            <label>unsharpThreshold（0〜255）</label>
+            <label>
+              unsharpThreshold（{PICA_RANGES.unsharpThreshold.min}〜
+              {PICA_RANGES.unsharpThreshold.max}）
+            </label>
             <input
               type="number"
-              min="0"
-              max="255"
-              step="1"
+              min={PICA_RANGES.unsharpThreshold.min}
+              max={PICA_RANGES.unsharpThreshold.max}
+              step={PICA_RANGES.unsharpThreshold.step}
               value={picaOptions.unsharpThreshold}
               onChange={(e) =>
                 handlePicaOptionChange(
@@ -990,9 +1020,7 @@ export default function CharaAssetMaker() {
               </h2>
               <div className="canvas-wrap">
                 <canvas
-                  ref={(el) => {
-                    canvasRefs.current[id] = el;
-                  }}
+                  ref={setCanvasRef(id)}
                   width={spec.w}
                   height={spec.h}
                   onPointerDown={(e) => handlePointerDown(id, e)}

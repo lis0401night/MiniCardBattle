@@ -14,7 +14,10 @@ import {
 } from '../../services/uiBattle.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import { PLACE_ANIMATION_DURATION } from '../../utils/constants/config.js';
+import {
+  PLACE_ANIMATION_DURATION,
+  MAX_HAND_SIZE_END_TURN,
+} from '../../utils/constants/config.js';
 import {
   createDamagePopup,
   getSeededRandom,
@@ -25,7 +28,6 @@ import {
   sleep,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { playCardVoice } from '../../utils/constants/voices.js';
 import { clearValkyriaGuard } from '../engine.js';
 import { evaluateAIMoves } from '../ai_normal.js';
 import { showConfirmModal } from '../../services/uiModals.js';
@@ -44,7 +46,7 @@ import {
   canEquipCard,
 } from './battleSelection.js';
 import { dispatchBattleAction, getIsQueueProcessing } from './battleQueue.js';
-import { TURN_SUB_PHASE } from './phases/phaseTypes.js';
+import { BATTLE_PHASE, TURN_SUB_PHASE } from './phases/phaseTypes.js';
 import { runPhases } from './phases/PhaseRunner.js';
 import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
 
@@ -251,8 +253,10 @@ export async function handleMoveSkills(owner) {
   }
 
   // 2. 移動 (move) スキルの解決
+  const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const movedIds = new Set();
+
   if (owner !== 'blue' && GameState.gameMode !== 'online') {
-    const b = GameState.enemyBoard;
     // AIの移動判断
     const bestMoves = evaluateAIMoves(GameState);
     if (bestMoves) {
@@ -266,8 +270,9 @@ export async function handleMoveSkills(owner) {
           await sleep(250);
         }
 
-        await resolveMoveDestination(owner, b, move.from, move.to, new Set());
+        await resolveMoveDestination(owner, b, move.from, move.to, movedIds);
         playSound(SOUNDS.seClick);
+        await cleanupDestroyedCards();
         await sleep(PLACE_ANIMATION_DURATION);
         renderBoard();
       }
@@ -275,8 +280,6 @@ export async function handleMoveSkills(owner) {
     return;
   }
 
-  const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-  const movedIds = new Set();
   for (let i = 0; i < 3; i++) {
     const c = b[i];
     if (
@@ -334,100 +337,12 @@ export async function handleMoveSkills(owner) {
             await sleep(250);
           }
 
-          let didUnion = false;
-          let didEquip = false;
-          const existingCard = b[target];
-
-          if (existingCard) {
-            // 1. 合体（Union）の判定と処理
-            const unionSkill =
-              c.skills && c.skills.find((s) => s.id === 'union');
-            if (
-              unionSkill &&
-              (existingCard.baseId === unionSkill.targetId ||
-                existingCard.id === unionSkill.targetId)
-            ) {
-              const combineId = unionSkill.summonId;
-              const masterData = CARD_MASTER.find((m) => m.id === combineId);
-              if (masterData) {
-                let unionCard = JSON.parse(JSON.stringify(masterData));
-                unionCard.uid = `union_${existingCard.uid}_${c.uid}`;
-                unionCard.owner = owner;
-                unionCard.baseId = unionCard.id;
-                unionCard.basePower = unionCard.power;
-                unionCard.currentPower = unionCard.power;
-                unionCard.unionMaterials = [existingCard, c];
-
-                b[target] = unionCard;
-                b[i] = null;
-                movedIds.add(unionCard.uid);
-
-                playSound(SOUNDS.sePlace);
-                playCardVoice(unionCard, 'play');
-                renderBoard();
-                await sleep(PLACE_ANIMATION_DURATION);
-
-                await cleanupDestroyedCards();
-
-                await sleep(100);
-                renderBoard();
-                didUnion = true;
-              }
-            }
-
-            // 2. 装備（Equip / Arm Self）の判定と処理（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
-            if (!didUnion && canEquipCard(c, existingCard)) {
-              applyEquipment(existingCard, c, movedIds);
-              b[i] = null;
-
-              playSound(SOUNDS.sePlace);
-              renderBoard();
-              await sleep(PLACE_ANIMATION_DURATION);
-
-              await cleanupDestroyedCards();
-
-              await sleep(100);
-              renderBoard();
-              didEquip = true;
-            }
-          }
-
-          // 3. 通常の破棄配置の処理
-          if (!didUnion && !didEquip) {
-            if (b[target] && hasSkill(b[target], 'startup')) {
-              // 起動消滅の特別処理
-              const existingCard = b[target];
-              existingCard.skills = existingCard.skills.filter(
-                (s) => s.id !== 'startup' && s.id !== 'defender'
-              );
-
-              // 移動しようとしたカードを墓地に送る
-              await discardCard(owner, c, i, false);
-
-              const targetEl = document.querySelector(
-                `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${target}"] .card`
-              );
-              if (targetEl) {
-                createDamagePopup(targetEl, '起動', '#38bdf8');
-              }
-
-              b[i] = null;
-              playSound(SOUNDS.sePlace);
-              renderBoard();
-              await sleep(PLACE_ANIMATION_DURATION);
-            } else {
-              if (b[target]) {
-                if (!(await discardCard(owner, b[target], target, false)))
-                  b[target] = null;
-              }
-              movedIds.add(c.uid || c.id);
-              b[target] = c;
-              b[i] = null;
-              playSound(SOUNDS.sePlace);
-              renderBoard();
-              await sleep(PLACE_ANIMATION_DURATION);
-            }
-          }
+          // AI 経路と同一の解決ロジックを使用し、挙動の非対称を防ぐ
+          await resolveMoveDestination(owner, b, i, target, movedIds);
+          playSound(SOUNDS.sePlace);
+          await cleanupDestroyedCards();
+          await sleep(100);
+          renderBoard();
           successMove = true;
         } else {
           // 同じレーンをクリックした場合は何もせず移動終了
@@ -443,7 +358,6 @@ export async function handleMoveSkills(owner) {
  * @param {string} owner - プレイヤー種別 ('blue' | 'red')
  */
 function decrementStatusCounters(owner) {
-  GameState.turnSubPhase = TURN_SUB_PHASE.STATUS_COUNTDOWN;
   const myBoard =
     owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   myBoard.forEach((c) => {
@@ -499,7 +413,6 @@ async function tutorialPauseIfNeeded(owner, pausePoint) {
  * @param {string} owner - プレイヤー種別 ('blue' | 'red')
  */
 function incrementSP(owner) {
-  GameState.turnSubPhase = TURN_SUB_PHASE.SP_INCREMENT;
   const c = owner === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
   if (GameState.turnCount > 1 && GameState.attackSkipCount === 0) {
     if (c.leaderSkill && c.leaderSkill.cost) {
@@ -521,8 +434,6 @@ function incrementSP(owner) {
  * @returns {Promise<boolean>} 戦闘実行中に勝敗が決した場合は true
  */
 async function executeCombatIfPossible(owner) {
-  GameState.turnSubPhase = TURN_SUB_PHASE.COMBAT;
-
   let skipAttack = false;
   if (GameState.attackSkipCount > 0) {
     skipAttack = true;
@@ -546,10 +457,6 @@ async function executeCombatIfPossible(owner) {
  * @param {string} owner - ターン所有者 ('blue' | 'red')
  */
 function transitionAfterTurnStart(owner) {
-  GameState.turnSubPhase = TURN_SUB_PHASE.DRAW;
-  drawCard(owner);
-
-  GameState.turnSubPhase = TURN_SUB_PHASE.TRANSITION;
   if (owner === 'blue') {
     GameState.selectedCardIndex = null;
     updateCardDetail(null);
@@ -558,7 +465,7 @@ function transitionAfterTurnStart(owner) {
     if (!getIsQueueProcessing()) {
       GameState.isProcessing = false;
     }
-    GameState.battlePhase = 'MAIN_ACTION';
+    GameState.battlePhase = BATTLE_PHASE.MAIN_ACTION;
   } else {
     renderBoard(); // 重要: 敵ターン開始前の状態（戦闘結果等）を画面に反映
     if (!getIsQueueProcessing()) {
@@ -613,6 +520,10 @@ const TURN_PHASES = [
   {
     id: TURN_SUB_PHASE.COMBAT,
     execute: (ctx) => executeCombatIfPossible(ctx.owner),
+  },
+  {
+    id: TURN_SUB_PHASE.DRAW,
+    execute: (ctx) => drawCard(ctx.owner),
   },
   {
     id: TURN_SUB_PHASE.TRANSITION,
@@ -686,8 +597,8 @@ export async function endTurnLogic(o) {
     }
 
     const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-    if (hand.length > 3) {
-      const discardCount = hand.length - 3;
+    if (hand.length > MAX_HAND_SIZE_END_TURN) {
+      const discardCount = hand.length - MAX_HAND_SIZE_END_TURN;
       GameState.placementMessage = null;
       if (updateBattleUIHook) updateBattleUIHook();
 

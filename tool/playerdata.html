@@ -480,10 +480,17 @@
         return path;
       };
 
-      // アイコンIDはURLエンコードしてから埋め込む（属性破壊とスクリプト注入を防ぐ）
+      // アイコンIDはURLパス成分としてエンコードする
+      // 注意: HTML属性へ埋め込む際は、別途 escapeHtml を併用すること
       const getIconPath = (id) =>
         fixAssetPath(
           `assets/icons/icon_${encodeURIComponent(String(id))}.webp`
+        );
+
+      // カードサムネイルのパスを生成する
+      const getCardThumbPath = (id) =>
+        fixAssetPath(
+          `assets/cards/card_${encodeURIComponent(String(id))}_thumb.webp`
         );
 
       // =============================
@@ -1254,9 +1261,9 @@
             if (a.rarity !== b.rarity) return b.rarity - a.rarity;
           }
 
-          // タイブレイカー: CARD_MASTER定義インデックス順
-          const idxA = orderMap.get(a.id) ?? 999;
-          const idxB = orderMap.get(b.id) ?? 999;
+          // 定義順に存在しないカードは常に末尾へ送る
+          const idxA = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+          const idxB = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
           return idxA - idxB;
         });
 
@@ -1290,7 +1297,7 @@
             return `
             <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-xl p-3 flex flex-col shadow-sm hover:shadow-md transition-shadow">
               <div class="flex gap-3 mb-3">
-                <img src="../assets/cards/card_${c.id}_thumb.webp" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='../assets/icons/icon_player.webp'" />
+                <img src="${escapeHtml(getCardThumbPath(c.id))}" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                 <div class="flex flex-col flex-1 min-w-0">
                   <div class="flex justify-between items-start gap-1">
                     <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>

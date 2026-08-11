@@ -111,6 +111,7 @@ function createCombatSnapshot() {
  * @param {object} card - 破棄対象のカードオブジェクト
  * @param {number} [lane] - 破棄が行われたレーンインデックス
  * @param {boolean} [isDestroyed=true] - 破壊による破棄かどうかのフラグ
+ * @returns {Promise<boolean>} 分裂等により盤面が既に置換済みの場合は true
  */
 export async function discardCard(owner, card, lane, isDestroyed = true) {
   // 防御: card が undefined/null の場合はエラーにならないようガード
@@ -119,7 +120,7 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
       '[discardCard] card は undefined/null です。スキップします。',
       { owner, lane }
     );
-    return;
+    return false;
   }
   // 付属物（装備・合体素材・変身元）の墓地返却処理（restoreCardForDiscard で共通化）
   if (card.equippedCards && card.equippedCards.length > 0) {
@@ -175,17 +176,15 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
   // TODO(リファクタリング): 処刑等の旧直接破棄ロジック（discardCard）と Engine/Renderer（新エンジン）の間で
   // 破棄・墓地送り処理が二重化しています。将来的にはすべて Engine / Renderer 構造へ一元化・統一すべきです。
-  for (const sk of skillsToResolve) {
-    if (isDestroyed) {
-      // 分裂(split): トークンを生成しつつ、元のカード本体も下部の墓地追加処理へ進める
-      if (sk.id === 'split' && lane !== undefined) {
-        await triggerSplitSkill(owner, lane, card);
-        isReplacedOnBoard = true;
-      }
-      // 誘爆(explode) — 隣接カードにダメージを与える（カード自体は通常通り墓地へ）
-      if (sk.id === 'explode' && lane !== undefined) {
-        await triggerExplodeSkill(owner, lane, card);
-      }
+  if (isDestroyed && lane !== undefined && lane !== null) {
+    // 分裂(split): トークンを生成しつつ、元のカード本体も下部の墓地追加処理へ進める
+    if (skillsToResolve.some((sk) => sk.id === 'split')) {
+      await triggerSplitSkill(owner, lane, card);
+      isReplacedOnBoard = true;
+    }
+    // 誘爆(explode) — 隣接カードにダメージを与える（カード自体は通常通り墓地へ）
+    if (skillsToResolve.some((sk) => sk.id === 'explode')) {
+      await triggerExplodeSkill(owner, lane, card);
     }
   }
 
@@ -228,30 +227,11 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
     }
   }
 
-  // マスターデータから完全な初期状態を再構成して墓地へ
-  let restoredCard;
-  const masterData = CARD_MASTER.find((m) => m.id === (card.baseId || card.id));
-  if (masterData) {
-    restoredCard = JSON.parse(JSON.stringify(masterData));
-    restoredCard.uid = card.uid; // IDなどの一意のプロパティは引き継ぐ
-    restoredCard.owner = owner;
-    restoredCard.baseId = card.baseId || card.id; // 画像URL等の解決に必須
-    if (card.isPremium !== undefined) restoredCard.isPremium = card.isPremium;
-    restoredCard.basePower = restoredCard.power;
-    restoredCard.currentPower = restoredCard.power;
-  } else {
-    // マスターデータが見つからない場合（特殊トークン等）のフォールバック
-    restoredCard = { ...card };
-    if ('basePower' in restoredCard)
-      restoredCard.power = restoredCard.basePower;
-    restoredCard.currentPower = restoredCard.power;
-    restoredCard.skills = []; // 付与されたスキルなどをクリア
-  }
-
-  // 【傀儡】傀儡スキルで奪ったカードは、元の持ち主の墓地に返却する
-  const discardOwner = card.puppetOriginalOwner || owner;
-  if (restoredCard.puppetOriginalOwner) delete restoredCard.puppetOriginalOwner;
-  restoredCard.owner = discardOwner;
+  // マスターデータから完全な初期状態を再構成して墓地へ（restoreCardForDiscard で共通化）
+  const { card: restoredCard, owner: discardOwner } = restoreCardForDiscard(
+    card,
+    owner
+  );
 
   if (typeof window.stripEphemeralSkills === 'function') {
     window.stripEphemeralSkills(restoredCard);
@@ -295,6 +275,8 @@ export async function triggerSplitSkill(owner, lane, card) {
   board[lane] = {
     ...JSON.parse(JSON.stringify(tL)),
     id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
+    baseId: tokenId,
+    isToken: true,
     owner,
     imgUrl: `assets/cards/card_${tokenId}.webp`,
     power: val,
@@ -696,37 +678,43 @@ export async function playCard(o, hI, l) {
     ) {
       const targetCard = b[l];
       const combineId = unionSkill.summonId;
-
-      // BattleScreen 等の UI 側で既に合体確認（または破棄確認等による上書き）が完了しているため
-      // 即座に合体を実行する。
-      const consumedCard = h.splice(hI, 1)[0];
       const masterData = CARD_MASTER.find((c) => c.id === combineId);
-      let unionCard = JSON.parse(JSON.stringify(masterData));
-      unionCard.uid = `union_${targetCard.uid}_${consumedCard.uid}`;
-      unionCard.owner = o;
-      unionCard.baseId = unionCard.id;
-      unionCard.basePower = unionCard.power;
-      unionCard.currentPower = unionCard.power;
-      unionCard.unionMaterials = [targetCard, consumedCard];
 
-      b[l] = unionCard;
+      if (!masterData) {
+        console.error(
+          `[playCard] 合体先カード "${combineId}" がマスターデータに存在しません。`
+        );
+      } else {
+        // BattleScreen 等の UI 側で既に合体確認（または破棄確認等による上書き）が完了しているため
+        // 即座に合体を実行する。
+        const consumedCard = h.splice(hI, 1)[0];
+        let unionCard = JSON.parse(JSON.stringify(masterData));
+        unionCard.uid = `union_${targetCard.uid}_${consumedCard.uid}`;
+        unionCard.owner = o;
+        unionCard.baseId = unionCard.id;
+        unionCard.basePower = unionCard.power;
+        unionCard.currentPower = unionCard.power;
+        unionCard.unionMaterials = [targetCard, consumedCard];
 
-      playSound(SOUNDS.sePlace);
-      playCardVoice(unionCard, 'play');
+        b[l] = unionCard;
 
-      if (o === 'blue') {
-        GameState.selectedCardIndex = null;
-        updateCardDetail(null);
+        playSound(SOUNDS.sePlace);
+        playCardVoice(unionCard, 'play');
+
+        if (o === 'blue') {
+          GameState.selectedCardIndex = null;
+          updateCardDetail(null);
+        }
+        renderHand();
+        renderBoard();
+
+        await resolveOnPlaySkill(o, l, unionCard);
+        await cleanupDestroyedCards();
+
+        await sleep(100);
+        renderBoard();
+        return true;
       }
-      renderHand();
-      renderBoard();
-
-      await resolveOnPlaySkill(o, l, unionCard);
-      await cleanupDestroyedCards();
-
-      await sleep(100);
-      renderBoard();
-      return true;
     }
 
     // 2. 装備（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）

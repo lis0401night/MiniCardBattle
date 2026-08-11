@@ -297,6 +297,16 @@
           .replace(/>/g, '&gt;');
       }
 
+      /**
+       * ニュースIDを数値として正規化する（インラインハンドラへの安全な埋め込み用）
+       * @param {*} value - 対象のID
+       * @returns {number} 正規化済みの数値ID
+       */
+      function safeId(value) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+      }
+
       function addNews() {
         const newId =
           newsItems.length > 0
@@ -368,6 +378,7 @@
           const div = document.createElement('div');
           div.className = 'news-item';
 
+          const itemId = safeId(item.id);
           const fallbackDisplay = item.imageUrl
             ? 'display: none;'
             : 'display: flex;';
@@ -384,10 +395,10 @@
           <div class="news-header">
             <div style="display: flex; align-items: center;">
               <span class="status-badge ${statusClass}">${statusText}</span>
-              <span style="font-weight: bold; margin-right: 15px;">ID: ${item.id}</span>
+              <span style="font-weight: bold; margin-right: 15px;">ID: ${itemId}</span>
               
               <label class="toggle-container">
-                <input type="checkbox" ${item.isActive ? 'checked' : ''} onchange="updateCheckbox(${item.id}, 'isActive', this.checked)">
+                <input type="checkbox" ${item.isActive ? 'checked' : ''} onchange="updateCheckbox(${itemId}, 'isActive', this.checked)">
                 <div class="toggle-switch"></div>
                 <span>${item.isActive ? '公開を許可' : '強制非公開'}</span>
               </label>
@@ -396,33 +407,33 @@
             <div class="news-controls">
               <button class="btn-circle" onclick="moveNews(${index}, -1)">▲</button>
               <button class="btn-circle" onclick="moveNews(${index}, 1)">▼</button>
-              <button class="btn-circle btn-danger" onclick="deleteNews(${item.id})">🗑</button>
+              <button class="btn-circle btn-danger" onclick="deleteNews(${itemId})">🗑</button>
             </div>
           </div>
           
           <div class="form-row">
             <div class="form-group" style="flex: 2;">
               <label>タイトル</label>
-              <input type="text" value="${escapeAttr(item.title)}" oninput="updateField(${item.id}, 'title', this.value)">
+              <input type="text" value="${escapeAttr(item.title)}" oninput="updateField(${itemId}, 'title', this.value)">
             </div>
             <div class="form-group" style="flex: 1;">
               <label>表示用日付 (バナー左上に表示)</label>
-              <input type="text" value="${escapeAttr(item.date)}" oninput="updateField(${item.id}, 'date', this.value)">
+              <input type="text" value="${escapeAttr(item.date)}" oninput="updateField(${itemId}, 'date', this.value)">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>公開開始日時 <span class="hint-text">※未入力で制限なし</span></label>
-              <input type="datetime-local" value="${escapeAttr(item.startDate || '')}" onchange="updateField(${item.id}, 'startDate', this.value)">
+              <input type="datetime-local" value="${escapeAttr(item.startDate || '')}" onchange="updateField(${itemId}, 'startDate', this.value)">
             </div>
             <div class="form-group">
               <label>公開終了日時 <span class="hint-text">※未入力で制限なし</span></label>
-              <input type="datetime-local" value="${escapeAttr(item.endDate || '')}" onchange="updateField(${item.id}, 'endDate', this.value)">
+              <input type="datetime-local" value="${escapeAttr(item.endDate || '')}" onchange="updateField(${itemId}, 'endDate', this.value)">
             </div>
             <div class="form-group">
               <label>ショートカット (画面ID)</label>
-              <select onchange="updateField(${item.id}, 'shortcut', this.value)" style="width: 100%; padding: 8px; border: 1px solid #475569; border-radius: 4px; background-color: #0f172a; color: white;">
+              <select onchange="updateField(${itemId}, 'shortcut', this.value)" style="width: 100%; padding: 8px; border: 1px solid #475569; border-radius: 4px; background-color: #0f172a; color: white;">
                 <option value="" ${item.shortcut === '' ? 'selected' : ''}>なし (ボタンを表示しない)</option>
                 <option value="screen-solo-menu" ${item.shortcut === 'screen-solo-menu' ? 'selected' : ''}>ソロモード</option>
                 <option value="screen-event-menu" ${item.shortcut === 'screen-event-menu' ? 'selected' : ''}>イベントモード</option>
@@ -439,33 +450,33 @@
           
           <div class="form-group">
             <label>本文</label>
-            <div id="editor-${item.id}" style="height: 150px;"></div>
+            <div id="editor-${itemId}" style="height: 150px;"></div>
           </div>
           
           <div class="form-group">
             <label>画像URL <span class="hint-text">※最適な画像サイズ：バナー用 720×240px または 1440×480px (3:1の比率)</span></label>
-            <input type="text" value="${escapeAttr(item.imageUrl)}" placeholder="https://..." oninput="updateField(${item.id}, 'imageUrl', this.value)">
+            <input type="text" value="${escapeAttr(item.imageUrl)}" placeholder="https://..." oninput="updateField(${itemId}, 'imageUrl', this.value)">
           </div>
           
-          <div class="fallback-group form-row" id="fallback-${item.id}" style="${fallbackDisplay}">
+          <div class="fallback-group form-row" id="fallback-${itemId}" style="${fallbackDisplay}">
             <div class="form-group">
               <label>グラデーション色1</label>
-              <input type="color" value="${escapeAttr(item.color1)}" onchange="updateField(${item.id}, 'color1', this.value)">
+              <input type="color" value="${escapeAttr(item.color1)}" onchange="updateField(${itemId}, 'color1', this.value)">
             </div>
             <div class="form-group">
               <label>グラデーション色2</label>
-              <input type="color" value="${escapeAttr(item.color2)}" onchange="updateField(${item.id}, 'color2', this.value)">
+              <input type="color" value="${escapeAttr(item.color2)}" onchange="updateField(${itemId}, 'color2', this.value)">
             </div>
             <div class="form-group">
               <label>アイコン (絵文字等)</label>
-              <input type="text" value="${escapeAttr(item.icon)}" oninput="updateField(${item.id}, 'icon', this.value)">
+              <input type="text" value="${escapeAttr(item.icon)}" oninput="updateField(${itemId}, 'icon', this.value)">
             </div>
           </div>
         `;
           container.appendChild(div);
 
           // Quillリッチテキストエディタを初期化する
-          const quill = new Quill(`#editor-${item.id}`, {
+          const quill = new Quill(`#editor-${itemId}`, {
             theme: 'snow',
             modules: {
               toolbar: [

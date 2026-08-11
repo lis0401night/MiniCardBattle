@@ -129,8 +129,9 @@ export async function dispatchBattleAction(action, isRemote = false) {
     const choiceData = action.choiceData !== undefined ? action.choiceData : '';
 
     if (pendingChoiceResolver) {
-      pendingChoiceResolver(choiceData);
-      pendingChoiceResolver = null;
+      const resolver = pendingChoiceResolver;
+      setPendingChoiceResolver(null);
+      resolver(choiceData);
     } else {
       if (!GameState.pendingChoices) GameState.pendingChoices = [];
       GameState.pendingChoices.push(choiceData);
@@ -294,42 +295,37 @@ function applySyncState(state) {
   GameState.playerSP = state.enemySP || 0;
   GameState.enemySP = state.playerSP || 0;
 
-  // 受信側（クライアント）では敵味方が反転するため、カードの owner プロパティも再帰的に反転させる
-  const invertCardOwner = (card) => {
+  /** owner 系プロパティを破壊的に反転する（コピーは呼び出し元で1回だけ行う） */
+  const invertOwnerInPlace = (card) => {
     if (!card) return null;
-    const cloned = JSON.parse(JSON.stringify(card));
-    if (cloned.owner === 'blue') cloned.owner = 'red';
-    else if (cloned.owner === 'red') cloned.owner = 'blue';
+    if (card.owner === 'blue') card.owner = 'red';
+    else if (card.owner === 'red') card.owner = 'blue';
 
-    if (cloned.puppetOriginalOwner === 'blue')
-      cloned.puppetOriginalOwner = 'red';
-    else if (cloned.puppetOriginalOwner === 'red')
-      cloned.puppetOriginalOwner = 'blue';
+    if (card.puppetOriginalOwner === 'blue') card.puppetOriginalOwner = 'red';
+    else if (card.puppetOriginalOwner === 'red')
+      card.puppetOriginalOwner = 'blue';
 
-    // 装備されているカード（equippedCards）も再帰的に反転する
-    if (cloned.equippedCards) {
-      const eqArr = Array.isArray(cloned.equippedCards)
-        ? cloned.equippedCards
-        : typeof cloned.equippedCards === 'object'
-          ? Object.values(cloned.equippedCards)
-          : [];
-      cloned.equippedCards = eqArr.map(invertCardOwner);
+    // Firebase はオブジェクト化して返す場合があるため、配列へ正規化する
+    const toArray = (v) =>
+      Array.isArray(v) ? v : v && typeof v === 'object' ? Object.values(v) : [];
+
+    if (card.equippedCards) {
+      card.equippedCards = toArray(card.equippedCards).map(invertOwnerInPlace);
     }
-    if (cloned.unionMaterials) {
-      const matArr = Array.isArray(cloned.unionMaterials)
-        ? cloned.unionMaterials
-        : typeof cloned.unionMaterials === 'object'
-          ? Object.values(cloned.unionMaterials)
-          : [];
-      cloned.unionMaterials = matArr.map(invertCardOwner);
-    }
-    if (cloned.originalRevertTarget) {
-      cloned.originalRevertTarget = invertCardOwner(
-        cloned.originalRevertTarget
+    if (card.unionMaterials) {
+      card.unionMaterials = toArray(card.unionMaterials).map(
+        invertOwnerInPlace
       );
     }
-    return cloned;
+    if (card.originalRevertTarget) {
+      invertOwnerInPlace(card.originalRevertTarget);
+    }
+    return card;
   };
+
+  /** 受信データを一度だけディープコピーしてから反転する */
+  const invertCardOwner = (card) =>
+    card ? invertOwnerInPlace(JSON.parse(JSON.stringify(card))) : null;
 
   // Firebaseでは配列に自動変換されたり省略されたりオブジェクト化されたりするため、厳密に配列化する
   const restoreArr = (arr, len = null) => {

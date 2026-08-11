@@ -459,9 +459,10 @@
               Number(pickCount) * Number(selfBaseSkillP.multiplier || 0);
 
             const avgScore = (choiceTotal / choicesArr.length) * pickCount;
-            // 選択は +1、命令は -1 の固定補正
-            const penalty = sk.id === 'choice' ? 1 : sk.id === 'force' ? -1 : 0;
-            score += avgScore + penalty + selfScore;
+            // スキルIDに応じたスコア補正を適用する（選択は +1 の加点、命令は -1 の減点）
+            const SKILL_SCORE_ADJUST = { choice: 1, force: -1 };
+            const adjust = SKILL_SCORE_ADJUST[sk.id] ?? 0;
+            score += avgScore + adjust + selfScore;
           } else {
             // baseは1回分のみ、value*multiplierは個数(count)分加算
             const p = pointSettings[sk.id] || { base: 0, multiplier: 0 };
@@ -490,12 +491,18 @@
         return usage;
       }
 
+      /**
+       * 全カードのスコアマップを構築する
+       * @returns {Map<string|number, number>} カードIDとスコアの対応マップ
+       */
+      function buildScoreMap() {
+        return new Map(cardData.map((c) => [c.id, calculateScore(c)]));
+      }
+
       function renderCards() {
         const tbody = document.getElementById('card-table-body');
         // 描画1回につきスコアと使用状況を1度だけ計算する (Map化)
-        const scoreMap = new Map(
-          cardData.map((c) => [c.id, calculateScore(c)])
-        );
+        const scoreMap = buildScoreMap();
         const usageMap = new Map(cardData.map((c) => [c.id, getUsage(c.id)]));
 
         const sorted = [...cardData].sort((a, b) => {
@@ -712,9 +719,7 @@
       function renderDecks() {
         const container = document.getElementById('decks-container');
         // デッキ再描画時もスコアを一括計算して参照する
-        const scoreMap = new Map(
-          cardData.map((c) => [c.id, calculateScore(c)])
-        );
+        const scoreMap = buildScoreMap();
 
         container.innerHTML = Object.entries(deckData)
           .map(

@@ -1,4 +1,4 @@
-:root {
+.vfx-spritesheet-container {
   color-scheme: dark;
   --bg: #1b1d22;
   --panel: #24262d;
@@ -14,17 +14,18 @@
   /* 透過表現用の市松模様パラメータ */
   --checker-color: #3a3d46;
   --checker-size: 20px;
-}
 
-.vfx-spritesheet-container {
   font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
   background: var(--bg);
   color: var(--text);
   padding: 20px;
   min-height: 100dvh;
+  box-sizing: border-box;
 }
 
-.vfx-spritesheet-container * {
+.vfx-spritesheet-container *,
+.vfx-spritesheet-container *::before,
+.vfx-spritesheet-container *::after {
   box-sizing: border-box;
 }
 

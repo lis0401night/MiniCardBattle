@@ -636,6 +636,20 @@ export async function setPlayerReadyOnly(isReadyStatus) {
 }
 
 /**
+ * 対戦開始時にルームのステータスを 'battle' に更新する（ホスト専用）
+ * 両プレイヤーが準備完了した際、DB上に対戦開始フラグを書き込み確実な追いつき同期を実現します。
+ * @returns {Promise<void>}
+ */
+export async function setRoomStatusToBattle() {
+  if (!currentRoomId || !database || !isHost) return;
+  const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+  await update(roomRef, {
+    status: 'battle',
+    battleStartedAt: serverTimestamp(),
+  });
+}
+
+/**
  * リマッチに向けてアクションキューを初期化し、新しいシードをセットする（ホスト専用）
  */
 export async function clearActionQueueAndRegenerateSeed() {

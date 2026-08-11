@@ -1,4 +1,4 @@
-:root {
+.chara-assetmaker-container {
   color-scheme: light dark;
   --bg: #f4f5f7;
   --panel-bg: #ffffff;
@@ -6,10 +6,17 @@
   --text: #202225;
   --muted: #6b7280;
   --accent: #3a6df0;
+
+  font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 16px 20px 60px;
+  min-height: 100dvh;
+  box-sizing: border-box;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  .chara-assetmaker-container {
     --bg: #16171b;
     --panel-bg: #1f2126;
     --border: #34363c;
@@ -19,15 +26,9 @@
   }
 }
 
-.chara-assetmaker-container {
-  font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding: 16px 20px 60px;
-  min-height: 100dvh;
-}
-
-.chara-assetmaker-container * {
+.chara-assetmaker-container *,
+.chara-assetmaker-container *::before,
+.chara-assetmaker-container *::after {
   box-sizing: border-box;
 }
 
