@@ -317,6 +317,7 @@ export function processActionSequence(
         extraTurnCount: GameState.extraTurnCount || 0,
         attackSkipCount: GameState.attackSkipCount || 0,
         combatDamageTaken: 0,
+        phaseBypassDamageTaken: 0,
         lastCardPlayed: null,
         lastPlayedLane: -1,
         _actionQueue: [],
@@ -1236,6 +1237,7 @@ export function processActionSequence(
         if (c && c.stunTurns > 0) c.stunTurns--;
         if (c && c.cantAttackTurns > 0) c.cantAttackTurns--;
       });
+      simState.phaseBypassDamageTaken = 0;
       calculateCombatPhase(simState, 'blue');
       simState.combatDamageTaken = Math.max(
         0,
@@ -1244,6 +1246,7 @@ export function processActionSequence(
     } else {
       simState.extraTurnCount--;
       simState.combatDamageTaken = 0;
+      simState.phaseBypassDamageTaken = 0;
     }
 
     return simState;
@@ -3152,10 +3155,17 @@ export function evaluateSimState(state) {
   }
 
   // 2. 生存ティアの判定 (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
+  // ※位相の相互すり抜けによる被ダメージはクロックレース（打点勝負）とみなし、
+  // パニック（Tier 2:危険状態）判定から除外する
+  const netCombatDamageTaken = Math.max(
+    0,
+    (state.combatDamageTaken || 0) - (state.phaseBypassDamageTaken || 0)
+  );
+
   let tier = 1;
   if (state.enemyHP <= 0) {
     tier = 3;
-  } else if ((state.combatDamageTaken || 0) >= 4) {
+  } else if (netCombatDamageTaken >= 4) {
     tier = 2;
   }
 
@@ -3220,7 +3230,7 @@ export function evaluateSimState(state) {
   // 【重要】危険状態（tier === 2、被ダメ4以上）の時は、少しでも被ダメージを抑えるプレイ（ブロック）を
   // 盤面パワー差（スロット4：1あたり1000点）よりも絶対優先するため、大きなペナルティ（1ダメージにつき -100,000点）を適用する。
   // 安全状態（tier === 1、被ダメ4未満）の時は、従来通りの微小なタイブレークペナルティ（-0.1）で評価する。
-  const damageTaken = state.combatDamageTaken || 0;
+  const damageTaken = netCombatDamageTaken;
   let s10 = 0;
   if (tier === 2) {
     s10 = -damageTaken * 100000;
@@ -3276,6 +3286,7 @@ export function evaluateAdhocTokenLanes(
     valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
     valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
     combatDamageTaken: 0,
+    phaseBypassDamageTaken: 0,
     lastCardPlayed: null,
     lastPlayedLane: -1,
     _actionQueue: [],
@@ -4890,11 +4901,13 @@ export function simulateMove(
       if (c && c.stunTurns > 0) c.stunTurns--;
       if (c && c.cantAttackTurns > 0) c.cantAttackTurns--;
     });
+    simState.phaseBypassDamageTaken = 0;
     calculateCombatPhase(simState, 'blue');
     simState.combatDamageTaken = Math.max(0, hpBeforeCombat - simState.enemyHP);
   } else {
     simState.extraTurnCount--;
     simState.combatDamageTaken = 0;
+    simState.phaseBypassDamageTaken = 0;
   }
   return simState;
 }

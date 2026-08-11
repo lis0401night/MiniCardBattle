@@ -971,8 +971,8 @@ export async function waitPlayerHandSelection(
     }
     if (results.length > 0) return results;
 
-    // フォールバック: 共通のAI破棄選択ロジックを利用する
-    return getAIDiscardIndices(hand, count);
+    // フォールバック: 共通のAI破棄選択ロジックを利用する（forceExact を伝達）
+    return getAIDiscardIndices(hand, count, forceExact);
   }
 
   // プレイヤーの場合：手動選択

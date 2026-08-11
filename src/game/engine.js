@@ -3098,10 +3098,10 @@ export function applyLeaderSkillLogic(
     const h = isBlue ? state.playerHand : state.enemyHand;
     const opH = isBlue ? state.enemyHand : state.playerHand;
 
-    // 1. 最大2枚捨てる（共通のAI手札選択ロジックを使用）
+    // 1. 最大2枚捨てる（共通のAI手札選択ロジックを使用、最大2枚まで任意のため isExact=false）
     let dc = 0;
     if (h.length > 0) {
-      const dropIndices = getAIDiscardIndices(h, 2);
+      const dropIndices = getAIDiscardIndices(h, 2, false);
       // Splice from the end to avoid index shifting
       const sortedDropIndices = [...dropIndices].sort((a, b) => b - a);
       for (let i of sortedDropIndices) {
@@ -4382,9 +4382,11 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   }
 
   let dC = defBoard[dLane];
+  let isPhaseBypass = false;
   if (dC && hasSkill(dC, 'phase') !== aHasPhase) {
     if (!hasSkill(dC, 'defender') && !(dC.stunTurns > 0)) {
       dC = null; // 位相が合わないため完全すり抜け（直接攻撃扱い）
+      isPhaseBypass = true;
     }
   }
   // 正面のカードを特定
@@ -5345,11 +5347,16 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         });
       } else {
         defHP -= finalDmg;
+        if (isPhaseBypass) {
+          state.phaseBypassDamageTaken =
+            (state.phaseBypassDamageTaken || 0) + finalDmg;
+        }
         events.push({
           type: 'damage_player',
           side: defSide,
           amount: finalDmg,
           source: 'direct_attack',
+          isPhaseBypass,
         });
         applyExtort(aC, defSide, attackerSide, aLane, events, state);
       }

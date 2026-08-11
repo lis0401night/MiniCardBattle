@@ -716,9 +716,9 @@ export async function endTurnLogic(o) {
             await discardCard('red', dropped, undefined, false);
           }
         } else {
-          // AIの破棄選択は共通ロジックへ統一する
+          // AIの破棄選択は共通ロジックへ統一する（手札オーバー破棄はピッタリ枚数が必要なため true）
           const sortedIndices = [
-            ...getAIDiscardIndices(GameState.enemyHand, discardCount),
+            ...getAIDiscardIndices(GameState.enemyHand, discardCount, true),
           ].sort((a, b) => b - a);
           for (const idx of sortedIndices) {
             const dropped = GameState.enemyHand.splice(idx, 1)[0];

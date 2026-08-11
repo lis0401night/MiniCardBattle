@@ -770,7 +770,7 @@ export async function checkHasPublicWaitingRooms() {
         equalTo('waiting')
       );
       snapshot = await get(waitingQuery);
-    } catch (queryErr) {
+    } catch {
       // インデックス未登録時の安全フォールバック
       snapshot = await get(roomsRef);
     }
