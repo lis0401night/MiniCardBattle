@@ -13,11 +13,14 @@ const CUTIN_DISPLAY_DURATION = 2500;
 
 /**
  * リーダースキル発動時のキャラクターカットインアニメーションを表示するコンポーネント
+ * CSS（style.css）の演出は一切変更せず、画像読み込み完了（onLoad）を検知してから可視化することで、
+ * ネットワーク遅延によるカットイン画像サイズ確定前の位置ズレ・ガタつきを防止する。
  *
  * @returns {JSX.Element|null} カットインオーバーレイ要素
  */
 export default function CutinOverlay() {
   const [cutinData, setCutinData] = useState(null);
+  const [isImageReady, setIsImageReady] = useState(false);
 
   useEffect(() => {
     let timeoutId = null;
@@ -30,11 +33,13 @@ export default function CutinOverlay() {
      */
     window.showCutinReact = (config, isBlue) => {
       if (timeoutId) clearTimeout(timeoutId);
+      setIsImageReady(false);
       setCutinData({ config, isBlue, timestamp: Date.now() });
 
       // 指定時間経過後にカットイン表示を非表示化
       timeoutId = setTimeout(() => {
         setCutinData(null);
+        setIsImageReady(false);
       }, CUTIN_DISPLAY_DURATION);
     };
 
@@ -71,7 +76,14 @@ export default function CutinOverlay() {
     : 'drop-shadow(0 0 20px #ef4444)';
 
   return (
-    <div key={timestamp} id="screen-cutin" style={{ display: 'flex' }}>
+    <div
+      key={timestamp}
+      id="screen-cutin"
+      style={{
+        display: 'flex',
+        visibility: isImageReady ? 'visible' : 'hidden',
+      }}
+    >
       <div
         id="cutin-bg"
         className="cutin-bg"
@@ -83,6 +95,7 @@ export default function CutinOverlay() {
         src={charImgSrc}
         className="cutin-char"
         alt="Cutin Character"
+        onLoad={() => setIsImageReady(true)}
         style={{ filter: filterGlow }}
       />
       <div

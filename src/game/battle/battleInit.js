@@ -46,6 +46,7 @@ import {
   getCardImgUrl,
   getOrCreateUUID,
   getSeededRandom,
+  hasPremiumVariant,
   hasSkill,
   playSound,
   setRNGSeed,
@@ -299,7 +300,19 @@ export function prepareBattle() {
         : null;
 
     const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
-    const cardUrls = allCards.map((c) => c?.imgUrl).filter(Boolean);
+    const cardUrls = [];
+    allCards.forEach((c) => {
+      if (!c) return;
+      if (c.imgUrl) cardUrls.push(c.imgUrl);
+      const lookupId = c.baseId || c.id;
+      // プレミアム版が存在するカードについては、設定や同期状況に関わらず通常版・プレミアム版双方の画像URLを事前ロード対象に追加
+      if (hasPremiumVariant(lookupId)) {
+        const premUrl = getCardImgUrl({ ...c, isPremium: true });
+        const normUrl = getCardImgUrl({ ...c, isPremium: false });
+        if (premUrl) cardUrls.push(premUrl);
+        if (normUrl) cardUrls.push(normUrl);
+      }
+    });
 
     // 対戦で使用する自プレイヤーおよび敵リーダーのカットイン・立ち絵・スキン画像
     const playerSkin = GameState.playerSkins?.[GameState.playerConfig?.id];
