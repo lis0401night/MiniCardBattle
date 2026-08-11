@@ -29,8 +29,8 @@ import {
   BATTLE_ASSET_LOAD_TIMEOUT_MS,
   BATTLE_SCREEN_READY_TIMEOUT_MS,
   INITIAL_DRAW_COUNT,
-  MAX_HP,
   MATCHING_SCREEN_TIMEOUT_MS,
+  MAX_HP,
   PLACE_ANIMATION_DURATION,
   PREPARE_BATTLE_LOCK_TIMEOUT_MS,
   TURN_ORDER_START_DELAY_MS,
@@ -41,6 +41,7 @@ import {
 } from '../../utils/constants/fortuneHandicaps.js';
 import { LEADER_SKILLS } from '../../utils/constants/leaderSkills.js';
 import { STAGES } from '../../utils/constants/stages.js';
+import { toDeckObjects } from '../../utils/deckUtils.js';
 import {
   checkIsFreeMode,
   checkIsStoryMode,
@@ -67,19 +68,18 @@ import {
   loadAndDecodeAudio,
   SOUNDS,
 } from '../../utils/sounds.js';
-import { checkWinCondition } from './battleResult.js';
+import { isTutorialMode, runTutorialFlow } from '../tutorialEngine.js';
 import { drawCard, playCard } from './battleCombat.js';
 import {
   dispatchBattleAction,
   resetQueueProcessing,
   setPendingChoiceResolver,
 } from './battleQueue.js';
+import { checkWinCondition } from './battleResult.js';
 import { waitPlayerHandSelection } from './battleSelection.js';
 import { endTurnLogic, startTurn } from './battleTurn.js';
-import { toDeckObjects } from '../../utils/deckUtils.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import { BATTLE_PHASE } from './phases/phaseTypes.js';
-import { isTutorialMode, runTutorialFlow } from '../tutorialEngine.js';
 
 /** リーダー固有の最大HP定義。未定義のキャラクターは MAX_HP を使用する */
 const LEADER_MAX_HP_OVERRIDES = {
@@ -912,7 +912,7 @@ export function initBattleState() {
       clearTimeout(safetyTimeout);
       window.onBattleScreenReady = null;
 
-      // 演出が唐突に始まらないよう、マウント完了から正確に1秒待って開始する
+      // 演出が唐突に始まらないよう、マウント完了から TURN_ORDER_START_DELAY_MS 待って開始する
       setTimeout(() => {
         determineTurnOrder();
       }, TURN_ORDER_START_DELAY_MS);

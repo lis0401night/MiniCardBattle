@@ -416,7 +416,6 @@ function resolveDefenseResult() {
 
     // 負けた場合は敵防衛者に3ポイントと防衛回数を付与する
     // ※防衛側プレイヤーへのポイント加算（非冪等）。通信失敗時はログ出力のみ（ゲーム仕様上、厳密な再送処理は不要）。
-    const enemyUuid = GameState.enemyConfig?.uuid;
     if (enemyUuid) {
       savePointsToServer('update_defense_points.php', 0, 0, {
         uuid: enemyUuid,

@@ -711,6 +711,7 @@ export async function waitPlayerEnemyLaneSelection(
       GameState.targetSelectedLanes = [];
       GameState.targetMaxCount = 0;
       GameState.isEnemyTargetAllowEmpty = false;
+      GameState.isTargetCancelable = false;
       window.handleEnemyLaneClick = null;
       window.finishEnemyTargetSelection = null;
       battleEvents.off('ENEMY_LANE_CLICK', onEnemyLaneClick);
@@ -742,11 +743,9 @@ export async function waitPlayerEnemyLaneSelection(
 
         if (GameState.targetSelectedLanes.length >= count) {
           setTimeout(() => {
-            if (window.finishEnemyTargetSelection) {
-              window.finishEnemyTargetSelection();
-            } else {
-              battleEvents.emit('ENEMY_TARGET_SELECTION_FINISH');
-            }
+            // 自身の選択が既に終了している場合は確定しない（後続の選択待ちを誤確定させないため）
+            if (isCleanedUp) return;
+            onFinishEnemyTargetSelection();
           }, 300);
         }
       }
@@ -880,6 +879,7 @@ export async function waitPlayerAlliedLaneSelection(
       GameState.isAlliedTargetMode = false;
       GameState.targetSelectedLanes = [];
       GameState.targetMaxCount = 0;
+      GameState.isTargetCancelable = false;
       window.handleAlliedLaneClick = null;
       window.finishAlliedSelection = null;
       battleEvents.off('ALLIED_LANE_CLICK', onAlliedLaneClick);
@@ -906,11 +906,9 @@ export async function waitPlayerAlliedLaneSelection(
         if (GameState.targetSelectedLanes.length >= count) {
           // タップ決定演出のために300ms待ってから、非同期で決定処理を呼び出す
           setTimeout(() => {
-            if (window.finishAlliedSelection) {
-              window.finishAlliedSelection();
-            } else {
-              battleEvents.emit('ALLIED_SELECTION_FINISH');
-            }
+            // 自身の選択が既に終了している場合は確定しない（後続の選択待ちを誤確定させないため）
+            if (isCleanedUp) return;
+            onFinishAlliedSelection();
           }, 300);
         }
       }

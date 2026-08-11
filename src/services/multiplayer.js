@@ -168,7 +168,7 @@ function subscribeWaitingRooms(onUpdate, { cleanupExpired = true } = {}) {
       // 放置された無人部屋のバックグラウンドクリーンアップ
       if (cleanupExpired && expiredRoomKeys.length > 0) {
         expiredRoomKeys.forEach(({ key, code }) => {
-          removeRoomAndCode(key, code).catch(() => {});
+          removeExpiredRoomIfStillInactive(key, code).catch(() => {});
         });
       }
 
@@ -274,6 +274,29 @@ async function removeRoomAndCode(roomId, roomCode) {
     updates[`roomCodeIndex/${roomCode}`] = null;
   }
   await update(ref(database), updates);
+}
+
+/**
+ * 期限切れ判定されたルームが、現在も非アクティブ状態（ホストが離脱・停止中）であることを
+ * トランザクション内でアトミックに再確認した上で安全に削除する。
+ * @param {string} roomId - 対象のルームID
+ * @param {string} [roomCode] - 対象のルームコード
+ * @returns {Promise<void>}
+ */
+async function removeExpiredRoomIfStillInactive(roomId, roomCode) {
+  if (!database || !roomId) return;
+  const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
+  const result = await runTransaction(roomRef, (room) => {
+    if (!room || isHostAlive(room, getServerNow())) return undefined;
+    return null;
+  });
+
+  if (!result.committed || !roomCode) return;
+
+  const codeRef = ref(database, `roomCodeIndex/${roomCode}`);
+  await runTransaction(codeRef, (indexedRoomId) => {
+    return indexedRoomId === roomId ? null : undefined;
+  });
 }
 
 /**
@@ -678,8 +701,16 @@ export async function resetRoomStatusToWaiting() {
       return next;
     });
   } else {
-    const clientRef = ref(database, `${ROOMS_REF}/${currentRoomId}/client`);
-    await update(clientRef, { isReady: false });
+    await runTransaction(roomRef, (room) => {
+      if (!room?.client) return undefined;
+      return {
+        ...room,
+        client: {
+          ...room.client,
+          isReady: false,
+        },
+      };
+    });
   }
 }
 

@@ -22,7 +22,7 @@ export default function CutinOverlay() {
   const [cutinData, setCutinData] = useState(null);
   const [isImageReady, setIsImageReady] = useState(false);
   const timeoutRef = useRef(null);
-  const currentTimestampRef = useRef(null);
+  const currentRequestIdRef = useRef(0);
 
   useEffect(() => {
     /**
@@ -37,9 +37,9 @@ export default function CutinOverlay() {
         timeoutRef.current = null;
       }
       setIsImageReady(false);
-      const timestamp = Date.now();
-      currentTimestampRef.current = timestamp;
-      setCutinData({ config, isBlue, timestamp });
+      const requestId = currentRequestIdRef.current + 1;
+      currentRequestIdRef.current = requestId;
+      setCutinData({ config, isBlue, requestId });
     };
 
     return () => {
@@ -54,17 +54,17 @@ export default function CutinOverlay() {
    * カットイン画像の読み込み完了時に呼び出されるハンドラー
    * 画像ロード完了後に 2.5 秒タイマーを開始し、演出を可視化（マウント）する。
    *
-   * @param {number} loadTimestamp - ロードされたカットインのタイムスタンプ
+   * @param {number} loadRequestId - ロードされたカットインのリクエストID
    */
-  const handleImageLoad = (loadTimestamp) => {
+  const handleImageLoad = (loadRequestId) => {
     // 最新のカットイン要求でない場合はスキップ（連続発動時の競合防止）
-    if (loadTimestamp !== currentTimestampRef.current) return;
+    if (loadRequestId !== currentRequestIdRef.current) return;
 
     setIsImageReady(true);
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
-      if (loadTimestamp === currentTimestampRef.current) {
+      if (loadRequestId === currentRequestIdRef.current) {
         setCutinData(null);
         setIsImageReady(false);
       }
@@ -73,7 +73,7 @@ export default function CutinOverlay() {
 
   if (!cutinData) return null;
 
-  const { config, isBlue, timestamp } = cutinData;
+  const { config, isBlue, requestId } = cutinData;
   const textColor = isBlue ? '#fff' : '#ff0000';
   const textShadow = isBlue
     ? '0 0 20px #38bdf8, 3px 3px 0 #000'
@@ -105,20 +105,20 @@ export default function CutinOverlay() {
           src={charImgSrc}
           alt=""
           style={{ display: 'none' }}
-          onLoad={() => handleImageLoad(timestamp)}
+          onLoad={() => handleImageLoad(requestId)}
         />
       )}
 
       {/* ロード完了後にアニメーション演出コンテナを可視化（マウント）する */}
       {isImageReady && (
-        <div key={timestamp} id="screen-cutin" style={{ display: 'flex' }}>
+        <div key={requestId} id="screen-cutin" style={{ display: 'flex' }}>
           <div
             id="cutin-bg"
             className="cutin-bg"
             style={{ background: bgGradient }}
           ></div>
           <img
-            key={`cutin-img-${timestamp}`}
+            key={`cutin-img-${requestId}`}
             id="cutin-char-img"
             src={charImgSrc}
             className="cutin-char"
