@@ -83,6 +83,34 @@ export default function ToolNavigation() {
   };
 
   /**
+   * 現在のページのロケーションに応じて、ツールへの適切な相対パスを算出する
+   * @param {string} targetPath 定義されているターゲットパス（例: '/tool/cardscore.html'）
+   * @returns {string} 解決された相対パス
+   */
+  const resolveToolPath = (targetPath) => {
+    if (!targetPath) return '#';
+    if (!currentPath) return targetPath;
+
+    const cleanTarget = targetPath.startsWith('/')
+      ? targetPath.slice(1)
+      : targetPath;
+    const normalizedCurrent = currentPath.replace(/\\/g, '/');
+
+    // 現在地が /tool/chara_assetmaker/ のように tool 配下のサブディレクトリの場合
+    if (/\btool\/[^/]+\//i.test(normalizedCurrent)) {
+      return '../' + cleanTarget.replace(/^tool\//, '');
+    }
+
+    // 現在地が /tool/ 直下（tool/cardscore.html など）の場合
+    if (/\btool\//i.test(normalizedCurrent)) {
+      return './' + cleanTarget.replace(/^tool\//, '');
+    }
+
+    // 現在地がルートの場合
+    return './' + cleanTarget;
+  };
+
+  /**
    * 現在選択されている（アクティブな）ツールの判定
    *
    * @param {string} itemPath 判定対象のツールのパス
@@ -90,7 +118,8 @@ export default function ToolNavigation() {
    */
   const isActive = (itemPath) => {
     if (!currentPath) return false;
-    return currentPath.endsWith(itemPath) || currentPath.includes(itemPath);
+    const filename = itemPath.split('/').pop();
+    return !!filename && currentPath.endsWith(filename);
   };
 
   return (
@@ -145,12 +174,13 @@ export default function ToolNavigation() {
         <ul className="tool-nav-list">
           {TOOL_NAV_ITEMS.map((item) => {
             const active = isActive(item.path);
+            const resolvedPath = resolveToolPath(item.path);
             return (
               <li
                 key={item.id}
                 className={`tool-nav-item ${active ? 'active' : ''}`}
               >
-                <a href={item.path}>
+                <a href={resolvedPath}>
                   <span className="tool-nav-icon">{item.icon}</span>
                   <div>
                     <div>{item.name}</div>

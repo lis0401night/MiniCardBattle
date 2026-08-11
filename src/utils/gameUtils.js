@@ -1538,9 +1538,9 @@ export function resolveAssetUrl(url) {
     }
   }
 
-  // 先頭が assets/ で始まっている場合はローカルルート相対パス /assets/ に補正
+  // 先頭が assets/ で始まっている場合は相対パス ./assets/ に補正
   if (url.startsWith('assets/')) {
-    return '/' + url;
+    return './' + url;
   }
 
   return url;

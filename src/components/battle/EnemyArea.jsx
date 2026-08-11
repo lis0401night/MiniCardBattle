@@ -1,7 +1,7 @@
 import { GameState } from '../../state/gameState.js';
 import {
   getSkinImage,
-  BOSS_CHARACTER_IDS,
+  getIconFramePath,
 } from '../../utils/constants/characters.js';
 import {
   MAX_DISCARD_PREVIEW_COUNT,
@@ -66,7 +66,7 @@ export default function EnemyArea({
             />
           </div>
           <img
-            src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(enemyConfig.id) ? 'red' : 'gold'}.webp`}
+            src={getIconFramePath(enemyConfig.id)}
             className="icon-frame"
             alt="frame"
           />

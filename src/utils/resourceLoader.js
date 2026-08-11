@@ -11,6 +11,7 @@ import { getCardImgUrl, hasPremiumVariant } from './gameUtils.js';
 import { appendVersionQuery } from './constants/config.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import { VFX_DATA } from './constants/vfx.js';
+import { UI_IMAGES } from './constants/uiImages.js';
 
 let isPreloaded = false;
 
@@ -99,7 +100,7 @@ export async function preloadAllGameResources(onProgress) {
 
   const urlsToLoad = new Set();
 
-  // タイトルなど起動直後に必要な画像は優先的に入れておく
+  // 1. タイトルなど起動直後に必要な画像・ロゴ
   urlsToLoad.add(appendVersionQuery('assets/ui/title_logo.png'));
   const MAX_TITLE_BGS = 3;
   for (let i = 1; i <= MAX_TITLE_BGS; i++) {
@@ -110,10 +111,44 @@ export async function preloadAllGameResources(onProgress) {
     );
   }
 
-  // カード・キャラ・VFX画像は非同期ロード（裏でゆっくりロードし、起動完了はブロックしない）
+  // 2. メインメニュー表示用UIボタン画像全種およびメイン選択背景
+  Object.values(UI_IMAGES).forEach((url) => {
+    if (url) urlsToLoad.add(url);
+  });
+  urlsToLoad.add(
+    appendVersionQuery('assets/backgrounds/background_select.webp')
+  );
+  urlsToLoad.add(appendVersionQuery('assets/ui/ui_btn_watermark.png'));
+  urlsToLoad.add(appendVersionQuery('assets/ui/ui_btn_ornament.png'));
+
+  // カード・キャラ・VFX・その他UIパーツ画像は非同期ロード（裏でゆっくりロードし、起動完了はブロックしない）
   const asyncUrlsToLoad = new Set();
 
-  // 1. カード画像
+  // A. その他のメニュー背景画像
+  const extraBackgrounds = [
+    'assets/backgrounds/background_online.webp',
+    'assets/backgrounds/background_deck.webp',
+    'assets/backgrounds/background_gallery.webp',
+    'assets/backgrounds/background_story.webp',
+    'assets/backgrounds/background_dungeon.webp',
+    'assets/backgrounds/background_rules.webp',
+  ];
+  extraBackgrounds.forEach((bg) => asyncUrlsToLoad.add(appendVersionQuery(bg)));
+
+  // B. 対戦・演出用パーツ画像
+  const extraUiParts = [
+    'assets/ui/vs_logo.png',
+    'assets/ui/chara_frame.png',
+    'assets/ui/ui_card_back.png',
+    'assets/ui/packimg01.png',
+    'assets/ui/packtextimg01.png',
+    'assets/ui/first_player.png',
+    'assets/ui/second_player.png',
+    'assets/icons/icon_exclamation.webp',
+  ];
+  extraUiParts.forEach((part) => asyncUrlsToLoad.add(appendVersionQuery(part)));
+
+  // C. カード画像
   CARD_MASTER.forEach((card) => {
     // 通常版画像
     const normalUrl = getCardImgUrl({ id: card.id, isPremium: false });
@@ -126,10 +161,10 @@ export async function preloadAllGameResources(onProgress) {
     }
   });
 
-  // 2. 全キャラクター立ち絵・スキン画像
+  // D. 全キャラクター立ち絵・スキン画像
   getAllCharacterImageUrls().forEach((url) => asyncUrlsToLoad.add(url));
 
-  // 3. 全VFX演出画像
+  // E. 全VFX演出画像
   getAllVfxImageUrls().forEach((url) => asyncUrlsToLoad.add(url));
 
   // BGM と SE

@@ -3,6 +3,7 @@ import { saveDeck } from '../../services/deck.js';
 import { setupDialogueScreen } from '../../services/uiDialogue.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 import { checkIsHighDiffMode, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
@@ -141,8 +142,9 @@ export default function RewardOverlay() {
 
   // 対戦相手の画像を取得(フォールバック付き)
   const enemyId = GameState.enemyConfig?.id || 'android';
-  const enemyImg =
-    GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.webp`;
+  const enemyImg = appendVersionQuery(
+    GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.webp`
+  );
 
   // 難易度に応じた発光色を判定
   const getGlowColorClass = () => {
@@ -320,11 +322,11 @@ export default function RewardOverlay() {
           z-index: 11;
           
           /* パック形状での切り抜き (はみ出し防止) */
-          mask-image: url('assets/ui/packimg01.png');
+          mask-image: url('${appendVersionQuery('assets/ui/packimg01.png')}');
           mask-size: contain;
           mask-repeat: no-repeat;
           mask-position: center;
-          -webkit-mask-image: url('assets/ui/packimg01.png');
+          -webkit-mask-image: url('${appendVersionQuery('assets/ui/packimg01.png')}');
           -webkit-mask-size: contain;
           -webkit-mask-repeat: no-repeat;
           -webkit-mask-position: center;
@@ -417,7 +419,7 @@ export default function RewardOverlay() {
               >
                 <img
                   className="pack-image"
-                  src="assets/ui/packimg01.png"
+                  src={appendVersionQuery('assets/ui/packimg01.png')}
                   alt="Booster Pack"
                 />
                 <div className="enemy-portrait-frame">
@@ -429,12 +431,12 @@ export default function RewardOverlay() {
                 </div>
                 <img
                   className="pack-image specular"
-                  src="assets/ui/packimg01.png"
+                  src={appendVersionQuery('assets/ui/packimg01.png')}
                   alt="Booster Pack Specular"
                 />
                 <img
                   className="pack-text-image"
-                  src="assets/ui/packtextimg01.png"
+                  src={appendVersionQuery('assets/ui/packtextimg01.png')}
                   alt="Pack Text"
                 />
               </div>
@@ -454,7 +456,7 @@ export default function RewardOverlay() {
             {/* 1. パック画像（底） */}
             <img
               className="pack-image"
-              src="assets/ui/packimg01.png"
+              src={appendVersionQuery('assets/ui/packimg01.png')}
               alt="Booster Pack"
             />
             {/* 2. キャラクター画像（中・乗算ブレンド） */}
@@ -468,13 +470,13 @@ export default function RewardOverlay() {
             {/* 3. パック画像（天・オーバーレイでハイライトを強調） */}
             <img
               className="pack-image specular"
-              src="assets/ui/packimg01.png"
+              src={appendVersionQuery('assets/ui/packimg01.png')}
               alt="Booster Pack Specular"
             />
             {/* 4. パックのテキスト画像（最前面） */}
             <img
               className="pack-text-image"
-              src="assets/ui/packtextimg01.png"
+              src={appendVersionQuery('assets/ui/packtextimg01.png')}
               alt="Pack Text"
             />
 

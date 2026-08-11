@@ -3,7 +3,10 @@ import { GameState } from '../../state/gameState.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { getStageBackgroundStyle } from '../../utils/constants/config.js';
+import {
+  getStageBackgroundStyle,
+  appendVersionQuery,
+} from '../../utils/constants/config.js';
 import './MatchingScreen.css';
 
 const TIMING = {
@@ -130,12 +133,12 @@ export default function MatchingScreen({
       <div className="matching-side enemy-side">
         <div className="matching-char-wrapper">
           <img
-            src={enemy.image}
+            src={appendVersionQuery(enemy.image)}
             alt={enemy.name}
             className="matching-char-img"
           />
           <img
-            src="assets/ui/chara_frame.png"
+            src={appendVersionQuery('assets/ui/chara_frame.png')}
             alt="frame"
             className="matching-char-frame"
           />
@@ -152,12 +155,12 @@ export default function MatchingScreen({
       <div className="matching-side player-side">
         <div className="matching-char-wrapper">
           <img
-            src={player.image}
+            src={appendVersionQuery(player.image)}
             alt={player.name}
             className="matching-char-img"
           />
           <img
-            src="assets/ui/chara_frame.png"
+            src={appendVersionQuery('assets/ui/chara_frame.png')}
             alt="frame"
             className="matching-char-frame"
           />
@@ -171,7 +174,11 @@ export default function MatchingScreen({
       </div>
 
       {/* VSロゴ */}
-      <img src="assets/ui/vs_logo.png" alt="VS" className="matching-vs-logo" />
+      <img
+        src={appendVersionQuery('assets/ui/vs_logo.png')}
+        alt="VS"
+        className="matching-vs-logo"
+      />
     </div>
   );
 }

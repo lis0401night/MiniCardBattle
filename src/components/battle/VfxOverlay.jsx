@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { VFX_DATA } from '../../utils/constants/vfx.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 import { playSound, sleep } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
@@ -253,7 +254,7 @@ function VfxItem({ effect }) {
             }}
           >
             <SpriteAnimation
-              src={data.src}
+              src={appendVersionQuery(data.src)}
               columns={data.columns}
               rows={data.rows}
               frameCount={data.frameCount}
@@ -273,7 +274,7 @@ function VfxItem({ effect }) {
           >
             {/* 背後のぼかしエフェクト */}
             <img
-              src="assets/ui/ui_joker.png"
+              src={appendVersionQuery('assets/ui/ui_joker.png')}
               className="vfx-joker-blur"
               alt=""
               style={{
@@ -287,7 +288,7 @@ function VfxItem({ effect }) {
             />
             {/* 手前のメインシンボル */}
             <img
-              src="assets/ui/ui_joker.png"
+              src={appendVersionQuery('assets/ui/ui_joker.png')}
               className="vfx-joker-main"
               alt="Joker"
               style={{

@@ -23,7 +23,6 @@ import {
   clearActionQueueAndRegenerateSeed,
   getIsHost,
   resetRoomStatusToWaiting,
-  setPlayerReadyOnly,
 } from '../../services/multiplayer.js';
 import {
   checkFortuneAchievements,

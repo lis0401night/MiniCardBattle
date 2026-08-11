@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 
 const DeckIcon = ({ count, max = 20 }) => {
   const uniqueId = useId();
@@ -99,7 +100,7 @@ const DeckIcon = ({ count, max = 20 }) => {
             y={topY}
           >
             <image
-              href="assets/ui/ui_card_back.png"
+              href={appendVersionQuery('assets/ui/ui_card_back.png')}
               x="0"
               y="0"
               width="40"

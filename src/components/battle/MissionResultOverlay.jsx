@@ -9,7 +9,10 @@ import {
 import { getSkinImage } from '../../utils/constants/characters.js';
 import { getSeededRandom, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
-import { MAX_CARD_COPIES } from '../../utils/constants/config.js';
+import {
+  MAX_CARD_COPIES,
+  appendVersionQuery,
+} from '../../utils/constants/config.js';
 import MenuButton from '../common/MenuButton.jsx';
 import { evaluateMission } from '../../game/missionLogic.js';
 
@@ -236,12 +239,18 @@ export default function MissionResultOverlay() {
                   {isActive && (
                     <div className="mission-result-pack-flash">
                       <img
-                        src="assets/ui/packimg01.png"
+                        src={appendVersionQuery('assets/ui/packimg01.png')}
                         alt="pack"
                         className="mission-result-pack-img"
                       />
                       {enemyImg && (
-                        <div className="mission-result-pack-mask">
+                        <div
+                          className="mission-result-pack-mask"
+                          style={{
+                            WebkitMaskImage: `url(${appendVersionQuery('assets/ui/packimg01.png')})`,
+                            maskImage: `url(${appendVersionQuery('assets/ui/packimg01.png')})`,
+                          }}
+                        >
                           <img
                             src={enemyImg}
                             alt="enemy"
@@ -250,12 +259,12 @@ export default function MissionResultOverlay() {
                         </div>
                       )}
                       <img
-                        src="assets/ui/packimg01.png"
+                        src={appendVersionQuery('assets/ui/packimg01.png')}
                         alt="pack specular"
                         className="mission-result-pack-img mission-result-pack-specular"
                       />
                       <img
-                        src="assets/ui/packtextimg01.png"
+                        src={appendVersionQuery('assets/ui/packtextimg01.png')}
                         alt="pack text"
                         className="mission-result-pack-img mission-result-pack-text"
                       />
