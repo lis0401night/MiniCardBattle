@@ -442,26 +442,8 @@ export function endBattle() {
           incrementStat('defenseAttackWins');
         }
 
-        // 相手プレイヤーの全勝・全敗判定用の対戦結果を保存
-        const defenseTargetsRaw = localStorage.getItem(DEFENSE_TARGETS_KEY);
-        let defenseTargets = [];
-        try {
-          if (defenseTargetsRaw) defenseTargets = JSON.parse(defenseTargetsRaw);
-        } catch (e) {
-          console.warn('防衛ターゲットの読み込みに失敗しました:', e);
-        }
-        if (Array.isArray(defenseTargets)) {
-          const targetItem = defenseTargets.find(
-            (t) => t.uuid === GameState.enemyConfig?.uuid
-          );
-          if (targetItem) {
-            targetItem.isWon = true;
-            localStorage.setItem(
-              DEFENSE_TARGETS_KEY,
-              JSON.stringify(defenseTargets)
-            );
-          }
-        }
+        // 勝利・敗北を問わず、防衛対戦終了後は次回新しい対戦相手が選出されるようターゲットキャッシュをクリアする
+        localStorage.removeItem(DEFENSE_TARGETS_KEY);
 
         // ポイント獲得のアラートを出してから、会話へ進む
         playSound(SOUNDS.seSkill);
@@ -473,6 +455,9 @@ export function endBattle() {
         );
         return;
       } else if (GameState.lastBattleResult === 'lose') {
+        // 勝利・敗北を問わず、防衛対戦終了後は次回新しい対戦相手が選出されるようターゲットキャッシュをクリアする
+        localStorage.removeItem(DEFENSE_TARGETS_KEY);
+
         // 負けた場合は敵に3ポイントと防衛回数を付与する
         const enemyUuid = GameState.enemyConfig?.uuid;
         if (enemyUuid) {
@@ -492,6 +477,7 @@ export function endBattle() {
 
         showDefenseBattleList();
       } else {
+        localStorage.removeItem(DEFENSE_TARGETS_KEY);
         showDefenseBattleList();
       }
       return;
