@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { getSkinImage } from '../../utils/constants/characters.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
@@ -13,18 +13,18 @@ const CUTIN_DISPLAY_DURATION = 2500;
 
 /**
  * リーダースキル発動時のキャラクターカットインアニメーションを表示するコンポーネント
- * CSS（style.css）の演出は一切変更せず、画像読み込み完了（onLoad）を検知してから可視化することで、
- * ネットワーク遅延によるカットイン画像サイズ確定前の位置ズレ・ガタつきを防止する。
+ * 画像の読み込み完了 (onLoad) を検知してからタイマー（2.5秒）とCSSアニメーション演出を開始することで、
+ * ネットワーク遅延によるカットイン時間短縮・CSSキーフレームの途切れ・位置ズレを完全に防止します。
  *
  * @returns {JSX.Element|null} カットインオーバーレイ要素
  */
 export default function CutinOverlay() {
   const [cutinData, setCutinData] = useState(null);
   const [isImageReady, setIsImageReady] = useState(false);
+  const timeoutRef = useRef(null);
+  const currentTimestampRef = useRef(null);
 
   useEffect(() => {
-    let timeoutId = null;
-
     /**
      * リーダースキル発動時のカットイン演出を起動するReactブリッジ関数
      *
@@ -32,22 +32,44 @@ export default function CutinOverlay() {
      * @param {boolean} isBlue - 自陣（青チーム）かどうか
      */
     window.showCutinReact = (config, isBlue) => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       setIsImageReady(false);
-      setCutinData({ config, isBlue, timestamp: Date.now() });
-
-      // 指定時間経過後にカットイン表示を非表示化
-      timeoutId = setTimeout(() => {
-        setCutinData(null);
-        setIsImageReady(false);
-      }, CUTIN_DISPLAY_DURATION);
+      const timestamp = Date.now();
+      currentTimestampRef.current = timestamp;
+      setCutinData({ config, isBlue, timestamp });
     };
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       delete window.showCutinReact;
     };
   }, []);
+
+  /**
+   * カットイン画像の読み込み完了時に呼び出されるハンドラー
+   * 画像ロード完了後に 2.5 秒タイマーを開始し、演出を可視化（マウント）する。
+   *
+   * @param {number} loadTimestamp - ロードされたカットインのタイムスタンプ
+   */
+  const handleImageLoad = (loadTimestamp) => {
+    // 最新のカットイン要求でない場合はスキップ（連続発動時の競合防止）
+    if (loadTimestamp !== currentTimestampRef.current) return;
+
+    setIsImageReady(true);
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (loadTimestamp === currentTimestampRef.current) {
+        setCutinData(null);
+        setIsImageReady(false);
+      }
+    }, CUTIN_DISPLAY_DURATION);
+  };
 
   if (!cutinData) return null;
 
@@ -76,38 +98,45 @@ export default function CutinOverlay() {
     : 'drop-shadow(0 0 20px #ef4444)';
 
   return (
-    <div
-      key={timestamp}
-      id="screen-cutin"
-      style={{
-        display: 'flex',
-        visibility: isImageReady ? 'visible' : 'hidden',
-      }}
-    >
-      <div
-        id="cutin-bg"
-        className="cutin-bg"
-        style={{ background: bgGradient }}
-      ></div>
-      <img
-        key={`cutin-img-${timestamp}`}
-        id="cutin-char-img"
-        src={charImgSrc}
-        className="cutin-char"
-        alt="Cutin Character"
-        onLoad={() => setIsImageReady(true)}
-        style={{ filter: filterGlow }}
-      />
-      <div
-        id="cutin-text"
-        className="cutin-text-img"
-        style={{
-          color: textColor,
-          textShadow: textShadow,
-        }}
-      >
-        {config.leaderSkill?.name ?? 'スキル'}!!
-      </div>
-    </div>
+    <>
+      {/* ロード未完了時は隠しimgタグでプリロードを行い、onLoad完了を検知する */}
+      {!isImageReady && (
+        <img
+          src={charImgSrc}
+          alt=""
+          style={{ display: 'none' }}
+          onLoad={() => handleImageLoad(timestamp)}
+        />
+      )}
+
+      {/* ロード完了後にアニメーション演出コンテナを可視化（マウント）する */}
+      {isImageReady && (
+        <div key={timestamp} id="screen-cutin" style={{ display: 'flex' }}>
+          <div
+            id="cutin-bg"
+            className="cutin-bg"
+            style={{ background: bgGradient }}
+          ></div>
+          <img
+            key={`cutin-img-${timestamp}`}
+            id="cutin-char-img"
+            src={charImgSrc}
+            className="cutin-char"
+            alt="Cutin Character"
+            style={{ filter: filterGlow }}
+          />
+          <div
+            id="cutin-text"
+            className="cutin-text-img"
+            style={{
+              color: textColor,
+              textShadow: textShadow,
+            }}
+          >
+            {config.leaderSkill?.name ?? 'スキル'}!!
+          </div>
+        </div>
+      )}
+    </>
   );
 }

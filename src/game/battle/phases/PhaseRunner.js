@@ -21,7 +21,7 @@ import { GameState } from '../../../state/gameState.js';
  * @returns {Promise<{ error: Error|null }>}
  */
 export async function runPhases(phases, context = {}) {
-  if (!Array.isArray(phases)) return;
+  if (!Array.isArray(phases)) return { error: null };
 
   /** 実行中に発生した最初の例外（全フェイズ完了後に呼び出し元へ伝える） */
   let firstError = null;
@@ -78,5 +78,8 @@ export async function runPhases(phases, context = {}) {
       firstError
     );
   }
+
+  // 全フェイズ完了後はサブフェイズ追跡状態をクリアする
+  GameState.turnSubPhase = null;
   return { error: firstError };
 }

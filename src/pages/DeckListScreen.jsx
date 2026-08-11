@@ -798,8 +798,7 @@ export default function DeckListScreen({ switchScreen }) {
                                 const deckTitle =
                                   deck.name || `デッキ${idx + 1}`;
                                 const deckLeaderSkill =
-                                  CHARACTERS[deck.leaderId]?.leaderSkill ||
-                                  null;
+                                  char?.leaderSkill || null;
                                 window.showEnemyDeckModal(
                                   deck.cards || [],
                                   deckTitle,

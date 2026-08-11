@@ -12,6 +12,7 @@ import {
   setRoomStatusToBattle,
   updatePlayerReady,
   updateRoomHeartbeat,
+  resetRoomStatusToWaiting,
 } from '../services/multiplayer.js';
 import { showOnlineMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
@@ -47,6 +48,7 @@ export default function OnlineLobbyScreen() {
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef(null);
   const battleStartTimeoutRef = useRef(null);
+  const latestRoomDataRef = useRef(null);
 
   // Initial config extraction
   useEffect(() => {
@@ -142,6 +144,8 @@ export default function OnlineLobbyScreen() {
         !data.host?.leaderConfig?.leaderConfig ||
         !data.client?.leaderConfig?.leaderConfig
       ) {
+        // 設定が揃っていない場合もタイマー参照を解除し、以降の再開始をブロックしない
+        battleStartTimeoutRef.current = null;
         return;
       }
       const isHost = getIsHost();
@@ -156,6 +160,10 @@ export default function OnlineLobbyScreen() {
         );
         showAlertModal(
           '対戦の同期情報を取得できませんでした。もう一度お試しください。'
+        );
+        // DB上の 'battle' 状態を 'waiting' へ戻し、状態不整合を残さない
+        resetRoomStatusToWaiting().catch((e) =>
+          console.warn('resetRoomStatusToWaiting failed:', e)
         );
         battleStartTimeoutRef.current = null;
         return;
@@ -178,18 +186,14 @@ export default function OnlineLobbyScreen() {
       GameState.enemyConfig.playmat = opData.leaderConfig.playmat || null;
       GameState.selectedPlaymatId = meData.leaderConfig.playmat || null;
 
-      if (!GameState.playerSkins) GameState.playerSkins = {};
-      // 前モードの敵スキン設定をクリアし、漏洩を防ぐ
+      // 前モードのスキン設定をクリアし、設定の漏洩を防ぐ
+      GameState.playerSkins = {};
       GameState.enemySkins = {};
 
-      if (meData.leaderConfig.skin) {
-        GameState.playerSkins[GameState.playerConfig.id] =
-          meData.leaderConfig.skin;
-      }
-      if (opData.leaderConfig.skin) {
-        GameState.enemySkins[GameState.enemyConfig.id] =
-          opData.leaderConfig.skin;
-      }
+      GameState.playerSkins[GameState.playerConfig.id] =
+        meData.leaderConfig.skin || 'default';
+      GameState.enemySkins[GameState.enemyConfig.id] =
+        opData.leaderConfig.skin || 'default';
 
       GameState.playerConfig.image = getSkinImage(
         GameState.playerConfig,
@@ -241,10 +245,6 @@ export default function OnlineLobbyScreen() {
             'iconDamage'
           ) || GameState.enemyConfig.icon;
 
-      // enemySkins は上で既にリセット・設定済み
-      GameState.enemySkins[GameState.enemyConfig.id] =
-        opData.leaderConfig.skin || 'default';
-
       // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
       multiplayerCallbacks.onRoomClosed = async () => {
         GameState.isBattleEnded = true;
@@ -262,7 +262,7 @@ export default function OnlineLobbyScreen() {
       GameState.appState = 'battle';
 
       window.dispatchEvent(new Event('startOnlineBattle'));
-      if (typeof prepareBattle === 'function') prepareBattle();
+      prepareBattle();
       battleStartTimeoutRef.current = null;
     };
 
@@ -295,8 +295,20 @@ export default function OnlineLobbyScreen() {
         return;
       }
 
+      // 3-a. 開始条件が崩れた場合（相手のReady解除・退室）は開始タイマーを解除する
+      if (
+        battleStartTimeoutRef.current &&
+        !(data && data.host?.isReady && data.client?.isReady)
+      ) {
+        clearTimeout(battleStartTimeoutRef.current);
+        battleStartTimeoutRef.current = null;
+      }
+
       // 3. 両方がReadyかつまだ対戦中ではない場合にバトル開始タイマーをセット
       if (data && data.host?.isReady && data.client?.isReady) {
+        // タイマー実行時に参照する最新ルームデータを更新する
+        latestRoomDataRef.current = data;
+
         // すでにタイマーが起動中の場合は clearTimeout でリセットせず既存タイマーを継続（キャンセル事故防止）
         if (battleStartTimeoutRef.current) {
           return;
@@ -315,7 +327,7 @@ export default function OnlineLobbyScreen() {
             battleStartTimeoutRef.current = null;
             return;
           }
-          executeStartBattle(data);
+          executeStartBattle(latestRoomDataRef.current);
         }, ONLINE_BATTLE_START_DELAY_MS);
       }
     };
@@ -335,12 +347,18 @@ export default function OnlineLobbyScreen() {
     }
 
     // ホストとしてロビーで待機中の間、一定周期ごとに生存信号（ハートビート）を送信するタイマー
-    const heartbeatInterval = setInterval(() => {
+    const sendHeartbeat = () => {
       const activeRoomId = getCurrentRoomId();
       if (getIsHost() && activeRoomId && GameState.appState !== 'battle') {
         updateRoomHeartbeat(activeRoomId);
       }
-    }, ROOM_HEARTBEAT_INTERVAL_MS);
+    };
+    // マウント直後に1回送信し、初回送信までの空白時間を作らない
+    sendHeartbeat();
+    const heartbeatInterval = setInterval(
+      sendHeartbeat,
+      ROOM_HEARTBEAT_INTERVAL_MS
+    );
 
     return () => {
       clearInterval(heartbeatInterval);

@@ -85,6 +85,66 @@ export function createUnionCard(owner, existingCard, consumedCard, masterData) {
 }
 
 /**
+ * 装備カードのパラメータおよびスキル（選択肢含む）を対象カードへ統合・加算適用する共通ヘルパー関数。
+ * DRY原則を遵守し、手札からのプレイ (playCard) および移動選択 (resolveMoveDestination) の両方から共通利用する。
+ * @param {object} target - 装備される対象カード
+ * @param {object} equipment - 装備するカード
+ * @param {Set} [movedIds] - 移動済みカードID集合（移動による装備時のみ使用）
+ */
+export function applyEquipment(target, equipment, movedIds) {
+  const equipPower = equipment.power || 0;
+  const currentPower = target.currentPower ?? target.power ?? 0;
+
+  target.power = (target.power || 0) + equipPower;
+  target.basePower = (target.basePower || 0) + equipPower;
+  target.currentPower = currentPower + equipPower;
+
+  // スキルの統合
+  const equipSkills = (equipment.skills || []).filter(
+    (skill) => skill.id !== 'equip'
+  );
+  if (equipSkills.length > 0) {
+    mergeCardSkills(target, equipSkills);
+  }
+
+  // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
+  if (equipment.choices && equipment.choices.length > 0) {
+    target.choices = target.choices || [];
+    equipment.choices.forEach((pc) => {
+      const isDup = target.choices.some(
+        (tc) =>
+          tc.id === pc.id &&
+          tc.value === pc.value &&
+          tc.choiceGroup === pc.choiceGroup
+      );
+      if (!isDup) target.choices.push({ ...pc });
+    });
+  }
+  if (equipment.choices2 && equipment.choices2.length > 0) {
+    target.choices2 = target.choices2 || [];
+    equipment.choices2.forEach((pc) => {
+      const isDup = target.choices2.some(
+        (tc) =>
+          tc.id === pc.id &&
+          tc.value === pc.value &&
+          tc.choiceGroup === pc.choiceGroup
+      );
+      if (!isDup) target.choices2.push({ ...pc });
+    });
+  }
+
+  target.equippedCards = target.equippedCards || [];
+  target.equippedCards.push(equipment);
+  consumeArmSelf(target, equipment);
+
+  if (movedIds) {
+    movedIds.add(target.uid || target.id);
+  }
+
+  return { equipSkills };
+}
+
+/**
  * カードをマスターデータから初期状態に復元し、傀儡の返却先所有者を確定する。
  * @param {object} card - 復元対象のカード
  * @param {string} fallbackOwner - puppetOriginalOwner/owner が無い場合の所有者
@@ -748,57 +808,10 @@ export async function playCard(o, hI, l) {
     // 2. 装備（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
     if (canEquipCard(playingCard, b[l])) {
       const targetCard = b[l];
-      // 装備によるパワー加算
-      targetCard.power = (targetCard.power || 0) + (playingCard.power || 0);
-      targetCard.basePower =
-        (targetCard.basePower || 0) + (playingCard.power || 0);
-      targetCard.currentPower =
-        (targetCard.currentPower || 0) + (playingCard.power || 0);
-
-      // スキルの統合
-      targetCard.skills = targetCard.skills || [];
-
-      const equipSkills = [];
-      if (playingCard.skills) {
-        playingCard.skills.forEach((s) => {
-          if (s.id !== 'equip') equipSkills.push(s);
-        });
-      }
-      mergeCardSkills(targetCard, equipSkills);
-
-      // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
-      if (playingCard.choices && playingCard.choices.length > 0) {
-        targetCard.choices = targetCard.choices || [];
-        playingCard.choices.forEach((pc) => {
-          const isDup = targetCard.choices.some(
-            (tc) =>
-              tc.id === pc.id &&
-              tc.value === pc.value &&
-              tc.choiceGroup === pc.choiceGroup
-          );
-          if (!isDup) targetCard.choices.push({ ...pc });
-        });
-      }
-      if (playingCard.choices2 && playingCard.choices2.length > 0) {
-        targetCard.choices2 = targetCard.choices2 || [];
-        playingCard.choices2.forEach((pc) => {
-          const isDup = targetCard.choices2.some(
-            (tc) =>
-              tc.id === pc.id &&
-              tc.value === pc.value &&
-              tc.choiceGroup === pc.choiceGroup
-          );
-          if (!isDup) targetCard.choices2.push({ ...pc });
-        });
-      }
-
-      // 手札の装備カードを消費して対象カードにアタッチ
       const consumedCard = h.splice(hI, 1)[0];
-      targetCard.equippedCards = targetCard.equippedCards || [];
-      targetCard.equippedCards.push(consumedCard);
 
-      // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-      consumeArmSelf(targetCard, playingCard);
+      // 共通ヘルパー applyEquipment により装備・パラメータ・スキル・選択肢・武装消費を統合適用
+      const { equipSkills } = applyEquipment(targetCard, consumedCard);
 
       // 配置音・ボイス
       playSound(SOUNDS.sePlace);
@@ -983,8 +996,4 @@ export async function executeCombatPhase(atk) {
   // 戦闘フェーズ中に破壊されたカード（トークン含む）を一括クリーニング
   await cleanupDestroyedCards();
   checkWinCondition();
-}
-
-if (typeof window !== 'undefined') {
-  window.discardCard = discardCard;
 }

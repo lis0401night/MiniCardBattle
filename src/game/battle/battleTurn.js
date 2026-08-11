@@ -22,8 +22,6 @@ import {
   createDamagePopup,
   getSeededRandom,
   hasSkill,
-  mergeCardSkills,
-  consumeArmSelf,
   playSound,
   sleep,
 } from '../../utils/gameUtils.js';
@@ -39,6 +37,7 @@ import {
   cleanupDestroyedCards,
   drawCard,
   createUnionCard,
+  applyEquipment,
 } from './battleCombat.js';
 import {
   waitPlayerLaneSelection,
@@ -50,37 +49,6 @@ import { dispatchBattleAction, getIsQueueProcessing } from './battleQueue.js';
 import { BATTLE_PHASE, TURN_SUB_PHASE } from './phases/phaseTypes.js';
 import { runPhases } from './phases/PhaseRunner.js';
 import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
-
-/**
- * 装備カードのパラメータおよびスキルを対象カードへ統合・加算適用する共通ヘルパー関数。
- * DRY原則を遵守し、resolveMoveDestination と handlePlayerMove の両方から同一のロジックを呼び出す。
- * @param {object} target - 装備される対象カード
- * @param {object} equipment - 装備するカード
- * @param {Set} [movedIds] - 移動済みカードID集合
- */
-function applyEquipment(target, equipment, movedIds) {
-  const equipPower = equipment.power || 0;
-  const currentPower = target.currentPower ?? target.power ?? 0;
-
-  target.power = (target.power || 0) + equipPower;
-  target.basePower = (target.basePower || 0) + equipPower;
-  target.currentPower = currentPower + equipPower;
-
-  const equipSkills = (equipment.skills || []).filter(
-    (skill) => skill.id !== 'equip'
-  );
-  if (equipSkills.length > 0) {
-    mergeCardSkills(target, equipSkills);
-  }
-
-  target.equippedCards = target.equippedCards || [];
-  target.equippedCards.push(equipment);
-  consumeArmSelf(target, equipment);
-
-  if (movedIds) {
-    movedIds.add(target.uid || target.id);
-  }
-}
 
 /**
  * 移動先レーンに既存カードがある場合の解決処理を行う。
@@ -474,7 +442,9 @@ function transitionAfterTurnStart(owner) {
 const TURN_PHASES = [
   {
     id: TURN_SUB_PHASE.STATUS_COUNTDOWN,
-    execute: (ctx) => decrementStatusCounters(ctx.owner),
+    execute: (ctx) => {
+      decrementStatusCounters(ctx.owner);
+    },
   },
   {
     id: TURN_SUB_PHASE.TUTORIAL_PAUSE_BEFORE_ENEMY_TURN,
@@ -489,19 +459,31 @@ const TURN_PHASES = [
   },
   {
     id: TURN_SUB_PHASE.TURN_START_SKILLS,
-    execute: (ctx) => triggerStartTurnSkills(ctx.owner),
+    // 戻り値を PhaseRunner の中断シグナル（true）と誤認させないよう明示的に遮断
+    execute: async (ctx) => {
+      await triggerStartTurnSkills(ctx.owner);
+    },
   },
   {
     id: TURN_SUB_PHASE.VALKYRIA_CLEAR,
-    execute: (ctx) => clearValkyriaGuard(GameState, ctx.owner),
+    // 戻り値を PhaseRunner の中断シグナル（true）と誤認させないよう明示的に遮断
+    execute: (ctx) => {
+      clearValkyriaGuard(GameState, ctx.owner);
+    },
   },
   {
     id: TURN_SUB_PHASE.MOVE_SKILLS,
-    execute: (ctx) => handleMoveSkills(ctx.owner),
+    // 戻り値を PhaseRunner の中断シグナル（true）と誤認させないよう明示的に遮断
+    execute: async (ctx) => {
+      await handleMoveSkills(ctx.owner);
+    },
   },
   {
     id: TURN_SUB_PHASE.SP_INCREMENT,
-    execute: (ctx) => incrementSP(ctx.owner),
+    // 戻り値を PhaseRunner の中断シグナル（true）と誤認させないよう明示的に遮断
+    execute: (ctx) => {
+      incrementSP(ctx.owner);
+    },
   },
   {
     id: TURN_SUB_PHASE.TUTORIAL_PAUSE_BEFORE_COMBAT,
@@ -510,7 +492,10 @@ const TURN_PHASES = [
   },
   {
     id: TURN_SUB_PHASE.COMBAT,
-    execute: (ctx) => executeCombatIfPossible(ctx.owner),
+    execute: (ctx) => {
+      GameState.battlePhase = BATTLE_PHASE.COMBAT;
+      return executeCombatIfPossible(ctx.owner);
+    },
   },
   {
     id: TURN_SUB_PHASE.DRAW,
@@ -521,7 +506,9 @@ const TURN_PHASES = [
   },
   {
     id: TURN_SUB_PHASE.TRANSITION,
-    execute: (ctx) => transitionAfterTurnStart(ctx.owner),
+    execute: (ctx) => {
+      transitionAfterTurnStart(ctx.owner);
+    },
   },
 ];
 

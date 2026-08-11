@@ -27,10 +27,13 @@ import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import {
   AI_THINKING_DURATION,
   BATTLE_ASSET_LOAD_TIMEOUT_MS,
+  BATTLE_SCREEN_READY_TIMEOUT_MS,
+  INITIAL_DRAW_COUNT,
   MAX_HP,
+  MATCHING_SCREEN_TIMEOUT_MS,
   PLACE_ANIMATION_DURATION,
   PREPARE_BATTLE_LOCK_TIMEOUT_MS,
-  MATCHING_SCREEN_TIMEOUT_MS,
+  TURN_ORDER_START_DELAY_MS,
 } from '../../utils/constants/config.js';
 import {
   CHAR_FORTUNE_HANDICAPS,
@@ -902,7 +905,7 @@ export function initBattleState() {
         console.warn('BattleScreen ready timed out. Forcing start...');
         window.onBattleScreenReady();
       }
-    }, 4000); // 4秒のセーフティ
+    }, BATTLE_SCREEN_READY_TIMEOUT_MS);
 
     // React側のマウント完了コールバックを待つ
     window.onBattleScreenReady = () => {
@@ -912,7 +915,7 @@ export function initBattleState() {
       // 演出が唐突に始まらないよう、マウント完了から正確に1秒待って開始する
       setTimeout(() => {
         determineTurnOrder();
-      }, 1000);
+      }, TURN_ORDER_START_DELAY_MS);
     };
   } catch (e) {
     console.error('Critical error in initBattleState:', e);
@@ -1119,9 +1122,9 @@ export async function determineTurnOrder() {
   GameState.isInitializing = true;
   GameState.turnCount = 0;
 
-  // ゲーム開始時の初期ドロー（両者3枚ずつ）
+  // ゲーム開始時の初期ドロー（両者指定枚数分）
   if (GameState.playerHand.length === 0 && GameState.enemyHand.length === 0) {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < INITIAL_DRAW_COUNT; i++) {
       drawCard('blue');
       drawCard('red');
     }
@@ -1188,15 +1191,15 @@ export async function startMulliganPhase() {
 
   const orderPrefix = GameState.firstPlayer === 'blue' ? '先攻：' : '後攻：';
   let playerPromise = waitPlayerHandSelection(
-    3,
+    INITIAL_DRAW_COUNT,
     'blue',
     false,
-    `${orderPrefix}引き直すカードを3枚まで選んでください`
+    `${orderPrefix}引き直すカードを${INITIAL_DRAW_COUNT}枚まで選んでください`
   );
   let enemyPromise;
 
   if (GameState.gameMode === 'online') {
-    enemyPromise = waitPlayerHandSelection(3, 'red', false);
+    enemyPromise = waitPlayerHandSelection(INITIAL_DRAW_COUNT, 'red', false);
   } else {
     enemyPromise = new Promise((resolve) => {
       let aiIndices = [];

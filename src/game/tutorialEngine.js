@@ -11,13 +11,13 @@
  * - 報酬なし、勝敗ダイアログなし
  */
 
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
 import { playSound, sleep, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle/index.js';
-import { GameState } from '../state/gameState.js';
-import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 
 // チュートリアル進行制御用の定数
 /** 演出完了後にメッセージを表示するまでの待機時間(ms) */
@@ -1816,7 +1816,8 @@ export async function runTutorialFlow() {
 
         // バトル処理の一時停止完了後に表示するメッセージの場合
         if (step.waitBattleIdle) {
-          // 連打対策: 敵ターンから自ターン攻撃フェーズまでの全戦闘演出が100%完了するまで確実に待機
+          // 連打対策: 戦闘演出の完了、または一時停止点（敵ターン再開待ち・戦闘再開待ち）への到達まで待機する。
+          // 一時停止中は isProcessing が true のまま resolver が設定されるため、resolver の存在も通過条件に含める。
           await waitUntilTutorialCondition(
             () =>
               !GameState.isProcessing ||

@@ -703,7 +703,26 @@ export async function waitPlayerEnemyLaneSelection(
       updateCardDetail(null);
     }
 
-    window.handleEnemyLaneClick = (laneIndex) => {
+    let isCleanedUp = false;
+    const cleanUp = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+      GameState.isEnemyTargetMode = false;
+      GameState.targetSelectedLanes = [];
+      GameState.targetMaxCount = 0;
+      GameState.isEnemyTargetAllowEmpty = false;
+      window.handleEnemyLaneClick = null;
+      window.finishEnemyTargetSelection = null;
+      battleEvents.off('ENEMY_LANE_CLICK', onEnemyLaneClick);
+      battleEvents.off(
+        'ENEMY_TARGET_SELECTION_FINISH',
+        onFinishEnemyTargetSelection
+      );
+      updateCardDetail(null);
+    };
+
+    const onEnemyLaneClick = (laneIndex) => {
+      if (isCleanedUp) return;
       // 連打防止: count分のレーンが既に選択済みなら追加クリックを無視
       if (GameState.targetSelectedLanes.length >= count) return;
       if (!validLanes.includes(laneIndex)) {
@@ -723,23 +742,21 @@ export async function waitPlayerEnemyLaneSelection(
 
         if (GameState.targetSelectedLanes.length >= count) {
           setTimeout(() => {
-            if (window.finishEnemyTargetSelection)
+            if (window.finishEnemyTargetSelection) {
               window.finishEnemyTargetSelection();
+            } else {
+              battleEvents.emit('ENEMY_TARGET_SELECTION_FINISH');
+            }
           }, 300);
         }
       }
     };
 
-    window.finishEnemyTargetSelection = async () => {
+    const onFinishEnemyTargetSelection = async () => {
+      if (isCleanedUp) return;
       playSound(SOUNDS.seClick);
-      GameState.isEnemyTargetMode = false;
       const result = [...GameState.targetSelectedLanes];
-      GameState.targetSelectedLanes = [];
-      GameState.targetMaxCount = 0;
-      GameState.isEnemyTargetAllowEmpty = false;
-      window.handleEnemyLaneClick = null;
-      window.finishEnemyTargetSelection = null;
-      updateCardDetail(null);
+      cleanUp();
 
       if (GameState.gameMode === 'online') {
         await sendOnlineAction({
@@ -752,6 +769,14 @@ export async function waitPlayerEnemyLaneSelection(
       if (updateBattleUIHook) updateBattleUIHook();
       resolve(result);
     };
+
+    window.handleEnemyLaneClick = onEnemyLaneClick;
+    window.finishEnemyTargetSelection = onFinishEnemyTargetSelection;
+    battleEvents.on('ENEMY_LANE_CLICK', onEnemyLaneClick);
+    battleEvents.on(
+      'ENEMY_TARGET_SELECTION_FINISH',
+      onFinishEnemyTargetSelection
+    );
 
     if (updateBattleUIHook) updateBattleUIHook();
   });
@@ -848,7 +873,26 @@ export async function waitPlayerAlliedLaneSelection(
      * 自分のカードやレーンがクリックされた時のイベントハンドラ
      * @param {number} laneIndex - クリックされたレーンインデックス
      */
-    window.handleAlliedLaneClick = (laneIndex) => {
+    let isCleanedUp = false;
+    const cleanUp = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+      GameState.isAlliedTargetMode = false;
+      GameState.targetSelectedLanes = [];
+      GameState.targetMaxCount = 0;
+      window.handleAlliedLaneClick = null;
+      window.finishAlliedSelection = null;
+      battleEvents.off('ALLIED_LANE_CLICK', onAlliedLaneClick);
+      battleEvents.off('ALLIED_SELECTION_FINISH', onFinishAlliedSelection);
+      updateCardDetail(null);
+    };
+
+    /**
+     * 自分のカードやレーンがクリックされた時のイベントハンドラ
+     * @param {number} laneIndex - クリックされたレーンインデックス
+     */
+    const onAlliedLaneClick = (laneIndex) => {
+      if (isCleanedUp) return;
       // 対象レーンにカードがない場合は処理をスキップ
       if (targetBoard[laneIndex] === null) return;
       playSound(SOUNDS.seClick);
@@ -860,13 +904,13 @@ export async function waitPlayerAlliedLaneSelection(
 
         // 規定枚数（目標数）の選択が完了した場合
         if (GameState.targetSelectedLanes.length >= count) {
-          // タップ決定演出のために300ms待ってから、非同期で決定処理（finishAlliedSelection）を呼び出す
-          // ※【多重タップ防止】
-          // 300msの待機中にプレイヤーが連打（ダブルクリック等）した場合、タイマーが重複して走り、
-          // 1回目のタイマーで null クリアされた window.finishAlliedSelection が2回目で呼び出され、
-          // TypeError クラッシュを引き起こすため、必ず存在判定のif文ガードを挟む。
+          // タップ決定演出のために300ms待ってから、非同期で決定処理を呼び出す
           setTimeout(() => {
-            if (window.finishAlliedSelection) window.finishAlliedSelection();
+            if (window.finishAlliedSelection) {
+              window.finishAlliedSelection();
+            } else {
+              battleEvents.emit('ALLIED_SELECTION_FINISH');
+            }
           }, 300);
         }
       }
@@ -875,17 +919,11 @@ export async function waitPlayerAlliedLaneSelection(
     /**
      * 選択処理を確定させ、画面上の選択モードを解除するクリーンアップ兼決定関数
      */
-    window.finishAlliedSelection = async () => {
+    const onFinishAlliedSelection = async () => {
+      if (isCleanedUp) return;
       playSound(SOUNDS.seClick);
-      GameState.isAlliedTargetMode = false;
       const result = [...GameState.targetSelectedLanes];
-
-      // 選択状態のクリーンアップ
-      GameState.targetSelectedLanes = [];
-      GameState.targetMaxCount = 0;
-      window.handleAlliedLaneClick = null;
-      window.finishAlliedSelection = null; // 多重実行を避けるため自身を即座に破棄する
-      updateCardDetail(null);
+      cleanUp();
 
       // オンライン対戦の場合は、選択決定データを同期送信する
       if (GameState.gameMode === 'online') {
@@ -899,6 +937,11 @@ export async function waitPlayerAlliedLaneSelection(
       if (updateBattleUIHook) updateBattleUIHook(); // UIハイライト等の状態更新をトリガー
       resolve(result); // 非同期の呼び出し元へ選択結果配列を返却する
     };
+
+    window.handleAlliedLaneClick = onAlliedLaneClick;
+    window.finishAlliedSelection = onFinishAlliedSelection;
+    battleEvents.on('ALLIED_LANE_CLICK', onAlliedLaneClick);
+    battleEvents.on('ALLIED_SELECTION_FINISH', onFinishAlliedSelection);
 
     if (updateBattleUIHook) updateBattleUIHook();
   });

@@ -117,7 +117,12 @@ export function resetQueueProcessing() {
 export async function dispatchBattleAction(action, isRemote = false) {
   if (GameState.gameMode === 'online' && !isRemote) {
     // ローカルのアクションは直接キューに入れず、Firebaseのルームへ送信
-    await sendOnlineAction(action);
+    try {
+      await sendOnlineAction(action);
+    } catch (err) {
+      console.error('オンラインアクションの送信に失敗しました:', err);
+      showAlertModal('通信に失敗しました。もう一度操作してください。');
+    }
     return;
   }
 

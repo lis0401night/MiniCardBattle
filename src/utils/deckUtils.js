@@ -20,8 +20,18 @@ export function toDeckObjects(
   const list = Array.isArray(premiumCardsList) ? premiumCardsList : [];
   return cards
     .map((c) => {
-      const cId = typeof c === 'string' ? c : c?.baseId || c?.id;
-      if (typeof cId !== 'string' || !cId) return null;
+      // baseId が文字列の場合のみ優先使用し、非文字列や未定義の場合は id へ安全にフォールバック
+      const cId =
+        typeof c === 'string'
+          ? c
+          : typeof c?.baseId === 'string' && c.baseId.length > 0
+            ? c.baseId
+            : typeof c?.id === 'string' && c.id.length > 0
+              ? c.id
+              : null;
+      if (!cId) return null;
+
+      // カードオブジェクト自体に isPremium (boolean) が設定されている場合はそれを優先し、無ければ所持リストで判定する
       const isPrem =
         c && typeof c === 'object' && typeof c.isPremium === 'boolean'
           ? c.isPremium
