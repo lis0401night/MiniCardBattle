@@ -30,7 +30,7 @@ export default function CutinOverlay() {
      */
     window.showCutinReact = (config, isBlue) => {
       if (timeoutId) clearTimeout(timeoutId);
-      setCutinData({ config, isBlue });
+      setCutinData({ config, isBlue, timestamp: Date.now() });
 
       // 指定時間経過後にカットイン表示を非表示化
       timeoutId = setTimeout(() => {
@@ -46,7 +46,7 @@ export default function CutinOverlay() {
 
   if (!cutinData) return null;
 
-  const { config, isBlue } = cutinData;
+  const { config, isBlue, timestamp } = cutinData;
   const textColor = isBlue ? '#fff' : '#ff0000';
   const textShadow = isBlue
     ? '0 0 20px #38bdf8, 3px 3px 0 #000'
@@ -66,24 +66,24 @@ export default function CutinOverlay() {
 
   const rawImgSrc = getSkinImage(config, skinId, 'image');
   const charImgSrc = appendVersionQuery(rawImgSrc);
+  const filterGlow = isBlue
+    ? 'drop-shadow(0 0 20px #38bdf8)'
+    : 'drop-shadow(0 0 20px #ef4444)';
 
   return (
-    <div id="screen-cutin" style={{ display: 'flex' }}>
+    <div key={timestamp} id="screen-cutin" style={{ display: 'flex' }}>
       <div
         id="cutin-bg"
         className="cutin-bg"
         style={{ background: bgGradient }}
       ></div>
       <img
+        key={`cutin-img-${timestamp}`}
         id="cutin-char-img"
         src={charImgSrc}
         className="cutin-char"
         alt="Cutin Character"
-        style={{
-          left: '50%',
-          transform: 'translateX(-50%)',
-          animation: 'slideIn 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards',
-        }}
+        style={{ filter: filterGlow }}
       />
       <div
         id="cutin-text"
@@ -91,7 +91,6 @@ export default function CutinOverlay() {
         style={{
           color: textColor,
           textShadow: textShadow,
-          animation: 'textPop 2s ease forwards',
         }}
       >
         {config.leaderSkill?.name ?? 'スキル'}!!
