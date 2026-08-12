@@ -169,6 +169,10 @@ export function prepareBattle() {
   // ローディング画面連打による二重呼び出し防止
   if (isBattleLoading) return;
   isBattleLoading = true;
+
+  // 【画面チラつき防止】対戦準備開始の瞬間に即座にローディング画面へ切り替え、旧画面（フリー対戦・デッキ編集等）の露出を防ぐ
+  switchScreen('screen-loading');
+
   const currentGeneration = ++prepareBattleGeneration;
   const isCurrentPreparation = () =>
     currentGeneration === prepareBattleGeneration;

@@ -442,6 +442,9 @@ export default function DeckEditorScreen({ switchScreen }) {
       if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(false);
     } else {
       GameState.appState = 'battle';
+      if (typeof switchScreen === 'function') {
+        switchScreen('screen-loading');
+      }
       if (typeof prepareBattle === 'function') {
         prepareBattle();
       }

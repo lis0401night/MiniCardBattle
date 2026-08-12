@@ -58,7 +58,7 @@ export async function waitPlayerLaneSelection(
   tokenLanes = null,
   checkConstraints = true,
   canCancel = false,
-  buttonText = '配置終了',
+  buttonText = '配置を完了',
   _skipImmediateDiscard = false // 【追加】後続の playCard 等で破棄を行う場合、この関数内での即時破棄をスキップするフラグ
 ) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -350,7 +350,7 @@ export async function waitPlayerLaneSelection(
       GameState.placementCount = 0;
       GameState.placementToken = null;
       GameState.placementCheckConstraints = true;
-      GameState.placementButtonText = '配置終了';
+      GameState.placementButtonText = '配置を完了';
       GameState.placementRestrictLanes = null;
       const result = [...GameState.placementSelectedLanes];
       GameState.placementSelectedLanes = [];

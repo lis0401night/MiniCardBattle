@@ -2866,7 +2866,7 @@ export async function resolveActiveSkillEffect(
             null,
             true,
             true,
-            '召喚終了'
+            '召喚を完了'
           );
           GameState.placementMessage = null;
 

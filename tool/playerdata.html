@@ -171,6 +171,13 @@
               プレイヤー一覧
             </button>
             <button
+              id="tab-leaders"
+              class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              onclick="window.switchTab('leaders')"
+            >
+              リーダー一覧
+            </button>
+            <button
               id="tab-cards"
               class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
               onclick="window.switchTab('cards')"
@@ -401,6 +408,70 @@
         </div>
       </div>
 
+      <!-- リーダー一覧ビュー -->
+      <div
+        id="view-leaders"
+        class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-2"
+        >
+          <div>
+            <h2
+              class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1"
+            >
+              データベース
+            </h2>
+            <div class="flex items-center gap-3">
+              <div class="text-xl font-black text-slate-800 tracking-tight">
+                リーダー一覧
+                <span
+                  id="leaders-count"
+                  class="text-sm font-bold text-slate-500 ml-2"
+                ></span>
+              </div>
+              <div
+                id="leaders-filter-status"
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200"
+              >
+                集計対象プレイヤー: --/--人
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">集計対象:</span>
+              <select
+                class="battle-limit-select bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.changeBattleLimit(this.value)"
+              >
+                <option value="50">直近 50 試合</option>
+                <option value="100" selected>直近 100 試合</option>
+                <option value="200">直近 200 試合</option>
+                <option value="500">直近 500 試合</option>
+                <option value="1000">直近 1000 試合</option>
+                <option value="all">全試合 (無制限)</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">並び替え:</span>
+              <select
+                id="leader-sort-select"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.sortLeaderList(this.value)"
+              >
+                <option value="defense">🛡️ 防衛デッキ使用順</option>
+                <option value="attack">⚔️ 攻撃デッキ使用順</option>
+                <option value="name">👤 キャラクター名順</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="panel-scroll scroll-custom p-4 md:p-6" id="leaders-grid">
+          <!-- JS Injection -->
+        </div>
+      </div>
+
       <!-- 全カード一覧ビュー -->
       <div
         id="view-cards"
@@ -431,18 +502,34 @@
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-slate-500">並び替え:</span>
-            <select
-              id="card-sort-select"
-              class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
-              onchange="window.sortCardList(this.value)"
-            >
-              <option value="defense">🛡️ 防衛デッキ使用順</option>
-              <option value="attack">⚔️ 攻撃デッキ使用順</option>
-              <option value="rarity">⭐ レアリティ順</option>
-              <option value="id">📇 ID順</option>
-            </select>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">集計対象:</span>
+              <select
+                class="battle-limit-select bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.changeBattleLimit(this.value)"
+              >
+                <option value="50">直近 50 試合</option>
+                <option value="100" selected>直近 100 試合</option>
+                <option value="200">直近 200 試合</option>
+                <option value="500">直近 500 試合</option>
+                <option value="1000">直近 1000 試合</option>
+                <option value="all">全試合 (無制限)</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">並び替え:</span>
+              <select
+                id="card-sort-select"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.sortCardList(this.value)"
+              >
+                <option value="defense">🛡️ 防衛デッキ使用順</option>
+                <option value="attack">⚔️ 攻撃デッキ使用順</option>
+                <option value="rarity">⭐ レアリティ順</option>
+                <option value="id">📇 ID順</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="panel-scroll scroll-custom p-4 md:p-6" id="cards-grid">
@@ -600,12 +687,27 @@
       // 状態管理
       // =============================
       let allPlayers = [];
+      let recentBattles = [];
       let filteredPlayers = [];
       let selectedPlayerId = null;
       let currentSort = { key: 'defense', dir: 'desc' };
       let currentCardSort = 'defense';
+      let currentLeaderSort = 'defense';
+      let currentBattleLimit = 100;
       let currentTab = 'players';
       let excludedPlayerIds = new Set(); // 集計から除外するプレイヤーのUUID集合
+
+      /**
+       * 現在設定されている集計対象試合数に応じて対戦ログを絞り込む
+       * @returns {Array} フィルタリングされた対戦ログ配列
+       */
+      function getFilteredRecentBattles() {
+        if (!Array.isArray(recentBattles)) return [];
+        if (currentBattleLimit === Infinity || isNaN(currentBattleLimit)) {
+          return recentBattles;
+        }
+        return recentBattles.slice(0, currentBattleLimit);
+      }
 
       /**
        * プレイヤーの集計対象（有効 / 除外）を切り替える
@@ -620,6 +722,7 @@
           excludedPlayerIds.add(uuid);
         }
         renderPlayerList();
+        renderLeaderList();
         renderCardList();
       }
 
@@ -634,6 +737,7 @@
           allPlayers.forEach((p) => excludedPlayerIds.add(p.uuid));
         }
         renderPlayerList();
+        renderLeaderList();
         renderCardList();
       }
 
@@ -645,6 +749,19 @@
       window.toggleAllPlayers = toggleAllPlayers;
       window.sortCardList = function (sortKey) {
         currentCardSort = sortKey;
+        renderCardList();
+      };
+      window.sortLeaderList = function (sortKey) {
+        currentLeaderSort = sortKey;
+        renderLeaderList();
+      };
+      window.changeBattleLimit = function (val) {
+        currentBattleLimit = val === 'all' ? Infinity : parseInt(val, 10);
+        // 同期のUIセレクトボックスの値を揃える
+        document.querySelectorAll('.battle-limit-select').forEach((el) => {
+          el.value = val;
+        });
+        renderLeaderList();
         renderCardList();
       };
 
@@ -719,6 +836,7 @@
             throw new Error('APIレスポンスエラー');
           }
           allPlayers = data.players || [];
+          recentBattles = data.recent_battles || [];
           filteredPlayers = [...allPlayers];
 
           document.getElementById('loading-overlay').classList.add('hidden');
@@ -739,24 +857,45 @@
       // =============================
       // タブ切り替え
       // =============================
+      /**
+       * プレイヤー一覧、リーダー一覧、全カード一覧のタブ表示を切り替える
+       * @param {string} tab - 'players' | 'leaders' | 'cards'
+       */
       function switchTab(tab) {
         currentTab = tab;
-        if (tab === 'players') {
-          document.getElementById('view-main').classList.remove('hidden');
-          document.getElementById('view-cards').classList.add('hidden');
-          document.getElementById('tab-players').className =
-            'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
-          document.getElementById('tab-cards').className =
-            'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
-        } else {
-          document.getElementById('view-main').classList.add('hidden');
-          document.getElementById('view-cards').classList.remove('hidden');
-          document.getElementById('tab-players').className =
-            'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
-          document.getElementById('tab-cards').className =
-            'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
+        const viewMain = document.getElementById('view-main');
+        const viewLeaders = document.getElementById('view-leaders');
+        const viewCards = document.getElementById('view-cards');
+        const tabPlayers = document.getElementById('tab-players');
+        const tabLeaders = document.getElementById('tab-leaders');
+        const tabCards = document.getElementById('tab-cards');
 
-          if (document.getElementById('cards-grid').children.length === 0) {
+        const activeClass =
+          'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
+        const inactiveClass =
+          'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
+
+        viewMain.classList.add('hidden');
+        viewLeaders.classList.add('hidden');
+        viewCards.classList.add('hidden');
+
+        tabPlayers.className = inactiveClass;
+        if (tabLeaders) tabLeaders.className = inactiveClass;
+        tabCards.className = inactiveClass;
+
+        if (tab === 'players') {
+          viewMain.classList.remove('hidden');
+          tabPlayers.className = activeClass;
+        } else if (tab === 'leaders') {
+          if (viewLeaders) viewLeaders.classList.remove('hidden');
+          if (tabLeaders) tabLeaders.className = activeClass;
+          if (document.getElementById('leaders-grid')?.children.length === 0) {
+            renderLeaderList();
+          }
+        } else if (tab === 'cards') {
+          viewCards.classList.remove('hidden');
+          tabCards.className = activeClass;
+          if (document.getElementById('cards-grid')?.children.length === 0) {
             renderCardList();
           }
         }
@@ -1154,16 +1293,158 @@
       }
 
       // =============================
+      // リーダー一覧セクション
+      // =============================
+      /**
+       * リーダー一覧の集計とレンダリングを行う関数。
+       * プレイヤーデータから防衛デッキリーダー使用数、および攻撃履歴データから攻撃デッキリーダー使用数を集計して表示する。
+       * 攻撃デッキ使用数の集計では、同一攻撃プレイヤー（UUID）による重複を加算せず、ユニーク攻撃者数を集計する。
+       *
+       * @function renderLeaderList
+       * @returns {void}
+       */
+      function renderLeaderList() {
+        const totalCount = allPlayers.length;
+        const includedCount = totalCount - excludedPlayerIds.size;
+        const activeBattles = getFilteredRecentBattles();
+        const activeCount = activeBattles.length;
+        const totalBattleCount = recentBattles.length;
+
+        const leadersFilterStatus = document.getElementById(
+          'leaders-filter-status'
+        );
+        if (leadersFilterStatus) {
+          leadersFilterStatus.innerHTML = `プレイヤー: <span class="font-black text-indigo-600">${includedCount}</span>/${totalCount}人 | 攻撃対戦ログ: <span class="font-black text-indigo-600">${activeCount}</span>/${totalBattleCount}件${
+            excludedPlayerIds.size > 0
+              ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
+              : ''
+          }`;
+        }
+
+        // 防衛デッキでのリーダー使用数と、攻撃履歴でのリーダー使用数（UUID重複排除）
+        const defenseLeaderCounts = {};
+        const globalPlayerLeaderSet = {}; // attackerUuid -> Set of charId
+
+        // 1. 防衛デッキのリーダー使用数集計
+        allPlayers.forEach((p) => {
+          if (excludedPlayerIds.has(p.uuid)) return;
+          if (p.has_defense_deck) {
+            const charId = p.character || p.deck_leader || 'android';
+            defenseLeaderCounts[charId] =
+              (defenseLeaderCounts[charId] || 0) + 1;
+          }
+        });
+
+        // 2. 攻撃デッキのリーダー使用数集計（選択された対戦ログ範囲 activeBattles から集計し、同一攻撃者UUIDで重複排除）
+        activeBattles.forEach((rec) => {
+          if (!rec.attackerUuid || excludedPlayerIds.has(rec.attackerUuid))
+            return;
+          const attackerUuid = rec.attackerUuid;
+          const charId =
+            rec.attackerCharacter || rec.attackerChar || rec.character;
+          if (charId) {
+            if (!globalPlayerLeaderSet[attackerUuid]) {
+              globalPlayerLeaderSet[attackerUuid] = new Set();
+            }
+            globalPlayerLeaderSet[attackerUuid].add(charId);
+          }
+        });
+
+        // 全攻撃者ごとの使用リーダーキャラID（Set）を各リーダーの攻撃使用数に加算
+        const attackLeaderCounts = {};
+        Object.values(globalPlayerLeaderSet).forEach((charSet) => {
+          charSet.forEach((charId) => {
+            attackLeaderCounts[charId] = (attackLeaderCounts[charId] || 0) + 1;
+          });
+        });
+
+        // 対象キャラクター一覧を取得（CHARACTERSマスタより）
+        const charKeys = Object.keys(CHARACTERS || {}).filter((key) => {
+          const c = CHARACTERS[key];
+          return c && typeof c === 'object' && (c.name || c.id);
+        });
+
+        // キーの重複排除
+        const uniqueCharKeys = Array.from(new Set(charKeys));
+
+        const leaderList = uniqueCharKeys.map((key) => {
+          const charData = CHARACTERS[key] || {};
+          const name = charData.name || key;
+          const desc = charData.desc || '';
+          const icon = charData.icon || charData.image || getIconPath(key);
+          const defCount = defenseLeaderCounts[key] || 0;
+          const atkCount = attackLeaderCounts[key] || 0;
+
+          return {
+            id: key,
+            name,
+            desc,
+            icon,
+            defCount,
+            atkCount,
+          };
+        });
+
+        // ソート処理
+        leaderList.sort((a, b) => {
+          if (currentLeaderSort === 'attack') {
+            if (a.atkCount !== b.atkCount) return b.atkCount - a.atkCount;
+            if (a.defCount !== b.defCount) return b.defCount - a.defCount;
+          } else if (currentLeaderSort === 'defense') {
+            if (a.defCount !== b.defCount) return b.defCount - a.defCount;
+            if (a.atkCount !== b.atkCount) return b.atkCount - a.atkCount;
+          }
+          return a.name.localeCompare(b.name, 'ja');
+        });
+
+        const leadersCountElem = document.getElementById('leaders-count');
+        if (leadersCountElem) {
+          leadersCountElem.innerText = `(${leaderList.length}人)`;
+        }
+
+        const gridHtml = leaderList
+          .map((c) => {
+            const isZero = c.defCount === 0 && c.atkCount === 0;
+            return `
+            <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-2xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all">
+              <div class="flex gap-4 mb-3 items-center">
+                <img src="${escapeHtml(c.icon)}" class="w-16 h-16 object-cover rounded-2xl border-2 border-indigo-500 bg-slate-900 shrink-0 shadow-sm" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                <div class="flex flex-col flex-1 min-w-0">
+                  <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
+                  <div class="text-[10px] font-bold text-slate-400 truncate mt-0.5">${escapeHtml(c.id)}</div>
+                  <div class="mt-2 text-[11px] font-bold space-y-0.5">
+                    <div class="text-indigo-600">⚔️ 攻撃デッキ使用: <span class="font-black">${c.atkCount}</span> 人</div>
+                    <div class="text-amber-600">🛡️ 防衛デッキ使用: <span class="font-black">${c.defCount}</span> 人</div>
+                  </div>
+                </div>
+              </div>
+              ${c.desc ? `<div class="mt-auto bg-slate-50 rounded-xl p-2.5 text-[10px] text-slate-500 line-clamp-2 leading-relaxed border border-slate-100">${escapeHtml(c.desc)}</div>` : ''}
+            </div>
+          `;
+          })
+          .join('');
+
+        const gridContainer = document.getElementById('leaders-grid');
+        if (gridContainer) {
+          gridContainer.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">${gridHtml}</div>`;
+        }
+      }
+
+      // =============================
       // 全カード一覧セクション
       // =============================
       function renderCardList() {
         const totalCount = allPlayers.length;
         const includedCount = totalCount - excludedPlayerIds.size;
+        const activeBattles = getFilteredRecentBattles();
+        const activeCount = activeBattles.length;
+        const totalBattleCount = recentBattles.length;
+
         const cardsFilterStatus = document.getElementById(
           'cards-filter-status'
         );
         if (cardsFilterStatus) {
-          cardsFilterStatus.innerHTML = `集計対象プレイヤー: <span class="font-black text-indigo-600">${includedCount}</span> / ${totalCount} 人${
+          cardsFilterStatus.innerHTML = `プレイヤー: <span class="font-black text-indigo-600">${includedCount}</span>/${totalCount}人 | 攻撃対戦ログ: <span class="font-black text-indigo-600">${activeCount}</span>/${totalBattleCount}件${
             excludedPlayerIds.size > 0
               ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
               : ''
@@ -1190,45 +1471,33 @@
           }
         });
 
-        // 2. 攻撃デッキ使用数の集計（同一プレイヤーの複数履歴がある場合、各デッキ内での最大枚数を採用）
-        // 例: 履歴AにカードXが2枚、履歴BにカードXが3枚 → そのプレイヤーのカードXは3枚として集計
+        // 2. 攻撃デッキ使用数の集計（選択された対戦ログ範囲 activeBattles から集計）
         const globalPlayerCardMaxCounts = {};
 
-        allPlayers.forEach((p) => {
-          // 除外指定されているプレイヤーはスキップ
-          if (excludedPlayerIds.has(p.uuid)) return;
+        activeBattles.forEach((rec) => {
+          if (!rec.attackerUuid || excludedPlayerIds.has(rec.attackerUuid))
+            return;
+          const attackerUuid = rec.attackerUuid;
 
-          if (Array.isArray(p.defense_history)) {
-            p.defense_history.forEach((rec) => {
-              // attackerUuid が存在しないデータはスキップ（100% UUIDのみで集計）
-              if (!rec.attackerUuid) return;
+          if (Array.isArray(rec.attackerDeck)) {
+            // このデッキ内でのカードごとの枚数を集計
+            const deckCardCounts = {};
+            rec.attackerDeck.forEach((entry) => {
+              const cId = resolveCardId(entry);
+              deckCardCounts[cId] = (deckCardCounts[cId] || 0) + 1;
+            });
 
-              // 攻撃側プレイヤーUUIDが集計除外リストに含まれている場合はスキップ
-              if (excludedPlayerIds.has(rec.attackerUuid)) return;
-
-              const attackerUuid = rec.attackerUuid;
-
-              if (Array.isArray(rec.attackerDeck)) {
-                // このデッキ内でのカードごとの枚数を集計
-                const deckCardCounts = {};
-                rec.attackerDeck.forEach((entry) => {
-                  const cId = resolveCardId(entry);
-                  deckCardCounts[cId] = (deckCardCounts[cId] || 0) + 1;
-                });
-
-                // プレイヤーごとの最大枚数を更新（既存値より多ければ上書き）
-                if (!globalPlayerCardMaxCounts[attackerUuid]) {
-                  globalPlayerCardMaxCounts[attackerUuid] = {};
-                }
-                Object.keys(deckCardCounts).forEach((cId) => {
-                  const currentMax =
-                    globalPlayerCardMaxCounts[attackerUuid][cId] || 0;
-                  globalPlayerCardMaxCounts[attackerUuid][cId] = Math.max(
-                    currentMax,
-                    deckCardCounts[cId]
-                  );
-                });
-              }
+            // プレイヤーごとの最大枚数を更新（同一攻撃者の履歴がある場合は最大値を採用）
+            if (!globalPlayerCardMaxCounts[attackerUuid]) {
+              globalPlayerCardMaxCounts[attackerUuid] = {};
+            }
+            Object.keys(deckCardCounts).forEach((cId) => {
+              const currentMax =
+                globalPlayerCardMaxCounts[attackerUuid][cId] || 0;
+              globalPlayerCardMaxCounts[attackerUuid][cId] = Math.max(
+                currentMax,
+                deckCardCounts[cId]
+              );
             });
           }
         });

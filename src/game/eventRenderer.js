@@ -226,10 +226,34 @@ export async function playEvents(events) {
         }
         updateCardPowerOnly(ev.lane, sidePrefix);
         if (ev.source === 'equip' && ev.card) {
-          // 「武装」による重ね配置の演出（配置音＋重ねられたトークンカードの出現ボイス）
+          // 「武装」による重ね配置の演出（配置音＋重ねられたトークン/装備カードの出現ボイス）
           playSound(SOUNDS.sePlace);
-          if (ev.card) {
-            playCardVoice(ev.card, 'play');
+
+          // 土台のカードではなく、実際に上に重ねられた最新の装備/武装カードを取得してボイスを再生
+          let targetCardForVoice = ev.card;
+          if (ev.card.equippedCards && ev.card.equippedCards.length > 0) {
+            const lastEquip =
+              ev.card.equippedCards[ev.card.equippedCards.length - 1];
+            if (lastEquip) {
+              targetCardForVoice = lastEquip;
+            }
+          }
+
+          if (targetCardForVoice) {
+            // voiceCategory が未保持の場合はマスターデータから検索・補完
+            if (!targetCardForVoice.voiceCategory) {
+              const baseId = targetCardForVoice.baseId || targetCardForVoice.id;
+              const cMaster = CARD_MASTER.find(
+                (m) =>
+                  m.id === baseId ||
+                  (targetCardForVoice.name &&
+                    m.name === targetCardForVoice.name)
+              );
+              if (cMaster && cMaster.voiceCategory) {
+                targetCardForVoice.voiceCategory = cMaster.voiceCategory;
+              }
+            }
+            playCardVoice(targetCardForVoice, 'play');
           }
           await sleep(200);
         } else {

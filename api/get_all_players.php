@@ -37,4 +37,18 @@ usort($players, function($a, $b) {
     return strcmp($b['timestamp'] ?? '', $a['timestamp'] ?? '');
 });
 
-echo json_encode(['success' => true, 'players' => $players]);
+// 直近100試合の全体対戦ログ (api/decks/recent_battles.json) の読み込み
+$recentLogFile = __DIR__ . '/decks/recent_battles.json';
+$recentBattles = [];
+if (file_exists($recentLogFile)) {
+    $recentContent = file_get_contents($recentLogFile);
+    if ($recentContent) {
+        $recentBattles = json_decode($recentContent, true) ?: [];
+    }
+}
+
+echo json_encode([
+    'success' => true,
+    'players' => $players,
+    'recent_battles' => $recentBattles,
+]);

@@ -574,7 +574,7 @@ export default function BattleScreen() {
                 if (window.finishPlacement) window.finishPlacement();
               }}
             >
-              {GameState.placementButtonText || '配置終了'}
+              {GameState.placementButtonText || '配置を完了'}
             </button>
           ) : GameState.isDiscardingMode ? (
             <button
@@ -625,7 +625,7 @@ export default function BattleScreen() {
                 if (window.finishHandSelection) window.finishHandSelection();
               }}
             >
-              選択終了
+              選択を完了
             </button>
           ) : GameState.isEnemyTargetMode ? (
             <button
@@ -666,7 +666,7 @@ export default function BattleScreen() {
                   window.finishEnemyTargetSelection();
               }}
             >
-              選択終了
+              選択を完了
             </button>
           ) : GameState.isAlliedTargetMode ? (
             <button
@@ -705,7 +705,7 @@ export default function BattleScreen() {
                   window.finishAlliedSelection();
               }}
             >
-              選択終了
+              選択を完了
             </button>
           ) : (
             <button

@@ -53,7 +53,12 @@ export default function TournamentResumeScreen() {
       rarity: 4,
       icon: CHARACTERS.android.icon,
     };
-    const charId = rawConf.id || rawConf.charId || 'android';
+    // rawConf.id が 'player' (トーナメント用識別子) の場合は charId や leaderId を優先参照する
+    const charId =
+      (rawConf.id !== 'player' && CHARACTERS[rawConf.id] ? rawConf.id : null) ||
+      rawConf.charId ||
+      rawConf.leaderId ||
+      'android';
     const charObj = CHARACTERS[charId] || CHARACTERS.android;
 
     // トーナメントモードでは常に学園スキン（school）を使用する
@@ -61,16 +66,23 @@ export default function TournamentResumeScreen() {
       getSkinImage(charObj, 'school', 'icon') ||
       getSkinImage(charObj, 'school', 'image') ||
       rawConf.icon ||
-      rawConf.image;
+      rawConf.image ||
+      charObj.icon ||
+      charObj.image;
 
     if (iconSrc) {
       iconSrc = iconSrc.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp');
     }
 
+    // セーブデータの属性消失を防ぎつつ、正しいマスタ情報（leaderSkill等）を上書き展開
     return {
       ...rawConf,
+      ...charObj,
+      name: rawConf.name || charObj.name,
+      charId,
       icon: iconSrc,
       image: iconSrc,
+      leaderSkill: charObj.leaderSkill || rawConf.leaderSkill || null,
     };
   }, [saveData]);
   const currentRound = tState?.round || 1;
@@ -254,7 +266,7 @@ export default function TournamentResumeScreen() {
                 alt={pConf.name}
               />
               <img
-                src={getIconFramePath(pConf.id || 'android')}
+                src={getIconFramePath(pConf.charId || pConf.id || 'android')}
                 className="banner-icon-frame"
                 alt="frame"
               />
@@ -272,6 +284,58 @@ export default function TournamentResumeScreen() {
               </div>
             </div>
           </div>
+
+          {/* リーダースキル詳細情報表示枠 */}
+          {pConf.leaderSkill && (
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '10px 14px',
+                background: 'rgba(15, 23, 42, 0.9)',
+                borderRadius: '10px',
+                border: '1px solid #3b82f6',
+                textAlign: 'left',
+                width: '100%',
+                maxWidth: '300px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  color: '#60a5fa',
+                  marginBottom: '4px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <span>👑 {pConf.leaderSkill.name}</span>
+                {pConf.leaderSkill.cost > 0 && (
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      color: '#facc15',
+                      marginLeft: '8px',
+                    }}
+                  >
+                    (SP: {pConf.leaderSkill.cost})
+                  </span>
+                )}
+              </div>
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#cbd5e1',
+                  lineHeight: '1.4',
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {pConf.leaderSkill.desc}
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>

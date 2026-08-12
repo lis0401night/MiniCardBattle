@@ -186,6 +186,12 @@ export const PREMIUM_VOICE_MAP = {
   dwarf: 'human_female_normal',
 };
 
+/**
+ * カードまたはボイスカテゴリIDに対応するボイス音声（出現時・死亡時等）を再生する。
+ * @param {string|object} categoryOrCard - ボイスカテゴリ文字列、または対象カードオブジェクト
+ * @param {string} [situation='play'] - 再生シチュエーション ('play' | 'death')
+ * @returns {Promise<void>}
+ */
 export async function playCardVoice(categoryOrCard, situation = 'play') {
   let category = '';
 
@@ -206,7 +212,10 @@ export async function playCardVoice(categoryOrCard, situation = 'play') {
     } else {
       category = card.voiceCategory;
       if (!category) {
-        const master = CARD_MASTER.find((m) => m.id === lookupId);
+        // ID一致に加えて、名前一致によるフォールバック検索を行い、生成トークンや重ね配置時のボイスカテゴリを確実に補完
+        const master = CARD_MASTER.find(
+          (m) => m.id === lookupId || (card.name && m.name === card.name)
+        );
         category = master ? master.voiceCategory : null;
       }
     }

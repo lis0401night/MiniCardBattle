@@ -279,7 +279,8 @@ export async function executeLeaderSkillAction(
         true,
         tokenLanes,
         true,
-        '召喚終了'
+        true,
+        '召喚を完了'
       );
       if (!selectedLanes || selectedLanes.length === 0) return;
       const l = selectedLanes[0];
@@ -427,7 +428,7 @@ export async function executeLeaderSkillAction(
           false,
           null,
           false,
-          '配置終了'
+          '配置を完了'
         );
         if (selectedAlliedLanes === null) return;
         if (selectedAlliedLanes.length === 0) {

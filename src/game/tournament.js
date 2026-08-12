@@ -271,9 +271,20 @@ export function startTournamentMatch() {
 // トーナメント中断・再開機能
 
 export function saveTournamentProgress() {
+  const pConf = GameState.playerConfig ? { ...GameState.playerConfig } : null;
+  if (pConf && GameState.pendingCharId) {
+    pConf.charId = GameState.pendingCharId;
+    if (
+      !pConf.leaderSkill &&
+      CHARACTERS[GameState.pendingCharId]?.leaderSkill
+    ) {
+      pConf.leaderSkill = CHARACTERS[GameState.pendingCharId].leaderSkill;
+    }
+  }
+
   const saveData = {
     tournament: GameState.tournament,
-    playerConfig: GameState.playerConfig,
+    playerConfig: pConf,
     deckEditDone: GameState.tournament?.deckEditDone || false,
     playerHP: GameState.playerHP,
   };

@@ -67,9 +67,9 @@ export const DEFENSE_HISTORY_KEY = 'mini_card_battle_defense_history';
 export const DEFENSE_TARGETS_KEY = 'mini_card_battle_defense_targets';
 
 /** prepareBattle の二重呼び出しロック強制解除タイムアウト（ミリ秒） */
-export const PREPARE_BATTLE_LOCK_TIMEOUT_MS = 15000;
+export const PREPARE_BATTLE_LOCK_TIMEOUT_MS = 30000;
 /** バトルアセット読み込みの強制完了タイムアウト（ミリ秒） */
-export const BATTLE_ASSET_LOAD_TIMEOUT_MS = 15000;
+export const BATTLE_ASSET_LOAD_TIMEOUT_MS = 30000;
 /** マッチング画面の強制完了タイムアウト（ミリ秒） */
 export const MATCHING_SCREEN_TIMEOUT_MS = 7000;
 /** BattleScreen のマウント完了待ちタイムアウト（ミリ秒） */
