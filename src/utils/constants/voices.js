@@ -186,6 +186,7 @@ export const PREMIUM_VOICE_MAP = {
   dwarf: 'human_female_normal',
   motorcycle: 'human_female_assassin',
   employee: 'human_female_normal',
+  babydragon: 'human_female_normal',
 };
 
 /**
