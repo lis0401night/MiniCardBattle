@@ -3,7 +3,7 @@
  */
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.5.6';
+export const GAME_VERSION = '0.3.6';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -117,9 +117,11 @@ export const EXCHANGE_LINEUP = [
   { id: 'djinn', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'shogun', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'pharaoh', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'motorcycle', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'gungnir', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'dreadnought', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'armsuits', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
-  { id: 'mjolnir', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
+  { id: 'babydragon', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'berserker', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'horse', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'crusher', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
@@ -137,6 +139,8 @@ export const EXCHANGE_LINEUP = [
   { id: 'muramasa', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'kitepriest', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'snakepriest', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
+  { id: 'employee', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
+  { id: 'mjolnir', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'badwolf', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'redhood', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
 ];
@@ -215,6 +219,7 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
 
 /**
  * アセットURLにバージョンクエリパラメータを付与してキャッシュを強制破棄します。
+ * さらに現在のアクセス階層（tool/ サブフォルダ等）に応じて相対パス（../assets/...）への全自動補正を行います。
  * @param {string} url - アセットURL
  * @returns {string} クエリパラメータが付与されたURL
  */
@@ -223,9 +228,26 @@ export function appendVersionQuery(url) {
   if (!url.includes('assets/')) {
     return url;
   }
-  if (/[?&]v=/.test(url)) return url;
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}v=${GAME_VERSION}`;
+  let targetUrl = url;
+  // tool/ ディレクトリ等のサブフォルダからアクセスされた場合の階層自動補正
+  if (
+    typeof window !== 'undefined' &&
+    window.location &&
+    window.location.pathname.includes('/tool/') &&
+    !targetUrl.startsWith('http://') &&
+    !targetUrl.startsWith('https://') &&
+    !targetUrl.startsWith('data:') &&
+    !targetUrl.startsWith('../')
+  ) {
+    if (targetUrl.startsWith('/assets/')) {
+      targetUrl = '..' + targetUrl;
+    } else if (targetUrl.startsWith('assets/')) {
+      targetUrl = '../' + targetUrl;
+    }
+  }
+  if (/[?&]v=/.test(targetUrl)) return targetUrl;
+  const separator = targetUrl.includes('?') ? '&' : '?';
+  return `${targetUrl}${separator}v=${GAME_VERSION}`;
 }
 
 // 防衛戦の選出ターゲット定数

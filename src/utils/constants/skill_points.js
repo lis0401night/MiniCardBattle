@@ -253,7 +253,7 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   force: {
-    base: 0,
+    base: -1,
     multiplier: 0,
   },
   // decay: 特殊計算（パワー÷2 + 1）のためポイント定義不要

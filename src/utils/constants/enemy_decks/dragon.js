@@ -4,8 +4,8 @@
  */
 export default {
   easy: [
-    'babydragon',
-    'babydragon',
+    'egg',
+    'egg',
     'dragonewt',
     'dragonewt',
     'lizardman',
@@ -32,8 +32,8 @@ export default {
     'dragoon',
     'drake',
     'drake',
-    'egg',
-    'egg',
+    'babydragon',
+    'babydragon',
     'wyvern',
     'wyvern',
     'dragonewt',

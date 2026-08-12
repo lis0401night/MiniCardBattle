@@ -459,10 +459,8 @@
               Number(pickCount) * Number(selfBaseSkillP.multiplier || 0);
 
             const avgScore = (choiceTotal / choicesArr.length) * pickCount;
-            // スキルIDに応じたスコア補正を適用する（選択は +1 の加点、命令は -1 の減点）
-            const SKILL_SCORE_ADJUST = { choice: 1, force: -1 };
-            const adjust = SKILL_SCORE_ADJUST[sk.id] ?? 0;
-            score += avgScore + adjust + selfScore;
+            // 選択・命令スキルの固定点は SKILL_POINTS (selfScore) で一元管理し、二重計上を排除
+            score += avgScore + selfScore;
           } else {
             // baseは1回分のみ、value*multiplierは個数(count)分加算
             const p = pointSettings[sk.id] || { base: 0, multiplier: 0 };

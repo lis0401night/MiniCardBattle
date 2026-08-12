@@ -1041,19 +1041,8 @@ export const CARD_MASTER = [
       '竜人族の騎兵。翼は無いが、戦場を駆け抜け敵を貫き、遠方の獲物も逃さない。',
   },
   {
-    id: 'babydragon',
-    obtain: ['dragon_easy'],
-    name: 'ドラゴンの雛',
-    rarity: 2,
-    power: 3,
-    skills: [{ id: 'growth', value: 2 }],
-    voiceCategory: 'lizard',
-    flavor:
-      'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。',
-  },
-  {
     id: 'egg',
-    obtain: ['dragon_normal'],
+    obtain: ['dragon_easy'],
     name: 'ドラゴンの卵',
     rarity: 2,
     power: 4,
@@ -1065,6 +1054,17 @@ export const CARD_MASTER = [
     voiceCategory: 'stone',
     flavor:
       '表面を覆う紅い殻が、内側から微かな熱を帯びている。いつか訪れる孵化の刻まで、秘めたる命は静かに力を蓄え続ける。',
+  },
+  {
+    id: 'babydragon',
+    obtain: ['dragon_normal'],
+    name: 'ドラゴンの雛',
+    rarity: 2,
+    power: 3,
+    skills: [{ id: 'growth', value: 2 }],
+    voiceCategory: 'lizard',
+    flavor:
+      'まだ小さなドラゴンの幼体。秘めたる魔力は無限の可能性を感じさせる。',
   },
   {
     id: 'wyvern',
@@ -1116,11 +1116,15 @@ export const CARD_MASTER = [
     name: 'ミノタウロスの傭兵',
     rarity: 2,
     power: 6,
-    skills: [{ id: 'choice', value: 1 }, { id: 'cleave' }],
+    skills: [
+      { id: 'choice', value: 1 },
+      { id: 'choice', value: 1, choiceGroup: 2 },
+    ],
     choices: [
       { id: 'convert', value: 2 },
       { id: 'brutal', value: 2 },
     ],
+    choices2: [{ id: 'pierce' }, { id: 'cleave' }],
     voiceCategory: 'giant',
     flavor:
       '圧倒的な力で敵を薙ぎ払うミノタウルスの傭兵。ただし、適切な報酬が支払われなければ、敵味方の区別なく暴れまわる。',
@@ -1599,8 +1603,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [
       { id: 'equip' },
-      { id: 'choice', value: 1 },
       { id: 'brutal', value: 2 },
+      { id: 'choice', value: 1 },
     ],
     choices: [{ id: 'absorb' }, { id: 'soul_bind', value: 2 }],
     voiceCategory: 'sword',
@@ -1787,7 +1791,7 @@ export const CARD_MASTER = [
     obtain: ['void_normal', 'void_hard'],
     name: '追放された旅人',
     rarity: 2,
-    power: 5,
+    power: 6,
     skills: [{ id: 'legendary' }, { id: 'deadly' }],
     voiceCategory: 'human_male_ikemen',
     flavor:
@@ -3758,6 +3762,7 @@ export const PREMIUM_CARD_IDS = [
   'djinn',
   'shogun',
   'pharaoh',
+  'motorcycle',
   'dreadnought',
   'mjolnir',
   'crusher',
@@ -3778,6 +3783,9 @@ export const PREMIUM_CARD_IDS = [
   'battlemage',
   'muramasa',
   'snakepriest',
+  'employee',
+  'babydragon',
+  'gungnir',
   // --- 運命の邂逅 ---
   'liberator',
   'dwarf',

@@ -184,6 +184,8 @@ export const PREMIUM_VOICE_MAP = {
   liberator: 'human_female_cool',
   crusher: 'human_male_ikemen',
   dwarf: 'human_female_normal',
+  motorcycle: 'human_female_assassin',
+  employee: 'human_female_normal',
 };
 
 /**

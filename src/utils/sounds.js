@@ -70,78 +70,138 @@ export const SOUNDS = {
   ...SE_PATHS,
 };
 
+/**
+ * 現在のアクセス階層（tool/ サブフォルダ等）に応じて音声アセットの相対パスを自動補正します。
+ * @param {string} path - 音声アセットパス
+ * @returns {string} 補正済みパス
+ */
+export function resolveAssetPath(path) {
+  if (!path || typeof path !== 'string') return path;
+  if (
+    path.startsWith('http://') ||
+    path.startsWith('https://') ||
+    path.startsWith('data:') ||
+    path.startsWith('../')
+  ) {
+    return path;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.location &&
+    window.location.pathname.includes('/tool/')
+  ) {
+    if (path.startsWith('/assets/')) return '..' + path;
+    if (path.startsWith('assets/')) return '../' + path;
+  }
+  return path;
+}
+
+function createAudioInstance(path) {
+  return new Audio(resolveAssetPath(path));
+}
+
 export const AUDIO_INSTANCES = {
   // BGM
-  bgmTitle: new Audio('assets/audio/bgm/bgm_title.mp3'),
-  bgmBattle: new Audio('assets/audio/bgm/bgm_battle.mp3'),
-  bgmEnding: new Audio('assets/audio/bgm/bgm_ending.mp3'),
-  bgmLastBattle: new Audio('assets/audio/bgm/bgm_lastbattle.mp3'),
-  bgmGallery: new Audio('assets/audio/bgm/bgm_gallery.mp3'),
-  bgmDefense: new Audio('assets/audio/bgm/bgm_defense.mp3'),
-  bgmChallenge: new Audio('assets/audio/bgm/bgm_challenge.mp3'),
-  bgmTournament1: new Audio('assets/audio/bgm/bgm_tournament01.mp3'),
-  bgmTournament2: new Audio('assets/audio/bgm/bgm_tournament02.mp3'),
-  bgmOnline: new Audio('assets/audio/bgm/bgm_online.mp3'),
-  bgmHighDifficulty: new Audio('assets/audio/bgm/bgm_high_difficulty.mp3'),
-  bgmStageAndroid: new Audio('assets/audio/bgm/bgm_stage_android01.mp3'),
-  bgmStageDragon: new Audio('assets/audio/bgm/bgm_stage_dragon01.mp3'),
-  bgmStageKnight: new Audio('assets/audio/bgm/bgm_stage_knight01.mp3'),
-  bgmStageCthulhu: new Audio('assets/audio/bgm/bgm_stage_cthulhu01.mp3'),
-  bgmStageElf: new Audio('assets/audio/bgm/bgm_stage_elf01.mp3'),
-  bgmStageCleric: new Audio('assets/audio/bgm/bgm_stage_cleric01.mp3'),
-  bgmStageDevilHunter: new Audio(
+  bgmTitle: createAudioInstance('assets/audio/bgm/bgm_title.mp3'),
+  bgmBattle: createAudioInstance('assets/audio/bgm/bgm_battle.mp3'),
+  bgmEnding: createAudioInstance('assets/audio/bgm/bgm_ending.mp3'),
+  bgmLastBattle: createAudioInstance('assets/audio/bgm/bgm_lastbattle.mp3'),
+  bgmGallery: createAudioInstance('assets/audio/bgm/bgm_gallery.mp3'),
+  bgmDefense: createAudioInstance('assets/audio/bgm/bgm_defense.mp3'),
+  bgmChallenge: createAudioInstance('assets/audio/bgm/bgm_challenge.mp3'),
+  bgmTournament1: createAudioInstance('assets/audio/bgm/bgm_tournament01.mp3'),
+  bgmTournament2: createAudioInstance('assets/audio/bgm/bgm_tournament02.mp3'),
+  bgmOnline: createAudioInstance('assets/audio/bgm/bgm_online.mp3'),
+  bgmHighDifficulty: createAudioInstance(
+    'assets/audio/bgm/bgm_high_difficulty.mp3'
+  ),
+  bgmStageAndroid: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_android01.mp3'
+  ),
+  bgmStageDragon: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_dragon01.mp3'
+  ),
+  bgmStageKnight: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_knight01.mp3'
+  ),
+  bgmStageCthulhu: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_cthulhu01.mp3'
+  ),
+  bgmStageElf: createAudioInstance('assets/audio/bgm/bgm_stage_elf01.mp3'),
+  bgmStageCleric: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_cleric01.mp3'
+  ),
+  bgmStageDevilHunter: createAudioInstance(
     'assets/audio/bgm/bgm_stage_devilhunter01.mp3'
   ),
-  bgmStageWitch: new Audio('assets/audio/bgm/bgm_stage_witch01.mp3'),
-  bgmStageOni: new Audio('assets/audio/bgm/bgm_stage_oni01.mp3'),
-  bgmStagePriest: new Audio('assets/audio/bgm/bgm_stage_priest01.mp3'),
-  bgmStageSatan: new Audio('assets/audio/bgm/bgm_stage_satan01.mp3'),
-  bgmStageDungeon: new Audio('assets/audio/bgm/bgm_stage_dungeon01.mp3'),
-  bgmStagePractice: new Audio('assets/audio/bgm/bgm_stage_practice01.mp3'),
-  bgmStageAutomata: new Audio('assets/audio/bgm/bgm_stage_automata01.mp3'),
-  bgmStageValkyria: new Audio('assets/audio/bgm/bgm_stage_valkyria01.mp3'),
-  bgmStageHighDifficulty: new Audio(
+  bgmStageWitch: createAudioInstance('assets/audio/bgm/bgm_stage_witch01.mp3'),
+  bgmStageOni: createAudioInstance('assets/audio/bgm/bgm_stage_oni01.mp3'),
+  bgmStagePriest: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_priest01.mp3'
+  ),
+  bgmStageSatan: createAudioInstance('assets/audio/bgm/bgm_stage_satan01.mp3'),
+  bgmStageDungeon: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_dungeon01.mp3'
+  ),
+  bgmStagePractice: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_practice01.mp3'
+  ),
+  bgmStageAutomata: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_automata01.mp3'
+  ),
+  bgmStageValkyria: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_valkyria01.mp3'
+  ),
+  bgmStageHighDifficulty: createAudioInstance(
     'assets/audio/bgm/bgm_stage_high_difficulty.mp3'
   ),
-  bgmStory01: new Audio('assets/audio/bgm/bgm_story01.mp3'),
-  bgmStory02: new Audio('assets/audio/bgm/bgm_story02.mp3'),
-  bgmFortune1: new Audio('assets/audio/bgm/bgm_fortune01.mp3'),
+  bgmStory01: createAudioInstance('assets/audio/bgm/bgm_story01.mp3'),
+  bgmStory02: createAudioInstance('assets/audio/bgm/bgm_story02.mp3'),
+  bgmFortune1: createAudioInstance('assets/audio/bgm/bgm_fortune01.mp3'),
   // SE (Web Audio API用フォールバックとしても事前生成しておく)
-  seClick: new Audio('assets/audio/se/se_click.mp3'),
-  sePlace: new Audio('assets/audio/se/se_place.mp3'),
-  seAttack: new Audio('assets/audio/se/se_attack.mp3'),
-  seDamage: new Audio('assets/audio/se/se_damage.mp3'),
-  seSkill: new Audio('assets/audio/se/se_skill_default.mp3'),
-  seDestroy: new Audio('assets/audio/se/se_destroy.mp3'),
-  seContinue: new Audio('assets/audio/se/se_skill_default.mp3'),
-  seLegend: new Audio('assets/audio/se/se_legend.mp3'),
-  seSkillBind: new Audio('assets/audio/se/se_skill_bind.mp3'),
-  seSkillToxic: new Audio('assets/audio/se/se_skill_toxic.mp3'),
-  seSkillCharge: new Audio('assets/audio/se/se_skill_charge.mp3'),
-  seSkillFreeze: new Audio('assets/audio/se/se_skill_freeze.mp3'),
-  seSkillCrush: new Audio('assets/audio/se/se_skill_crush.mp3'),
-  seSkillSnipe: new Audio('assets/audio/se/se_skill_snipe.mp3'),
-  seSkillHeal: new Audio('assets/audio/se/se_skill_heal.mp3'),
-  seSkillDominate: new Audio('assets/audio/se/se_skill_dominate.mp3'),
-  seTurnover: new Audio('assets/audio/se/se_turnoverthecard.mp3'),
-  seMatching: new Audio('assets/audio/bgm/bgm_matching_metal.mp3'),
-  seVS: new Audio('assets/audio/se/se_heavyslash.mp3'),
-  seSkillMorph: new Audio('assets/audio/se/se_skill_morph.mp3'),
-  seSkillGoaCrush: new Audio('assets/audio/se/se_skill_goacrush.mp3'),
-  seSkillBloodDamage: new Audio('assets/audio/se/se_blooddamage.mp3'),
-  seSkillExplode: new Audio('assets/audio/se/se_skill_explode.mp3'),
-  voiceUndeadPlay: new Audio('assets/audio/voice/voice_undead_play.mp3'),
-  seSkillHero: new Audio('assets/audio/se/se_skill_hero.mp3'),
-  seSkillExtort: new Audio('assets/audio/se/se_skill_extort.mp3'),
-  seSkillAdversity: new Audio('assets/audio/se/se_skill_adversity.mp3'),
-  seSkillBrutal: new Audio('assets/audio/se/se_skill_brutal.mp3'),
-  seSkillSeal: new Audio('assets/audio/se/se_skill_seal.mp3'),
-  seSkillArtillery: new Audio('assets/audio/se/se_skill_artillery.mp3'),
-  seSkillSacrifice: new Audio('assets/audio/se/se_skill_sacrifice.mp3'),
-  seSkillExecute: new Audio('assets/audio/se/se_skill_execute.mp3'),
-  seSkillStealth: new Audio('assets/audio/se/se_skill_stealth.mp3'),
-  seSkillCall: new Audio('assets/audio/se/se_skill_call.mp3'),
-  seSkillIgnis: new Audio('assets/audio/se/se_summon_ignis.mp3'),
+  seClick: createAudioInstance('assets/audio/se/se_click.mp3'),
+  sePlace: createAudioInstance('assets/audio/se/se_place.mp3'),
+  seAttack: createAudioInstance('assets/audio/se/se_attack.mp3'),
+  seDamage: createAudioInstance('assets/audio/se/se_damage.mp3'),
+  seSkill: createAudioInstance('assets/audio/se/se_skill_default.mp3'),
+  seDestroy: createAudioInstance('assets/audio/se/se_destroy.mp3'),
+  seContinue: createAudioInstance('assets/audio/se/se_skill_default.mp3'),
+  seLegend: createAudioInstance('assets/audio/se/se_legend.mp3'),
+  seSkillBind: createAudioInstance('assets/audio/se/se_skill_bind.mp3'),
+  seSkillToxic: createAudioInstance('assets/audio/se/se_skill_toxic.mp3'),
+  seSkillCharge: createAudioInstance('assets/audio/se/se_skill_charge.mp3'),
+  seSkillFreeze: createAudioInstance('assets/audio/se/se_skill_freeze.mp3'),
+  seSkillCrush: createAudioInstance('assets/audio/se/se_skill_crush.mp3'),
+  seSkillSnipe: createAudioInstance('assets/audio/se/se_skill_snipe.mp3'),
+  seSkillHeal: createAudioInstance('assets/audio/se/se_skill_heal.mp3'),
+  seSkillDominate: createAudioInstance('assets/audio/se/se_skill_dominate.mp3'),
+  seTurnover: createAudioInstance('assets/audio/se/se_turnoverthecard.mp3'),
+  seMatching: createAudioInstance('assets/audio/bgm/bgm_matching_metal.mp3'),
+  seVS: createAudioInstance('assets/audio/se/se_heavyslash.mp3'),
+  seSkillMorph: createAudioInstance('assets/audio/se/se_skill_morph.mp3'),
+  seSkillGoaCrush: createAudioInstance('assets/audio/se/se_skill_goacrush.mp3'),
+  seSkillBloodDamage: createAudioInstance('assets/audio/se/se_blooddamage.mp3'),
+  seSkillExplode: createAudioInstance('assets/audio/se/se_skill_explode.mp3'),
+  voiceUndeadPlay: createAudioInstance(
+    'assets/audio/voice/voice_undead_play.mp3'
+  ),
+  seSkillHero: createAudioInstance('assets/audio/se/se_skill_hero.mp3'),
+  seSkillExtort: createAudioInstance('assets/audio/se/se_skill_extort.mp3'),
+  seSkillAdversity: createAudioInstance(
+    'assets/audio/se/se_skill_adversity.mp3'
+  ),
+  seSkillBrutal: createAudioInstance('assets/audio/se/se_skill_brutal.mp3'),
+  seSkillSeal: createAudioInstance('assets/audio/se/se_skill_seal.mp3'),
+  seSkillArtillery: createAudioInstance(
+    'assets/audio/se/se_skill_artillery.mp3'
+  ),
+  seSkillSacrifice: createAudioInstance(
+    'assets/audio/se/se_skill_sacrifice.mp3'
+  ),
+  seSkillExecute: createAudioInstance('assets/audio/se/se_skill_execute.mp3'),
+  seSkillStealth: createAudioInstance('assets/audio/se/se_skill_stealth.mp3'),
+  seSkillCall: createAudioInstance('assets/audio/se/se_skill_call.mp3'),
+  seSkillIgnis: createAudioInstance('assets/audio/se/se_summon_ignis.mp3'),
 };
 
 /**
@@ -187,7 +247,8 @@ Object.keys(AUDIO_INSTANCES).forEach((key) => {
 export async function loadAndDecodeAudio(url) {
   if (!audioCtx) return null;
   try {
-    const response = await fetch(url);
+    const fetchUrl = resolveAssetPath(url);
+    const response = await fetch(fetchUrl);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const arrayBuffer = await response.arrayBuffer();
     return await new Promise((resolve) => {

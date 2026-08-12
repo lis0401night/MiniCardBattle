@@ -184,6 +184,13 @@
             >
               全カード一覧
             </button>
+            <button
+              id="tab-battles"
+              class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              onclick="window.switchTab('battles')"
+            >
+              防衛戦結果
+            </button>
           </div>
           <div class="hidden md:block h-8 w-px bg-slate-700 mx-2"></div>
           <div
@@ -536,6 +543,158 @@
           <!-- JS Injection -->
         </div>
       </div>
+
+      <!-- 防衛戦結果一覧ビュー -->
+      <div
+        id="view-battles"
+        class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3"
+        >
+          <div>
+            <h2
+              class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1"
+            >
+              データベース
+            </h2>
+            <div class="flex items-center gap-3">
+              <div class="text-xl font-black text-slate-800 tracking-tight">
+                防衛戦結果一覧 (対戦履歴)
+                <span
+                  id="battles-count"
+                  class="text-sm font-bold text-slate-500 ml-2"
+                ></span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                id="battle-search-input"
+                placeholder="対戦者・防衛者名で検索..."
+                class="bg-white text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all w-48 shadow-sm"
+                oninput="window.renderBattleLogsList()"
+              />
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">勝敗結果:</span>
+              <select
+                id="battle-result-filter"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.renderBattleLogsList()"
+              >
+                <option value="all">すべて</option>
+                <option value="atk_win">⚔️ 攻撃成功 (防衛失敗) のみ</option>
+                <option value="def_win">🛡️ 防衛成功 (攻撃失敗) のみ</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">表示件数:</span>
+              <select
+                id="battle-limit-filter"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.renderBattleLogsList()"
+              >
+                <option value="50">直近 50 試合</option>
+                <option value="100" selected>直近 100 試合</option>
+                <option value="200">直近 200 試合</option>
+                <option value="500">直近 500 試合</option>
+                <option value="all">全試合 (無制限)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="panel-scroll scroll-custom w-full">
+          <table class="w-full text-left border-collapse">
+            <thead
+              class="bg-white/95 backdrop-blur-sm text-[10px] font-black uppercase text-slate-400 tracking-widest border-b sticky top-0 z-20 shadow-sm"
+            >
+              <tr>
+                <th class="p-3 w-12 text-center">#</th>
+                <th class="p-3" style="min-width: 150px">対戦日時</th>
+                <th class="p-3" style="min-width: 200px">攻撃プレイヤー</th>
+                <th class="p-3" style="min-width: 180px">防衛プレイヤー</th>
+                <th class="p-3 text-center" style="min-width: 140px">
+                  勝敗結果
+                </th>
+                <th class="p-3 text-center" style="min-width: 150px">
+                  攻撃デッキ
+                </th>
+              </tr>
+            </thead>
+            <tbody id="battles-table-body" class="divide-y divide-slate-100">
+              <!-- JS Injection -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 攻撃デッキ詳細ポップアップモーダル -->
+      <div
+        id="battle-deck-modal"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"
+        onclick="if (event.target === this) window.closeBattleDeckModal();"
+      >
+        <div
+          class="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in"
+        >
+          <!-- モーダルヘッダー -->
+          <div
+            class="p-4 md:p-5 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center shrink-0"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-xl"
+              >
+                🎴
+              </div>
+              <div>
+                <h3
+                  id="modal-deck-title"
+                  class="font-black text-lg text-white tracking-tight"
+                >
+                  攻撃デッキ確認
+                </h3>
+                <div id="modal-deck-subtitle" class="text-xs text-slate-400">
+                  使用カード: 20枚
+                </div>
+              </div>
+            </div>
+            <button
+              onclick="window.closeBattleDeckModal()"
+              class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-sm font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- モーダルボディ (カード20枚グリッド) -->
+          <div
+            class="panel-scroll scroll-custom p-4 md:p-6 overflow-y-auto flex-1"
+          >
+            <div
+              id="modal-deck-cards-grid"
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+            >
+              <!-- JS Injection -->
+            </div>
+          </div>
+
+          <!-- モーダルフッター -->
+          <div
+            class="p-4 border-t border-slate-800 bg-slate-950 flex justify-end shrink-0"
+          >
+            <button
+              onclick="window.closeBattleDeckModal()"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition-colors"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script type="module">
@@ -747,6 +906,9 @@
       window.switchTab = switchTab;
       window.togglePlayerFilter = togglePlayerFilter;
       window.toggleAllPlayers = toggleAllPlayers;
+      window.renderBattleLogsList = renderBattleLogsList;
+      window.openBattleDeckModal = openBattleDeckModal;
+      window.closeBattleDeckModal = closeBattleDeckModal;
       window.sortCardList = function (sortKey) {
         currentCardSort = sortKey;
         renderCardList();
@@ -866,9 +1028,11 @@
         const viewMain = document.getElementById('view-main');
         const viewLeaders = document.getElementById('view-leaders');
         const viewCards = document.getElementById('view-cards');
+        const viewBattles = document.getElementById('view-battles');
         const tabPlayers = document.getElementById('tab-players');
         const tabLeaders = document.getElementById('tab-leaders');
         const tabCards = document.getElementById('tab-cards');
+        const tabBattles = document.getElementById('tab-battles');
 
         const activeClass =
           'px-3 py-1.5 rounded-md text-xs font-bold bg-indigo-600 text-white transition-colors';
@@ -876,16 +1040,18 @@
           'px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors';
 
         viewMain.classList.add('hidden');
-        viewLeaders.classList.add('hidden');
-        viewCards.classList.add('hidden');
+        if (viewLeaders) viewLeaders.classList.add('hidden');
+        if (viewCards) viewCards.classList.add('hidden');
+        if (viewBattles) viewBattles.classList.add('hidden');
 
-        tabPlayers.className = inactiveClass;
+        if (tabPlayers) tabPlayers.className = inactiveClass;
         if (tabLeaders) tabLeaders.className = inactiveClass;
-        tabCards.className = inactiveClass;
+        if (tabCards) tabCards.className = inactiveClass;
+        if (tabBattles) tabBattles.className = inactiveClass;
 
         if (tab === 'players') {
           viewMain.classList.remove('hidden');
-          tabPlayers.className = activeClass;
+          if (tabPlayers) tabPlayers.className = activeClass;
         } else if (tab === 'leaders') {
           if (viewLeaders) viewLeaders.classList.remove('hidden');
           if (tabLeaders) tabLeaders.className = activeClass;
@@ -893,11 +1059,15 @@
             renderLeaderList();
           }
         } else if (tab === 'cards') {
-          viewCards.classList.remove('hidden');
-          tabCards.className = activeClass;
+          if (viewCards) viewCards.classList.remove('hidden');
+          if (tabCards) tabCards.className = activeClass;
           if (document.getElementById('cards-grid')?.children.length === 0) {
             renderCardList();
           }
+        } else if (tab === 'battles') {
+          if (viewBattles) viewBattles.classList.remove('hidden');
+          if (tabBattles) tabBattles.className = activeClass;
+          renderBattleLogsList();
         }
       }
 
@@ -1592,6 +1762,217 @@
 
         document.getElementById('cards-grid').innerHTML =
           `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">${gridHtml}</div>`;
+      }
+
+      // =============================
+      // 防衛戦結果 (対戦履歴) セクション
+      // =============================
+
+      /**
+       * 防衛戦結果（対戦履歴）一覧テーブルを描画する
+       */
+      function renderBattleLogsList() {
+        const container = document.getElementById('battles-table-body');
+        const countEl = document.getElementById('battles-count');
+        if (!container) return;
+
+        const searchQuery = (
+          document.getElementById('battle-search-input')?.value || ''
+        )
+          .trim()
+          .toLowerCase();
+        const resultFilter =
+          document.getElementById('battle-result-filter')?.value || 'all';
+        const limitVal =
+          document.getElementById('battle-limit-filter')?.value || '100';
+        const limit = limitVal === 'all' ? Infinity : parseInt(limitVal, 10);
+
+        let logs = Array.isArray(recentBattles) ? [...recentBattles] : [];
+
+        // 1. 勝敗結果フィルター (データ上の rec.result === 'lose' が攻撃成功, 'win' が防衛成功)
+        if (resultFilter === 'atk_win') {
+          logs = logs.filter((r) => r.result === 'lose');
+        } else if (resultFilter === 'def_win') {
+          logs = logs.filter((r) => r.result === 'win');
+        }
+
+        // 2. 名前検索フィルター (攻撃者名・防衛者名)
+        if (searchQuery) {
+          logs = logs.filter(
+            (r) =>
+              (r.attackerName || '').toLowerCase().includes(searchQuery) ||
+              (r.targetName || '').toLowerCase().includes(searchQuery)
+          );
+        }
+
+        // 件数更新
+        if (countEl) {
+          countEl.textContent = `(表示: ${Math.min(logs.length, limit)} / 全 ${recentBattles.length} 件)`;
+        }
+
+        // 表示件数制限
+        const displayLogs = limit === Infinity ? logs : logs.slice(0, limit);
+
+        if (displayLogs.length === 0) {
+          container.innerHTML = `
+            <tr>
+              <td colspan="6" class="p-12 text-center text-slate-400 font-bold text-sm">
+                該当する対戦履歴データが見つかりませんでした。
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const rowsHtml = displayLogs
+          .map((rec, idx) => {
+            const realIdx = recentBattles.indexOf(rec);
+            const formattedDate = rec.timestamp
+              ? new Date(rec.timestamp * 1000).toLocaleString('ja-JP', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '--';
+
+            // rec.result は防衛者視点 ('win' = 防衛成功, 'lose' = 防衛失敗/攻撃成功)
+            const isAtkWin = rec.result === 'lose';
+            const resultBadge = isAtkWin
+              ? `<span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm inline-flex items-center gap-1">⚔️ 攻撃成功 (防衛失敗)</span>`
+              : `<span class="px-2.5 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800 border border-blue-300 shadow-sm inline-flex items-center gap-1">🛡️ 防衛成功 (攻撃失敗)</span>`;
+
+            // 攻撃キャラクターアイコン
+            const charId = rec.attackerCharacter || 'android';
+            const charObj = CHARACTERS[charId] || {};
+            const skinId = rec.attackerSkin || 'default';
+            const rawIconPath =
+              (typeof getSkinImage === 'function' &&
+                getSkinImage(charObj, skinId, 'icon')) ||
+              charObj.icon ||
+              getIconPath('player');
+            const iconPath = fixAssetPath(rawIconPath);
+
+            const deckCount = Array.isArray(rec.attackerDeck)
+              ? rec.attackerDeck.length
+              : 0;
+
+            return `
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="p-3 text-center text-xs font-mono font-bold text-slate-400">${idx + 1}</td>
+              <td class="p-3 text-xs font-semibold text-slate-600">${escapeHtml(formattedDate)}</td>
+              <td class="p-3">
+                <div class="flex items-center gap-2.5">
+                  <img src="${escapeHtml(iconPath)}" class="w-8 h-8 rounded-full object-cover border border-indigo-200 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                  <div class="flex flex-col min-w-0">
+                    <div class="font-bold text-slate-800 text-sm truncate">${escapeHtml(rec.attackerName || '不明')}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(charObj.name || charId)}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-slate-700 text-sm">${escapeHtml(rec.targetName || '不明')}</div>
+              </td>
+              <td class="p-3 text-center">
+                ${resultBadge}
+              </td>
+              <td class="p-3 text-center">
+                <button
+                  onclick="window.openBattleDeckModal(${realIdx})"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200 transition-all shadow-sm flex items-center gap-1.5 mx-auto"
+                >
+                  <span>🎴 攻撃デッキ (${deckCount}枚)</span>
+                </button>
+              </td>
+            </tr>
+          `;
+          })
+          .join('');
+
+        container.innerHTML = rowsHtml;
+      }
+
+      /**
+       * 攻撃デッキ詳細ポップアップモーダルを開く
+       * @param {number} recordIndex - recentBattles のインデックス
+       */
+      function openBattleDeckModal(recordIndex) {
+        const rec = recentBattles[recordIndex];
+        if (!rec || !Array.isArray(rec.attackerDeck)) return;
+
+        const modal = document.getElementById('battle-deck-modal');
+        const titleEl = document.getElementById('modal-deck-title');
+        const subtitleEl = document.getElementById('modal-deck-subtitle');
+        const gridEl = document.getElementById('modal-deck-cards-grid');
+        if (!modal || !gridEl) return;
+
+        const formattedDate = rec.timestamp
+          ? new Date(rec.timestamp * 1000).toLocaleString('ja-JP')
+          : '';
+
+        if (titleEl) {
+          titleEl.textContent = `${rec.attackerName || '不明'} の攻撃デッキ`;
+        }
+        if (subtitleEl) {
+          const isAtkWin = rec.result === 'lose';
+          subtitleEl.textContent = `対戦相手: ${rec.targetName || '不明'} | 日時: ${formattedDate} | 結果: ${isAtkWin ? '⚔️ 攻撃成功 (防衛失敗)' : '🛡️ 防衛成功 (攻撃失敗)'}`;
+        }
+
+        const RARITY_LABELS = { 1: 'N', 2: 'R', 3: 'SR', 4: 'UR', 5: 'LR' };
+        const RARITY_COLORS = {
+          1: 'slate',
+          2: 'emerald',
+          3: 'blue',
+          4: 'amber',
+          5: 'purple',
+        };
+
+        const cardsHtml = rec.attackerDeck
+          .map((entry) => {
+            const cardId = resolveCardId(entry);
+            const isPremium =
+              typeof entry === 'object' && entry !== null
+                ? !!entry.isPremium
+                : false;
+            const cardObj = (CARD_MASTER || []).find((c) => c.id === cardId);
+
+            const cardName = cardObj ? cardObj.name : cardId;
+            const power = cardObj ? cardObj.power : '?';
+            const rarity = cardObj ? cardObj.rarity : 1;
+            const thumbUrl = getCardThumbPath(cardId);
+
+            const rarityColor = RARITY_COLORS[rarity] || 'slate';
+            const rarityLabel = RARITY_LABELS[rarity] || '?';
+
+            return `
+            <div class="relative bg-slate-800 border ${isPremium ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-700'} rounded-2xl p-2.5 flex flex-col shadow-md hover:border-indigo-400 transition-all overflow-hidden group">
+              ${isPremium ? '<div class="absolute top-0 right-0 bg-gradient-to-l from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-bl-lg shadow-sm z-10">★ プレミアム</div>' : ''}
+              <div class="relative mb-2 overflow-hidden rounded-xl bg-slate-900 border border-slate-700/50 aspect-square">
+                <img src="${escapeHtml(thumbUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${escapeHtml(cardName)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+              </div>
+              <div class="flex flex-col flex-1 min-w-0">
+                <div class="font-black text-white text-xs truncate" title="${escapeHtml(cardName)}">${escapeHtml(cardName)}</div>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="text-[9px] font-black text-${rarityColor}-400 bg-${rarityColor}-950/80 px-1.5 py-0.5 rounded border border-${rarityColor}-800">${rarityLabel}</span>
+                  <span class="text-xs font-black text-amber-400">PWR ${power}</span>
+                </div>
+              </div>
+            </div>
+          `;
+          })
+          .join('');
+
+        gridEl.innerHTML = cardsHtml;
+        modal.classList.remove('hidden');
+      }
+
+      /**
+       * 攻撃デッキ詳細ポップアップモーダルを閉じる
+       */
+      function closeBattleDeckModal() {
+        const modal = document.getElementById('battle-deck-modal');
+        if (modal) modal.classList.add('hidden');
       }
 
       // =============================

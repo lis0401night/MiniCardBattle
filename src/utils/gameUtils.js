@@ -1,6 +1,6 @@
 import { OWNERSHIP_FILTERS } from '../hooks/useCardFilterSort.js';
 import { GameState } from '../state/gameState.js';
-import { CARD_MASTER } from './constants/cards.js';
+import { CARD_MASTER, PREMIUM_CARD_IDS } from './constants/cards.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import {
   appendVersionQuery,
@@ -698,54 +698,7 @@ export function stripEphemeralSkills(card) {
   }
 }
 
-export const VALID_PREMIUM_CARDS = [
-  'assassin',
-  'cleric',
-  'commander',
-  'cyberdragon',
-  'eye',
-  'dragon',
-  'empress',
-  'cyberman',
-  'dancer',
-  'oldgod',
-  'pray',
-  'wolf',
-  'necromancer',
-  'vampire',
-  'beginnermagic',
-  'djinn',
-  'shogun',
-  'omyouji',
-  'mummy',
-  'pharaoh',
-  'dreadnought',
-  'armsuits',
-  'mjolnir',
-  'berserker',
-  'horse',
-  'crusher',
-  'shark',
-  'parasite',
-  'shaman',
-  'darkelf',
-  'doom',
-  'acolyte',
-  'plaguedoctor',
-  'servant',
-  'ring',
-  'battlemage',
-  'yukionna',
-  'muramasa',
-  'kitepriest',
-  'snakepriest',
-  'light',
-  'cheetah',
-  'tortoise',
-  'liberator',
-  'dwarf',
-  'sniper',
-];
+export const VALID_PREMIUM_CARDS = PREMIUM_CARD_IDS;
 
 /**
  * 指定されたカードIDがプレミアム版（WebPまたはJPGイラスト）を持っているか判定します。
