@@ -33,6 +33,7 @@ import {
   PLACE_ANIMATION_DURATION,
   PREPARE_BATTLE_LOCK_TIMEOUT_MS,
   TURN_ORDER_START_DELAY_MS,
+  appendVersionQuery,
 } from '../../utils/constants/config.js';
 import {
   CHAR_FORTUNE_HANDICAPS,
@@ -103,6 +104,75 @@ function setBattlePreparingLock(isPreparing) {
       document.body.classList.remove('is-preparing-battle');
     }
   }
+}
+
+/**
+ * マッチング画面（VS演出画面）で使用する必須画像アセット（立ち絵・枠・VSロゴ・背景等）を
+ * 画面表示前に100%事前ロード完了させるヘルパー関数。
+ *
+ * @function preloadMatchingAssets
+ * @param {Function} onComplete - 全マッチング用画像が読み込み完了した際に呼ばれるコールバック
+ * @returns {void}
+ */
+function preloadMatchingAssets(onComplete) {
+  const playerSkin = GameState.playerSkins?.[GameState.playerConfig?.id];
+  const enemySkin = GameState.enemySkins?.[GameState.enemyConfig?.id];
+
+  const playerLeaderUrls = getLeaderPreloadUrls(
+    GameState.playerConfig,
+    playerSkin
+  );
+  const enemyLeaderUrls = getLeaderPreloadUrls(
+    GameState.enemyConfig,
+    enemySkin
+  );
+
+  const matchingAssetUrls = Array.from(
+    new Set([
+      ...playerLeaderUrls,
+      ...enemyLeaderUrls,
+      appendVersionQuery('assets/ui/vs_logo.png'),
+      appendVersionQuery('assets/ui/chara_frame.png'),
+    ])
+  );
+
+  if (matchingAssetUrls.length === 0) {
+    if (onComplete) onComplete();
+    return;
+  }
+
+  let loadedCount = 0;
+  let isDone = false;
+
+  const checkDone = () => {
+    if (isDone) return;
+    loadedCount++;
+    if (loadedCount >= matchingAssetUrls.length) {
+      isDone = true;
+      if (onComplete) onComplete();
+    }
+  };
+
+  // 読み込み遅延時のセーフティタイムアウト (最大1500msで強制進行)
+  const safetyTimeout = setTimeout(() => {
+    if (!isDone) {
+      isDone = true;
+      if (onComplete) onComplete();
+    }
+  }, 1500);
+
+  matchingAssetUrls.forEach((url) => {
+    const img = new Image();
+    img.onload = () => {
+      clearTimeout(safetyTimeout);
+      checkDone();
+    };
+    img.onerror = () => {
+      clearTimeout(safetyTimeout);
+      checkDone();
+    };
+    img.src = url;
+  });
 }
 
 /** バトル準備の連打防止・二重呼び出しローディングロックフラグ */
@@ -178,6 +248,29 @@ function syncConfigSkins() {
 // ==========================================
 
 /**
+ * 新しい対戦の準備に入る直前に、前戦の残像（盤面・手札・HP・墓地等）が露出するのを防ぐため
+ * GameState の対戦パラメータを事前にクリーン初期化する。
+ *
+ * @function clearBattleStateData
+ * @returns {void}
+ */
+export function clearBattleStateData() {
+  GameState.isInitializing = true;
+  GameState.playerBoard = [null, null, null];
+  GameState.enemyBoard = [null, null, null];
+  GameState.playerHand = [];
+  GameState.enemyHand = [];
+  GameState.playerDiscard = [];
+  GameState.enemyDiscard = [];
+  GameState.playerSealedLanes = [0, 0, 0];
+  GameState.enemySealedLanes = [0, 0, 0];
+  GameState.actionQueue = [];
+  GameState.pendingChoices = [];
+  GameState.isProcessing = false;
+  GameState.isBattleEnded = false;
+}
+
+/**
  * バトルの準備（アセットのプリロード、デッキ/スキル設定、初期化スクリプトの実行）を行う。
  * 連打による二重呼び出しを防止する。
  */
@@ -187,10 +280,8 @@ export function prepareBattle() {
   isBattleLoading = true;
   setBattlePreparingLock(true);
 
-  // 【画面チラつき・旧画面露出の完全防止】
-  // VS演出やアセットロードの裏側で旧画面（デッキ編集画面等）が露出するのを防ぐため、
-  // 対戦準備開始時点で裏側の画面を対戦画面（screen-battle）へ即座にセットする。
-  switchScreen('screen-battle');
+  // 【前戦データクリア】新対戦に入る直前に前戦の盤面・手札データをクリーンリセット
+  clearBattleStateData();
 
   const currentGeneration = ++prepareBattleGeneration;
   const isCurrentPreparation = () =>
@@ -464,14 +555,18 @@ export function prepareBattle() {
   if (typeof window.showMatchingScreen === 'function') {
     if (!isCurrentPreparation()) return;
 
-    // マッチング画面開始
-    window.showMatchingScreen(() => {
-      if (isCurrentPreparation()) {
-        initBattleState();
-      }
+    // マッチング画面に必要な必須アセット（立ち絵・枠・ロゴ）を事前に100%ロード完了させてからマッチング画面を表示する
+    preloadMatchingAssets(() => {
+      if (!isCurrentPreparation()) return;
+
+      window.showMatchingScreen(() => {
+        if (isCurrentPreparation()) {
+          initBattleState();
+        }
+      });
     });
 
-    // 裏側でアセット読み込みを開始
+    // 裏側で対戦用の全アセット読み込み（カード20枚・VFX・BGM等）を開始
     startLoadingAndBattle(() => {
       if (!isCurrentPreparation()) return;
       // アセットロード完了をMatchingScreenコンポーネントへ通知
