@@ -29,7 +29,6 @@ import {
   BATTLE_ASSET_LOAD_TIMEOUT_MS,
   BATTLE_SCREEN_READY_TIMEOUT_MS,
   INITIAL_DRAW_COUNT,
-  MATCHING_SCREEN_TIMEOUT_MS,
   MAX_HP,
   PLACE_ANIMATION_DURATION,
   PREPARE_BATTLE_LOCK_TIMEOUT_MS,
@@ -187,6 +186,11 @@ export function prepareBattle() {
   if (isBattleLoading) return;
   isBattleLoading = true;
   setBattlePreparingLock(true);
+
+  // 【画面チラつき・旧画面露出の完全防止】
+  // VS演出やアセットロードの裏側で旧画面（デッキ編集画面等）が露出するのを防ぐため、
+  // 対戦準備開始時点で裏側の画面を対戦画面（screen-battle）へ即座にセットする。
+  switchScreen('screen-battle');
 
   const currentGeneration = ++prepareBattleGeneration;
   const isCurrentPreparation = () =>
@@ -459,36 +463,21 @@ export function prepareBattle() {
 
   if (typeof window.showMatchingScreen === 'function') {
     if (!isCurrentPreparation()) return;
-    let matchingDone = false;
-    let loadingDone = false;
-
-    const tryInit = () => {
-      if (isCurrentPreparation() && matchingDone && loadingDone) {
-        initBattleState();
-      }
-    };
 
     // マッチング画面開始
-    const matchingSafetyTimeout = setTimeout(() => {
-      if (isCurrentPreparation() && !matchingDone) {
-        console.warn('Matching screen timed out. Forcing battle start...');
-        matchingDone = true;
-        tryInit();
-      }
-    }, MATCHING_SCREEN_TIMEOUT_MS);
-
     window.showMatchingScreen(() => {
-      clearTimeout(matchingSafetyTimeout);
-      if (!isCurrentPreparation()) return;
-      matchingDone = true;
-      tryInit();
+      if (isCurrentPreparation()) {
+        initBattleState();
+      }
     });
 
-    // 読み込みも開始
+    // 裏側でアセット読み込みを開始
     startLoadingAndBattle(() => {
       if (!isCurrentPreparation()) return;
-      loadingDone = true;
-      tryInit();
+      // アセットロード完了をMatchingScreenコンポーネントへ通知
+      if (typeof window.notifyMatchingLoaded === 'function') {
+        window.notifyMatchingLoaded();
+      }
     });
   } else {
     // マッチング画面がない場合はロード完了後すぐに initBattleState を実行して対戦画面へ遷移

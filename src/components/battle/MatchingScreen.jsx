@@ -12,11 +12,14 @@ import './MatchingScreen.css';
 const TIMING = {
   INITIAL_DELAY: 50,
   VS_SOUND_DELAY: 1050,
-  TRANSITION_DELAY: 4000,
-  FADEOUT_START: 4500,
-  DESTROY_DELAY: 5000,
+  MIN_PRESENTATION_TIME: 2500, // 最低保証演出時間（2.5秒）
 };
 
+/**
+ * VSマッチング演出コンポーネント。
+ * アセットロードが100%完了し、かつ最低演出時間が経過するまで画面を全画面で保持し、
+ * ロード完了と同時に対戦画面へスムーズにフェードアウト遷移する。
+ */
 export default function MatchingScreen({
   onComplete,
   onFadeOutComplete,
@@ -36,12 +39,41 @@ export default function MatchingScreen({
   }, [onFadeOutComplete]);
 
   useEffect(() => {
+    let isMinTimePassed = false;
+    let isLoadFinished = false;
+    let isEndingStarted = false;
+
+    // 演出完了と対戦画面へのフェードアウト直接遷移を開始する内部関数
+    const tryFinishMatching = () => {
+      if (isEndingStarted) return;
+      // 最低演出時間の経過とアセットロード完了の両方が揃った場合のみ進行
+      if (isMinTimePassed && isLoadFinished) {
+        isEndingStarted = true;
+
+        // バトル初期化と画面切替をトリガー
+        if (onCompleteRef.current) onCompleteRef.current();
+
+        // VS画面のフェードアウトを開始
+        setVisible(false);
+
+        // フェードアウト完了（0.5秒後）にアンマウント処理を実行
+        setTimeout(() => {
+          if (onFadeOutCompleteRef.current) onFadeOutCompleteRef.current();
+        }, 500);
+      }
+    };
+
+    // グローバルシグナル（アセットロード完了時にbattleInit.jsから呼ばれる関数）を登録
+    window.notifyMatchingLoaded = () => {
+      isLoadFinished = true;
+      tryFinishMatching();
+    };
+
     // マウント時にアニメーション開始
-    // 少し遅延を入れてから表示クラスを付与
     const t = setTimeout(() => {
       setVisible(true);
       if (typeof playSound === 'function') {
-        playSound(SOUNDS.seMatching); // 追加いただいたBGM/SEを再生
+        playSound(SOUNDS.seMatching);
       }
     }, TIMING.INITIAL_DELAY);
 
@@ -50,29 +82,19 @@ export default function MatchingScreen({
       if (typeof playSound === 'function') {
         playSound(SOUNDS.seVS);
       }
-    }, TIMING.VS_SOUND_DELAY); // css of 1s delay + first 50ms delay
+    }, TIMING.VS_SOUND_DELAY);
 
-    // 演出終了の少し前（4.0秒時点）で裏側のバトル画面への遷移を開始（チラつき防止のため完全に覆われている間に切り替える）
-    const transitionTimer = setTimeout(() => {
-      if (onCompleteRef.current) onCompleteRef.current();
-    }, TIMING.TRANSITION_DELAY);
-
-    // 4.5秒後に自動でフェードアウトを開始する
-    const endTimer = setTimeout(() => {
-      setVisible(false);
-    }, TIMING.FADEOUT_START);
-
-    // 5.0秒後（0.5秒のフェードアウトアニメーション完了後）にアンマウント用のコールバックを実行
-    const destroyTimer = setTimeout(() => {
-      if (onFadeOutCompleteRef.current) onFadeOutCompleteRef.current();
-    }, TIMING.DESTROY_DELAY);
+    // 最低演出時間（2.5秒）の経過タイマー
+    const minTimer = setTimeout(() => {
+      isMinTimePassed = true;
+      tryFinishMatching();
+    }, TIMING.MIN_PRESENTATION_TIME);
 
     return () => {
+      window.notifyMatchingLoaded = null;
       clearTimeout(t);
       clearTimeout(vsTimer);
-      clearTimeout(transitionTimer);
-      clearTimeout(endTimer);
-      clearTimeout(destroyTimer);
+      clearTimeout(minTimer);
     };
   }, []);
 
