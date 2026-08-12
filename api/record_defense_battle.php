@@ -127,34 +127,6 @@ if ($playerData) {
     $playerData['defense_history'] = $history;
     $playerData['timestamp'] = time();
 
-    // 【全体対戦ログ集約】直近100試合のログ (api/decks/recent_battles.json) に追記・一元化
-    $recentLogFile = __DIR__ . '/decks/recent_battles.json';
-    $rfp = @fopen($recentLogFile, 'c+');
-    if ($rfp && flock($rfp, LOCK_EX)) {
-        clearstatcache(true, $recentLogFile);
-        $rfSize = filesize($recentLogFile);
-        $rfContent = $rfSize > 0 ? stream_get_contents($rfp) : '';
-        $recentBattles = $rfSize > 0 ? json_decode($rfContent, true) : [];
-        if (!is_array($recentBattles)) {
-            $recentBattles = [];
-        }
-        $logRecord = $newRecord;
-        $logRecord['targetUuid'] = $target_uuid;
-        $logRecord['targetName'] = $playerData['name'] ?? '防衛プレイヤー';
-
-        array_unshift($recentBattles, $logRecord);
-
-        $recentJson = json_encode($recentBattles, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        ftruncate($rfp, 0);
-        rewind($rfp);
-        fwrite($rfp, $recentJson);
-        fflush($rfp);
-        flock($rfp, LOCK_UN);
-        fclose($rfp);
-    } else if ($rfp) {
-        fclose($rfp);
-    }
-
     $data_json = json_encode($playerData);
     $js_content = <<<EOT
 if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
@@ -170,13 +142,50 @@ EOT;
     flock($fp, LOCK_UN);
     fclose($fp);
 
-    if ($writeSuccess === strlen($js_content)) {
-        echo json_encode(['success' => true, 'history' => $history]);
-        exit;
-    } else {
+    if ($writeSuccess !== strlen($js_content)) {
         echo json_encode(['success' => false, 'error' => 'Failed to save updated file completely']);
         exit;
     }
+
+    // 【全体対戦ログ集約】直近対戦ログ (api/decks/recent_battles.json) に追記・一元化
+    $recentLogFile = __DIR__ . '/decks/recent_battles.json';
+    $rfp = @fopen($recentLogFile, 'c+');
+    if ($rfp && flock($rfp, LOCK_EX)) {
+        clearstatcache(true, $recentLogFile);
+        $rfSize = filesize($recentLogFile);
+        $rfContent = $rfSize > 0 ? stream_get_contents($rfp) : '';
+        $recentBattles = $rfSize > 0 ? json_decode($rfContent, true) : [];
+        if (!is_array($recentBattles)) {
+            $recentBattles = [];
+        }
+        $logRecord = $newRecord;
+        $logRecord['targetUuid'] = $target_uuid;
+        $logRecord['targetName'] = $playerData['name'] ?? '防衛プレイヤー';
+
+        array_unshift($recentBattles, $logRecord);
+        // 最大2000件に制限
+        $recentBattles = array_slice($recentBattles, 0, 2000);
+
+        $recentJson = json_encode($recentBattles, JSON_UNESCAPED_UNICODE);
+        if ($recentJson === false) {
+            error_log('recent_battles.json のエンコードに失敗しました: ' . json_last_error_msg());
+        } else {
+            ftruncate($rfp, 0);
+            rewind($rfp);
+            $recentWritten = fwrite($rfp, $recentJson);
+            fflush($rfp);
+            if ($recentWritten !== strlen($recentJson)) {
+                error_log('recent_battles.json の書き込みが不完全です。');
+            }
+        }
+        flock($rfp, LOCK_UN);
+        fclose($rfp);
+    } else if ($rfp) {
+        fclose($rfp);
+    }
+
+    echo json_encode(['success' => true, 'history' => $history]);
+    exit;
 } else {
     flock($fp, LOCK_UN);
     fclose($fp);

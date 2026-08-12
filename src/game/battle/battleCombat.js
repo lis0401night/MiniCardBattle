@@ -92,7 +92,7 @@ export function createUnionCard(owner, existingCard, consumedCard, masterData) {
  * @param {Set} [movedIds] - 移動済みカードID集合（移動による装備時のみ使用）
  */
 export function applyEquipment(target, equipment, movedIds) {
-  const equipPower = equipment.power || 0;
+  const equipPower = equipment.currentPower ?? equipment.power ?? 0;
   const currentPower = target.currentPower ?? target.power ?? 0;
 
   target.power = (target.power || 0) + equipPower;

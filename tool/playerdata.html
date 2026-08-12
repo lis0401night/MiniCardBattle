@@ -1340,8 +1340,7 @@
           if (!rec.attackerUuid || excludedPlayerIds.has(rec.attackerUuid))
             return;
           const attackerUuid = rec.attackerUuid;
-          const charId =
-            rec.attackerCharacter || rec.attackerChar || rec.character;
+          const charId = rec.attackerCharacter;
           if (charId) {
             if (!globalPlayerLeaderSet[attackerUuid]) {
               globalPlayerLeaderSet[attackerUuid] = new Set();
@@ -1364,8 +1363,8 @@
           return c && typeof c === 'object' && (c.name || c.id);
         });
 
-        // キーの重複排除
-        const uniqueCharKeys = Array.from(new Set(charKeys));
+        // Object.keys() は仕様上キーが一意であるため重複排除は不要
+        const uniqueCharKeys = charKeys;
 
         const leaderList = uniqueCharKeys.map((key) => {
           const charData = CHARACTERS[key] || {};

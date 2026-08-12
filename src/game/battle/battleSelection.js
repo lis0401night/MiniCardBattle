@@ -58,7 +58,7 @@ export async function waitPlayerLaneSelection(
   tokenLanes = null,
   checkConstraints = true,
   canCancel = false,
-  buttonText = '配置を完了',
+  buttonText = '配置完了',
   _skipImmediateDiscard = false // 【追加】後続の playCard 等で破棄を行う場合、この関数内での即時破棄をスキップするフラグ
 ) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -350,7 +350,7 @@ export async function waitPlayerLaneSelection(
       GameState.placementCount = 0;
       GameState.placementToken = null;
       GameState.placementCheckConstraints = true;
-      GameState.placementButtonText = '配置を完了';
+      GameState.placementButtonText = '配置完了';
       GameState.placementRestrictLanes = null;
       const result = [...GameState.placementSelectedLanes];
       GameState.placementSelectedLanes = [];
@@ -893,8 +893,8 @@ export async function waitPlayerAlliedLaneSelection(
      */
     const onAlliedLaneClick = (laneIndex) => {
       if (isCleanedUp) return;
-      // 対象レーンにカードがない場合は処理をスキップ
-      if (targetBoard[laneIndex] === null) return;
+      // 対象レーンにカードがない、または範囲外・不正なレーンの場合は処理をスキップ
+      if (!occupiedLanes.includes(laneIndex)) return;
       playSound(SOUNDS.seClick);
 
       // まだ選択されていないレーンであれば選択リストに追加する

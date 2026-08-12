@@ -57,6 +57,7 @@ import {
   DEFENSE_TARGETS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
+  MAX_CARD_COPIES,
 } from '../../utils/constants/config.js';
 import {
   calculateFortuneRewards,
@@ -319,6 +320,9 @@ function resolveDungeonResult() {
  * @returns {boolean} 処理を完結し、後続のドロップ抽選等をスキップする場合は true
  */
 function resolveDefenseResult() {
+  // 勝敗結果に関わらず消化した防衛ターゲット一覧のキャッシュを消去する
+  localStorage.removeItem(DEFENSE_TARGETS_KEY);
+
   if (GameState.gameMode !== 'defense_attack') return false;
 
   // 対象の防衛者宛に防衛履歴（勝敗、攻撃者情報、攻撃デッキ）を送信
@@ -401,8 +405,6 @@ function resolveDefenseResult() {
       incrementStat('defenseAttackWins');
     }
 
-    localStorage.removeItem(DEFENSE_TARGETS_KEY);
-
     playSound(SOUNDS.seSkill);
     showAlertModal(
       `防衛戦に勝利しました！\n防衛ポイントを ${winPoints} Pt 獲得しました！`,
@@ -412,8 +414,6 @@ function resolveDefenseResult() {
     );
     return true;
   } else if (GameState.lastBattleResult === 'lose') {
-    localStorage.removeItem(DEFENSE_TARGETS_KEY);
-
     // 負けた場合は敵防衛者に3ポイントと防衛回数を付与する
     // ※防衛側プレイヤーへのポイント加算（非冪等）。通信失敗時はログ出力のみ（ゲーム仕様上、厳密な再送処理は不要）。
     if (enemyUuid) {
@@ -434,7 +434,6 @@ function resolveDefenseResult() {
     showDefenseBattleList();
     return true;
   } else {
-    localStorage.removeItem(DEFENSE_TARGETS_KEY);
     showDefenseBattleList();
     return true;
   }
@@ -593,7 +592,7 @@ function resolveCardDrop() {
 
   const availableCards = uniqueCards.filter((cid) => {
     const count = GameState.playerInventory?.[cid] || 0;
-    return count < 4;
+    return count < MAX_CARD_COPIES;
   });
 
   if (availableCards.length === 0) return false;
@@ -605,7 +604,7 @@ function resolveCardDrop() {
   for (let i = 0; i < rewardCount; i++) {
     const currentAvailable = uniqueCards.filter((cid) => {
       const count = tempInventory[cid] || 0;
-      return count < 4;
+      return count < MAX_CARD_COPIES;
     });
 
     if (currentAvailable.length > 0) {

@@ -71,6 +71,22 @@ export default function CutinOverlay() {
     }, CUTIN_DISPLAY_DURATION);
   };
 
+  /**
+   * カットイン画像の読み込み失敗時に呼び出されるハンドラー
+   * 画像取得に失敗した場合、演出状態をクリアして安全に終了する。
+   *
+   * @param {number} failedRequestId - 読み込み失敗したカットインのリクエストID
+   */
+  const handleImageError = (failedRequestId) => {
+    if (failedRequestId !== currentRequestIdRef.current) return;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setCutinData(null);
+    setIsImageReady(false);
+  };
+
   if (!cutinData) return null;
 
   const { config, isBlue, requestId } = cutinData;
@@ -106,6 +122,7 @@ export default function CutinOverlay() {
           alt=""
           style={{ display: 'none' }}
           onLoad={() => handleImageLoad(requestId)}
+          onError={() => handleImageError(requestId)}
         />
       )}
 

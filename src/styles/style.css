@@ -1975,6 +1975,13 @@ h2 {
   transition: background 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
+  text-align: center;
+}
+
+/* 右側アクションボタン（ターン終了/召喚完了/配置完了等）の幅を固定し、
+   テキスト変更時にリーダースキルボタンがずれるのを防止する */
+#btn-end-turn {
+  width: 7em;
 }
 
 .action-btn:active {

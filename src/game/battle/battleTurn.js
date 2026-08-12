@@ -268,7 +268,7 @@ export async function handleMoveSkills(owner) {
           possibleLanes,
           false,
           true,
-          '移動を完了'
+          '移動完了'
         );
 
         if (owner === 'blue') {

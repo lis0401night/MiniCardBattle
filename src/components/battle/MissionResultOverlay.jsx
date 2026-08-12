@@ -129,12 +129,13 @@ export default function MissionResultOverlay() {
 
   if (!isVisible) return null;
 
-  const enemyImg =
+  const rawEnemyImg =
     getSkinImage(
       GameState.enemyConfig,
       GameState.enemySkins?.[GameState.enemyConfig?.id],
       'main'
     ) || GameState.enemyConfig?.image;
+  const enemyImg = rawEnemyImg ? appendVersionQuery(rawEnemyImg) : '';
 
   const bonusCount = Math.min(
     Math.floor(animatedScore / MISSION_POINTS_PER_PACK),

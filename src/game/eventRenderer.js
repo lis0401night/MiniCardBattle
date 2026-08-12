@@ -240,19 +240,6 @@ export async function playEvents(events) {
           }
 
           if (targetCardForVoice) {
-            // voiceCategory が未保持の場合はマスターデータから検索・補完
-            if (!targetCardForVoice.voiceCategory) {
-              const baseId = targetCardForVoice.baseId || targetCardForVoice.id;
-              const cMaster = CARD_MASTER.find(
-                (m) =>
-                  m.id === baseId ||
-                  (targetCardForVoice.name &&
-                    m.name === targetCardForVoice.name)
-              );
-              if (cMaster && cMaster.voiceCategory) {
-                targetCardForVoice.voiceCategory = cMaster.voiceCategory;
-              }
-            }
             playCardVoice(targetCardForVoice, 'play');
           }
           await sleep(200);

@@ -37,18 +37,28 @@ usort($players, function($a, $b) {
     return strcmp($b['timestamp'] ?? '', $a['timestamp'] ?? '');
 });
 
-// 直近100試合の全体対戦ログ (api/decks/recent_battles.json) の読み込み
+// 全体対戦ログ (api/decks/recent_battles.json) の読み込み
 $recentLogFile = __DIR__ . '/decks/recent_battles.json';
 $recentBattles = [];
 if (file_exists($recentLogFile)) {
-    $recentContent = file_get_contents($recentLogFile);
-    if ($recentContent) {
-        $recentBattles = json_decode($recentContent, true) ?: [];
+    // 書き込み中の不完全なJSONを読まないよう共有ロック(LOCK_SH)を取得する
+    $rfp = @fopen($recentLogFile, 'r');
+    if ($rfp) {
+        if (flock($rfp, LOCK_SH)) {
+            $rfSize = filesize($recentLogFile);
+            $recentContent = $rfSize > 0 ? stream_get_contents($rfp) : '';
+            flock($rfp, LOCK_UN);
+            if ($recentContent !== false && $recentContent !== '') {
+                $decoded = json_decode($recentContent, true);
+                $recentBattles = is_array($decoded) ? $decoded : [];
+            }
+        }
+        fclose($rfp);
     }
 }
 
 echo json_encode([
     'success' => true,
     'players' => $players,
-    'recent_battles' => $recentBattles,
+    'recent_battles' => array_slice($recentBattles, 0, 2000),
 ]);
