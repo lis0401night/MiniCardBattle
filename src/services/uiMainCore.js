@@ -1438,7 +1438,11 @@ export function openEnemyDeckPreview(level) {
   ) {
     const titleText = `${GameState.enemyConfig.name} [上級]`;
     if (window.showEnemyDeckModal) {
-      window.showEnemyDeckModal(GameState.enemyConfig.dungeonDeck, titleText);
+      window.showEnemyDeckModal(
+        GameState.enemyConfig.dungeonDeck,
+        titleText,
+        GameState.enemyConfig.leaderSkill
+      );
     }
     return;
   }
@@ -1524,7 +1528,11 @@ export function openEnemyDeckPreview(level) {
 
   const titleText = `${GameState.enemyConfig.name} [${level === 1 ? '初級' : level === 2 ? '中級' : '上級'}]`;
   if (window.showEnemyDeckModal) {
-    window.showEnemyDeckModal(deckIds, titleText);
+    window.showEnemyDeckModal(
+      deckIds,
+      titleText,
+      GameState.enemyConfig?.leaderSkill
+    );
   }
 }
 

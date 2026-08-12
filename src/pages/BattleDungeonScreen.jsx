@@ -340,11 +340,20 @@ function ResumeSelect() {
     if (saveData) {
       if (saveData.playerConfig) GameState.playerConfig = saveData.playerConfig;
       if (window.showEnemyDeckModal) {
+        const leaderSkill =
+          saveData?.playerConfig?.leaderSkill ||
+          GameState.playerConfig?.leaderSkill ||
+          CHARACTERS[
+            saveData?.playerConfig?.id ||
+              saveData?.playerConfig?.charId ||
+              saveData?.playerConfig?.leaderCardId ||
+              GameState.playerConfig?.id ||
+              'android'
+          ]?.leaderSkill;
         window.showEnemyDeckModal(
           saveData.cards || [],
           '所持カード確認',
-          saveData?.playerConfig?.leaderSkill ||
-            GameState.playerConfig?.leaderSkill,
+          leaderSkill,
           { isPlayerDeck: true }
         );
       }
@@ -357,13 +366,19 @@ function ResumeSelect() {
       if (saveData.playerConfig) GameState.playerConfig = saveData.playerConfig;
       if (window.showEnemyDeckModal) {
         const deck = saveData.deck || saveData.cards?.slice(0, 20) || [];
-        window.showEnemyDeckModal(
-          deck,
-          'デッキ確認',
+        const leaderSkill =
           saveData?.playerConfig?.leaderSkill ||
-            GameState.playerConfig?.leaderSkill,
-          { isPlayerDeck: true }
-        );
+          GameState.playerConfig?.leaderSkill ||
+          CHARACTERS[
+            saveData?.playerConfig?.id ||
+              saveData?.playerConfig?.charId ||
+              saveData?.playerConfig?.leaderCardId ||
+              GameState.playerConfig?.id ||
+              'android'
+          ]?.leaderSkill;
+        window.showEnemyDeckModal(deck, 'デッキ確認', leaderSkill, {
+          isPlayerDeck: true,
+        });
       }
     }
   };
@@ -956,10 +971,17 @@ function OpponentSelect() {
 
   const handleCheckPocket = () => {
     if (window.showEnemyDeckModal) {
+      const leaderSkill =
+        GameState.playerConfig?.leaderSkill ||
+        CHARACTERS[
+          GameState.playerConfig?.id ||
+            GameState.playerConfig?.charId ||
+            'android'
+        ]?.leaderSkill;
       window.showEnemyDeckModal(
         GameState.dungeonCards,
         '所持カード確認',
-        GameState.playerConfig?.leaderSkill,
+        leaderSkill,
         { isPlayerDeck: true }
       );
     }
@@ -970,12 +992,16 @@ function OpponentSelect() {
       const currentDeck = GameState.playerDeckSelection
         ? GameState.playerDeckSelection.filter(Boolean)
         : GameState.dungeonCards.slice(0, 20);
-      window.showEnemyDeckModal(
-        currentDeck,
-        'デッキ確認',
-        GameState.playerConfig?.leaderSkill,
-        { isPlayerDeck: true }
-      );
+      const leaderSkill =
+        GameState.playerConfig?.leaderSkill ||
+        CHARACTERS[
+          GameState.playerConfig?.id ||
+            GameState.playerConfig?.charId ||
+            'android'
+        ]?.leaderSkill;
+      window.showEnemyDeckModal(currentDeck, 'デッキ確認', leaderSkill, {
+        isPlayerDeck: true,
+      });
     }
   };
 
@@ -1227,10 +1253,17 @@ function RewardSelect() {
   const handleCheckPocket = () => {
     playSound(SOUNDS.seClick);
     if (window.showEnemyDeckModal) {
+      const leaderSkill =
+        GameState.playerConfig?.leaderSkill ||
+        CHARACTERS[
+          GameState.playerConfig?.id ||
+            GameState.playerConfig?.charId ||
+            'android'
+        ]?.leaderSkill;
       window.showEnemyDeckModal(
         GameState.dungeonCards,
         '所持カード確認',
-        GameState.playerConfig?.leaderSkill,
+        leaderSkill,
         { isPlayerDeck: true }
       );
     }
@@ -1242,12 +1275,16 @@ function RewardSelect() {
       const currentDeck = GameState.playerDeckSelection
         ? GameState.playerDeckSelection.filter(Boolean)
         : GameState.dungeonCards.slice(0, 20);
-      window.showEnemyDeckModal(
-        currentDeck,
-        'デッキ確認',
-        GameState.playerConfig?.leaderSkill,
-        { isPlayerDeck: true }
-      );
+      const leaderSkill =
+        GameState.playerConfig?.leaderSkill ||
+        CHARACTERS[
+          GameState.playerConfig?.id ||
+            GameState.playerConfig?.charId ||
+            'android'
+        ]?.leaderSkill;
+      window.showEnemyDeckModal(currentDeck, 'デッキ確認', leaderSkill, {
+        isPlayerDeck: true,
+      });
     }
   };
 

@@ -1179,11 +1179,20 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               </div>
             </div>
             {(() => {
+              const cfg = enemyDeckData.isPlayerDeck
+                ? GameState.playerConfig
+                : GameState.enemyConfig;
+              const charId =
+                cfg?.id ||
+                cfg?.charId ||
+                cfg?.leaderCardId ||
+                cfg?.leaderId ||
+                'android';
               const targetSkill =
                 enemyDeckData.leaderSkill ||
-                (enemyDeckData.isPlayerDeck
-                  ? GameState.playerConfig?.leaderSkill
-                  : GameState.enemyConfig?.leaderSkill);
+                cfg?.leaderSkill ||
+                CHARACTERS[charId]?.leaderSkill ||
+                CHARACTERS.android.leaderSkill;
 
               if (!targetSkill) return null;
 
