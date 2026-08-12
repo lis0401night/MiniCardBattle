@@ -1208,7 +1208,8 @@
 
         const charData = CHARACTERS[p.character] || {};
         const charName = getCharName(p.character);
-        const charIcon = charData.icon || getIconPath(p.character || 'player');
+        const charIcon =
+          fixAssetPath(charData.icon) || getIconPath(p.character || 'player');
 
         // デッキのカード情報を解決（デッキはオブジェクト配列{id,isPremium}または文字列配列に対応）
         const deckCards = p.deck.map((entry) => {
@@ -1370,7 +1371,8 @@
           const charData = CHARACTERS[key] || {};
           const name = charData.name || key;
           const desc = charData.desc || '';
-          const icon = charData.icon || charData.image || getIconPath(key);
+          const icon =
+            fixAssetPath(charData.icon || charData.image) || getIconPath(key);
           const defCount = defenseLeaderCounts[key] || 0;
           const atkCount = attackLeaderCounts[key] || 0;
 

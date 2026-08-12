@@ -89,6 +89,23 @@ const LEADER_MAX_HP_OVERRIDES = {
   warlock: 30,
 };
 
+/**
+ * 対戦準備中（裏でアセットロード中）の画面操作遮断（連打防止）状態を制御する。
+ *
+ * @function setBattlePreparingLock
+ * @param {boolean} isPreparing - 対戦準備中（ロック状態）にするかどうか
+ * @returns {void}
+ */
+function setBattlePreparingLock(isPreparing) {
+  if (typeof document !== 'undefined' && document.body) {
+    if (isPreparing) {
+      document.body.classList.add('is-preparing-battle');
+    } else {
+      document.body.classList.remove('is-preparing-battle');
+    }
+  }
+}
+
 /** バトル準備の連打防止・二重呼び出しローディングロックフラグ */
 let isBattleLoading = false;
 
@@ -166,12 +183,10 @@ function syncConfigSkins() {
  * 連打による二重呼び出しを防止する。
  */
 export function prepareBattle() {
-  // ローディング画面連打による二重呼び出し防止
+  // ローディング画面連打による二重呼び出し防止および操作遮断ガード適用
   if (isBattleLoading) return;
   isBattleLoading = true;
-
-  // 【画面チラつき防止】対戦準備開始の瞬間に即座にローディング画面へ切り替え、旧画面（フリー対戦・デッキ編集等）の露出を防ぐ
-  switchScreen('screen-loading');
+  setBattlePreparingLock(true);
 
   const currentGeneration = ++prepareBattleGeneration;
   const isCurrentPreparation = () =>
@@ -184,6 +199,7 @@ export function prepareBattle() {
         'prepareBattle: セーフティタイマーによりローディングロックを解除します'
       );
       isBattleLoading = false;
+      setBattlePreparingLock(false);
     }
   }, PREPARE_BATTLE_LOCK_TIMEOUT_MS);
 
@@ -193,11 +209,8 @@ export function prepareBattle() {
   // 1. 以前のBGMを強制停止
   stopAllBGM();
 
-  // 2. マッチング画面の表示（表示中に裏でローディングを進行させる）
-  const startLoadingAndBattle = (onLoadComplete, skipLoadingScreen = false) => {
-    if (!skipLoadingScreen) {
-      switchScreen('screen-loading');
-    }
+  // 2. 裏でアセット読み込みと対戦状態の構築を進行させる
+  const startLoadingAndBattle = (onLoadComplete) => {
     const isOnline = GameState.gameMode === 'online';
     const sessionId = isOnline
       ? GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()
@@ -445,53 +458,45 @@ export function prepareBattle() {
   };
 
   if (typeof window.showMatchingScreen === 'function') {
-    setTimeout(() => {
-      if (!isCurrentPreparation()) return;
-      let matchingDone = false;
-      let loadingDone = false;
+    if (!isCurrentPreparation()) return;
+    let matchingDone = false;
+    let loadingDone = false;
 
-      const tryInit = () => {
-        if (isCurrentPreparation() && matchingDone && loadingDone) {
-          setTimeout(() => {
-            if (isCurrentPreparation()) {
-              initBattleState();
-            }
-          }, 50);
-        }
-      };
+    const tryInit = () => {
+      if (isCurrentPreparation() && matchingDone && loadingDone) {
+        initBattleState();
+      }
+    };
 
-      // マッチング画面開始
-      const matchingSafetyTimeout = setTimeout(() => {
-        if (isCurrentPreparation() && !matchingDone) {
-          console.warn('Matching screen timed out. Forcing battle start...');
-          matchingDone = true;
-          tryInit();
-        }
-      }, MATCHING_SCREEN_TIMEOUT_MS);
-
-      window.showMatchingScreen(() => {
-        clearTimeout(matchingSafetyTimeout);
-        if (!isCurrentPreparation()) return;
+    // マッチング画面開始
+    const matchingSafetyTimeout = setTimeout(() => {
+      if (isCurrentPreparation() && !matchingDone) {
+        console.warn('Matching screen timed out. Forcing battle start...');
         matchingDone = true;
         tryInit();
-      });
+      }
+    }, MATCHING_SCREEN_TIMEOUT_MS);
 
-      // 読み込みも開始
-      startLoadingAndBattle(() => {
-        if (!isCurrentPreparation()) return;
-        loadingDone = true;
-        tryInit();
-      }, true);
-    }, 500); // 演出前に0.5秒ディレイ
-  } else {
-    // 従来の挙動
+    window.showMatchingScreen(() => {
+      clearTimeout(matchingSafetyTimeout);
+      if (!isCurrentPreparation()) return;
+      matchingDone = true;
+      tryInit();
+    });
+
+    // 読み込みも開始
     startLoadingAndBattle(() => {
-      setTimeout(() => {
-        if (isCurrentPreparation()) {
-          initBattleState();
-        }
-      }, 500);
-    }, false);
+      if (!isCurrentPreparation()) return;
+      loadingDone = true;
+      tryInit();
+    });
+  } else {
+    // マッチング画面がない場合はロード完了後すぐに initBattleState を実行して対戦画面へ遷移
+    startLoadingAndBattle(() => {
+      if (isCurrentPreparation()) {
+        initBattleState();
+      }
+    });
   }
 }
 
@@ -509,8 +514,9 @@ export function prepareBattle() {
  * @returns {void}
  */
 export function initBattleState() {
-  // バトル準備フラグをリセット（次回のprepareBattle呼び出しを許可）
+  // バトル準備フラグおよび操作遮断ロックをリセット（次回のprepareBattle呼び出しを許可）
   isBattleLoading = false;
+  setBattlePreparingLock(false);
   GameState.isInitializing = true;
 
   try {

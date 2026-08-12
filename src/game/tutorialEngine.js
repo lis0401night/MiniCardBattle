@@ -1725,8 +1725,7 @@ export function startTutorial(tutorialId) {
 
   playSound(SOUNDS.seClick);
 
-  // 【画面チラつき防止】チュートリアル開始の瞬間に即座にローディング画面へ切り替え、選択画面の露出を防ぐ
-  switchScreen('screen-loading');
+  // チュートリアル準備開始
 
   // キャラクター設定
   const playerChar = JSON.parse(

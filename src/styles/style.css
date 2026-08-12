@@ -52,6 +52,25 @@ body {
   position: relative;
 }
 
+/* 対戦準備中（裏でアセットロード中）の画面操作遮断・連打防止ガード */
+body.is-preparing-battle {
+  pointer-events: none !important;
+  cursor: wait !important;
+}
+
+body.is-preparing-battle::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.08);
+  cursor: wait !important;
+  pointer-events: auto !important;
+}
+
 .screen {
   display: none;
   width: 100%;
