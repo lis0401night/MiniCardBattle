@@ -246,8 +246,8 @@ export default function App() {
   }, [isSlowMotion]);
 
   useEffect(() => {
-    window.showMatchingScreen = (onComplete) => {
-      setMatchingState({ show: true, onComplete });
+    window.showMatchingScreen = (onComplete, loadingPromise) => {
+      setMatchingState({ show: true, onComplete, loadingPromise });
     };
     return () => {
       window.showMatchingScreen = undefined;
@@ -305,13 +305,14 @@ export default function App() {
       <div id="fade-overlay" className="fade-overlay"></div>
       {matchingState.show && (
         <MatchingScreen
+          loadingPromise={matchingState.loadingPromise}
           onComplete={() => {
             // 裏でバトル画面の初期化と遷移を開始
             if (matchingState.onComplete) matchingState.onComplete();
           }}
           onFadeOutComplete={() => {
             // フェードアウト演出が完了した後にアンマウント
-            setMatchingState({ show: false, onComplete: null });
+            setMatchingState({ show: false, onComplete: null, loadingPromise: null });
           }}
         />
       )}

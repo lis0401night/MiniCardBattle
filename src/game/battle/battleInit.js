@@ -555,24 +555,33 @@ export function prepareBattle() {
   if (typeof window.showMatchingScreen === 'function') {
     if (!isCurrentPreparation()) return;
 
+    // アセットロード完了をPromiseで通知する（レース条件防止）
+    // Promiseはresolve済みでも.then()が確実に実行されるため、
+    // MatchingScreenのマウントタイミングに依存しない安全な設計となる。
+    let resolveLoading;
+    const loadingPromise = new Promise((r) => {
+      resolveLoading = r;
+    });
+
     // マッチング画面に必要な必須アセット（立ち絵・枠・ロゴ）を事前に100%ロード完了させてからマッチング画面を表示する
     preloadMatchingAssets(() => {
       if (!isCurrentPreparation()) return;
 
-      window.showMatchingScreen(() => {
-        if (isCurrentPreparation()) {
-          initBattleState();
-        }
-      });
+      window.showMatchingScreen(
+        () => {
+          if (isCurrentPreparation()) {
+            initBattleState();
+          }
+        },
+        loadingPromise
+      );
     });
 
     // 裏側で対戦用の全アセット読み込み（カード20枚・VFX・BGM等）を開始
     startLoadingAndBattle(() => {
       if (!isCurrentPreparation()) return;
-      // アセットロード完了をMatchingScreenコンポーネントへ通知
-      if (typeof window.notifyMatchingLoaded === 'function') {
-        window.notifyMatchingLoaded();
-      }
+      // アセットロード完了をPromise経由でMatchingScreenへ通知
+      resolveLoading();
     });
   } else {
     // マッチング画面がない場合はロード完了後すぐに initBattleState を実行して対戦画面へ遷移

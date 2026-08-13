@@ -23,6 +23,7 @@ const TIMING = {
 export default function MatchingScreen({
   onComplete,
   onFadeOutComplete,
+  loadingPromise,
   testEnemyId,
   testEnemySkinId,
 }) {
@@ -63,11 +64,15 @@ export default function MatchingScreen({
       }
     };
 
-    // グローバルシグナル（アセットロード完了時にbattleInit.jsから呼ばれる関数）を登録
-    window.notifyMatchingLoaded = () => {
-      isLoadFinished = true;
-      tryFinishMatching();
-    };
+    // アセットロード完了をPromise経由で検知（レース条件フリー）
+    // Promiseはresolve済みでも.then()が確実に実行されるため、
+    // MatchingScreenのマウントがロード完了より後でも安全に動作する。
+    if (loadingPromise) {
+      loadingPromise.then(() => {
+        isLoadFinished = true;
+        tryFinishMatching();
+      });
+    }
 
     // マウント時にアニメーション開始
     const t = setTimeout(() => {
@@ -91,12 +96,11 @@ export default function MatchingScreen({
     }, TIMING.MIN_PRESENTATION_TIME);
 
     return () => {
-      window.notifyMatchingLoaded = null;
       clearTimeout(t);
       clearTimeout(vsTimer);
       clearTimeout(minTimer);
     };
-  }, []);
+  }, [loadingPromise]);
 
   // デバッグ用にプレイヤーと敵の情報を取得（未設定の場合はデフォルト）
   const player = GameState.playerConfig || CHARACTERS['dragon'];
