@@ -59,7 +59,14 @@ const WEBP_QUALITY = 0.92;
 const WHEEL_ZOOM_FACTOR = 1.0015;
 
 /** 一括書き出し対象のレイヤーID順 */
-const EXPORT_ORDER = ['char', 'board', 'icon', 'iconDamage'];
+const EXPORT_ORDER = [
+  'char',
+  'board',
+  'icon',
+  'iconDamage',
+  'ending',
+  'background',
+];
 
 /**
  * 数値を指定の最小値・最大値の範囲内に収める（有限数値でない場合はデフォルト値を返す）
@@ -153,6 +160,25 @@ const TARGET_SPECS = {
     circular: true,
     sourceOf: 'B',
   },
+  ending: {
+    id: 'ending',
+    label: 'char_',
+    suffix: '_ending',
+    specText: '(840×1400)',
+    w: 840,
+    h: 1400,
+    circular: false,
+    sourceOf: 'C',
+  },
+  background: {
+    id: 'background',
+    label: 'background_',
+    specText: '(420×700)',
+    w: 420,
+    h: 700,
+    circular: false,
+    sourceOf: 'D',
+  },
 };
 
 /**
@@ -180,8 +206,13 @@ const DEFAULT_ANCHOR_Y = 0.3;
  * @return {JSX.Element} アセット書き出しツールUI
  */
 export default function CharaAssetMaker() {
-  // 画像アセット（A: 通常時, B: ダメージ時）
-  const [images, setImages] = useState({ A: null, B: null });
+  // 画像アセット（A: 通常時, B: ダメージ時, C: エンディング, D: ステージ背景）
+  const [images, setImages] = useState({
+    A: null,
+    B: null,
+    C: null,
+    D: null,
+  });
 
   // ファイル名（プレフィックス slug）
   const [nameSlug, setNameSlug] = useState('dragon');
@@ -212,7 +243,7 @@ export default function CharaAssetMaker() {
     }
   }, [picaOptions]);
 
-  // 各レイヤー（char, board, icon, iconDamage）の変換パラメータ状態
+  // 各レイヤー（char, board, icon, iconDamage, ending, background）の変換パラメータ状態
   const [transforms, setTransforms] = useState({
     char: {
       scale: 1,
@@ -239,6 +270,22 @@ export default function CharaAssetMaker() {
       sliderValue: 0,
     },
     iconDamage: {
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      minScale: 1,
+      maxScale: 1,
+      sliderValue: 0,
+    },
+    ending: {
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      minScale: 1,
+      maxScale: 1,
+      sliderValue: 0,
+    },
+    background: {
       scale: 1,
       offsetX: 0,
       offsetY: 0,
@@ -520,7 +567,7 @@ export default function CharaAssetMaker() {
   /**
    * 画像ファイルアップロードのハンドラー
    *
-   * @param {string} slot 'A' (通常) または 'B' (ダメージ)
+   * @param {string} slot 'A' (通常) | 'B' (ダメージ) | 'C' (エンディング) | 'D' (ステージ背景)
    * @param {File} file アップロードされたファイル
    */
   const handleUpload = (slot, file) => {
@@ -545,7 +592,7 @@ export default function CharaAssetMaker() {
   const resetLayerTransformRef = useRef(resetLayerTransform);
   resetLayerTransformRef.current = resetLayerTransform;
 
-  // 画像Aロード完了時の初期変換の設定
+  // 画像A (通常表情) ロード完了時の初期変換の設定
   useEffect(() => {
     if (images.A) {
       resetLayerTransformRef.current('char');
@@ -554,12 +601,26 @@ export default function CharaAssetMaker() {
     }
   }, [images.A]);
 
-  // 画像Bロード完了時の初期変換の設定
+  // 画像B (ダメージ表情) ロード完了時の初期変換の設定
   useEffect(() => {
     if (images.B) {
       resetLayerTransformRef.current('iconDamage');
     }
   }, [images.B]);
+
+  // 画像C (エンディングイラスト) ロード完了時の初期変換の設定
+  useEffect(() => {
+    if (images.C) {
+      resetLayerTransformRef.current('ending');
+    }
+  }, [images.C]);
+
+  // 画像D (ステージ背景) ロード完了時の初期変換の設定
+  useEffect(() => {
+    if (images.D) {
+      resetLayerTransformRef.current('background');
+    }
+  }, [images.D]);
 
   // 画像Bロード時、およびリンク有効化時に通常アイコンの変換値をダメージアイコンへ同期する
   useEffect(() => {
@@ -868,6 +929,7 @@ export default function CharaAssetMaker() {
             accept="image/*"
             onChange={(e) => handleUpload('A', e.target.files[0])}
           />
+          <span className="hint">立ち絵・盤面ミニ・通常アイコンに使用</span>
         </div>
         <div className="field">
           <label>ダメージ表情画像（Image B）</label>
@@ -876,7 +938,25 @@ export default function CharaAssetMaker() {
             accept="image/*"
             onChange={(e) => handleUpload('B', e.target.files[0])}
           />
-          <span className="hint">アイコンのダメージ差分にのみ使用されます</span>
+          <span className="hint">ダメージアイコンにのみ使用</span>
+        </div>
+        <div className="field">
+          <label>エンディング画像（Image C）</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleUpload('C', e.target.files[0])}
+          />
+          <span className="hint">エンディングイラストに使用</span>
+        </div>
+        <div className="field">
+          <label>ステージ背景画像（Image D）</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleUpload('D', e.target.files[0])}
+          />
+          <span className="hint">ステージ背景イラストに使用</span>
         </div>
         <div className="field">
           <label>出力名（◯◯◯部分）</label>
@@ -1089,7 +1169,7 @@ export default function CharaAssetMaker() {
       {/* 全ファイルダウンロードフッター */}
       <footer>
         <button type="button" onClick={exportAll}>
-          4ファイルをまとめてダウンロード
+          6ファイルをまとめてダウンロード
         </button>
       </footer>
     </div>
