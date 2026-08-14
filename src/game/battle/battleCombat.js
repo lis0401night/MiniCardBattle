@@ -188,6 +188,12 @@ function createCombatSnapshot() {
     enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
     playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
+    playerSealedLanes: GameState.playerSealedLanes
+      ? [...GameState.playerSealedLanes]
+      : [0, 0, 0],
+    enemySealedLanes: GameState.enemySealedLanes
+      ? [...GameState.enemySealedLanes]
+      : [0, 0, 0],
     valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
     valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
