@@ -427,7 +427,8 @@ export const hydrateDungeonOpponent = (opp) => {
       ? { ...charMaster.dialogue, ...skinObj.dialogue }
       : charMaster.dialogue;
 
-    const isHighBossFlag = opp.isHighBoss || isBoss;
+    // 50階などの倍数階層で生成された高難易度ボス（isHighBoss === true）の場合のみ event_high の設定を適用する
+    const isHighBossFlag = Boolean(opp.isHighBoss);
     const highConfig =
       isHighBossFlag && charMaster.event_high ? charMaster.event_high : null;
 
