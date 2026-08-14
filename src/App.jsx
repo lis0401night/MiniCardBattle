@@ -312,7 +312,11 @@ export default function App() {
           }}
           onFadeOutComplete={() => {
             // フェードアウト演出が完了した後にアンマウント
-            setMatchingState({ show: false, onComplete: null, loadingPromise: null });
+            setMatchingState({
+              show: false,
+              onComplete: null,
+              loadingPromise: null,
+            });
           }}
         />
       )}

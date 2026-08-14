@@ -9,7 +9,7 @@ const execFileAsync = util.promisify(execFile);
 const targets = [
   { name: 'card_motorcycle_premium.webp', fps: 30, q: 60 },
   { name: 'card_djinn_premium.webp', fps: 25, q: 60 },
-  { name: 'card_gungnir_premium.webp', fps: 25, q: 60 }
+  { name: 'card_gungnir_premium.webp', fps: 25, q: 60 },
 ];
 
 async function runCompress() {
@@ -28,11 +28,15 @@ async function runCompress() {
     // -i srcPath -vf "fps=fps_val" -quality q_val -loop 0 tempPath
     const args = [
       '-y',
-      '-i', srcPath,
-      '-vf', `fps=${item.fps}`,
-      '-quality', `${item.q}`,
-      '-loop', '0',
-      tempPath
+      '-i',
+      srcPath,
+      '-vf',
+      `fps=${item.fps}`,
+      '-quality',
+      `${item.q}`,
+      '-loop',
+      '0',
+      tempPath,
     ];
 
     try {
@@ -42,10 +46,15 @@ async function runCompress() {
       if (fs.existsSync(tempPath)) {
         const newStats = fs.statSync(tempPath);
         const newSizeMB = (newStats.size / (1024 * 1024)).toFixed(2);
-        const reduction = (((originalStats.size - newStats.size) / originalStats.size) * 100).toFixed(1);
+        const reduction = (
+          ((originalStats.size - newStats.size) / originalStats.size) *
+          100
+        ).toFixed(1);
 
         console.log(`[成功] ${item.name}`);
-        console.log(`  元サイズ: ${originalSizeMB} MB -> 最適化後: ${newSizeMB} MB (-${reduction}%)`);
+        console.log(
+          `  元サイズ: ${originalSizeMB} MB -> 最適化後: ${newSizeMB} MB (-${reduction}%)`
+        );
 
         // 元のファイルをバックアップして、最適化後のファイルで差し替え
         const backupPath = path.join('public/assets/cards', `bak_${item.name}`);

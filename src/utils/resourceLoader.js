@@ -251,8 +251,8 @@ export async function preloadAllGameResources(onProgress) {
     });
   };
 
-  // 同時接続数制限を入れてロード
-  const concurrencyLimit = 15;
+  // サーバーのアクセス制限（AccessLimit exceeded）回避のため同時接続数を5に制限
+  const concurrencyLimit = 5;
   let index = 0;
   const worker = async () => {
     while (index < urlList.length) {

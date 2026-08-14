@@ -567,14 +567,11 @@ export function prepareBattle() {
     preloadMatchingAssets(() => {
       if (!isCurrentPreparation()) return;
 
-      window.showMatchingScreen(
-        () => {
-          if (isCurrentPreparation()) {
-            initBattleState();
-          }
-        },
-        loadingPromise
-      );
+      window.showMatchingScreen(() => {
+        if (isCurrentPreparation()) {
+          initBattleState();
+        }
+      }, loadingPromise);
     });
 
     // 裏側で対戦用の全アセット読み込み（カード20枚・VFX・BGM等）を開始
