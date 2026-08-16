@@ -51,12 +51,12 @@ if (isset($data['attacker_deck']) && is_array($data['attacker_deck'])) {
     foreach ($data['attacker_deck'] as $item) {
         if (count($attacker_deck) >= 20) break;
         if (is_string($item)) {
-            $cleaned_id = preg_replace('/[^a-z0-9_]/', '', $item);
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
             if (!empty($cleaned_id)) {
                 $attacker_deck[] = $cleaned_id;
             }
         } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
-            $cleaned_id = preg_replace('/[^a-z0-9_]/', '', $item['id']);
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
             if (!empty($cleaned_id)) {
                 $attacker_deck[] = [
                     'id' => $cleaned_id,

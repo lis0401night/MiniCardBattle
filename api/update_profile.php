@@ -95,7 +95,7 @@ $player_data['name'] = $name;
 $player_data['icon'] = $icon;
 if (array_key_exists('favoriteCard', $data)) {
     $cleaned_card_id = (is_array($data['favoriteCard']) && isset($data['favoriteCard']['cardId']))
-        ? preg_replace('/[^a-z0-9_]/', '', (string) $data['favoriteCard']['cardId'])
+        ? preg_replace('/[^a-zA-Z0-9_]/', '', (string) $data['favoriteCard']['cardId'])
         : '';
     if ($cleaned_card_id !== '') {
         // cardIdのみサニタイズし、isPremiumはbool型で保持
