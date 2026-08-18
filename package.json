@@ -13,31 +13,31 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "dompurify": "^3.4.10",
-    "firebase": "^12.11.0",
-    "pica": "^10.0.2",
+    "dompurify": "^3.4.13",
+    "firebase": "^12.17.1",
+    "pica": "^10.0.3",
     "pngjs": "^7.0.0",
-    "puppeteer": "^24.38.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "puppeteer": "^25.8.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@eslint/js": "^9.21.0",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.21.0",
+    "@eslint/js": "^9.39.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
     "eslint-plugin-unused-imports": "^4.4.1",
     "ffmpeg-static": "^5.3.0",
     "globals": "^15.15.0",
-    "prettier": "^3.5.2",
-    "sass": "^1.85.1",
+    "prettier": "^3.9.6",
+    "sass": "^1.102.0",
     "sharp": "^0.35.3",
-    "vite": "^6.4.1",
-    "vite-plugin-static-copy": "^2.2.0"
+    "vite": "^8.2.1",
+    "vite-plugin-static-copy": "^4.1.1"
   }
 }

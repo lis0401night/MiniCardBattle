@@ -444,14 +444,12 @@ function resolveDefenseResult() {
  * @returns {boolean} 処理を完結し、後続のドロップ抽選等をスキップする場合は true
  */
 function resolveFortuneRewards() {
-  if (
-    !(
-      GameState.lastBattleResult === 'win' &&
-      GameState.gameMode?.startsWith('event_') &&
-      GameState.gameMode?.endsWith('_fortune') &&
-      GameState.fortuneHandicaps
-    )
-  ) {
+  if (!(
+    GameState.lastBattleResult === 'win' &&
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune') &&
+    GameState.fortuneHandicaps
+  )) {
     return false;
   }
 
@@ -542,14 +540,12 @@ function resolveFortuneRewards() {
  * @returns {boolean} 報酬画面を表示した場合は true
  */
 function resolveCardDrop() {
-  if (
-    !(
-      GameState.lastBattleResult === 'win' &&
-      GameState.gameMode !== 'online' &&
-      GameState.gameMode !== 'practice' &&
-      GameState.gameMode !== 'tournament'
-    )
-  ) {
+  if (!(
+    GameState.lastBattleResult === 'win' &&
+    GameState.gameMode !== 'online' &&
+    GameState.gameMode !== 'practice' &&
+    GameState.gameMode !== 'tournament'
+  )) {
     return false;
   }
 

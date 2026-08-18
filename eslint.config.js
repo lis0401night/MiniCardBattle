@@ -55,6 +55,7 @@ export default [
       'no-empty': 'off',
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',

@@ -36,17 +36,33 @@ export default defineConfig({
           './tool/vfx_spritesheet_tool/vfx_spritesheet_tool.html',
       },
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          gameCore: [
-            './src/services/uiMainCore.js',
-            './src/services/uiDialogue.js',
-            './src/services/deck.js',
-            './src/game/battle/index.js',
-            './src/game/battleDungeon.js',
-            './src/utils/constants/battleDungeon.js',
-            './src/utils/constants/battleDungeonCharacter.js',
-          ],
+        /**
+         * モジュール分割（チャンク分割）関数
+         * Vite 8 (Rolldown) および Rollup との互換性のため関数形式で指定
+         * @param {string} id モジュールの絶対パス
+         * @returns {string|undefined} チャンク名
+         */
+        manualChunks(id) {
+          const normalizedPath = id.replace(/\\/g, '/');
+          if (
+            normalizedPath.includes('node_modules/react/') ||
+            normalizedPath.includes('node_modules/react-dom/')
+          ) {
+            return 'vendor';
+          }
+          if (
+            normalizedPath.includes('/src/services/uiMainCore.js') ||
+            normalizedPath.includes('/src/services/uiDialogue.js') ||
+            normalizedPath.includes('/src/services/deck.js') ||
+            normalizedPath.includes('/src/game/battle/index.js') ||
+            normalizedPath.includes('/src/game/battleDungeon.js') ||
+            normalizedPath.includes('/src/utils/constants/battleDungeon.js') ||
+            normalizedPath.includes(
+              '/src/utils/constants/battleDungeonCharacter.js'
+            )
+          ) {
+            return 'gameCore';
+          }
         },
       },
     },

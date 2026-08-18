@@ -4700,16 +4700,14 @@ export function simulateMove(
           simState.enemyBoard[laneIdx] !== null &&
           !hasSkill(simState.enemyBoard[laneIdx], 'arm_self')
         ) {
-          if (
-            !(
-              playedCard.skills &&
-              playedCard.skills.find((s) => s.id === 'union') &&
-              (simState.enemyBoard[laneIdx].baseId ===
-                playedCard.skills.find((s) => s.id === 'union').targetId ||
-                simState.enemyBoard[laneIdx].id ===
-                  playedCard.skills.find((s) => s.id === 'union').targetId)
-            )
-          ) {
+          if (!(
+            playedCard.skills &&
+            playedCard.skills.find((s) => s.id === 'union') &&
+            (simState.enemyBoard[laneIdx].baseId ===
+              playedCard.skills.find((s) => s.id === 'union').targetId ||
+              simState.enemyBoard[laneIdx].id ===
+                playedCard.skills.find((s) => s.id === 'union').targetId)
+          )) {
             return null;
           }
         }
