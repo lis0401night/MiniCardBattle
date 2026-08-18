@@ -703,6 +703,7 @@ export async function resetRoomStatusToWaiting() {
       const next = {
         ...room,
         status: 'waiting',
+        battleStartedAt: null, // 対戦終了を明示し、ロビーの追いつき同期の誤発火を防止
         host: {
           ...room.host,
           isReady: false,

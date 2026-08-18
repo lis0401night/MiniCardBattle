@@ -188,12 +188,15 @@ function createCombatSnapshot() {
     enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
     playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
     enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
-    playerSealedLanes: GameState.playerSealedLanes
-      ? [...GameState.playerSealedLanes]
-      : [0, 0, 0],
-    enemySealedLanes: GameState.enemySealedLanes
-      ? [...GameState.enemySealedLanes]
-      : [0, 0, 0],
+    // 封鎖レーン状態を常に3レーンで正規化する（外部データ由来の配列長不整合を防止）
+    playerSealedLanes: Array.from(
+      { length: 3 },
+      (_, i) => GameState.playerSealedLanes?.[i] ?? 0
+    ),
+    enemySealedLanes: Array.from(
+      { length: 3 },
+      (_, i) => GameState.enemySealedLanes?.[i] ?? 0
+    ),
     valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
     valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
