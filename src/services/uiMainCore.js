@@ -1572,6 +1572,7 @@ export function showOnlineSearch() {
 export function showOnlineLobby() {
   playSound(SOUNDS.seClick);
   playSound(AUDIO_INSTANCES.bgmOnline);
+  GameState.appState = 'lobby'; // バトル後のステータス残存による誤動作を防止
   setPlayerReadyOnly(false); // バトル終了後などにルームへ戻った際は準備完了状態を解除
   switchScreen('screen-online-lobby');
 }

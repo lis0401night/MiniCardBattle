@@ -12,7 +12,6 @@ import {
   setRoomStatusToBattle,
   updatePlayerReady,
   updateRoomHeartbeat,
-  resetRoomStatusToWaiting,
 } from '../services/multiplayer.js';
 import { showOnlineMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
@@ -161,10 +160,6 @@ export default function OnlineLobbyScreen() {
         showAlertModal(
           '対戦の同期情報を取得できませんでした。もう一度お試しください。'
         );
-        // DB上の 'battle' 状態を 'waiting' へ戻し、状態不整合を残さない
-        resetRoomStatusToWaiting().catch((e) =>
-          console.warn('resetRoomStatusToWaiting failed:', e)
-        );
         battleStartTimeoutRef.current = null;
         return;
       }
@@ -296,9 +291,12 @@ export default function OnlineLobbyScreen() {
       }
 
       // 3-a. 開始条件が崩れた場合（相手のReady解除・退室）は開始タイマーを解除する
+      // ただし、status が 'battle' の場合は setRoomStatusToBattle により isReady が
+      // 消費済み（false化）であるため、タイマーを解除してはならない
       if (
         battleStartTimeoutRef.current &&
-        !(data && data.host?.isReady && data.client?.isReady)
+        !(data && data.host?.isReady && data.client?.isReady) &&
+        data?.status !== 'battle'
       ) {
         clearTimeout(battleStartTimeoutRef.current);
         battleStartTimeoutRef.current = null;

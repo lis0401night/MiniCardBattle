@@ -662,14 +662,30 @@ export async function setPlayerReadyOnly(isReadyStatus) {
 /**
  * 対戦開始時にルームのステータスを 'battle' に更新する（ホスト専用）
  * 両プレイヤーが準備完了した際、DB上に対戦開始フラグを書き込み確実な追いつき同期を実現します。
+ * トランザクションにより、ステータス変更と isReady フラグの消費（false 化）を原子的に実行し、
+ * 対戦終了後にロビーへ戻った際の残存データ（status:'battle', isReady:true）による
+ * 誤った即時再試合の発火を防止します。
  * @returns {Promise<void>}
  */
 export async function setRoomStatusToBattle() {
   if (!currentRoomId || !database || !isHost) return;
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
-  await update(roomRef, {
-    status: 'battle',
-    battleStartedAt: serverTimestamp(),
+  await runTransaction(roomRef, (room) => {
+    // ルームが存在しない、または双方の準備完了が確認できない場合はコミットしない
+    if (!room || !room.host?.isReady || !room.client?.isReady) return undefined;
+    return {
+      ...room,
+      status: 'battle',
+      battleStartedAt: getServerNow(),
+      host: {
+        ...room.host,
+        isReady: false,
+      },
+      client: {
+        ...room.client,
+        isReady: false,
+      },
+    };
   });
 }
 
