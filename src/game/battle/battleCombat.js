@@ -68,7 +68,6 @@ import {
  */
 export function createUnionCard(owner, existingCard, consumedCard, masterData) {
   const masterClone = JSON.parse(JSON.stringify(masterData));
-  const unionSkills = JSON.parse(JSON.stringify(masterClone.skills || []));
   const unionCard = {
     ...masterClone,
     uid: `union_${existingCard.uid || existingCard.id}_${consumedCard.uid || consumedCard.id}`,
@@ -76,11 +75,12 @@ export function createUnionCard(owner, existingCard, consumedCard, masterData) {
     baseId: masterClone.id,
     basePower: masterClone.power,
     currentPower: masterClone.power,
-    skills: [],
+    // マスターデータのスキル配列をそのまま保持する（mergeCardSkills を使うと同名スキルの
+    // value が合算されて snipe:2×3 → snipe:6×1 のように個数が潰れるため）
+    skills: JSON.parse(JSON.stringify(masterClone.skills || [])),
     unionMaterials: [existingCard, consumedCard],
     isPremium: !!consumedCard.isPremium || !!existingCard.isPremium,
   };
-  mergeCardSkills(unionCard, unionSkills);
   return unionCard;
 }
 

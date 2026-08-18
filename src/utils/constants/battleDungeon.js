@@ -194,7 +194,12 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
 
   const imagePath =
     leaderCard.image || `assets/cards/card_${leaderCard.id}.webp`;
-  const dialogueData = getDungeonCharacterDialogue(leaderCard.id);
+  // モブ敵であることを示す最低限のコンテキストを渡し、CHARACTERS キーと一致するカードID
+  // （warlock, dragon 等）でキャラクター台詞が誤って使用されるのを防止する
+  const dialogueData = getDungeonCharacterDialogue(leaderCard.id, {
+    isDungeonEnemy: true,
+    leaderCardId: leaderCard.id,
+  });
 
   // 試練の宮殿の汎用リーダースキルはレア度に関わらず一律4ターン（SP:4）に固定
   const leaderCost = 4;
