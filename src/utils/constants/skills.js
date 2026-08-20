@@ -86,18 +86,6 @@ export const SKILLS = {
     icon: '⛓️',
     desc: (val) => `戦闘で敵を破壊した時、パワーを+${val || 2}する。`,
   },
-  soul_bind_void: {
-    name: '魂縛(虚)',
-    icon: '⛓️',
-    desc: (val) => [
-      { type: 'text', value: '戦闘で敵を破壊した時、手札の' },
-      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      {
-        type: 'text',
-        value: `1枚につきパワーを+${val || 2}する。`,
-      },
-    ],
-  },
   sturdy: {
     name: '頑丈',
     icon: '⛰',
@@ -732,18 +720,6 @@ export const SKILLS = {
       },
     ],
   },
-  spread_void: {
-    name: '拡散(虚)',
-    icon: '☄️',
-    desc: (val) => [
-      { type: 'text', value: '召喚時、自分の手札の' },
-      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      {
-        type: 'text',
-        value: `1枚につき正面とその隣のカードに${val || 2}ダメージ。`,
-      },
-    ],
-  },
   support_void: {
     name: '援護(虚)',
     icon: '🚩',
@@ -753,18 +729,6 @@ export const SKILLS = {
       {
         type: 'text',
         value: `1枚につき隣のカードのパワーを+${val || 2}する。`,
-      },
-    ],
-  },
-  sacrifice_void: {
-    name: '代償(虚)',
-    icon: '🩸',
-    desc: (val) => [
-      { type: 'text', value: '召喚時、自分の手札の' },
-      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      {
-        type: 'text',
-        value: `1枚につき、自分リーダーに${val || 1}ダメージ。`,
       },
     ],
   },
@@ -850,10 +814,8 @@ export const ACTIVE_SKILLS = [
   'sublimation',
   'snipe_void',
   'heal_void',
-  'spread_void',
   'support_void',
   'treason',
-  'sacrifice_void',
   'oblivion',
   'grant_deadly',
   'grant_sturdy',
@@ -865,7 +827,6 @@ export const PASSIVE_SKILLS = [
   'sturdy',
   'guardian',
   'soul_bind',
-  'soul_bind_void',
   'growth',
   'defender',
   'split',
@@ -912,7 +873,6 @@ export const SKILL_CATEGORIES = [
           'snipe',
           'snipe_void',
           'spread',
-          'spread_void',
           'artillery',
           'decree',
           'fate',
@@ -989,7 +949,6 @@ export const SKILL_CATEGORIES = [
         name: 'デメリット',
         skills: [
           'sacrifice',
-          'sacrifice_void',
           'berserk',
           'convert',
           'loss',
@@ -1011,14 +970,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '戦闘時・撃破時',
-        skills: [
-          'soul_bind',
-          'soul_bind_void',
-          'absorb',
-          'extort',
-          'split',
-          'retaliate',
-        ],
+        skills: ['soul_bind', 'absorb', 'extort', 'split', 'retaliate'],
       },
       {
         name: 'ターン開始時',

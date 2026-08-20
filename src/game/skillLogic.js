@@ -289,7 +289,6 @@ export async function resolveActiveSkillEffect(
     'metamorph',
     'petrify',
     'sacrifice',
-    'sacrifice_void',
     'heal',
     'heal_void',
   ];
@@ -307,7 +306,6 @@ export async function resolveActiveSkillEffect(
         'snipe',
         'snipe_void',
         'spread',
-        'spread_void',
         'artillery',
         'dominate',
         'heal',
@@ -315,7 +313,6 @@ export async function resolveActiveSkillEffect(
         'metamorph',
         'petrify',
         'sacrifice',
-        'sacrifice_void',
         'cull',
         'execute',
         'call',
@@ -335,9 +332,7 @@ export async function resolveActiveSkillEffect(
       heal: '回復',
       charge: '充填',
       sacrifice: '代償',
-      sacrifice_void: '代償(虚)',
       soul_bind: '魂縛',
-      soul_bind_void: '魂縛(虚)',
       quick: '速攻',
       oblivion: '沈黙',
       choice: '選択',
@@ -368,7 +363,6 @@ export async function resolveActiveSkillEffect(
       sublimation: '昇華',
       snipe_void: '狙撃(虚)',
       heal_void: '回復(虚)',
-      spread_void: '拡散(虚)',
       support_void: '援護(虚)',
       call: '号令',
       bless: '祝福',
@@ -1621,26 +1615,15 @@ export async function resolveActiveSkillEffect(
       }
       await sleep(200);
     }
-  } else if (skillId === 'sacrifice' || skillId === 'sacrifice_void') {
+  } else if (skillId === 'sacrifice') {
     // 【開発ガイドライン適用】直接トリガー型アクティブスキル
     const sidePrefix = o === 'blue' ? 'player' : 'enemy';
     const hpFill = document.getElementById(`${sidePrefix}-hp-fill`);
 
-    let dmg = skillValue || 3;
+    const dmg = skillValue || 3;
     if (cEl) {
-      const sacText = skillId === 'sacrifice_void' ? '代償(虚)' : '代償';
-      createDamagePopup(cEl, sacText, '#ef4444');
+      createDamagePopup(cEl, '代償', '#ef4444');
       await sleep(200);
-    }
-    if (skillId === 'sacrifice_void') {
-      const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-      const voidCount = hand
-        ? hand.filter(
-            (card) =>
-              card && (card.id === 'token_void' || card.baseId === 'token_void')
-          ).length
-        : 0;
-      dmg = (skillValue || 1) * voidCount;
     }
 
     if (dmg > 0) {
@@ -3501,8 +3484,7 @@ export async function resolveActiveSkillEffect(
     // エンジンのイベントによって状態と描画が同期される
     if (events.length > 0) {
       await playEvents(events);
-      if (skillId === 'sacrifice' || skillId === 'sacrifice_void')
-        checkWinCondition();
+      if (skillId === 'sacrifice') checkWinCondition();
     }
   }
 }

@@ -268,11 +268,7 @@ export default function OnlineLobbyScreen() {
       // 相手またはホスト側で対戦が開始された場合、ローカルタイマーを待たずに即座に対戦画面へ遷移する
       // ※ battleStartedAt は setRoomStatusToBattle で書き込まれ、resetRoomStatusToWaiting でクリアされる
       // ※ isReady はトランザクションで消費済み（false化）のため判定に使わない
-      if (
-        data &&
-        data.status === 'battle' &&
-        data.battleStartedAt
-      ) {
+      if (data && data.status === 'battle' && data.battleStartedAt) {
         if (GameState.appState !== 'battle') {
           // すでに開始タイマーが動作している場合は、そちらの演出待ちを尊重する
           if (!battleStartTimeoutRef.current) {

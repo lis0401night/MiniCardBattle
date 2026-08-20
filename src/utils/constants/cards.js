@@ -521,15 +521,14 @@ export const CARD_MASTER = [
     flavor: '分厚い教典を片手に、休むことなく教えを説き続ける厳格な導き手。',
   },
   {
-    id: 'flagellant',
+    id: 'flak',
     obtain: ['cleric_normal'],
-    name: '鎖の殉教者',
+    name: 'ミスリルの高射砲',
     rarity: 1,
-    power: 5,
-    skills: [{ id: 'martyr' }],
-    voiceCategory: 'human_male_normal',
-    flavor:
-      '自らの肉体を切り刻むことで、彼は神への絶対的な忠誠を証明しようとしている。',
+    power: 7,
+    skills: [{ id: 'defender' }, { id: 'intercept', value: 2 }],
+    voiceCategory: 'machine_old',
+    flavor: '高高度を狙う神聖なる対空砲。上空からの奇襲を許さない。',
   },
   {
     id: 'charity',
@@ -627,29 +626,15 @@ export const CARD_MASTER = [
       '厳重に封印された硝子瓶。中で燻るのは、万物を灰燼に帰す竜王の怒りだ。',
   },
   {
-    id: 'iceblast',
+    id: 'mage',
     obtain: ['witch_normal', 'witch_hard'],
-    name: 'アイスブラスト',
+    name: '未熟な拡散魔導士',
     rarity: 1,
-    power: 0,
-    skills: [{ id: 'choice', value: 1 }],
-    choices: [
-      { id: 'bind', value: 3 },
-      { id: 'freeze', value: 1 },
-    ],
-    voiceCategory: 'magic',
-    flavor: '冷気が染み出す氷結の塊。触れた者はたちまち動きを奪われる。',
-  },
-  {
-    id: 'ogre',
-    obtain: ['oni_easy'],
-    name: '鬼',
-    rarity: 1,
-    power: 7,
-    skills: [{ id: 'brutal', value: 2 }],
-    voiceCategory: 'giant',
+    power: 1,
+    skills: [{ id: 'spread', value: 2 }],
+    voiceCategory: 'human_female_cute',
     flavor:
-      '血に飢えた咆哮とともに、巨大な金棒が振り下ろされる。理性を失ったその暴虐なる一撃は、周囲のすべてを無差別に粉砕する。',
+      '魔導アカデミーの見習い魔導士。魔法のコントロールが苦手で、暴走した魔力が周囲へバラバラに散乱してしまう。',
   },
   {
     id: 'ninja',
@@ -661,6 +646,17 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_normal',
     flavor:
       '影に潜み、音もなく標的に近づく工作員。その姿を捉えることは困難である。',
+  },
+  {
+    id: 'ogre',
+    obtain: ['oni_easy'],
+    name: '鬼',
+    rarity: 1,
+    power: 7,
+    skills: [{ id: 'brutal', value: 2 }],
+    voiceCategory: 'giant',
+    flavor:
+      '血に飢えた咆哮とともに、巨大な金棒が振り下ろされる。理性を失ったその暴虐なる一撃は、周囲のすべてを無差別に粉砕する。',
   },
   {
     id: 'tengu',
@@ -783,18 +779,15 @@ export const CARD_MASTER = [
     flavor: '空を舞う半人半鳥の怪物。獲物を鋭い爪で切り刻む。',
   },
   {
-    id: 'goat',
+    id: 'flagellant',
     obtain: ['succubus_easy'],
-    name: 'スケープゴート',
+    name: '鎖の殉教者',
     rarity: 1,
-    power: 3,
-    skills: [
-      { id: 'sacrifice', value: 3 },
-      { id: 'charge', value: 2 },
-    ],
-    voiceCategory: 'monster',
+    power: 5,
+    skills: [{ id: 'martyr' }],
+    voiceCategory: 'human_male_normal',
     flavor:
-      '不吉な儀式の供物として捧げられる山羊。その命が尽きる時、主には強大な魔力が還元される。',
+      '自らの肉体を切り刻むことで、彼は主への絶対的な忠誠を証明しようとしている。',
   },
   {
     id: 'siren',
@@ -904,9 +897,9 @@ export const CARD_MASTER = [
     obtain: ['satan_normal'],
     name: '地獄の放火魔',
     rarity: 1,
-    power: 3,
+    power: 2,
     skills: [
-      { id: 'artillery', value: 2 },
+      { id: 'spread', value: 2 },
       { id: 'explode', value: 2 },
     ],
     voiceCategory: 'devil',
@@ -1322,14 +1315,14 @@ export const CARD_MASTER = [
       '微かに光るルーンを道標に、失った記憶を辿る旅。その道を阻む者がいれば、迷いなき必中の矢が静かに急所を射抜く。',
   },
   {
-    id: 'flak',
+    id: 'demolisher',
     obtain: ['cleric_easy', 'cleric_normal', 'cleric_hard'],
-    name: 'ミスリルの高射砲',
+    name: 'デモリッシャー',
     rarity: 2,
-    power: 7,
-    skills: [{ id: 'defender' }, { id: 'intercept', value: 2 }],
-    voiceCategory: 'machine_old',
-    flavor: '高高度を狙う神聖なる対空砲。上空からの奇襲を許さない。',
+    power: 3,
+    skills: [{ id: 'artillery', value: 2 }],
+    voiceCategory: 'human_male_normal',
+    flavor: '教会の爆破工作員。彼の持つ箱は異端を裁くための聖なる祭壇である。',
   },
   {
     id: 'pegasus',
@@ -1490,15 +1483,18 @@ export const CARD_MASTER = [
       '城の警備もなんのその、神出鬼没の小さな怪盗は宵の闇をすり抜けていく。',
   },
   {
-    id: 'mage',
+    id: 'iceblast',
     obtain: ['witch_easy', 'witch_normal', 'witch_hard'],
-    name: '未熟な拡散魔導士',
+    name: 'アイスブラスト',
     rarity: 2,
-    power: 1,
-    skills: [{ id: 'spread', value: 2 }],
-    voiceCategory: 'human_female_cute',
-    flavor:
-      '魔導アカデミーの見習い魔導士。魔法のコントロールが苦手で、呪文を詠唱するたびに暴走した魔力が周囲へバラバラに散乱してしまう。',
+    power: 0,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'bind', value: 3 },
+      { id: 'freeze', value: 1 },
+    ],
+    voiceCategory: 'magic',
+    flavor: '冷気が染み出す氷結の塊。触れた者はたちまち動きを奪われる。',
   },
   {
     id: 'ring',
@@ -1707,35 +1703,8 @@ export const CARD_MASTER = [
       '遺跡の深部で王の眠りを守護する黄金の機械兵士。暗い石室に、古く軋んだ駆動音が響き渡る。',
   },
   {
-    id: 'dealer',
-    obtain: ['satan_easy', 'void_easy', 'succubus_easy', 'warlock_easy'],
-    name: 'デビル・ディーラー',
-    rarity: 2,
-    power: 5,
-    skills: [
-      { id: 'sacrifice', value: 2 },
-      { id: 'draw', value: 3 },
-    ],
-    voiceCategory: 'devil',
-    flavor:
-      '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。',
-  },
-  {
     id: 'daemonarmor',
-    obtain: [
-      'satan_easy',
-      'satan_normal',
-      'satan_hard',
-      'void_easy',
-      'void_normal',
-      'void_hard',
-      'succubus_easy',
-      'succubus_normal',
-      'succubus_hard',
-      'warlock_easy',
-      'warlock_normal',
-      'warlock_hard',
-    ],
+    obtain: ['satan_easy', 'void_easy', 'succubus_easy', 'warlock_easy'],
     name: '悪魔の鎧',
     rarity: 2,
     power: 5,
@@ -1748,13 +1717,9 @@ export const CARD_MASTER = [
     id: 'killermachine',
     obtain: [
       'satan_normal',
-      'satan_hard',
       'void_normal',
-      'void_hard',
       'succubus_normal',
-      'succubus_hard',
       'warlock_normal',
-      'warlock_hard',
     ],
     name: '殺戮歩行機械',
     rarity: 2,
@@ -1766,7 +1731,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'bountyhunter',
-    obtain: ['void_normal'],
+    obtain: ['void_easy', 'void_normal', 'void_hard'],
     name: '賞金稼ぎ',
     rarity: 2,
     power: 7,
@@ -1774,6 +1739,17 @@ export const CARD_MASTER = [
     voiceCategory: 'sword',
     flavor:
       '扉が開かれた瞬間、酒場の喧騒は凍りついた。こぼれ落ちた麦酒が床に染み込むより早く、冷たい斧が振り下ろされる。',
+  },
+  {
+    id: 'blackknight',
+    obtain: ['void_normal', 'void_hard'],
+    name: '黒騎士',
+    rarity: 2,
+    power: 4,
+    skills: [{ id: 'convert', value: 1 }, { id: 'deadly' }, { id: 'pierce' }],
+    voiceCategory: 'sword',
+    flavor:
+      '主君を持たず、盾の紋章を塗りつぶした傭兵騎士。鍛え上げた槍捌きで過酷な戦場を生き抜く。',
   },
   {
     id: 'voiddog',
@@ -1798,18 +1774,22 @@ export const CARD_MASTER = [
       '村を救った英雄は病魔に冒され、故郷を追われた。かつて自らが守り抜いた世界に背を向けて。',
   },
   {
-    id: 'priestess',
-    obtain: ['succubus_normal'],
-    name: '聖餐の司祭',
+    id: 'goat',
+    obtain: ['succubus_easy', 'succubus_normal', 'succubus_hard'],
+    name: 'スケープゴート',
     rarity: 2,
-    power: 4,
-    skills: [{ id: 'execute' }, { id: 'resurrect', value: 5 }],
-    voiceCategory: 'human_female_sexy',
-    flavor: '一つの命を奪うことで、深淵より悪魔を呼び覚ます。',
+    power: 3,
+    skills: [
+      { id: 'sacrifice', value: 3 },
+      { id: 'charge', value: 2 },
+    ],
+    voiceCategory: 'monster',
+    flavor:
+      '不吉な儀式の供物として捧げられる山羊。その命が尽きる時、主には強大な魔力が還元される。',
   },
   {
     id: 'alraune',
-    obtain: ['succubus_hard'],
+    obtain: ['succubus_normal', 'succubus_hard'],
     name: '茨の妖精',
     rarity: 2,
     power: 2,
@@ -1821,6 +1801,21 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_cool',
     flavor:
       '深き森で微睡む紫の花に魅入られてはならない。その甘き香りは、命を蝕む死の胞子か、あるいは永遠に目覚めぬ隷属の夢への誘いなのだから。',
+  },
+  {
+    id: 'shatter',
+    obtain: ['succubus_hard'],
+    name: 'マインドシャッター',
+    rarity: 2,
+    power: 0,
+    skills: [{ id: 'choice', value: 1 }],
+    choices: [
+      { id: 'dominate', value: 4 },
+      { id: 'burial', value: 8 },
+    ],
+    voiceCategory: 'magic',
+    flavor:
+      '生涯をかけた魔道の探求も一瞬で白紙と化す。理性を砕かれ、残るのは傀儡としての服従か、完全な忘却か。',
   },
   {
     id: 'incubus',
@@ -1835,7 +1830,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'enchanter',
-    obtain: ['warlock_normal'],
+    obtain: ['warlock_easy', 'warlock_normal', 'warlock_hard'],
     name: 'ダーク・エンチャンター',
     rarity: 2,
     power: 4,
@@ -1846,7 +1841,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'metalworker',
-    obtain: ['warlock_hard'],
+    obtain: ['warlock_normal', 'warlock_hard'],
     name: '教団の職工',
     rarity: 2,
     power: 4,
@@ -1854,6 +1849,16 @@ export const CARD_MASTER = [
     voiceCategory: 'devil',
     flavor:
       '仲間の肉体を無慈悲に改造する悪魔。身を捩るほどの激痛の代償として、冷たく強固な金属の体を与える。',
+  },
+  {
+    id: 'priestess',
+    obtain: ['warlock_hard'],
+    name: '聖餐の司祭',
+    rarity: 2,
+    power: 4,
+    skills: [{ id: 'execute' }, { id: 'resurrect', value: 5 }],
+    voiceCategory: 'human_female_sexy',
+    flavor: '一つの命を奪うことで、深淵より悪魔を呼び覚ます。',
   },
   {
     id: 'skeletonlord',
@@ -1868,6 +1873,20 @@ export const CARD_MASTER = [
     voiceCategory: 'undead',
     flavor:
       '迷宮を彷徨う骸の王。その体が砕け散る時、呪われた骨は新たな兵士として立ち上がる。',
+  },
+  {
+    id: 'dealer',
+    obtain: ['satan_easy', 'satan_normal', 'satan_hard'],
+    name: 'デビル・ディーラー',
+    rarity: 2,
+    power: 5,
+    skills: [
+      { id: 'sacrifice', value: 2 },
+      { id: 'draw', value: 3 },
+    ],
+    voiceCategory: 'devil',
+    flavor:
+      '「さあ、運命を選びな。代償は君の魂で十分だ。」不敵な笑みを浮かべる悪魔の占い師。',
   },
   {
     id: 'cavalry',
@@ -2015,7 +2034,7 @@ export const CARD_MASTER = [
     power: 5,
     skills: [
       { id: 'legendary' },
-      { id: 'spend', value: 3 },
+      { id: 'spend', value: 2 },
       { id: 'spread', value: 3 },
     ],
     voiceCategory: 'machine_new',
@@ -2463,7 +2482,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'dragon',
     flavor:
-      '業火を纏い爆走する厄災の竜。その神速の突進はあらゆる防壁を貫き、戦場を焦土に変え蹂躙し尽くす。',
+      '業火を纏い爆走する厄災の龍。その神速の突進はあらゆる防壁を貫き、戦場を焦土に変え蹂躙し尽くす。',
   },
   {
     id: 'shogun',

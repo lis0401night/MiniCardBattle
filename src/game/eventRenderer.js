@@ -29,13 +29,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import { scanMissionEvents } from './missionLogic.js';
 
 // 狙撃・拡散・迎撃などのVFXトリガー共通処理（DRY原則適用）
-const SNIPE_SKILLS = [
-  'snipe',
-  'snipe_void',
-  'spread',
-  'spread_void',
-  'intercept',
-];
+const SNIPE_SKILLS = ['snipe', 'snipe_void', 'spread', 'intercept'];
 const SNIPE_DELAY_SKILLS = ['snipe', 'snipe_void', 'intercept'];
 
 async function triggerSnipeVfx(source, side, lane) {
@@ -98,7 +92,7 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
 
-        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
+        // 狙撃（snipe, snipe_void）および拡散（spread）、迎撃（intercept）用VFX
         await triggerSnipeVfx(ev.source, ev.side, ev.lane);
 
         if (cEl) {
@@ -132,7 +126,7 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
 
-        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
+        // 狙撃（snipe, snipe_void）および拡散（spread）、迎撃（intercept）用VFX
         await triggerSnipeVfx(ev.source, ev.side, ev.lane);
 
         if (cEl) {
@@ -160,7 +154,7 @@ export async function playEvents(events) {
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
 
-        // 狙撃（snipe, snipe_void）および拡散（spread, spread_void）、迎撃（intercept）用VFX
+        // 狙撃（snipe, snipe_void）および拡散（spread）、迎撃（intercept）用VFX
         await triggerSnipeVfx(ev.source, ev.side, ev.lane);
 
         if (cEl) {
@@ -219,7 +213,6 @@ export async function playEvents(events) {
           let label = `${prefix}${ev.amount}`;
           if (ev.source === 'growth') label = `成長 ${label}`;
           else if (ev.source === 'soul_bind') label = `魂縛 ${label}`;
-          else if (ev.source === 'soul_bind_void') label = `魂縛(虚) ${label}`;
           else if (ev.source === 'retaliate') label = `報復 ${label}`;
 
           createDamagePopup(cEl, label, color);

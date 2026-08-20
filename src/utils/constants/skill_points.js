@@ -367,25 +367,13 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 2 / 3,
   },
-  spread_void: {
-    base: 0,
-    multiplier: 2,
-  },
   support_void: {
     base: 0,
     multiplier: 1,
   },
-  sacrifice_void: {
-    base: 0,
-    multiplier: -1,
-  },
   teleport: {
     base: 0,
     multiplier: 0,
-  },
-  soul_bind_void: {
-    base: 0,
-    multiplier: 0.5,
   },
   portent: {
     base: 5,

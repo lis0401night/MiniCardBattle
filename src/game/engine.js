@@ -973,24 +973,6 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'spread_void': {
-      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
-      const voidCount = hand
-        ? hand.filter(
-            (card) =>
-              card && (card.id === 'token_void' || card.baseId === 'token_void')
-          ).length
-        : 0;
-      if (voidCount > 0) {
-        const spVal = (val || 2) * voidCount;
-        [l - 1, l, l + 1].forEach((j) => {
-          if (j >= 0 && j < 3 && eB[j]) {
-            damageCard(state, oppOwner, j, spVal, 'spread_void', events, true);
-          }
-        });
-      }
-      break;
-    }
     case 'support_void': {
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const voidCount = hand
@@ -1501,20 +1483,6 @@ export function applyActiveSkillLogic(
     case 'sacrifice': {
       const sacAmt = val || 3;
       damageLeader(state, owner, sacAmt, 'sacrifice', events);
-      break;
-    }
-    case 'sacrifice_void': {
-      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
-      const voidCount = hand
-        ? hand.filter(
-            (card) =>
-              card && (card.id === 'token_void' || card.baseId === 'token_void')
-          ).length
-        : 0;
-      if (voidCount > 0) {
-        const sacAmt = (val || 1) * voidCount;
-        damageLeader(state, owner, sacAmt, 'sacrifice_void', events);
-      }
       break;
     }
     case 'artillery': {
@@ -4742,7 +4710,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
     }
 
-    // [5] 魂縛 / 魂縛(虚): 一掃で破壊した敵カードの数だけ発動（攻撃者自身が生存している場合のみ）
+    // [5] 魂縛: 一掃で破壊した敵カードの数だけ発動（攻撃者自身が生存している場合のみ）
     if (aC.currentPower > 0) {
       let destroyedCount = 0;
       for (let targetLane of targets) {
@@ -4762,32 +4730,9 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             source: 'soul_bind',
           });
         }
-        if (hasSkill(aC, 'soul_bind_void')) {
-          const hand =
-            attackerSide === 'blue' ? state.playerHand : state.enemyHand;
-          const voidCount = hand
-            ? hand.filter(
-                (card) =>
-                  card &&
-                  (card.id === 'token_void' || card.baseId === 'token_void')
-              ).length
-            : 0;
-          if (voidCount > 0) {
-            const val = getSkillValue(aC, 'soul_bind_void') || 2;
-            const totalGain = val * voidCount * destroyedCount;
-            aC.currentPower += totalGain;
-            events.push({
-              type: 'power_change',
-              side: attackerSide,
-              lane: l,
-              amount: totalGain,
-              source: 'soul_bind_void',
-            });
-          }
-        }
       }
     }
-    // 防御側の魂縛 / 魂縛(虚): 反撃で攻撃者（またはその守護）を倒した場合に発動
+    // 防御側の魂縛: 反撃で攻撃者（またはその守護）を倒した場合に発動
     if (
       originalTarget &&
       originalTarget.currentPower > 0 &&
@@ -4803,28 +4748,6 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           amount: val,
           source: 'soul_bind',
         });
-      }
-      if (hasSkill(originalTarget, 'soul_bind_void')) {
-        const hand = defSide === 'blue' ? state.playerHand : state.enemyHand;
-        const voidCount = hand
-          ? hand.filter(
-              (card) =>
-                card &&
-                (card.id === 'token_void' || card.baseId === 'token_void')
-            ).length
-          : 0;
-        if (voidCount > 0) {
-          const val = getSkillValue(originalTarget, 'soul_bind_void') || 2;
-          const totalGain = val * voidCount;
-          originalTarget.currentPower += totalGain;
-          events.push({
-            type: 'power_change',
-            side: defSide,
-            lane: l,
-            amount: totalGain,
-            source: 'soul_bind_void',
-          });
-        }
       }
     }
   } else if (dC) {
@@ -5273,7 +5196,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       }
     }
 
-    // 魂縛 / 魂縛(虚)
+    // 魂縛
     let aD = aC_defend.currentPower <= 0,
       dD = dC.currentPower <= 0;
     if (dD && aC.currentPower > 0) {
@@ -5287,29 +5210,6 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           amount: val,
           source: 'soul_bind',
         });
-      }
-      if (hasSkill(aC, 'soul_bind_void')) {
-        const hand =
-          attackerSide === 'blue' ? state.playerHand : state.enemyHand;
-        const voidCount = hand
-          ? hand.filter(
-              (card) =>
-                card &&
-                (card.id === 'token_void' || card.baseId === 'token_void')
-            ).length
-          : 0;
-        if (voidCount > 0) {
-          const val = getSkillValue(aC, 'soul_bind_void') || 2;
-          const totalGain = val * voidCount;
-          aC.currentPower += totalGain;
-          events.push({
-            type: 'power_change',
-            side: attackerSide,
-            lane: l,
-            amount: totalGain,
-            source: 'soul_bind_void',
-          });
-        }
       }
     }
     const counterSoulBindCard =
@@ -5325,28 +5225,6 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           amount: val,
           source: 'soul_bind',
         });
-      }
-      if (hasSkill(counterSoulBindCard, 'soul_bind_void')) {
-        const hand = defSide === 'blue' ? state.playerHand : state.enemyHand;
-        const voidCount = hand
-          ? hand.filter(
-              (card) =>
-                card &&
-                (card.id === 'token_void' || card.baseId === 'token_void')
-            ).length
-          : 0;
-        if (voidCount > 0) {
-          const val = getSkillValue(counterSoulBindCard, 'soul_bind_void') || 2;
-          const totalGain = val * voidCount;
-          counterSoulBindCard.currentPower += totalGain;
-          events.push({
-            type: 'power_change',
-            side: defSide,
-            lane: l,
-            amount: totalGain,
-            source: 'soul_bind_void',
-          });
-        }
       }
     }
   } else {
