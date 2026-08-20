@@ -1890,7 +1890,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cavalry',
-    obtain: ['satan_normal', 'satan_high'],
+    obtain: ['satan_normal', 'satan_hard', 'satan_high'],
     name: '煉獄侯爵の先陣',
     rarity: 2,
     power: 5,

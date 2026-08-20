@@ -3,15 +3,15 @@
  * セレスティア専用の高難易度イベント用デッキ構成データ
  */
 export default [
+  'duelist',
+  'duelist',
+  'duelist',
   'darkpaladin',
   'darkpaladin',
   'darkpaladin',
   'elite',
   'elite',
   'elite',
-  'duelist',
-  'duelist',
-  'duelist',
   'guildmaster',
   'guildmaster',
   'guildmaster',

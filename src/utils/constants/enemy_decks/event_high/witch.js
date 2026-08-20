@@ -3,6 +3,9 @@
  * クロエ専用の高難易度イベント用デッキ構成データ
  */
 export default [
+  'gorgon',
+  'gorgon',
+  'gorgon',
   'philosopher',
   'philosopher',
   'philosopher',
@@ -12,9 +15,6 @@ export default [
   'archmage',
   'archmage',
   'archmage',
-  'gorgon',
-  'gorgon',
-  'gorgon',
   'djinn',
   'djinn',
   'djinn',

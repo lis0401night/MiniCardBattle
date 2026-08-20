@@ -3,6 +3,9 @@
  * ナイア専用の高難易度イベント用デッキ構成データ
  */
 export default [
+  'cthulhu',
+  'cthulhu',
+  'cthulhu',
   'shoggoth',
   'shoggoth',
   'shoggoth',
@@ -13,9 +16,6 @@ export default [
   'starfish',
   'starfish',
   'starfish',
-  'cthulhu',
-  'cthulhu',
-  'cthulhu',
   'oldgod',
   'oldgod',
   'oldgod',
