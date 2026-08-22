@@ -5150,6 +5150,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         amount: finalDmg,
         source: 'direct_attack',
       });
+      finalDmg = 0;
     } else {
       defHP -= finalDmg;
       if (isPhaseBypass) {

@@ -672,7 +672,13 @@ export async function setRoomStatusToBattle() {
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
   await runTransaction(roomRef, (room) => {
     // ルームが存在しない、または双方の準備完了が確認できない場合はコミットしない
-    if (!room || !room.host?.isReady || !room.client?.isReady) return undefined;
+    if (
+      !room ||
+      !room.host?.isReady ||
+      !room.client?.isReady ||
+      !Number.isFinite(room.battleSeed)
+    )
+      return undefined;
     return {
       ...room,
       status: 'battle',
