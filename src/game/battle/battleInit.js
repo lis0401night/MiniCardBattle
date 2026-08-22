@@ -194,15 +194,13 @@ function resolveStageAndBgm() {
   if (GameState.gameMode === 'battle_dungeon') {
     stageId = 'dungeon';
   } else if (GameState.gameMode === 'tournament') {
-    stageId = 'practice';
+    stageId = 'tournament';
   }
 
   const stageData = STAGES[stageId];
   let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
   if (GameState.gameMode === 'story' && GameState.enemyConfig?.id === 'satan') {
     bgmKey = 'bgmLastBattle';
-  } else if (GameState.gameMode === 'tournament') {
-    bgmKey = 'bgmTournament2';
   } else if (
     GameState.gameMode?.startsWith('event_') &&
     GameState.gameMode?.endsWith('_high')

@@ -134,12 +134,16 @@ export default function MatchingScreen({
 
   // バトルのステージIDを決定（initBattleStateと同じロジック）
   const stageId =
-    GameState.gameMode === 'story'
-      ? enemy.stageId || 'android'
-      : GameState.selectedStageId ||
-        enemy.stageId ||
-        enemy.id.replace('_high', '') ||
-        'android';
+    GameState.gameMode === 'battle_dungeon'
+      ? 'dungeon'
+      : GameState.gameMode === 'tournament'
+        ? 'tournament'
+        : GameState.gameMode === 'story'
+          ? enemy.stageId || 'android'
+          : GameState.selectedStageId ||
+            enemy.stageId ||
+            enemy.id.replace('_high', '') ||
+            'android';
 
   return (
     <div className={`matching-screen-container ${visible ? 'show' : ''}`}>

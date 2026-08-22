@@ -252,7 +252,7 @@ export function startTournamentMatch() {
   if (!GameState.enemySkins) GameState.enemySkins = {}; // 再開時のフォールバック
   GameState.enemySkins[opponent.charId] = 'school';
 
-  GameState.selectedStageId = 'practice'; // トーナメント用の背景
+  GameState.selectedStageId = 'tournament'; // トーナメント用の背景（全国大会）
   GameState.aiLevel = 2; // 適度な強さ
 
   // バトル前の会話をセットアップ

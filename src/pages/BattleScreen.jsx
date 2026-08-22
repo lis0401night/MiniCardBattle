@@ -393,9 +393,11 @@ export default function BattleScreen() {
   const stageId =
     GameState.gameMode === 'battle_dungeon'
       ? 'dungeon'
-      : GameState.gameMode === 'story'
-        ? GameState.enemyConfig?.stageId || 'android'
-        : GameState.selectedStageId || 'android';
+      : GameState.gameMode === 'tournament'
+        ? 'tournament'
+        : GameState.gameMode === 'story'
+          ? GameState.enemyConfig?.stageId || 'android'
+          : GameState.selectedStageId || 'android';
   const battleStyle = {
     backgroundColor: '#0f172a',
     ...getStageBackgroundStyle(stageId),
