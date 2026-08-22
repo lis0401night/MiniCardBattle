@@ -8,7 +8,11 @@ import {
   triggerFinishVisuals,
   updateBattleUIHook,
 } from '../../services/uiBattle.js';
-import { dispatchBattleAction } from './battleQueue.js';
+import {
+  dispatchBattleAction,
+  setPendingChoiceResolver,
+} from './battleQueue.js';
+import { battleEvents } from './events/battleEventEmitter.js';
 import {
   checkIsMissionEligible,
   getDialogue,
@@ -778,7 +782,8 @@ export function endBattle() {
 /**
  * 対戦終了時の包括的メモリクリーンアップを実行する。
  * 対戦中に蓄積されたカードオブジェクト配列、アクション履歴、一時ステート、
- * および不要になった戦闘用BGMバッファを完全に解放し、iOS (WebKit) のメモリ肥大化を防止する。
+ * 選択待機リゾルバ、イベントリスナー、およびグローバルコールバックを完全に解放し、
+ * iOS (WebKit) のメモリ肥大化および画面遷移後の誤動作を防止する。
  */
 export function cleanupBattleState() {
   // 1. 対戦用カード・盤面オブジェクトの参照を解放
@@ -793,10 +798,36 @@ export function cleanupBattleState() {
   GameState.playerSealedLanes = [0, 0, 0];
   GameState.enemySealedLanes = [0, 0, 0];
   GameState.actionQueue = [];
+  GameState.pendingChoices = [];
   GameState.battleStartPlayerDeckObjects = null;
   GameState.aiDecision = null;
 
-  // 2. 長押しやタイマーのクリア
+  // 2. モード系フラグおよび選択リゾルバのクリア
+  GameState.isPlacementMode = false;
+  GameState.placementCount = 0;
+  GameState.placementToken = null;
+  GameState.placementSelectedLanes = [];
+  GameState.isEnemyTargetMode = false;
+  GameState.isAlliedTargetMode = false;
+  GameState.enemyTargetSkillId = null;
+  GameState.targetSelectResolve = null;
+  GameState.isDiscardingMode = false;
+  GameState.discardSelectedIndices = [];
+  GameState.discardMaxCount = 0;
+  GameState.isDiscardingExact = false;
+
+  // 3. グローバルコールバック・リゾルバ・イベントリスナーの解除
+  setPendingChoiceResolver(null);
+  battleEvents.clearAll();
+  window.finishHandSelection = null;
+  window.handlePlacementLaneClick = null;
+  window.finishPlacement = null;
+  window.handleEnemyLaneClick = null;
+  window.finishEnemyTargetSelection = null;
+  window.handleAlliedLaneClick = null;
+  window.finishAlliedSelection = null;
+
+  // 4. 長押しやタイマーのクリア
   if (GameState.longPressTimer) {
     clearTimeout(GameState.longPressTimer);
     GameState.longPressTimer = null;

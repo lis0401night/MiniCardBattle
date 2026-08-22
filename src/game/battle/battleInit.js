@@ -409,14 +409,22 @@ export function prepareBattle() {
     const cardUrls = [];
     allCards.forEach((c) => {
       if (!c) return;
+      // フルサイズ画像および盤面表示用サムネイル画像の両方を事前ロード対象に追加
       if (c.imgUrl) cardUrls.push(c.imgUrl);
+      const thumbUrl = getCardImgUrl(c, true);
+      if (thumbUrl) cardUrls.push(thumbUrl);
+
       const lookupId = c.baseId || c.id;
-      // プレミアム版が存在するカードについては、設定や同期状況に関わらず通常版・プレミアム版双方の画像URLを事前ロード対象に追加
+      // プレミアム版が存在するカードについては、設定や同期状況に関わらず通常版・プレミアム版双方の画像URL（フル＆サムネ）を事前ロード対象に追加
       if (hasPremiumVariant(lookupId)) {
-        const premUrl = getCardImgUrl({ ...c, isPremium: true });
-        const normUrl = getCardImgUrl({ ...c, isPremium: false });
-        if (premUrl) cardUrls.push(premUrl);
-        if (normUrl) cardUrls.push(normUrl);
+        const premThumb = getCardImgUrl({ ...c, isPremium: true }, true);
+        const premFull = getCardImgUrl({ ...c, isPremium: true }, false);
+        const normThumb = getCardImgUrl({ ...c, isPremium: false }, true);
+        const normFull = getCardImgUrl({ ...c, isPremium: false }, false);
+        if (premThumb) cardUrls.push(premThumb);
+        if (premFull) cardUrls.push(premFull);
+        if (normThumb) cardUrls.push(normThumb);
+        if (normFull) cardUrls.push(normFull);
       }
     });
 

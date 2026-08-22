@@ -267,6 +267,7 @@ export default function OnlineLobbyScreen() {
     };
 
     multiplayerCallbacks.onRoomUpdated = (data) => {
+      latestRoomDataRef.current = data;
       setRoomData(data);
       if (data?.status !== 'battle') {
         setBattleStartError(false);
@@ -275,8 +276,15 @@ export default function OnlineLobbyScreen() {
       // 1. DB上の status が 'battle' に確定している場合（対戦開始シーケンス）
       // トランザクションコミット後にサーバー時刻 battleStartedAt が付与された更新を受信した時、
       // 両プレイヤーで同一の基準時刻（battleStartedAt）から残り時間を計算して開始タイマーを起動する。
-      if (data && data.status === 'battle' && data.battleStartedAt) {
-        latestRoomDataRef.current = data;
+      if (data?.status === 'battle') {
+        if (!Number.isFinite(data.battleStartedAt)) {
+          setBattleStartError(true);
+          if (battleStartTimeoutRef.current) {
+            clearTimeout(battleStartTimeoutRef.current);
+          }
+          battleStartTimeoutRef.current = null;
+          return;
+        }
 
         if (GameState.appState === 'battle') {
           if (battleStartTimeoutRef.current) {
@@ -337,12 +345,24 @@ export default function OnlineLobbyScreen() {
         data.client?.isReady &&
         data.status !== 'battle'
       ) {
-        latestRoomDataRef.current = data;
-
         if (getIsHost()) {
-          setRoomStatusToBattle().catch((e) =>
-            console.warn('setRoomStatusToBattle failed:', e)
-          );
+          setRoomStatusToBattle()
+            .then((startedRoom) => {
+              const currentRoom = latestRoomDataRef.current;
+              if (
+                startedRoom ||
+                currentRoom?.status === 'battle' ||
+                !currentRoom?.host?.isReady ||
+                !currentRoom?.client?.isReady
+              ) {
+                return;
+              }
+              setBattleStartError(true);
+              showAlertModal(
+                '対戦の開始条件を確認できませんでした。準備を解除して再試行してください。'
+              );
+            })
+            .catch((e) => console.warn('setRoomStatusToBattle failed:', e));
         }
       }
     };

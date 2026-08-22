@@ -160,6 +160,20 @@ export const VOICE_CATEGORIES = {
   },
 };
 
+/**
+ * VOICE_CATEGORIES に定義されているすべてのカードボイス音声ファイルパスを取得する
+ * @returns {string[]} 全カードボイスのファイルパス配列
+ */
+export function getAllVoicePaths() {
+  const paths = new Set();
+  Object.values(VOICE_CATEGORIES).forEach((cat) => {
+    if (!cat) return;
+    if (cat.play) paths.add(cat.play);
+    if (cat.death) paths.add(cat.death);
+  });
+  return Array.from(paths);
+}
+
 // ボイス再生用の関数
 export const voiceAudioCache = {};
 

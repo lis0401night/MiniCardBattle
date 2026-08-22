@@ -272,6 +272,9 @@ export async function loadAndDecodeAudio(url) {
 
 /**
  * 特定のSEをロードしてデコード
+ * @param {string} key - SE識別キー
+ * @param {string} url - 音声ファイルURL
+ * @returns {Promise<void>}
  */
 export async function loadSE(key, url) {
   try {
@@ -282,6 +285,22 @@ export async function loadSE(key, url) {
     }
   } catch (e) {
     console.warn(`Failed to loadSE: ${key} (${url})`, e);
+  }
+}
+
+/**
+ * 特定のカードボイスをロードしてデコードし、voiceBuffers にキャッシュする
+ * @param {string} url - 音声ファイルURL
+ * @returns {Promise<void>}
+ */
+export async function loadVoice(url) {
+  try {
+    const buffer = await loadAndDecodeAudio(url);
+    if (buffer) {
+      voiceBuffers[url] = buffer;
+    }
+  } catch (e) {
+    console.warn(`Failed to loadVoice: ${url}`, e);
   }
 }
 

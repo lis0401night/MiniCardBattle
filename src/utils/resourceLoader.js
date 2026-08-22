@@ -4,6 +4,7 @@ import {
   SE_PATHS,
   shouldSkipAudioPreload,
   loadSE,
+  loadVoice,
   loadBgm,
   audioCtx,
 } from './sounds.js';
@@ -12,6 +13,7 @@ import { appendVersionQuery } from './constants/config.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import { VFX_DATA } from './constants/vfx.js';
 import { UI_IMAGES } from './constants/uiImages.js';
+import { getAllVoicePaths } from './constants/voices.js';
 
 let isPreloaded = false;
 
@@ -148,15 +150,25 @@ export async function preloadAllGameResources(onProgress) {
   ];
   extraUiParts.forEach((part) => asyncUrlsToLoad.add(appendVersionQuery(part)));
 
-  // C. カード画像
+  // C. カード画像（サムネイルおよびフルサイズ画像）
   CARD_MASTER.forEach((card) => {
-    // 通常版画像
-    const normalUrl = getCardImgUrl({ id: card.id, isPremium: false });
+    // 通常版画像（サムネイル & フルサイズ）
+    const normalThumbUrl = getCardImgUrl(
+      { id: card.id, isPremium: false },
+      true
+    );
+    if (normalThumbUrl) asyncUrlsToLoad.add(normalThumbUrl);
+    const normalUrl = getCardImgUrl({ id: card.id, isPremium: false }, false);
     if (normalUrl) asyncUrlsToLoad.add(normalUrl);
 
     // プレミアム画像（プレミアム版が存在する場合のみ追加）
     if (hasPremiumVariant(card.id)) {
-      const premiumUrl = getCardImgUrl({ id: card.id, isPremium: true });
+      const premiumThumbUrl = getCardImgUrl(
+        { id: card.id, isPremium: true },
+        true
+      );
+      if (premiumThumbUrl) asyncUrlsToLoad.add(premiumThumbUrl);
+      const premiumUrl = getCardImgUrl({ id: card.id, isPremium: true }, false);
       if (premiumUrl) asyncUrlsToLoad.add(premiumUrl);
     }
   });
@@ -169,6 +181,12 @@ export async function preloadAllGameResources(onProgress) {
 
   // BGM と SE
   Object.values(SE_PATHS).forEach((path) => {
+    urlsToLoad.add(path);
+  });
+
+  // カードボイス全種（召喚・撃破CV）
+  const voicePaths = getAllVoicePaths();
+  voicePaths.forEach((path) => {
     urlsToLoad.add(path);
   });
 
@@ -195,8 +213,9 @@ export async function preloadAllGameResources(onProgress) {
   const loadPromise = (url) => {
     return new Promise((resolve) => {
       if (url.match(/\.(mp3|wav|ogg|m4a)$/i)) {
-        // SEかBGMかを判定
+        // SEかカードボイスかBGMかを判定
         const isSE = Object.values(SE_PATHS).includes(url);
+        const isVoice = voicePaths.includes(url);
         if (isSE) {
           // 効果音（SE）の場合は Web Audio API で事前デコードしてキャッシュする
           const key = Object.keys(SE_PATHS).find((k) => SE_PATHS[k] === url);
@@ -205,6 +224,9 @@ export async function preloadAllGameResources(onProgress) {
           } else {
             resolve();
           }
+        } else if (isVoice) {
+          // カードボイスの場合は Web Audio API で事前デコードして voiceBuffers に常駐キャッシュする
+          loadVoice(url).then(resolve).catch(resolve);
         } else {
           // BGM（タイトルBGMなど）の場合は、Web Audio API での事前デコードと HTML5 Audio 双方をロードする
           const bgmKey = Object.keys(AUDIO_INSTANCES).find((k) => {

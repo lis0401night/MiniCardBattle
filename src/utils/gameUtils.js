@@ -64,6 +64,7 @@ export const retryPlayBgm = () => {
             : 0.3;
 
         if (buffer) {
+          registerDecodedBgm(fetchUrl, buffer);
           startWebAudioBgm(buffer, baseVol);
         } else {
           // デコードされていない場合はここでデコードして再生
