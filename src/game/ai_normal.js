@@ -430,7 +430,15 @@ export function processActionSequence(
                 boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
                 boardCard.basePower = METAMORPH_ESTIMATED_POWER;
               } else if (
-                ['heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
+                [
+                  'heal',
+                  'bless',
+                  'morph',
+                  'shuffle',
+                  'draw',
+                  'salvage',
+                  'explore',
+                ].includes(sk.id)
               ) {
                 // ユーティリティボーナス系スキル (瘴気発動時は回復ボーナスを除外)
                 if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
@@ -1095,7 +1103,17 @@ export function processActionSequence(
             hasSkill(activeCardForSkills, 'chant');
 
           skills.forEach((sk) => {
-            if (['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)) {
+            if (
+              [
+                'draw',
+                'heal',
+                'bless',
+                'morph',
+                'shuffle',
+                'salvage',
+                'explore',
+              ].includes(sk.id)
+            ) {
               if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
                 simState.actionUtilityBonus =
                   (simState.actionUtilityBonus || 0) +

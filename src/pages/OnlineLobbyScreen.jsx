@@ -388,7 +388,10 @@ export default function OnlineLobbyScreen() {
     }
   }, [roomData?.chat]);
 
+  const isBattleStarting = roomData?.status === 'battle';
+
   const handleLeaveRoom = async () => {
+    if (isBattleStarting) return;
     playSound(SOUNDS.seClick);
     await safeLeaveRoom('退室に失敗しました:');
     setRoomData(null);
@@ -396,6 +399,7 @@ export default function OnlineLobbyScreen() {
   };
 
   const handleDeckEdit = () => {
+    if (isBattleStarting) return;
     playSound(SOUNDS.seClick);
     GameState.gameMode = 'online_deck_edit';
     GameState.appState = 'select_deck';
@@ -403,6 +407,7 @@ export default function OnlineLobbyScreen() {
   };
 
   const handleSetReady = async () => {
+    if (isBattleStarting) return;
     if (
       !localReadyConfig ||
       !localReadyConfig.deck ||
@@ -422,6 +427,7 @@ export default function OnlineLobbyScreen() {
   };
 
   const handleCancelReady = async () => {
+    if (isBattleStarting) return;
     playSound(SOUNDS.seClick);
     try {
       await updatePlayerReady(localReadyConfig, false);
@@ -432,6 +438,7 @@ export default function OnlineLobbyScreen() {
 
   const handleSendChat = async (e) => {
     e.preventDefault();
+    if (isBattleStarting) return;
     if (!chatInput.trim()) return;
     try {
       const storedName =
@@ -611,14 +618,39 @@ export default function OnlineLobbyScreen() {
             >
               <div
                 style={{
-                  color: myData?.isReady ? '#10b981' : '#facc15',
+                  color: isBattleStarting
+                    ? '#38bdf8'
+                    : myData?.isReady
+                      ? '#10b981'
+                      : '#facc15',
                   fontWeight: 'bold',
                 }}
               >
-                {myData?.isReady ? '準備完了！' : '準備中...'}
+                {isBattleStarting
+                  ? '対戦開始！'
+                  : myData?.isReady
+                    ? '準備完了！'
+                    : '準備中...'}
               </div>
               <div>
-                {myData?.isReady ? (
+                {isBattleStarting ? (
+                  <button
+                    className="btn"
+                    disabled
+                    style={{
+                      margin: 0,
+                      padding: '5px 10px',
+                      fontSize: '0.8rem',
+                      whiteSpace: 'nowrap',
+                      background: '#0284c7',
+                      opacity: 0.8,
+                      cursor: 'not-allowed',
+                      flexShrink: 0,
+                    }}
+                  >
+                    対戦開始中...
+                  </button>
+                ) : myData?.isReady ? (
                   <button
                     className="btn"
                     style={{
@@ -726,11 +758,19 @@ export default function OnlineLobbyScreen() {
               ) : (
                 <div
                   style={{
-                    color: opData.isReady ? '#10b981' : '#facc15',
+                    color: isBattleStarting
+                      ? '#38bdf8'
+                      : opData.isReady
+                        ? '#10b981'
+                        : '#facc15',
                     fontWeight: 'bold',
                   }}
                 >
-                  {opData.isReady ? '準備完了！' : '準備中...'}
+                  {isBattleStarting
+                    ? '対戦開始！'
+                    : opData.isReady
+                      ? '準備完了！'
+                      : '準備中...'}
                 </div>
               )}
             </div>
@@ -820,11 +860,14 @@ export default function OnlineLobbyScreen() {
             <button
               type="submit"
               className="btn"
+              disabled={isBattleStarting}
               style={{
                 margin: 0,
                 padding: '5px 15px',
                 width: 'auto',
-                background: '#3b82f6',
+                background: isBattleStarting ? '#64748b' : '#3b82f6',
+                opacity: isBattleStarting ? 0.6 : 1,
+                cursor: isBattleStarting ? 'not-allowed' : 'pointer',
               }}
             >
               送信
@@ -836,10 +879,16 @@ export default function OnlineLobbyScreen() {
       <div style={{ marginTop: '15px', textAlign: 'center', flexShrink: 0 }}>
         <button
           className="btn"
-          style={{ margin: '0', background: '#ef4444' }}
+          disabled={isBattleStarting}
+          style={{
+            margin: '0',
+            background: isBattleStarting ? '#64748b' : '#ef4444',
+            opacity: isBattleStarting ? 0.6 : 1,
+            cursor: isBattleStarting ? 'not-allowed' : 'pointer',
+          }}
           onClick={handleLeaveRoom}
         >
-          退出・解散する
+          {isBattleStarting ? '対戦開始中...' : '退出・解散する'}
         </button>
       </div>
     </div>
