@@ -1,6 +1,9 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { ACTIVE_SKILLS, FATE_ESTIMATED_DAMAGE } from '../utils/constants/skills.js';
+import {
+  ACTIVE_SKILLS,
+  FATE_ESTIMATED_DAMAGE,
+} from '../utils/constants/skills.js';
 import {
   consumeArmSelf,
   getSeededRandom,

@@ -4751,14 +4751,12 @@ export function simulateMove(
           const unionSkillForCheck =
             playedCard.skills &&
             playedCard.skills.find((s) => s.id === 'union');
-          if (
-            !(
-              unionSkillForCheck &&
-              (simState.enemyBoard[laneIdx].baseId ===
-                unionSkillForCheck.targetId ||
-                simState.enemyBoard[laneIdx].id === unionSkillForCheck.targetId)
-            )
-          ) {
+          if (!(
+            unionSkillForCheck &&
+            (simState.enemyBoard[laneIdx].baseId ===
+              unionSkillForCheck.targetId ||
+              simState.enemyBoard[laneIdx].id === unionSkillForCheck.targetId)
+          )) {
             return null;
           }
         }
