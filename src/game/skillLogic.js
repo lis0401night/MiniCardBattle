@@ -1408,11 +1408,18 @@ export async function resolveActiveSkillEffect(
       } else if (roll === 5) {
         dmg = 3;
       }
+      if (window.triggerVfx) {
+        await window.triggerVfx('anm_skill_artillery', o);
+      }
       const targetSide = o === 'blue' ? 'red' : 'blue';
       await applyLeaderDamageWithGuard(targetSide, dmg, 'fate', c, o);
     } else {
       let dmg = 6;
-      // 出目6は自傷（発動者自身がダメージを受ける）
+      // 出目6は自傷（発動者自身がダメージを受けるため、反対陣営を指定して自分のHPゲージ位置にVFXを表示）
+      if (window.triggerVfx) {
+        const oppSide = o === 'blue' ? 'red' : 'blue';
+        await window.triggerVfx('anm_skill_artillery', oppSide);
+      }
       await applyLeaderDamageWithGuard(o, dmg, 'fate', c, o);
     }
   } else if (skillId === 'quick') {

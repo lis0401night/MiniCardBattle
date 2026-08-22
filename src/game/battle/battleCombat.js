@@ -384,6 +384,7 @@ export async function triggerSplitSkill(owner, lane, card) {
 
   playSound(SOUNDS.sePlace);
   renderBoard();
+  playCardVoice(board[lane], 'play');
   const cEl = document.querySelector(
     `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${lane}"] .card`
   );

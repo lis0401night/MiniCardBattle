@@ -72,19 +72,21 @@ function createSplitSimToken(execCard, tgtLane, owner = 'red') {
  *
  *   実際に号令が発動する際（skillLogic.js）には、デッキトップの実カードが判明するため、
  *   evaluateAdhocTokenLanes() でシミュレーションベースの最適レーン選択を行う。
- *   この時点では号令元カードは「本来のパワー」で盤面に存在している（GameStateから読むため）。
- *   また、号令によるカード配置はリーダースキルの発動タイミングが過ぎているため、
- *   リーダースキルは使用しないシミュレーションとなる。
- *
  * ■ 変身（metamorph）:
  *   全カードからランダムに1枚に変身するスキルだが、結果が不明なため、
  *   METAMORPH_ESTIMATED_POWER（定数）のパワーとして仮評価する。
+ *
+ * ■ 運命（fate）:
+ *   確率で相手ダメージまたは自傷となるスキルだが、AI思考シミュレーション時は
+ *   常に最高の結果（FATE_ESTIMATED_DAMAGE = 3）を想定して盤面・打点を評価する。
  *
  * ■ 号令で呼ばれたカードが号令や変身を持つ場合:
  *   evaluateAdhocTokenLanes() 内でもスキル実行ループに同じ仮評価ロジックを適用しているため、
  *   号令で出されたカードがさらに号令や変身を持っていても、同じルールで正しく評価される。
  */
 const METAMORPH_ESTIMATED_POWER = 5;
+/** 運命（fate）スキルのAIシミュレーション用最大見積もりダメージ（相手リーダーに3ダメージ） */
+export const FATE_ESTIMATED_DAMAGE = 3;
 
 /**
  * ボード上の全カードの「無敵（invincible）」スキルの持続ターンを減退・解除する共通ヘルパー

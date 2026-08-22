@@ -487,6 +487,7 @@ export function processDestructionTriggers(state, events) {
                 card: {
                   ...JSON.parse(JSON.stringify(tL)),
                   id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${i}_${getSeededRandom().toString(36).substr(2, 5)}`,
+                  baseId: tokenId,
                   owner: side,
                   imgUrl: `assets/cards/card_${tokenId}.webp`,
                   power: val,
@@ -1409,6 +1410,15 @@ export function applyActiveSkillLogic(
       damageLeader(state, oppOwner, artAmt, 'artillery', events);
       break;
     }
+    case 'fate': {
+      // 【システム解説】運命（fate）スキル：
+      // AI思考シミュレーション時は常に最高の結果（相手リーダーに3ダメージ）として見積もり評価する。
+      // ※ 実際の対戦プレイ時におけるダイス抽選（5/6で1~3、1/6で自傷6）およびVFXアニメーション・ポップアップ演出は
+      //    「src/game/skillLogic.js」内の「resolveActiveSkillEffect」で実行されます。
+      const fateMaxDmg = 3;
+      damageLeader(state, oppOwner, fateMaxDmg, 'fate', events);
+      break;
+    }
     case 'decree': {
       // 宣告：手札の「宣告」を持つカード枚数×valダメージを相手リーダーに与える
       const decreeMultiplier = val || 4;
@@ -2211,6 +2221,7 @@ export function applyActiveSkillLogic(
                 b[execLane] = {
                   ...JSON.parse(JSON.stringify(tL)),
                   id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${execLane}_${getSeededRandom().toString(36).substr(2, 5)}`,
+                  baseId: tokenId,
                   owner,
                   imgUrl: `assets/cards/card_${tokenId}.webp`,
                   power: val,
