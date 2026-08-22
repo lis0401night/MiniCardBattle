@@ -65,7 +65,6 @@ import {
 } from '../../utils/resourceLoader.js';
 import {
   AUDIO_INSTANCES,
-  cleanupOldDecodedBgms,
   loadAndDecodeAudio,
   registerDecodedBgm,
   SOUNDS,
@@ -508,9 +507,6 @@ export function prepareBattle() {
       if (fetchUrl.includes('assets/audio/bgm/')) {
         fetchUrl = fetchUrl.substring(fetchUrl.indexOf('assets/audio/bgm/'));
       }
-
-      // 前の画面などの不要なBGMバッファを破棄してメモリを事前確保
-      cleanupOldDecodedBgms(fetchUrl);
 
       if (!decodedBgms[fetchUrl]) {
         if (window.updateLoadingTextReact) {

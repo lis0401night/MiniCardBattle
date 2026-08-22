@@ -52,6 +52,7 @@ import {
   BOSS_CHARACTER_IDS,
   canShowUnlockableCharacter,
   CHARACTERS,
+  getIconFramePath,
   getPlayerIconPath,
   getSkinImage,
 } from '../utils/constants/characters.js';
@@ -2223,7 +2224,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 fontSize: '1.2rem',
               }}
             >
-              キャラスキン設定
+              スキン変更
             </h2>
 
             <div
@@ -2371,24 +2372,25 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           window.forceUpdateSelectScreen();
                       }}
                     >
+                      {/* スキンアイコン（フレーム付き） */}
                       <div
+                        className="banner-icon-wrapper"
                         style={{
                           width: '48px',
                           height: '48px',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          border: '2px solid #475569',
+                          marginRight: 0,
                           flexShrink: 0,
                         }}
                       >
                         <img
                           src={skinDef.icon}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
+                          className="banner-icon"
                           alt={skinDef.name}
+                        />
+                        <img
+                          src={getIconFramePath(charDetailData.id)}
+                          className="banner-icon-frame"
+                          alt="frame"
                         />
                       </div>
                       <div
@@ -2600,24 +2602,39 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         }
                       }}
                     >
+                      {/* リーダーアイコン（フレーム付き・スキン反映対応） */}
                       <div
+                        className="banner-icon-wrapper"
                         style={{
                           width: '48px',
                           height: '48px',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          border: '2px solid #475569',
+                          marginRight: 0,
                           flexShrink: 0,
                         }}
                       >
                         <img
-                          src={char.icon}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
+                          src={
+                            (getSkinImage
+                              ? getSkinImage(
+                                  char,
+                                  (charDetailData?.targetDeckIndex !==
+                                    undefined &&
+                                    GameState.decks?.[
+                                      charDetailData.targetDeckIndex
+                                    ]?.playerSkins?.[char.id]) ||
+                                    GameState.playerSkins?.[char.id] ||
+                                    'default',
+                                  'icon'
+                                )
+                              : char.icon) || char.icon
+                          }
+                          className="banner-icon"
                           alt={char.name}
+                        />
+                        <img
+                          src={getIconFramePath(char.id)}
+                          className="banner-icon-frame"
+                          alt="frame"
                         />
                       </div>
                       <div

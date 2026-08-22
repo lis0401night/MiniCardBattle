@@ -19,8 +19,8 @@ export default [
   'cyberdragon',
   'cyberdragon',
   'booster',
-  'mechanic',
-  'mechanic',
-  'mechanic',
-  'mechanic',
+  'cop',
+  'cop',
+  'cop',
+  'cop',
 ];

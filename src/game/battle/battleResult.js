@@ -295,6 +295,7 @@ function resolveDungeonResult() {
   if (GameState.gameMode !== 'battle_dungeon') return false;
 
   if (GameState.lastBattleResult === 'draw') {
+    cleanupBattleState();
     setupDialogueScreen();
     return true;
   }
@@ -315,6 +316,7 @@ function resolveDungeonResult() {
   GameState.dialogueQueue = endText
     ? [{ speaker: 'enemy', text: endText }]
     : [];
+  cleanupBattleState();
   setupDialogueScreen();
   return true;
 }
@@ -413,6 +415,7 @@ function resolveDefenseResult() {
     showAlertModal(
       `防衛戦に勝利しました！\n防衛ポイントを ${winPoints} Pt 獲得しました！`,
       () => {
+        cleanupBattleState();
         setupDialogueScreen();
       }
     );
@@ -435,9 +438,11 @@ function resolveDefenseResult() {
       });
     }
 
+    cleanupBattleState();
     showDefenseBattleList();
     return true;
   } else {
+    cleanupBattleState();
     showDefenseBattleList();
     return true;
   }
@@ -527,12 +532,14 @@ function resolveFortuneRewards() {
       color: '#f97316',
       darkColor: '#ea580c',
       onClose: () => {
+        cleanupBattleState();
         GameState.appState = 'post_dialogue';
         setupDialogueScreen();
       },
     });
     return true;
   } else {
+    cleanupBattleState();
     GameState.appState = 'post_dialogue';
     setupDialogueScreen();
     return true;
@@ -687,14 +694,14 @@ export function endBattle() {
 
     buildResultDialogueQueue();
 
-    // ※ resolveDefenseResult() は内部で battleStartPlayerDeckObjects を参照するため、
+    // ※ 各resolve関数は内部で画面遷移直前またはモーダルのコールバック内で
+    //    cleanupBattleState() を呼ぶため、ここでは呼ばない。
+    //    resolveDefenseResult() は内部で battleStartPlayerDeckObjects を参照するため、
     //    cleanupBattleState() は必ず各resolve関数の実行「後」に呼ぶこと。
     if (resolveDungeonResult()) {
-      cleanupBattleState();
       return;
     }
     if (resolveDefenseResult()) {
-      cleanupBattleState();
       return;
     }
 
@@ -735,12 +742,12 @@ export function endBattle() {
         incrementStat('eventClear', `${charId}_high`);
       }
 
+      // resolveFortuneRewards: 内部のコールバックまたは同期パスでcleanupBattleState実行
       if (resolveFortuneRewards()) {
-        cleanupBattleState();
         return;
       }
+      // resolveCardDrop: RewardOverlay閉じ時にcleanupBattleState実行
       if (resolveCardDrop()) {
-        cleanupBattleState();
         return;
       }
     }

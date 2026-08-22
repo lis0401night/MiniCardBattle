@@ -143,6 +143,14 @@ export default function DeckListScreen({ switchScreen }) {
 
     return () => {
       window.forceUpdateDeckList = null;
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      if (autoScrollTimer.current) {
+        clearTimeout(autoScrollTimer.current);
+        autoScrollTimer.current = null;
+      }
     };
   }, []);
 

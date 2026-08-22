@@ -397,6 +397,7 @@ export default function OnlineLobbyScreen() {
 
     return () => {
       clearInterval(heartbeatInterval);
+      window.reloadOnlineLobbyConfig = null;
       // ロビー画面から離脱した場合（対戦開始時を除く）はコールバックを解除
       // 対戦開始時は対戦用のコールバック（切断検知等）を維持するため、バトル状態でない場合のみ null にする
       if (GameState.appState !== 'battle') {

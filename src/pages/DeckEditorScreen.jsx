@@ -295,6 +295,10 @@ export default function DeckEditorScreen({ switchScreen }) {
     }
     // 既存の再描画関数をフック
     setRenderDeckEditHook(updateDeckEditor);
+    return () => {
+      // 画面アンマウント時に外部フック参照を確実に切断し、過去の画面インスタンスおよびクロージャの残留を防ぐ
+      setRenderDeckEditHook(null);
+    };
   }, [updateDeckEditor]);
 
   // 変更をグローバルに反映する
@@ -954,21 +958,26 @@ export default function DeckEditorScreen({ switchScreen }) {
                         }}
                       >
                         {isBanned && <BannedOverlay />}
-                        <div
-                          className="card-bg"
-                          style={{
-                            backgroundImage: `url('${imgUrl}')`,
-                            filter: card.filter || 'none',
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            width: '100%',
-                            height: '100%',
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            borderRadius: 'inherit',
-                          }}
-                        ></div>
+                        {imgUrl && (
+                          <img
+                            className="card-bg"
+                            src={imgUrl}
+                            alt={card.name || ''}
+                            loading="lazy"
+                            decoding="async"
+                            style={{
+                              filter: card.filter || 'none',
+                              objectFit: 'cover',
+                              width: '100%',
+                              height: '100%',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              borderRadius: 'inherit',
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        )}
 
                         {isPremUnlocked && (
                           <div
@@ -1250,18 +1259,26 @@ export default function DeckEditorScreen({ switchScreen }) {
                           }}
                         >
                           {isBanned && <BannedOverlay />}
-                          <div
-                            className="card-bg"
-                            style={{
-                              backgroundImage: `url('${imgUrl}')`,
-                              filter: template.filter || 'none',
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                              width: '100%',
-                              height: '100%',
-                              position: 'absolute',
-                            }}
-                          ></div>
+                          {imgUrl && (
+                            <img
+                              className="card-bg"
+                              src={imgUrl}
+                              alt={template.name || ''}
+                              loading="lazy"
+                              decoding="async"
+                              style={{
+                                filter: template.filter || 'none',
+                                objectFit: 'cover',
+                                width: '100%',
+                                height: '100%',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                borderRadius: 'inherit',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                          )}
 
                           {isPremUnlocked && (
                             <div

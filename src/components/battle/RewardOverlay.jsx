@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { saveDeck } from '../../services/deck.js';
 import { setupDialogueScreen } from '../../services/uiDialogue.js';
+import { cleanupBattleState } from '../../game/battle/battleResult.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
@@ -128,6 +129,7 @@ export default function RewardOverlay() {
     // 報酬確認が終わったらダイアログ（会話）シーンへ移行する
     clearAllTimers();
     setIsVisible(false);
+    cleanupBattleState();
     setupDialogueScreen();
   };
 
