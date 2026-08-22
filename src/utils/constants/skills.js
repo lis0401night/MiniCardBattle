@@ -13,7 +13,7 @@ export const SKILLS = {
   deadly: {
     name: '必殺',
     icon: '☠️',
-    desc: () => '戦闘した時、相手を破壊する。',
+    desc: () => '戦闘ダメージを与えた相手を破壊する。',
   },
   draw: {
     name: '入替',
@@ -585,11 +585,6 @@ export const SKILLS = {
     desc: () =>
       '戦闘で受けるダメージをリーダーに肩代わりさせる。また、カードを装備できず、装備になれない。',
   },
-  martyr: {
-    name: '犠牲',
-    icon: '✝️',
-    desc: () => '自分のリーダーが戦闘で受けるダメージを肩代わりする。',
-  },
   awake: {
     name: '覚醒',
     icon: '💎',
@@ -850,7 +845,6 @@ export const PASSIVE_SKILLS = [
   'retaliate',
   'substitute',
   'possession',
-  'martyr',
   'cleave',
   'arm_self',
   'grave_keeper',
@@ -969,7 +963,7 @@ export const SKILL_CATEGORIES = [
         skills: ['sturdy', 'double_strike', 'deadly', 'pierce', 'cleave'],
       },
       {
-        name: '戦闘時・撃破時',
+        name: '戦闘時・破壊時',
         skills: ['soul_bind', 'absorb', 'extort', 'split', 'retaliate'],
       },
       {
@@ -986,7 +980,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '肩代わり',
-        skills: ['guardian', 'substitute', 'martyr', 'possession', 'reflect'],
+        skills: ['guardian', 'substitute', 'possession', 'reflect'],
       },
       {
         name: '耐性',
@@ -1012,7 +1006,7 @@ export const SKILL_CATEGORIES = [
   },
   {
     id: 'constraint',
-    name: '制約スキル (配置ルール制限)',
+    name: '制約スキル (召喚ルール制限)',
     groups: [
       {
         name: '配置制約',

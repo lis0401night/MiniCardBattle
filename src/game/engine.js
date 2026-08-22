@@ -199,81 +199,7 @@ export function canTakeDamage(
 }
 
 /**
- * リーダーが受けるダメージを「犠牲」を持つカードに肩代わりさせるか判定し、適用する。
- * 肩代わりが発生した場合は true を返し、カードにダメージを与えます。
- * 発生しなかった場合は false を返します。
- * 複数ある場合は、左側のレーン（インデックスが小さいレーン）から優先的に肩代わりします。
- */
-export function applyMartyrForLeader(state, side, amount, events) {
-  if (amount <= 0) return false;
-
-  const board = side === 'blue' ? state.playerBoard : state.enemyBoard;
-  let martyrLane = -1;
-  let martyrCard = null;
-
-  for (let i = 0; i < board.length; i++) {
-    const card = board[i];
-    // パワーが1以上で、「犠牲（martyr）」スキルを持つカードを左から検索（気絶状態でも肩代わり可能）
-    if (card && card.currentPower > 0 && hasSkill(card, 'martyr')) {
-      martyrCard = card;
-      martyrLane = i;
-      break;
-    }
-  }
-
-  if (martyrCard) {
-    events.push({
-      type: 'skill_popup',
-      side: side,
-      lane: martyrLane,
-      skillName: '犠牲',
-    });
-
-    let appliedDmg = amount;
-    if (!canTakeDamage(martyrCard, appliedDmg, false, state, side)) {
-      events.push({
-        type: 'immune_block',
-        side: side,
-        lane: martyrLane,
-        source: 'martyr',
-      });
-      appliedDmg = 0;
-    } else if (hasSkill(martyrCard, 'invincible')) {
-      events.push({
-        type: 'invincible_block',
-        side: side,
-        lane: martyrLane,
-      });
-      appliedDmg = 0;
-    }
-
-    if (appliedDmg > 0) {
-      martyrCard.currentPower -= appliedDmg;
-      events.push({
-        type: 'damage_card',
-        side: side,
-        lane: martyrLane,
-        amount: appliedDmg,
-        source: 'martyr',
-      });
-    }
-
-    return true; // 肩代わり成功
-  }
-
-  return false; // 肩代わりなし
-}
-
-/** 戦闘に起因するダメージ源（犠牲による肩代わりが可能） */
-const MARTYR_ELIGIBLE_SOURCES = [
-  'combat',
-  'possession',
-  'pierce',
-  'direct_attack',
-];
-
-/**
- * リーダーにダメージを与える（犠牲の肩代わりを考慮する）
+ * リーダーにダメージを与える
  */
 export function damageLeader(state, side, amount, source, events, lane = null) {
   if (amount <= 0) return;
@@ -289,15 +215,7 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
     return;
   }
 
-  // 犠牲の肩代わりチェック（戦闘に起因するダメージのみ肩代わり可能）
-  if (
-    MARTYR_ELIGIBLE_SOURCES.includes(source) &&
-    applyMartyrForLeader(state, side, amount, events)
-  ) {
-    return; // 肩代わりされたので終了
-  }
-
-  // 肩代わりされなかった場合、通常通りリーダーダメージ
+  // 通常通りリーダーダメージ
   if (side === 'blue') {
     state.playerHP = Math.max(0, state.playerHP - amount);
   } else {
@@ -1486,13 +1404,13 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'artillery': {
-      // 砲撃：相手リーダーに直接ダメージ（加護・犠牲考慮）
+      // 砲撃：相手リーダーに直接ダメージ
       const artAmt = val || 3;
       damageLeader(state, oppOwner, artAmt, 'artillery', events);
       break;
     }
     case 'decree': {
-      // 宣告：手札の「宣告」を持つカード枚数×valダメージを相手リーダーに与える（加護・犠牲考慮）
+      // 宣告：手札の「宣告」を持つカード枚数×valダメージを相手リーダーに与える
       const decreeMultiplier = val || 4;
       const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const decreeCount = (myHand || []).filter(
@@ -2603,7 +2521,7 @@ export function applyLeaderSkillLogic(
       });
     }
 
-    // 相手が捨てた虚空の枚数分、相手がダメージを受ける（加護・犠牲考慮）
+    // 相手が捨てた虚空の枚数分、相手がダメージを受ける
     if (voidDiscarded > 0) {
       damageLeader(state, oppOwner, voidDiscarded, 'void_purge', events);
     }
@@ -5026,16 +4944,14 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           lane: dLane,
           skillName: '憑依',
         });
-        if (!applyMartyrForLeader(state, defSide, dmgToDef, events)) {
-          defHP -= dmgToDef;
-          events.push({
-            type: 'damage_player',
-            side: defSide,
-            amount: dmgToDef,
-            source: 'possession',
-            lane: dLane,
-          });
-        }
+        defHP -= dmgToDef;
+        events.push({
+          type: 'damage_player',
+          side: defSide,
+          amount: dmgToDef,
+          source: 'possession',
+          lane: dLane,
+        });
         dmgToDef = 0;
       }
     }
@@ -5151,45 +5067,43 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       let effectiveAP = hasSkill(aC, 'double_strike') ? aP * 2 : aP;
       let pDmg = Math.max(0, effectiveAP - originalTargetPower);
       if (pDmg > 0) {
-        if (!applyMartyrForLeader(state, defSide, pDmg, events)) {
-          if (isValkyriaGuardActive(state, defSide)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: defSide,
-              amount: pDmg,
-              source: 'pierce',
-            });
-          } else {
-            defHP -= pDmg;
-            events.push({
-              type: 'damage_player',
-              side: defSide,
-              amount: pDmg,
-              source: 'pierce',
-            });
-            applyExtort(aC, defSide, attackerSide, aLane, events, state);
+        if (isValkyriaGuardActive(state, defSide)) {
+          events.push({
+            type: 'valkyria_guard_block',
+            side: defSide,
+            amount: pDmg,
+            source: 'pierce',
+          });
+        } else {
+          defHP -= pDmg;
+          events.push({
+            type: 'damage_player',
+            side: defSide,
+            amount: pDmg,
+            source: 'pierce',
+          });
+          applyExtort(aC, defSide, attackerSide, aLane, events, state);
 
-            if (hasSkill(aC, 'absorb')) {
-              const healAmt = Math.floor(pDmg / 2);
-              if (healAmt > 0 && !isMiasmaActive(state)) {
-                if (attackerSide === 'blue')
-                  state.playerHP = Math.min(
-                    state.playerMaxHP || 20,
-                    state.playerHP + healAmt
-                  );
-                else
-                  state.enemyHP = Math.min(
-                    state.enemyMaxHP || 20,
-                    state.enemyHP + healAmt
-                  );
-                events.push({
-                  type: 'heal_player',
-                  side: attackerSide,
-                  amount: healAmt,
-                  source: 'absorb',
-                  lane: aLane,
-                });
-              }
+          if (hasSkill(aC, 'absorb')) {
+            const healAmt = Math.floor(pDmg / 2);
+            if (healAmt > 0 && !isMiasmaActive(state)) {
+              if (attackerSide === 'blue')
+                state.playerHP = Math.min(
+                  state.playerMaxHP || 20,
+                  state.playerHP + healAmt
+                );
+              else
+                state.enemyHP = Math.min(
+                  state.enemyMaxHP || 20,
+                  state.enemyHP + healAmt
+                );
+              events.push({
+                type: 'heal_player',
+                side: attackerSide,
+                amount: healAmt,
+                source: 'absorb',
+                lane: aLane,
+              });
             }
           }
         }
@@ -5229,51 +5143,49 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     }
   } else {
     let finalDmg = aP;
-    if (!applyMartyrForLeader(state, defSide, finalDmg, events)) {
-      if (isValkyriaGuardActive(state, defSide)) {
-        events.push({
-          type: 'valkyria_guard_block',
-          side: defSide,
-          amount: finalDmg,
-          source: 'direct_attack',
-        });
-      } else {
-        defHP -= finalDmg;
-        if (isPhaseBypass) {
-          state.phaseBypassDamageTaken =
-            (state.phaseBypassDamageTaken || 0) + finalDmg;
-        }
-        events.push({
-          type: 'damage_player',
-          side: defSide,
-          amount: finalDmg,
-          source: 'direct_attack',
-          isPhaseBypass,
-        });
-        applyExtort(aC, defSide, attackerSide, aLane, events, state);
+    if (isValkyriaGuardActive(state, defSide)) {
+      events.push({
+        type: 'valkyria_guard_block',
+        side: defSide,
+        amount: finalDmg,
+        source: 'direct_attack',
+      });
+    } else {
+      defHP -= finalDmg;
+      if (isPhaseBypass) {
+        state.phaseBypassDamageTaken =
+          (state.phaseBypassDamageTaken || 0) + finalDmg;
       }
+      events.push({
+        type: 'damage_player',
+        side: defSide,
+        amount: finalDmg,
+        source: 'direct_attack',
+        isPhaseBypass,
+      });
+      applyExtort(aC, defSide, attackerSide, aLane, events, state);
+    }
 
-      if (finalDmg > 0 && hasSkill(aC, 'absorb')) {
-        const healAmt = Math.floor(finalDmg / 2);
-        if (healAmt > 0 && !isMiasmaActive(state)) {
-          if (attackerSide === 'blue')
-            state.playerHP = Math.min(
-              state.playerMaxHP || 20,
-              state.playerHP + healAmt
-            );
-          else
-            state.enemyHP = Math.min(
-              state.enemyMaxHP || 20,
-              state.enemyHP + healAmt
-            );
-          events.push({
-            type: 'heal_player',
-            side: attackerSide,
-            amount: healAmt,
-            source: 'absorb',
-            lane: aLane,
-          });
-        }
+    if (finalDmg > 0 && hasSkill(aC, 'absorb')) {
+      const healAmt = Math.floor(finalDmg / 2);
+      if (healAmt > 0 && !isMiasmaActive(state)) {
+        if (attackerSide === 'blue')
+          state.playerHP = Math.min(
+            state.playerMaxHP || 20,
+            state.playerHP + healAmt
+          );
+        else
+          state.enemyHP = Math.min(
+            state.enemyMaxHP || 20,
+            state.enemyHP + healAmt
+          );
+        events.push({
+          type: 'heal_player',
+          side: attackerSide,
+          amount: healAmt,
+          source: 'absorb',
+          lane: aLane,
+        });
       }
     }
   }

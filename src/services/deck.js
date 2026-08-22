@@ -53,6 +53,7 @@ export const CARD_ID_MIGRATION_MAP = {
   valkyrie: 'rocktitan',
   hammer: 'catoblepas',
   ippondatara: 'tomoe',
+  flagellant: 'curtain',
 };
 
 export function migrateCardId(id) {

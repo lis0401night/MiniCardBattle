@@ -1060,8 +1060,8 @@ export async function executeLeaderSkillAction(
 
       if (window.triggerVfx) {
         await Promise.all([
-          window.triggerVfx('anm_otherworld_gate', owner),
-          window.triggerVfx('anm_otherworld_gate', opId),
+          window.triggerVfx('anm_abyss_ritual', owner),
+          window.triggerVfx('anm_abyss_ritual', opId),
         ]);
       }
 
@@ -1077,8 +1077,8 @@ export async function executeLeaderSkillAction(
     } else {
       if (window.triggerVfx) {
         await Promise.all([
-          window.triggerVfx('anm_otherworld_gate', owner),
-          window.triggerVfx('anm_otherworld_gate', opId),
+          window.triggerVfx('anm_abyss_ritual', owner),
+          window.triggerVfx('anm_abyss_ritual', opId),
         ]);
       }
     }
@@ -1135,8 +1135,8 @@ export async function executeLeaderSkillAction(
 
       if (window.triggerVfx) {
         await Promise.all([
-          window.triggerVfx('anm_otherworld_gate', owner),
-          window.triggerVfx('anm_otherworld_gate', opId),
+          window.triggerVfx('anm_abyss_ritual', owner),
+          window.triggerVfx('anm_abyss_ritual', opId),
         ]);
       }
 
@@ -1151,8 +1151,8 @@ export async function executeLeaderSkillAction(
     } else {
       if (window.triggerVfx) {
         await Promise.all([
-          window.triggerVfx('anm_otherworld_gate', owner),
-          window.triggerVfx('anm_otherworld_gate', opId),
+          window.triggerVfx('anm_abyss_ritual', owner),
+          window.triggerVfx('anm_abyss_ritual', opId),
         ]);
       }
     }

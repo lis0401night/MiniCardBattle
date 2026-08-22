@@ -779,15 +779,15 @@ export const CARD_MASTER = [
     flavor: '空を舞う半人半鳥の怪物。獲物を鋭い爪で切り刻む。',
   },
   {
-    id: 'flagellant',
+    id: 'curtain',
     obtain: ['succubus_easy'],
-    name: '鎖の殉教者',
+    name: 'ブラッド・カーテン',
     rarity: 1,
-    power: 5,
-    skills: [{ id: 'martyr' }],
-    voiceCategory: 'human_male_normal',
+    power: 10,
+    skills: [{ id: 'defender' }, { id: 'guardian' }],
+    voiceCategory: 'undead',
     flavor:
-      '自らの肉体を切り刻むことで、彼は主への絶対的な忠誠を証明しようとしている。',
+      '侵入者を惑わす血色の帳。触れた者の方向感覚を奪い、永遠に迷宮を彷徨わせる。',
   },
   {
     id: 'siren',
@@ -2117,7 +2117,7 @@ export const CARD_MASTER = [
     name: 'ギルドの暗殺者',
     rarity: 3,
     power: 1,
-    skills: [{ id: 'deadly' }, { id: 'stealth', value: 1 }, { id: 'quick' }],
+    skills: [{ id: 'stealth', value: 1 }, { id: 'quick' }, { id: 'deadly' }],
     voiceCategory: 'human_female_assassin',
     flavor: '2本の短剣を持つ女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。',
   },
@@ -2743,9 +2743,9 @@ export const CARD_MASTER = [
     power: 3,
     skills: [
       { id: 'berserk', value: 3 },
+      { id: 'quick' },
       { id: 'dodge', value: 6 },
       { id: 'double_strike' },
-      { id: 'quick' },
     ],
     voiceCategory: 'human_female_cool',
     flavor:
