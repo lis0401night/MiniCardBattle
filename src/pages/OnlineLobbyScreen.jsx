@@ -893,13 +893,17 @@ export default function OnlineLobbyScreen() {
           disabled={isBattleStarting && !battleStartError}
           style={{
             margin: '0',
-            background: isBattleStarting && !battleStartError ? '#64748b' : '#ef4444',
+            background:
+              isBattleStarting && !battleStartError ? '#64748b' : '#ef4444',
             opacity: isBattleStarting && !battleStartError ? 0.6 : 1,
-            cursor: isBattleStarting && !battleStartError ? 'not-allowed' : 'pointer',
+            cursor:
+              isBattleStarting && !battleStartError ? 'not-allowed' : 'pointer',
           }}
           onClick={handleLeaveRoom}
         >
-          {isBattleStarting && !battleStartError ? '対戦開始中...' : '退出・解散する'}
+          {isBattleStarting && !battleStartError
+            ? '対戦開始中...'
+            : '退出・解散する'}
         </button>
       </div>
     </div>

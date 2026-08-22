@@ -286,18 +286,89 @@ export async function loadSE(key, url) {
 }
 
 /**
- * 特定のBGMをロードしてデコード（事前デコード用）
+ * デコード済みBGMバッファの最大保持数 (iOS等のRAM保護のため最大2曲に制限)
+ */
+const MAX_CACHED_BGMS = 2;
+const bgmAccessHistory = [];
+
+/**
+ * デコード済みBGMのLRUキャッシュを更新し、保持上限を超えた古いバッファを自動解放する。
+ * @param {string} accessedUrl - アクセスされたBGMのURLまたは相対パス
+ * @param {AudioBuffer} buffer - デコード済みAudioBuffer
+ */
+export function registerDecodedBgm(accessedUrl, buffer) {
+  if (!accessedUrl || !buffer) return;
+  decodedBgms[accessedUrl] = buffer;
+
+  // 相対パスのエイリアスも保持
+  let relativePath = accessedUrl;
+  if (accessedUrl.includes('assets/audio/bgm/')) {
+    relativePath = accessedUrl.substring(
+      accessedUrl.indexOf('assets/audio/bgm/')
+    );
+    decodedBgms[relativePath] = buffer;
+  }
+
+  // アクセス履歴を更新（最新のものを末尾へ）
+  const normalizedKey = relativePath;
+  const existingIndex = bgmAccessHistory.indexOf(normalizedKey);
+  if (existingIndex !== -1) {
+    bgmAccessHistory.splice(existingIndex, 1);
+  }
+  bgmAccessHistory.push(normalizedKey);
+
+  // 保持上限を超えた古いBGMバッファを破棄してメモリ解放
+  while (bgmAccessHistory.length > MAX_CACHED_BGMS) {
+    const oldestKey = bgmAccessHistory.shift();
+    Object.keys(decodedBgms).forEach((k) => {
+      if (k.includes(oldestKey) || oldestKey.includes(k)) {
+        delete decodedBgms[k];
+      }
+    });
+  }
+}
+
+/**
+ * 指定されたURL以外のすべての古いデコード済みBGMバッファを強制解放する。
+ * （対戦終了時や画面切り替え時の明示的メモリクリーンアップ用）
+ * @param {string|string[]} [keepUrls=[]] - 保持するBGMのURLまたはパス（省略時は全削除）
+ */
+export function cleanupOldDecodedBgms(keepUrls = []) {
+  const keepList = (Array.isArray(keepUrls) ? keepUrls : [keepUrls]).filter(
+    Boolean
+  );
+  Object.keys(decodedBgms).forEach((key) => {
+    const shouldKeep = keepList.some(
+      (keepUrl) => keepUrl && (key.includes(keepUrl) || keepUrl.includes(key))
+    );
+    if (!shouldKeep) {
+      delete decodedBgms[key];
+    }
+  });
+
+  // アクセス履歴も同期
+  for (let i = bgmAccessHistory.length - 1; i >= 0; i--) {
+    const histKey = bgmAccessHistory[i];
+    const shouldKeep = keepList.some(
+      (keepUrl) =>
+        keepUrl && (histKey.includes(keepUrl) || keepUrl.includes(histKey))
+    );
+    if (!shouldKeep) {
+      bgmAccessHistory.splice(i, 1);
+    }
+  }
+}
+
+/**
+ * 特定のBGMをロードしてデコード（事前デコード用・LRU管理対応）
+ * @param {string} key - BGMキー
+ * @param {string} url - 音声ファイルURL
  */
 export async function loadBgm(key, url) {
   try {
     const buffer = await loadAndDecodeAudio(url);
     if (buffer) {
-      decodedBgms[url] = buffer;
-      let relativePath = url;
-      if (url.includes('assets/audio/bgm/')) {
-        relativePath = url.substring(url.indexOf('assets/audio/bgm/'));
-      }
-      decodedBgms[relativePath] = buffer;
+      registerDecodedBgm(url, buffer);
     }
   } catch (e) {
     console.warn(`Failed to loadBgm: ${key} (${url})`, e);
@@ -508,6 +579,7 @@ export async function recreateAudioSystem() {
   Object.keys(decodedBgms).forEach((key) => {
     delete decodedBgms[key];
   });
+  bgmAccessHistory.length = 0;
   Object.keys(voiceBuffers).forEach((key) => {
     delete voiceBuffers[key];
   });

@@ -676,14 +676,23 @@ export function endBattle() {
     GameState.appState = 'post_dialogue';
 
     if (GameState.gameMode === 'tutorial') {
+      cleanupBattleState();
       handleTutorialEnd();
       return;
     }
 
     buildResultDialogueQueue();
 
-    if (resolveDungeonResult()) return;
-    if (resolveDefenseResult()) return;
+    // ※ resolveDefenseResult() は内部で battleStartPlayerDeckObjects を参照するため、
+    //    cleanupBattleState() は必ず各resolve関数の実行「後」に呼ぶこと。
+    if (resolveDungeonResult()) {
+      cleanupBattleState();
+      return;
+    }
+    if (resolveDefenseResult()) {
+      cleanupBattleState();
+      return;
+    }
 
     if (
       GameState.lastBattleResult === 'win' &&
@@ -722,12 +731,19 @@ export function endBattle() {
         incrementStat('eventClear', `${charId}_high`);
       }
 
-      if (resolveFortuneRewards()) return;
-      if (resolveCardDrop()) return;
+      if (resolveFortuneRewards()) {
+        cleanupBattleState();
+        return;
+      }
+      if (resolveCardDrop()) {
+        cleanupBattleState();
+        return;
+      }
     }
 
     if (GameState.gameMode === 'practice') {
       GameState.appState = 'select_deck';
+      cleanupBattleState();
       if (typeof window.loadDeck === 'function') window.loadDeck();
       if (window.forceUpdateDeckList) window.forceUpdateDeckList();
       switchScreen('screen-deck-list');
@@ -738,6 +754,7 @@ export function endBattle() {
     if (GameState.gameMode === 'tournament') {
       if (!GameState.tournament) {
         console.error('Tournament state is missing at endBattle.');
+        cleanupBattleState();
         setupDialogueScreen();
         return;
       }
@@ -748,12 +765,45 @@ export function endBattle() {
       } else {
         GameState.tournament.playerLost = true;
       }
+      cleanupBattleState();
       setupDialogueScreen();
       return;
     }
 
+    cleanupBattleState();
     setupDialogueScreen();
   }, BATTLE_RESULT_DELAY_MS);
+}
+
+/**
+ * 対戦終了時の包括的メモリクリーンアップを実行する。
+ * 対戦中に蓄積されたカードオブジェクト配列、アクション履歴、一時ステート、
+ * および不要になった戦闘用BGMバッファを完全に解放し、iOS (WebKit) のメモリ肥大化を防止する。
+ */
+export function cleanupBattleState() {
+  // 1. 対戦用カード・盤面オブジェクトの参照を解放
+  GameState.playerDeck = [];
+  GameState.enemyDeck = [];
+  GameState.playerHand = [];
+  GameState.enemyHand = [];
+  GameState.playerDiscard = [];
+  GameState.enemyDiscard = [];
+  GameState.playerBoard = [null, null, null];
+  GameState.enemyBoard = [null, null, null];
+  GameState.playerSealedLanes = [0, 0, 0];
+  GameState.enemySealedLanes = [0, 0, 0];
+  GameState.actionQueue = [];
+  GameState.battleStartPlayerDeckObjects = null;
+  GameState.aiDecision = null;
+
+  // 2. 長押しやタイマーのクリア
+  if (GameState.longPressTimer) {
+    clearTimeout(GameState.longPressTimer);
+    GameState.longPressTimer = null;
+  }
+
+  // ※ BGMバッファは sounds.js の LRUキャッシュ（MAX_CACHED_BGMS = 2）によって
+  //    自動管理・維持されるため、ここでの明示的パージは行わない（再戦時の再デコード負荷を防止）。
 }
 
 /**
@@ -765,6 +815,7 @@ export function returnToTitle() {
     showConfirmModal('チュートリアルを中断しますか？', () => {
       stopAllBGM();
       cleanupTutorial();
+      cleanupBattleState();
       GameState.isBattleEnded = true;
       GameState.isProcessing = false;
       GameState.appState = 'title';

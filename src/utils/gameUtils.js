@@ -15,10 +15,12 @@ import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import { setCurrentScreen } from './errorReporter.js';
 import {
   audioCtx,
+  cleanupOldDecodedBgms,
   decodedBgms,
   isAudioUnlocked,
   loadAndDecodeAudio,
   recreateAudioSystem,
+  registerDecodedBgm,
   seBuffers,
   SOUNDS,
   unlockAudio,
@@ -72,7 +74,7 @@ export const retryPlayBgm = () => {
                 currentBgmAudio &&
                 currentBgmAudio.src.includes(fetchUrl)
               ) {
-                decodedBgms[fetchUrl] = buf;
+                registerDecodedBgm(fetchUrl, buf);
                 startWebAudioBgm(buf, baseVol);
               }
             })
@@ -281,12 +283,13 @@ export async function playSound(audioOrKey) {
           const playWebAudioBgm = () => {
             const buffer = decodedBgms[fetchUrl];
             if (buffer) {
+              registerDecodedBgm(fetchUrl, buffer);
               startWebAudioBgm(buffer, baseVol);
             } else {
               loadAndDecodeAudio(audio.src)
                 .then((buf) => {
                   if (buf && currentBgmAudio === audio) {
-                    decodedBgms[fetchUrl] = buf;
+                    registerDecodedBgm(fetchUrl, buf);
                     startWebAudioBgm(buf, baseVol);
                   }
                 })
@@ -413,9 +416,7 @@ export async function forceSoundReload() {
   }
 
   // BGM用のデコードバッファキャッシュもクリア
-  Object.keys(decodedBgms).forEach((key) => {
-    delete decodedBgms[key];
-  });
+  cleanupOldDecodedBgms();
 
   // 現在再生中のBGMがあった場合、それを再起動
   if (currentBgmAudio) {

@@ -65,7 +65,9 @@ import {
 } from '../../utils/resourceLoader.js';
 import {
   AUDIO_INSTANCES,
+  cleanupOldDecodedBgms,
   loadAndDecodeAudio,
+  registerDecodedBgm,
   SOUNDS,
 } from '../../utils/sounds.js';
 import { isTutorialMode, runTutorialFlow } from '../tutorialEngine.js';
@@ -499,6 +501,9 @@ export function prepareBattle() {
         fetchUrl = fetchUrl.substring(fetchUrl.indexOf('assets/audio/bgm/'));
       }
 
+      // 前の画面などの不要なBGMバッファを破棄してメモリを事前確保
+      cleanupOldDecodedBgms(fetchUrl);
+
       if (!decodedBgms[fetchUrl]) {
         if (window.updateLoadingTextReact) {
           window.updateLoadingTextReact('Loading Stage BGM...');
@@ -507,7 +512,7 @@ export function prepareBattle() {
           .then((buffer) => {
             if (!isCurrentPreparation()) return;
             if (buffer) {
-              decodedBgms[fetchUrl] = buffer;
+              registerDecodedBgm(fetchUrl, buffer);
             }
             bgmLoaded = true;
             finishLoading();
@@ -519,6 +524,7 @@ export function prepareBattle() {
             finishLoading();
           });
       } else {
+        registerDecodedBgm(fetchUrl, decodedBgms[fetchUrl]);
         bgmLoaded = true;
         finishLoading();
       }
@@ -533,12 +539,30 @@ export function prepareBattle() {
       return;
     }
 
-    battleImageUrls.forEach((url) => {
+    // iOS (WebKit) の瞬間メモリスパイクを防止するため、画像の同時デコード数を制限する
+    const IMG_CONCURRENCY_LIMIT = 4;
+    let imgIndex = 0;
+    const loadNextImage = () => {
+      if (imgIndex >= battleImageUrls.length) return;
+      const url = battleImageUrls[imgIndex++];
       const img = new Image();
-      img.onload = updateProgress;
-      img.onerror = updateProgress;
+      img.onload = () => {
+        updateProgress();
+        loadNextImage();
+      };
+      img.onerror = () => {
+        updateProgress();
+        loadNextImage();
+      };
       img.src = url;
-    });
+    };
+    for (
+      let i = 0;
+      i < Math.min(IMG_CONCURRENCY_LIMIT, battleImageUrls.length);
+      i++
+    ) {
+      loadNextImage();
+    }
   };
 
   if (typeof window.showMatchingScreen === 'function') {

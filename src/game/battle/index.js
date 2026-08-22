@@ -77,6 +77,7 @@ export {
 // --- battleResult.js: 勝敗判定・報酬・画面遷移 ---
 export {
   checkWinCondition,
+  cleanupBattleState,
   executeSkillFromConfirm,
   endBattle,
   returnToTitle,

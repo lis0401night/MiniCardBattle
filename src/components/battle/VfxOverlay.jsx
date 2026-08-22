@@ -236,14 +236,6 @@ function VfxItem({ effect }) {
           alignItems: 'center',
         }}
       >
-        {data.type === 'css' && data.className === 'beam-container' && (
-          <div className="beam-container">
-            <div className="beam-core"></div>
-            <div className="beam-flare"></div>
-            <div className="beam-particles"></div>
-          </div>
-        )}
-
         {data.type === 'sprite' && (
           <div
             style={{

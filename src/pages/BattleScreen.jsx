@@ -116,6 +116,10 @@ export default function BattleScreen() {
       setUpdateCardDetailHook(null);
       setSummonAnimationHook(null);
       setTutorialMessageCallback(null);
+      if (GameState.longPressTimer) {
+        clearTimeout(GameState.longPressTimer);
+        GameState.longPressTimer = null;
+      }
     };
   }, []);
 

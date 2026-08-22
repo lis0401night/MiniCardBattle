@@ -33,17 +33,6 @@ export const VFX_DATA = {
     targetSide: 'self', // ターゲット (enemy: 相手陣地, self: 自分陣地)
   },
 
-  // 以前のCSSビーム演出（統合管理用）
-  annihilation_beam: {
-    type: 'css',
-    className: 'beam-container',
-    duration: 1500,
-    se: 'seSkill',
-    position: 'fill',
-    offsetY: 0,
-    scale: 1.0,
-  },
-
   // リナSPスキル（サンプル）
   anm_elf_arts: {
     type: 'sprite',
@@ -223,22 +212,6 @@ export const VFX_DATA = {
     shake: false,
     flipOnEnemy: true, // 手前の自分カードに当たるとき（敵が発動したとき）に上下反転させる
     targetSide: 'enemy', // 相手のレーンがターゲット
-  },
-
-  // ゼノンスキル用VFX
-  anm_otherworld_gate: {
-    type: 'sprite',
-    src: 'assets/vfx/pipo-mapeffect015_192.png',
-    columns: 5,
-    rows: 2,
-    frameCount: 10,
-    duration: 1000,
-    se: 'seSkillCharge',
-    position: 'hp', // HPゲージの高さに合わせて表示
-    offsetY: 0,
-    scale: 1.0,
-    shake: false,
-    targetSide: 'self', // スキル処理から両方を指定するためselfベースにする
   },
 
   // マキナスキル「鉄の行進」用VFX
