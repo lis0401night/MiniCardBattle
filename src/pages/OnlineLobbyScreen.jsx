@@ -44,6 +44,7 @@ async function safeLeaveRoom(errorMessage) {
 
 export default function OnlineLobbyScreen() {
   const [roomData, setRoomData] = useState(cachedRoomData || null);
+  const [battleStartError, setBattleStartError] = useState(false);
   const [localReadyConfig, setLocalReadyConfig] = useState(null);
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef(null);
@@ -145,6 +146,7 @@ export default function OnlineLobbyScreen() {
         !data.client?.leaderConfig?.leaderConfig
       ) {
         // 設定が揃っていない場合もタイマー参照を解除し、以降の再開始をブロックしない
+        setBattleStartError(true);
         battleStartTimeoutRef.current = null;
         return;
       }
@@ -161,9 +163,11 @@ export default function OnlineLobbyScreen() {
         showAlertModal(
           '対戦の同期情報を取得できませんでした。もう一度お試しください。'
         );
+        setBattleStartError(true);
         battleStartTimeoutRef.current = null;
         return;
       }
+      setBattleStartError(false);
       GameState.battleSeed = bSeed; // 最新のシードをGameStateに記録
       const hostStage = data.host.leaderConfig?.stage || 'plain';
       const clientStage = data.client.leaderConfig?.stage || 'plain';
@@ -264,6 +268,9 @@ export default function OnlineLobbyScreen() {
 
     multiplayerCallbacks.onRoomUpdated = (data) => {
       setRoomData(data);
+      if (data?.status !== 'battle') {
+        setBattleStartError(false);
+      }
 
       // 1. DB上の status が 'battle' に確定している場合（対戦開始シーケンス）
       // トランザクションコミット後にサーバー時刻 battleStartedAt が付与された更新を受信した時、
@@ -391,7 +398,7 @@ export default function OnlineLobbyScreen() {
   const isBattleStarting = roomData?.status === 'battle';
 
   const handleLeaveRoom = async () => {
-    if (isBattleStarting) return;
+    if (isBattleStarting && !battleStartError) return;
     playSound(SOUNDS.seClick);
     await safeLeaveRoom('退室に失敗しました:');
     setRoomData(null);
@@ -618,22 +625,26 @@ export default function OnlineLobbyScreen() {
             >
               <div
                 style={{
-                  color: isBattleStarting
-                    ? '#38bdf8'
-                    : myData?.isReady
-                      ? '#10b981'
-                      : '#facc15',
+                  color: battleStartError
+                    ? '#f87171'
+                    : isBattleStarting
+                      ? '#38bdf8'
+                      : myData?.isReady
+                        ? '#10b981'
+                        : '#facc15',
                   fontWeight: 'bold',
                 }}
               >
-                {isBattleStarting
-                  ? '対戦開始！'
-                  : myData?.isReady
-                    ? '準備完了！'
-                    : '準備中...'}
+                {battleStartError
+                  ? '開始エラー（退出可）'
+                  : isBattleStarting
+                    ? '対戦開始！'
+                    : myData?.isReady
+                      ? '準備完了！'
+                      : '準備中...'}
               </div>
               <div>
-                {isBattleStarting ? (
+                {isBattleStarting && !battleStartError ? (
                   <button
                     className="btn"
                     disabled
@@ -879,16 +890,16 @@ export default function OnlineLobbyScreen() {
       <div style={{ marginTop: '15px', textAlign: 'center', flexShrink: 0 }}>
         <button
           className="btn"
-          disabled={isBattleStarting}
+          disabled={isBattleStarting && !battleStartError}
           style={{
             margin: '0',
-            background: isBattleStarting ? '#64748b' : '#ef4444',
-            opacity: isBattleStarting ? 0.6 : 1,
-            cursor: isBattleStarting ? 'not-allowed' : 'pointer',
+            background: isBattleStarting && !battleStartError ? '#64748b' : '#ef4444',
+            opacity: isBattleStarting && !battleStartError ? 0.6 : 1,
+            cursor: isBattleStarting && !battleStartError ? 'not-allowed' : 'pointer',
           }}
           onClick={handleLeaveRoom}
         >
-          {isBattleStarting ? '対戦開始中...' : '退出・解散する'}
+          {isBattleStarting && !battleStartError ? '対戦開始中...' : '退出・解散する'}
         </button>
       </div>
     </div>
