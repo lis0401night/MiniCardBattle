@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import MissionListModal from '../components/battle/MissionListModal.jsx';
 import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
@@ -250,6 +251,33 @@ export default function DeckEditorScreen({ switchScreen }) {
     sheetMaxHeightPx,
     deckListExtraPaddingMax
   );
+
+  // --- 所持カード一覧の仮想スクロール設定 ---
+  const masterListContainerRef = useRef(null);
+
+  // 所持カードを列数（gridCols）ごとにグループ化して行配列を生成
+  const masterCardRows = useMemo(() => {
+    const rows = [];
+    const safeCols = Math.max(1, gridCols);
+    for (let i = 0; i < sortedMasterCards.length; i += safeCols) {
+      rows.push(sortedMasterCards.slice(i, i + safeCols));
+    }
+    return rows;
+  }, [sortedMasterCards, gridCols]);
+
+  // 推定行高さの計算（カードの縦横比1.5 + ギャップ）
+  const estimatedMasterRowHeight = useMemo(() => {
+    return deckRowHeightPx > 0 ? deckRowHeightPx : 120;
+  }, [deckRowHeightPx]);
+
+  // @tanstack/react-virtual による所持カード一覧の行単位仮想化
+  const masterRowVirtualizer = useVirtualizer({
+    count: masterCardRows.length,
+    getScrollElement: () => masterListContainerRef.current,
+    estimateSize: () => estimatedMasterRowHeight,
+    gap: gridGap,
+    overscan: 2,
+  });
 
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
   // battle_dungeon中はデッキ自体にleaderIdが保存されないため、
@@ -1181,6 +1209,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                 </div>
               </div>
               <div
+                ref={masterListContainerRef}
                 id="deck-master-list-container"
                 className="card-list-container"
                 style={{
@@ -1190,158 +1219,186 @@ export default function DeckEditorScreen({ switchScreen }) {
                   background: 'rgba(0, 0, 0, 0.3)',
                   borderRadius: '8px',
                   padding: '10px 5px',
+                  position: 'relative',
                 }}
               >
                 <div
-                  id="deck-inventory-grid"
-                  className="card-list-grid-3col"
                   style={{
-                    gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-                    gap: `${gridGap}px`,
+                    height: `${masterRowVirtualizer.getTotalSize()}px`,
+                    width: '100%',
+                    position: 'relative',
                   }}
                 >
-                  {sortedMasterCards.map((template) => {
-                    const ownedCount = inventory[template.id] || 0;
-                    const isOwned = ownedCount > 0;
-
-                    const inDeckCount = deckSelection.filter(
-                      (c) => c.id === template.id
-                    ).length;
-                    const remaining = ownedCount - inDeckCount;
-                    const canAdd =
-                      isOwned && remaining > 0 && inDeckCount < MAX_CARD_COPIES;
-
-                    const isBanned = isCardBannedByFortune(template);
-                    const opacity =
-                      !isOwned || !canAdd || isBanned ? '0.4' : '1';
-                    const rarityClass = template.rarity
-                      ? ` rarity-${template.rarity}`
-                      : '';
-                    const imgUrl = getCardImgUrl
-                      ? getCardImgUrl(template, true)
-                      : '';
-                    const isPremUnlocked = unlockedPremium.includes(
-                      template.id
-                    );
-                    const isPremActive = (
-                      GameState.premiumCards || []
-                    ).includes(template.id);
-
+                  {masterRowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const row = masterCardRows[virtualRow.index] || [];
                     return (
                       <div
-                        key={template.id}
-                        className="deck-card-item gallery-card-wrapper"
-                        onPointerDown={(e) => {
-                          if (e.pointerType === 'mouse' && e.button !== 0)
-                            return;
-                          handlePointerDown(template);
-                        }}
-                        onPointerUp={cancelLongPress}
-                        onPointerLeave={cancelLongPress}
-                        onPointerCancel={cancelLongPress}
-                        onClick={() => {
-                          if (!isOwned) return;
-                          handleClick(template, addCard);
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        ref={masterRowVirtualizer.measureElement}
+                        className="card-list-grid-3col"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          transform: `translateY(${virtualRow.start}px)`,
+                          display: 'grid',
+                          gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                          gap: `${gridGap}px`,
                         }}
                       >
-                        <div
-                          className={`card blue${rarityClass}`}
-                          style={{
-                            position: 'relative',
-                            display: 'block',
-                            opacity,
-                            overflow: 'hidden',
-                            padding: 0,
-                            border: isBanned ? '3px solid #ef4444' : undefined,
-                            boxShadow: isBanned
-                              ? '0 0 10px #ef4444'
-                              : undefined,
-                          }}
-                        >
-                          {isBanned && <BannedOverlay />}
-                          {imgUrl && (
-                            <img
-                              className="card-bg"
-                              src={imgUrl}
-                              alt={template.name || ''}
-                              loading="lazy"
-                              decoding="async"
-                              style={{
-                                filter: template.filter || 'none',
-                                objectFit: 'cover',
-                                width: '100%',
-                                height: '100%',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                borderRadius: 'inherit',
-                                pointerEvents: 'none',
-                              }}
-                            />
-                          )}
+                        {row.map((template) => {
+                          const ownedCount = inventory[template.id] || 0;
+                          const isOwned = ownedCount > 0;
 
-                          {isPremUnlocked && (
+                          const inDeckCount = deckSelection.filter(
+                            (c) => c.id === template.id
+                          ).length;
+                          const remaining = ownedCount - inDeckCount;
+                          const canAdd =
+                            isOwned &&
+                            remaining > 0 &&
+                            inDeckCount < MAX_CARD_COPIES;
+
+                          const isBanned = isCardBannedByFortune(template);
+                          const opacity =
+                            !isOwned || !canAdd || isBanned ? '0.4' : '1';
+                          const rarityClass = template.rarity
+                            ? ` rarity-${template.rarity}`
+                            : '';
+                          const imgUrl = getCardImgUrl
+                            ? getCardImgUrl(template, true)
+                            : '';
+                          const isPremUnlocked = unlockedPremium.includes(
+                            template.id
+                          );
+                          const isPremActive = (
+                            GameState.premiumCards || []
+                          ).includes(template.id);
+
+                          return (
                             <div
-                              className="premium-toggle-icon"
-                              onPointerDown={(e) => e.stopPropagation()}
-                              onClick={(e) =>
-                                handleTogglePremium(e, template.id)
-                              }
-                              style={{
-                                position: 'absolute',
-                                top: '4px',
-                                left: '4px',
-                                background: 'rgba(0,0,0,0.85)',
-                                color: isPremActive ? '#d946ef' : '#94a3b8',
-                                padding: '2px 6px',
-                                borderRadius: '10px',
-                                fontSize: '0.8rem',
-                                zIndex: 7,
-                                border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
-                                cursor: 'pointer',
+                              key={template.id}
+                              className="deck-card-item gallery-card-wrapper"
+                              onPointerDown={(e) => {
+                                if (e.pointerType === 'mouse' && e.button !== 0)
+                                  return;
+                                handlePointerDown(template);
+                              }}
+                              onPointerUp={cancelLongPress}
+                              onPointerLeave={cancelLongPress}
+                              onPointerCancel={cancelLongPress}
+                              onClick={() => {
+                                if (!isOwned) return;
+                                handleClick(template, addCard);
                               }}
                             >
-                              ✨
+                              <div
+                                className={`card blue${rarityClass}`}
+                                style={{
+                                  position: 'relative',
+                                  display: 'block',
+                                  opacity,
+                                  overflow: 'hidden',
+                                  padding: 0,
+                                  border: isBanned
+                                    ? '3px solid #ef4444'
+                                    : undefined,
+                                  boxShadow: isBanned
+                                    ? '0 0 10px #ef4444'
+                                    : undefined,
+                                }}
+                              >
+                                {isBanned && <BannedOverlay />}
+                                {imgUrl && (
+                                  <img
+                                    className="card-bg"
+                                    src={imgUrl}
+                                    alt={template.name || ''}
+                                    loading="lazy"
+                                    decoding="async"
+                                    style={{
+                                      filter: template.filter || 'none',
+                                      objectFit: 'cover',
+                                      width: '100%',
+                                      height: '100%',
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      borderRadius: 'inherit',
+                                      pointerEvents: 'none',
+                                    }}
+                                  />
+                                )}
+
+                                {isPremUnlocked && (
+                                  <div
+                                    className="premium-toggle-icon"
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onClick={(e) =>
+                                      handleTogglePremium(e, template.id)
+                                    }
+                                    style={{
+                                      position: 'absolute',
+                                      top: '4px',
+                                      left: '4px',
+                                      background: 'rgba(0,0,0,0.85)',
+                                      color: isPremActive
+                                        ? '#d946ef'
+                                        : '#94a3b8',
+                                      padding: '2px 6px',
+                                      borderRadius: '10px',
+                                      fontSize: '0.8rem',
+                                      zIndex: 7,
+                                      border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    ✨
+                                  </div>
+                                )}
+
+                                <div
+                                  className="card-power"
+                                  style={{
+                                    fontSize: '1.4rem',
+                                    bottom: 0,
+                                    right: '4px',
+                                  }}
+                                >
+                                  {template.power}
+                                </div>
+
+                                {window.renderSkillTag && (
+                                  <div
+                                    dangerouslySetInnerHTML={{
+                                      __html: window.renderSkillTag(template),
+                                    }}
+                                  ></div>
+                                )}
+
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    top: '4px',
+                                    right: '4px',
+                                    background: 'rgba(0,0,0,0.85)',
+                                    color: canAdd ? '#facc15' : '#ef4444',
+                                    padding: '1px 6px',
+                                    borderRadius: '10px',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.75rem',
+                                    zIndex: 6,
+                                    border: `1px solid ${canAdd ? '#facc15' : '#ef4444'}`,
+                                  }}
+                                >
+                                  {inDeckCount}/{ownedCount}
+                                </div>
+                              </div>
                             </div>
-                          )}
-
-                          <div
-                            className="card-power"
-                            style={{
-                              fontSize: '1.4rem',
-                              bottom: 0,
-                              right: '4px',
-                            }}
-                          >
-                            {template.power}
-                          </div>
-
-                          {window.renderSkillTag && (
-                            <div
-                              dangerouslySetInnerHTML={{
-                                __html: window.renderSkillTag(template),
-                              }}
-                            ></div>
-                          )}
-
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: '4px',
-                              right: '4px',
-                              background: 'rgba(0,0,0,0.85)',
-                              color: canAdd ? '#facc15' : '#ef4444',
-                              padding: '1px 6px',
-                              borderRadius: '10px',
-                              fontWeight: 'bold',
-                              fontSize: '0.75rem',
-                              zIndex: 6,
-                              border: `1px solid ${canAdd ? '#facc15' : '#ef4444'}`,
-                            }}
-                          >
-                            {inDeckCount}/{ownedCount}
-                          </div>
-                        </div>
+                          );
+                        })}
                       </div>
                     );
                   })}

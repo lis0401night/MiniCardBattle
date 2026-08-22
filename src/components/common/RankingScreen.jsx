@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { loadFortuneClearedData } from '../../utils/constants/fortuneRewards.js';
 
 import ScreenLayout from './ScreenLayout.jsx';
@@ -306,6 +307,17 @@ export default function RankingScreen({
     });
   }, [rawPlayers, currentPointField, currentFallbackField]);
 
+  const listContainerRef = useRef(null);
+
+  // @tanstack/react-virtual によるプレイヤー行の仮想化
+  const rowVirtualizer = useVirtualizer({
+    count: players.length,
+    getScrollElement: () => listContainerRef.current,
+    estimateSize: () => 56, // バナー行の高さ
+    gap: 10,
+    overscan: 4,
+  });
+
   return (
     <ScreenLayout
       id={id}
@@ -412,119 +424,141 @@ export default function RankingScreen({
 
         {status === 'success' && (
           <div
+            ref={listContainerRef}
             style={{
               overflowY: 'auto',
               width: '100%',
               flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
               paddingRight: '2px',
+              position: 'relative',
             }}
           >
-            {players.map((p) => {
-              const char =
-                (CHARACTERS && CHARACTERS[p.character]) || CHARACTERS?.android;
-              if (!char) return null;
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const p = players[virtualRow.index];
+                if (!p) return null;
 
-              const rankForAccent = p.displayRank - 1;
-              const { extraClass, borderColor, textColor } =
-                RANK_ACCENTS[rankForAccent] || DEFAULT_RANK_ACCENT;
+                const char =
+                  (CHARACTERS && CHARACTERS[p.character]) ||
+                  CHARACTERS?.android;
+                if (!char) return null;
 
-              return (
-                <div
-                  key={p.uuid}
-                  className={`btn-banner ${extraClass}`}
-                  style={{
-                    borderColor,
-                    flexShrink: 0,
-                    cursor: 'pointer',
-                    opacity: 0.9,
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '10px 15px',
-                    boxSizing: 'border-box',
-                    width: '100%',
-                  }}
-                  onClick={() => {
-                    playSound?.(SOUNDS?.seClick);
-                    if (window.showPlayerProfileModal) {
-                      window.showPlayerProfileModal(p);
-                    }
-                  }}
-                >
+                const rankForAccent = p.displayRank - 1;
+                const { extraClass, borderColor, textColor } =
+                  RANK_ACCENTS[rankForAccent] || DEFAULT_RANK_ACCENT;
+
+                return (
                   <div
+                    key={p.uuid || virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={rowVirtualizer.measureElement}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
                       width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <div
-                        style={{
-                          marginRight: '12px',
-                          fontSize: '1rem',
-                          fontWeight: 'bold',
-                          color: textColor,
-                          width: '40px',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {p.displayRank}位
-                      </div>
-                      <div className="banner-icon-wrapper">
-                        <img
-                          src={getPlayerIconPath(p)}
-                          className="banner-icon"
-                          alt=""
-                        />
-                        <img
-                          src={getIconFramePath(char.id)}
-                          className="banner-icon-frame"
-                          alt="frame"
-                        />
-                      </div>
-                      <span
-                        className="banner-text"
-                        style={{
-                          color: getPlayerColor(p),
-                          marginRight: '10px',
-                        }}
-                      >
-                        {p.name}
-                      </span>
-                      {p.isMe && (
-                        <span
-                          style={{
-                            color: 'var(--color-blue)',
-                            fontWeight: 'bold',
-                            fontSize: '0.85rem',
-                            textShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
-                            marginLeft: '5px',
-                          }}
-                        >
-                          (YOU)
-                        </span>
-                      )}
-                    </div>
                     <div
+                      className={`btn-banner ${extraClass}`}
                       style={{
-                        color: '#cbd5e1',
-                        fontWeight: 'bold',
-                        fontSize: '0.9rem',
+                        borderColor,
+                        cursor: 'pointer',
+                        opacity: 0.9,
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '10px 15px',
+                        boxSizing: 'border-box',
+                        width: '100%',
+                      }}
+                      onClick={() => {
+                        playSound?.(SOUNDS?.seClick);
+                        if (window.showPlayerProfileModal) {
+                          window.showPlayerProfileModal(p);
+                        }
                       }}
                     >
-                      {p.displayTotalPoints}
-                      {/^[A-Za-z]+$/.test(currentUnit)
-                        ? ` ${currentUnit}`
-                        : currentUnit}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <div
+                            style={{
+                              marginRight: '12px',
+                              fontSize: '1rem',
+                              fontWeight: 'bold',
+                              color: textColor,
+                              width: '40px',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {p.displayRank}位
+                          </div>
+                          <div className="banner-icon-wrapper">
+                            <img
+                              src={getPlayerIconPath(p)}
+                              className="banner-icon"
+                              alt=""
+                            />
+                            <img
+                              src={getIconFramePath(char.id)}
+                              className="banner-icon-frame"
+                              alt="frame"
+                            />
+                          </div>
+                          <span
+                            className="banner-text"
+                            style={{
+                              color: getPlayerColor(p),
+                              marginRight: '10px',
+                            }}
+                          >
+                            {p.name}
+                          </span>
+                          {p.isMe && (
+                            <span
+                              style={{
+                                color: 'var(--color-blue)',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                textShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
+                                marginLeft: '5px',
+                              }}
+                            >
+                              (YOU)
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            color: '#cbd5e1',
+                            fontWeight: 'bold',
+                            fontSize: '0.9rem',
+                          }}
+                        >
+                          {p.displayTotalPoints}
+                          {/^[A-Za-z]+$/.test(currentUnit)
+                            ? ` ${currentUnit}`
+                            : currentUnit}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

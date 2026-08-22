@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
@@ -153,6 +154,27 @@ export default function DefenseExchangeScreen() {
     }
   });
 
+  const listContainerRef = useRef(null);
+
+  // 交換アイテムを3列ごとに行配列へ分割
+  const itemRows = useMemo(() => {
+    const rows = [];
+    const cols = 3;
+    for (let i = 0; i < exchangeItems.length; i += cols) {
+      rows.push(exchangeItems.slice(i, i + cols));
+    }
+    return rows;
+  }, [exchangeItems]);
+
+  // @tanstack/react-virtual による行単位仮想化
+  const rowVirtualizer = useVirtualizer({
+    count: itemRows.length,
+    getScrollElement: () => listContainerRef.current,
+    estimateSize: () => 140,
+    gap: 15,
+    overscan: 2,
+  });
+
   return (
     <CompactScreenLayout
       id="screen-exchange"
@@ -171,167 +193,210 @@ export default function DefenseExchangeScreen() {
       </div>
 
       <div
+        ref={listContainerRef}
         className="card-list-container"
-        style={{ flex: 1, minHeight: 0, maxHeight: '500px' }}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          maxHeight: '500px',
+          overflowY: 'auto',
+          position: 'relative',
+        }}
       >
-        <div id="exchange-item-grid" className="card-list-grid-3col">
-          {exchangeItems.map((itemInfo, index) => {
-            const cardMaster = CARD_MASTER || [];
-            const itemObj =
-              cardMaster.find((c) => c.id === itemInfo.id) ||
-              cardMaster[0] ||
-              {};
-
-            let canExchange = true;
-            let isMaxed = false;
-            let ownedCount = 0;
-
-            if (itemInfo.type === 'premium') {
-              if (unlockedPremium.includes(itemInfo.id)) {
-                canExchange = false;
-                isMaxed = true;
-              }
-            } else if (itemInfo.type === 'card') {
-              ownedCount = inventory[itemInfo.id] || 0;
-              if (ownedCount >= 4) {
-                canExchange = false;
-                isMaxed = true;
-              }
-            }
-
-            if (points.current < itemInfo.cost) {
-              canExchange = false;
-            }
-
-            const opacity = canExchange ? '1.0' : isMaxed ? '0.3' : '0.6';
-            const rarityClass = itemObj.rarity
-              ? ` rarity-${itemObj.rarity}`
-              : '';
-
-            let imgUrl = getCardImgUrl
-              ? getCardImgUrl(
-                  itemInfo.type === 'premium'
-                    ? { ...itemObj, isPremium: true }
-                    : itemObj,
-                  true
-                )
-              : '';
-
-            let originalImgUrl = getCardImgUrl
-              ? getCardImgUrl(
-                  itemInfo.type === 'premium'
-                    ? { ...itemObj, isPremium: true }
-                    : itemObj,
-                  false
-                )
-              : '';
-
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const row = itemRows[virtualRow.index] || [];
             return (
               <div
-                key={index}
-                className="deck-card-item"
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
+                className="card-list-grid-3col"
                 style={{
-                  opacity,
-                  cursor: canExchange ? 'pointer' : 'not-allowed',
-                }}
-                onClick={() => {
-                  playSound(SOUNDS?.seClick);
-                  if (!isTransitioning && window.showExchangeDetailModal) {
-                    window.showExchangeDetailModal({
-                      id: itemInfo.id,
-                      type: itemInfo.type,
-                      cost: itemInfo.cost,
-                      itemObj: itemObj,
-                      titleColor: '#10b981',
-                      canExchange: canExchange,
-                      isMaxed: isMaxed,
-                      titleName: itemObj.name,
-                      displayType:
-                        itemInfo.type === 'premium'
-                          ? 'プレミアム特典'
-                          : 'カード',
-                      displayFlavor: itemObj.flavor,
-                      imgUrl: originalImgUrl,
-                      onConfirm: () => {
-                        handleExchange({
-                          ...itemInfo,
-                          isMaxed,
-                          canExchange,
-                          imgUrl: originalImgUrl,
-                        });
-                        window.closeExchangeDetailModal?.();
-                      },
-                    });
-                  }
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '15px',
                 }}
               >
-                <div
-                  className={`card blue${rarityClass}`}
-                  style={{
-                    width: '80px',
-                    height: '120px',
-                    position: 'relative',
-                    display: 'block',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    className="card-bg"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      position: 'relative',
-                    }}
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={itemObj.name}
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'top center',
-                        display: 'block',
-                      }}
-                    />
-                  </div>
+                {row.map((itemInfo, localIdx) => {
+                  const index = virtualRow.index * 3 + localIdx;
+                  const cardMaster = CARD_MASTER || [];
+                  const itemObj =
+                    cardMaster.find((c) => c.id === itemInfo.id) ||
+                    cardMaster[0] ||
+                    {};
 
-                  {itemInfo.type === 'card' && (
+                  let canExchange = true;
+                  let isMaxed = false;
+                  let ownedCount = 0;
+
+                  if (itemInfo.type === 'premium') {
+                    if (unlockedPremium.includes(itemInfo.id)) {
+                      canExchange = false;
+                      isMaxed = true;
+                    }
+                  } else if (itemInfo.type === 'card') {
+                    ownedCount = inventory[itemInfo.id] || 0;
+                    if (ownedCount >= 4) {
+                      canExchange = false;
+                      isMaxed = true;
+                    }
+                  }
+
+                  if (points.current < itemInfo.cost) {
+                    canExchange = false;
+                  }
+
+                  const opacity = canExchange ? '1.0' : isMaxed ? '0.3' : '0.6';
+                  const rarityClass = itemObj.rarity
+                    ? ` rarity-${itemObj.rarity}`
+                    : '';
+
+                  let imgUrl = getCardImgUrl
+                    ? getCardImgUrl(
+                        itemInfo.type === 'premium'
+                          ? { ...itemObj, isPremium: true }
+                          : itemObj,
+                        true
+                      )
+                    : '';
+
+                  let originalImgUrl = getCardImgUrl
+                    ? getCardImgUrl(
+                        itemInfo.type === 'premium'
+                          ? { ...itemObj, isPremium: true }
+                          : itemObj,
+                        false
+                      )
+                    : '';
+
+                  return (
                     <div
+                      key={index}
+                      className="deck-card-item"
                       style={{
-                        position: 'absolute',
-                        top: '4px',
-                        right: '4px',
-                        background: 'rgba(0,0,0,0.85)',
-                        color: '#facc15',
-                        padding: '1px 6px',
-                        borderRadius: '10px',
-                        fontWeight: 'bold',
-                        fontSize: '0.75rem',
-                        zIndex: 6,
-                        border: '1px solid #facc15',
+                        opacity,
+                        cursor: canExchange ? 'pointer' : 'not-allowed',
+                      }}
+                      onClick={() => {
+                        playSound(SOUNDS?.seClick);
+                        if (
+                          !isTransitioning &&
+                          window.showExchangeDetailModal
+                        ) {
+                          window.showExchangeDetailModal({
+                            id: itemInfo.id,
+                            type: itemInfo.type,
+                            cost: itemInfo.cost,
+                            itemObj: itemObj,
+                            titleColor: '#10b981',
+                            canExchange: canExchange,
+                            isMaxed: isMaxed,
+                            titleName: itemObj.name,
+                            displayType:
+                              itemInfo.type === 'premium'
+                                ? 'プレミアム特典'
+                                : 'カード',
+                            displayFlavor: itemObj.flavor,
+                            imgUrl: originalImgUrl,
+                            onConfirm: () => {
+                              handleExchange({
+                                ...itemInfo,
+                                isMaxed,
+                                canExchange,
+                                imgUrl: originalImgUrl,
+                              });
+                              window.closeExchangeDetailModal?.();
+                            },
+                          });
+                        }
                       }}
                     >
-                      {ownedCount}/4
+                      <div
+                        className={`card blue${rarityClass}`}
+                        style={{
+                          width: '80px',
+                          height: '120px',
+                          position: 'relative',
+                          display: 'block',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          className="card-bg"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            position: 'relative',
+                          }}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={itemObj.name}
+                            loading="lazy"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              objectPosition: 'top center',
+                              display: 'block',
+                            }}
+                          />
+                        </div>
+
+                        {itemInfo.type === 'card' && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              background: 'rgba(0,0,0,0.85)',
+                              color: '#facc15',
+                              padding: '1px 6px',
+                              borderRadius: '10px',
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              zIndex: 6,
+                              border: '1px solid #facc15',
+                            }}
+                          >
+                            {ownedCount}/4
+                          </div>
+                        )}
+
+                        <div
+                          className="card-power"
+                          style={{
+                            fontSize: '1.4rem',
+                            bottom: 0,
+                            right: '4px',
+                          }}
+                        >
+                          {itemObj.power}
+                        </div>
+
+                        {window.renderSkillTag && (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: window.renderSkillTag(itemObj),
+                            }}
+                          ></div>
+                        )}
+                      </div>
                     </div>
-                  )}
-
-                  <div
-                    className="card-power"
-                    style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}
-                  >
-                    {itemObj.power}
-                  </div>
-
-                  {window.renderSkillTag && (
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: window.renderSkillTag(itemObj),
-                      }}
-                    ></div>
-                  )}
-                </div>
+                  );
+                })}
               </div>
             );
           })}

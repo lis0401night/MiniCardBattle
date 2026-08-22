@@ -1,4 +1,3 @@
-import { CARD_MASTER } from './constants/cards.js';
 import {
   AUDIO_INSTANCES,
   SE_PATHS,
@@ -8,7 +7,6 @@ import {
   loadBgm,
   audioCtx,
 } from './sounds.js';
-import { getCardImgUrl, hasPremiumVariant } from './gameUtils.js';
 import { appendVersionQuery } from './constants/config.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import { VFX_DATA } from './constants/vfx.js';
@@ -123,7 +121,8 @@ export async function preloadAllGameResources(onProgress) {
   urlsToLoad.add(appendVersionQuery('assets/ui/ui_btn_watermark.png'));
   urlsToLoad.add(appendVersionQuery('assets/ui/ui_btn_ornament.png'));
 
-  // カード・キャラ・VFX・その他UIパーツ画像は非同期ロード（裏でゆっくりロードし、起動完了はブロックしない）
+  // メニュー共通背景・対戦共通パーツ画像のみバックグラウンドで非同期ロード
+  // （※カード画像・キャラ立ち絵・VFXは対戦開始時や画面スクロール時にオンデマンドで読み込むため、起動時の一括メモリ展開を防止）
   const asyncUrlsToLoad = new Set();
 
   // A. その他のメニュー背景画像
@@ -137,7 +136,7 @@ export async function preloadAllGameResources(onProgress) {
   ];
   extraBackgrounds.forEach((bg) => asyncUrlsToLoad.add(appendVersionQuery(bg)));
 
-  // B. 対戦・演出用パーツ画像
+  // B. 対戦・演出用共通UIパーツ画像
   const extraUiParts = [
     'assets/ui/vs_logo.png',
     'assets/ui/chara_frame.png',
@@ -149,35 +148,6 @@ export async function preloadAllGameResources(onProgress) {
     'assets/icons/icon_exclamation.webp',
   ];
   extraUiParts.forEach((part) => asyncUrlsToLoad.add(appendVersionQuery(part)));
-
-  // C. カード画像（サムネイルおよびフルサイズ画像）
-  CARD_MASTER.forEach((card) => {
-    // 通常版画像（サムネイル & フルサイズ）
-    const normalThumbUrl = getCardImgUrl(
-      { id: card.id, isPremium: false },
-      true
-    );
-    if (normalThumbUrl) asyncUrlsToLoad.add(normalThumbUrl);
-    const normalUrl = getCardImgUrl({ id: card.id, isPremium: false }, false);
-    if (normalUrl) asyncUrlsToLoad.add(normalUrl);
-
-    // プレミアム画像（プレミアム版が存在する場合のみ追加）
-    if (hasPremiumVariant(card.id)) {
-      const premiumThumbUrl = getCardImgUrl(
-        { id: card.id, isPremium: true },
-        true
-      );
-      if (premiumThumbUrl) asyncUrlsToLoad.add(premiumThumbUrl);
-      const premiumUrl = getCardImgUrl({ id: card.id, isPremium: true }, false);
-      if (premiumUrl) asyncUrlsToLoad.add(premiumUrl);
-    }
-  });
-
-  // D. 全キャラクター立ち絵・スキン画像
-  getAllCharacterImageUrls().forEach((url) => asyncUrlsToLoad.add(url));
-
-  // E. 全VFX演出画像
-  getAllVfxImageUrls().forEach((url) => asyncUrlsToLoad.add(url));
 
   // BGM と SE
   Object.values(SE_PATHS).forEach((path) => {

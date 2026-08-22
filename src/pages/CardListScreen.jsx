@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
@@ -73,6 +74,28 @@ export default function CardListScreen() {
     inventory,
     densityStorageKey: GALLERY_GRID_DENSITY_KEY,
     defaultOwnership: DEFAULT_OWNERSHIP,
+  });
+
+  // --- 仮想スクロール設定 ---
+  const listContainerRef = useRef(null);
+
+  // カードを列数（gridCols）ごとにグループ化して行配列を生成
+  const cardRows = useMemo(() => {
+    const rows = [];
+    const safeCols = Math.max(1, gridCols);
+    for (let i = 0; i < sortedMasterCards.length; i += safeCols) {
+      rows.push(sortedMasterCards.slice(i, i + safeCols));
+    }
+    return rows;
+  }, [sortedMasterCards, gridCols]);
+
+  // @tanstack/react-virtual による行単位仮想化
+  const rowVirtualizer = useVirtualizer({
+    count: cardRows.length,
+    getScrollElement: () => listContainerRef.current,
+    estimateSize: () => 140, // 初期推定行高さ（実測値で自動更新される）
+    gap: gridGap,
+    overscan: 2,
   });
 
   // タイトルを10回クリックでデバッグ全解放モードを起動するイースターエッグ
@@ -258,111 +281,151 @@ export default function CardListScreen() {
       </div>
 
       <div
+        ref={listContainerRef}
         className="card-list-container"
-        style={{ flex: 1, minHeight: 0, maxHeight: '560px' }}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          maxHeight: '560px',
+          overflowY: 'auto',
+          position: 'relative',
+        }}
       >
         <div
-          id="gallery-card-grid"
-          className="card-list-grid-3col"
           style={{
-            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-            gap: `${gridGap}px`,
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
           }}
         >
-          {sortedMasterCards.map((template) => {
-            const ownedCount = inventory[template.id] || 0;
-            const isOwned = ownedCount > 0;
-            const opacity = isOwned ? '1' : '0.4';
-            const rarityClass = template.rarity
-              ? ` rarity-${template.rarity}`
-              : '';
-            const imgUrl = getCardImgUrl ? getCardImgUrl(template, true) : '';
-            const filter = template.filter || 'none';
-
-            const hasPremiumUnlocked = unlockedPremium.includes(template.id);
-            const isPremiumActive = activePremium.includes(template.id);
-
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const row = cardRows[virtualRow.index] || [];
             return (
               <div
-                key={template.id}
-                className="deck-card-item gallery-card-wrapper"
-                onClick={() => {
-                  if (!isTransitioning) {
-                    openCardPreview?.(template, { fromCardList: true });
-                  }
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
+                className="card-list-grid-3col"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                  gap: `${gridGap}px`,
                 }}
               >
-                <div className={`card blue${rarityClass}`} style={{ opacity }}>
-                  {imgUrl && (
-                    <img
-                      className="card-bg"
-                      src={imgUrl}
-                      alt={template.name}
-                      loading="lazy"
-                      style={{
-                        filter,
-                        objectFit: 'cover',
-                        width: '100%',
-                        height: '100%',
-                      }}
-                    />
-                  )}
+                {row.map((template) => {
+                  const ownedCount = inventory[template.id] || 0;
+                  const isOwned = ownedCount > 0;
+                  const opacity = isOwned ? '1' : '0.4';
+                  const rarityClass = template.rarity
+                    ? ` rarity-${template.rarity}`
+                    : '';
+                  const imgUrl = getCardImgUrl
+                    ? getCardImgUrl(template, true)
+                    : '';
+                  const filter = template.filter || 'none';
 
-                  {hasPremiumUnlocked && (
+                  const hasPremiumUnlocked = unlockedPremium.includes(
+                    template.id
+                  );
+                  const isPremiumActive = activePremium.includes(template.id);
+
+                  return (
                     <div
-                      className="premium-toggle-icon"
-                      onClick={(e) => handleTogglePremium(e, template.id)}
-                      style={{
-                        position: 'absolute',
-                        top: '4px',
-                        left: '4px',
-                        background: 'rgba(0,0,0,0.85)',
-                        color: isPremiumActive ? '#d946ef' : '#94a3b8',
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        fontSize: '0.8rem',
-                        zIndex: 7,
-                        border: `1px solid ${isPremiumActive ? '#d946ef' : '#475569'}`,
-                        cursor: 'pointer',
+                      key={template.id}
+                      className="deck-card-item gallery-card-wrapper"
+                      onClick={() => {
+                        if (!isTransitioning) {
+                          openCardPreview?.(template, { fromCardList: true });
+                        }
                       }}
                     >
-                      ✨
+                      <div
+                        className={`card blue${rarityClass}`}
+                        style={{ opacity }}
+                      >
+                        {imgUrl && (
+                          <img
+                            className="card-bg"
+                            src={imgUrl}
+                            alt={template.name}
+                            loading="lazy"
+                            decoding="async"
+                            style={{
+                              filter,
+                              objectFit: 'cover',
+                              width: '100%',
+                              height: '100%',
+                            }}
+                          />
+                        )}
+
+                        {hasPremiumUnlocked && (
+                          <div
+                            className="premium-toggle-icon"
+                            onClick={(e) => handleTogglePremium(e, template.id)}
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              left: '4px',
+                              background: 'rgba(0,0,0,0.85)',
+                              color: isPremiumActive ? '#d946ef' : '#94a3b8',
+                              padding: '2px 6px',
+                              borderRadius: '10px',
+                              fontSize: '0.8rem',
+                              zIndex: 7,
+                              border: `1px solid ${isPremiumActive ? '#d946ef' : '#475569'}`,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✨
+                          </div>
+                        )}
+
+                        <div
+                          className="card-power"
+                          style={{
+                            fontSize: '1.4rem',
+                            bottom: 0,
+                            right: '4px',
+                          }}
+                        >
+                          {template.power}
+                        </div>
+
+                        {window.renderSkillTag && (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: window.renderSkillTag(template),
+                            }}
+                          ></div>
+                        )}
+
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            background: 'rgba(0,0,0,0.85)',
+                            color: '#facc15',
+                            padding: '1px 6px',
+                            borderRadius: '10px',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            zIndex: 6,
+                            border: '1px solid #facc15',
+                          }}
+                        >
+                          x{ownedCount}
+                        </div>
+                      </div>
                     </div>
-                  )}
-
-                  <div
-                    className="card-power"
-                    style={{ fontSize: '1.4rem', bottom: 0, right: '4px' }}
-                  >
-                    {template.power}
-                  </div>
-
-                  {window.renderSkillTag && (
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: window.renderSkillTag(template),
-                      }}
-                    ></div>
-                  )}
-
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '4px',
-                      right: '4px',
-                      background: 'rgba(0,0,0,0.85)',
-                      color: '#facc15',
-                      padding: '1px 6px',
-                      borderRadius: '10px',
-                      fontWeight: 'bold',
-                      fontSize: '0.75rem',
-                      zIndex: 6,
-                      border: '1px solid #facc15',
-                    }}
-                  >
-                    x{ownedCount}
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             );
           })}

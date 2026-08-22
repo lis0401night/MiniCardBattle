@@ -1,7 +1,7 @@
 {
   "name": "mini-card-battle",
   "private": true,
-  "version": "0.3.9.4",
+  "version": "0.3.9.5",
   "type": "module",
   "scripts": {
     "sync-version": "node sync_version.js && node scripts/generate_card_thumbnails.js && node scripts/compress_audio_all.js",
@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.14.10",
     "dompurify": "^3.4.13",
     "firebase": "^12.17.1",
     "pica": "^10.0.3",
