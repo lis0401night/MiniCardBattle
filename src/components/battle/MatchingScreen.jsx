@@ -7,6 +7,7 @@ import {
   getStageBackgroundStyle,
   appendVersionQuery,
 } from '../../utils/constants/config.js';
+import { resolveBattleStageId } from '../../utils/constants/stages.js';
 import './MatchingScreen.css';
 
 const TIMING = {
@@ -132,18 +133,8 @@ export default function MatchingScreen({
   const pData = parseName(player.name);
   const eData = parseName(enemy.name);
 
-  // バトルのステージIDを決定（initBattleStateと同じロジック）
-  const stageId =
-    GameState.gameMode === 'battle_dungeon'
-      ? 'dungeon'
-      : GameState.gameMode === 'tournament'
-        ? 'tournament'
-        : GameState.gameMode === 'story'
-          ? enemy.stageId || 'android'
-          : GameState.selectedStageId ||
-            enemy.stageId ||
-            enemy.id.replace('_high', '') ||
-            'android';
+  // バトルのステージIDを決定（initBattleStateと同じ共通ロジック）
+  const stageId = resolveBattleStageId({ enemyConfig: enemy });
 
   return (
     <div className={`matching-screen-container ${visible ? 'show' : ''}`}>

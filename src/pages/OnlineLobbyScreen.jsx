@@ -5,6 +5,7 @@ import {
   getCurrentRoomCode,
   getCurrentRoomId,
   getIsHost,
+  getServerNow,
   leaveRoom,
   listenToRoom,
   multiplayerCallbacks,
@@ -264,16 +265,38 @@ export default function OnlineLobbyScreen() {
     multiplayerCallbacks.onRoomUpdated = (data) => {
       setRoomData(data);
 
-      // 1. DB上の status が 'battle' に変更されている場合（追いつき自動同期）
-      // 相手またはホスト側で対戦が開始された場合、ローカルタイマーを待たずに即座に対戦画面へ遷移する
-      // ※ battleStartedAt は setRoomStatusToBattle で書き込まれ、resetRoomStatusToWaiting でクリアされる
-      // ※ isReady はトランザクションで消費済み（false化）のため判定に使わない
+      // 1. DB上の status が 'battle' に確定している場合（対戦開始シーケンス）
+      // トランザクションコミット後にサーバー時刻 battleStartedAt が付与された更新を受信した時、
+      // 両プレイヤーで同一の基準時刻（battleStartedAt）から残り時間を計算して開始タイマーを起動する。
       if (data && data.status === 'battle' && data.battleStartedAt) {
-        if (GameState.appState !== 'battle') {
-          // すでに開始タイマーが動作している場合は、そちらの演出待ちを尊重する
-          if (!battleStartTimeoutRef.current) {
-            executeStartBattle(data);
+        latestRoomDataRef.current = data;
+
+        if (GameState.appState === 'battle') {
+          if (battleStartTimeoutRef.current) {
+            clearTimeout(battleStartTimeoutRef.current);
+            battleStartTimeoutRef.current = null;
           }
+          return;
+        }
+
+        // すでに開始タイマーが動作中の場合は既存タイマーを継続（二重起動防止）
+        if (battleStartTimeoutRef.current) {
+          return;
+        }
+
+        const elapsed = getServerNow() - data.battleStartedAt;
+        const remainingMs = Math.max(0, ONLINE_BATTLE_START_DELAY_MS - elapsed);
+
+        if (remainingMs <= 0) {
+          executeStartBattle(data);
+        } else {
+          battleStartTimeoutRef.current = setTimeout(() => {
+            if (GameState.appState === 'battle') {
+              battleStartTimeoutRef.current = null;
+              return;
+            }
+            executeStartBattle(latestRoomDataRef.current || data);
+          }, remainingMs);
         }
         return;
       }
@@ -287,7 +310,7 @@ export default function OnlineLobbyScreen() {
         return;
       }
 
-      // 3-a. 開始条件が崩れた場合（相手のReady解除・退室）は開始タイマーを解除する
+      // 3. 開始条件が崩れた場合（相手のReady解除・退室）は開始タイマーを解除する
       // ただし、status が 'battle' の場合は setRoomStatusToBattle により isReady が
       // 消費済み（false化）であるため、タイマーを解除してはならない
       if (
@@ -299,31 +322,21 @@ export default function OnlineLobbyScreen() {
         battleStartTimeoutRef.current = null;
       }
 
-      // 3. 両方がReadyかつまだ対戦中ではない場合にバトル開始タイマーをセット
-      if (data && data.host?.isReady && data.client?.isReady) {
-        // タイマー実行時に参照する最新ルームデータを更新する
+      // 4. 両方がReadyになった場合、ホスト側がトランザクションを発行して status: 'battle' を確定させる
+      // ※ コミット前にはタイマーを起動せず、上記 1 の確定データ（status === 'battle'）受信を待つ（片側だけ誤突入する事故を100%防止）
+      if (
+        data &&
+        data.host?.isReady &&
+        data.client?.isReady &&
+        data.status !== 'battle'
+      ) {
         latestRoomDataRef.current = data;
 
-        // すでにタイマーが起動中の場合は clearTimeout でリセットせず既存タイマーを継続（キャンセル事故防止）
-        if (battleStartTimeoutRef.current) {
-          return;
-        }
-
-        // ホスト側はDB上のstatusを 'battle' に更新
         if (getIsHost()) {
           setRoomStatusToBattle().catch((e) =>
             console.warn('setRoomStatusToBattle failed:', e)
           );
         }
-
-        battleStartTimeoutRef.current = setTimeout(() => {
-          // タイマー実行時に再度対戦中チェック（二重呼び出し防止）
-          if (GameState.appState === 'battle') {
-            battleStartTimeoutRef.current = null;
-            return;
-          }
-          executeStartBattle(latestRoomDataRef.current);
-        }, ONLINE_BATTLE_START_DELAY_MS);
       }
     };
 

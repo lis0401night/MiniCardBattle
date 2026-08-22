@@ -40,7 +40,7 @@ import {
   HANDICAP_TYPES,
 } from '../../utils/constants/fortuneHandicaps.js';
 import { LEADER_SKILLS } from '../../utils/constants/leaderSkills.js';
-import { STAGES } from '../../utils/constants/stages.js';
+import { STAGES, resolveBattleStageId } from '../../utils/constants/stages.js';
 import { toDeckObjects } from '../../utils/deckUtils.js';
 import {
   checkIsFreeMode,
@@ -187,16 +187,7 @@ let prepareBattleGeneration = 0;
  * @returns {{ stageId: string, bgmKey: string }} ステージIDとBGMキー
  */
 function resolveStageAndBgm() {
-  let stageId =
-    GameState.gameMode === 'story'
-      ? GameState.enemyConfig?.stageId || 'android'
-      : GameState.selectedStageId || 'android';
-  if (GameState.gameMode === 'battle_dungeon') {
-    stageId = 'dungeon';
-  } else if (GameState.gameMode === 'tournament') {
-    stageId = 'tournament';
-  }
-
+  const stageId = resolveBattleStageId();
   const stageData = STAGES[stageId];
   let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
   if (GameState.gameMode === 'story' && GameState.enemyConfig?.id === 'satan') {

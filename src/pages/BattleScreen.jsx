@@ -21,6 +21,7 @@ import {
 import { evaluateMission } from '../game/missionLogic.js';
 import { showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
+import { resolveBattleStageId } from '../utils/constants/stages.js';
 import {
   checkShowMissionButton,
   getCardImgUrl,
@@ -390,14 +391,7 @@ export default function BattleScreen() {
     }
   };
 
-  const stageId =
-    GameState.gameMode === 'battle_dungeon'
-      ? 'dungeon'
-      : GameState.gameMode === 'tournament'
-        ? 'tournament'
-        : GameState.gameMode === 'story'
-          ? GameState.enemyConfig?.stageId || 'android'
-          : GameState.selectedStageId || 'android';
+  const stageId = resolveBattleStageId();
   const battleStyle = {
     backgroundColor: '#0f172a',
     ...getStageBackgroundStyle(stageId),

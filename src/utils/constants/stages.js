@@ -1,3 +1,5 @@
+import { GameState } from '../../state/gameState.js';
+
 /**
  * Mini Card Battle - Stage Data
  */
@@ -43,4 +45,34 @@ export function canShowUnlockableStage(stageId) {
     console.error('Failed to parse unlocked stages:', e);
   }
   return unlockedStages.includes(stageId);
+}
+
+/**
+ * バトル画面・マッチング画面・BGM初期化で共通利用するステージID解決関数。
+ * ゲームモードや選択状態、敵設定から一元的にステージIDを決定する（DRY徹底・フォールバック整合）。
+ * @param {object} [params={}] - 判定パラメータ
+ * @param {string} [params.gameMode] - ゲームモード
+ * @param {string} [params.selectedStageId] - 選択中ステージID
+ * @param {object} [params.enemyConfig] - 敵の設定オブジェクト
+ * @returns {string} 決定されたステージID
+ */
+export function resolveBattleStageId({
+  gameMode = GameState.gameMode,
+  selectedStageId = GameState.selectedStageId,
+  enemyConfig = GameState.enemyConfig,
+} = {}) {
+  // 1. ダンジョン・トーナメント等のモード固定ステージ
+  if (gameMode === 'battle_dungeon') return 'dungeon';
+  if (gameMode === 'tournament') return 'tournament';
+
+  // 2. ストーリーモード（敵固有ステージ）
+  if (gameMode === 'story') return enemyConfig?.stageId || 'android';
+
+  // 3. 通常モード（選択ステージ > 敵固有ステージ > 敵IDプレフィックス > デフォルト）
+  return (
+    selectedStageId ||
+    enemyConfig?.stageId ||
+    enemyConfig?.id?.replace('_high', '') ||
+    'android'
+  );
 }

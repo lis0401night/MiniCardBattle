@@ -1021,3 +1021,10 @@ export const SKILL_CATEGORIES = [
  * バトルボーナス「攻撃以外のダメージで勝利 (win_by_skill)」の判定等で使用されます。
  */
 export const DAMAGE_PLAYER_SKILL_IDS = ['artillery', 'decree', 'fate'];
+
+/**
+ * 運命（fate）スキルのAI思考シミュレーション用最大見積もりダメージ定数（相手リーダーに3ダメージ）
+ * 運命スキルは確率でダメージが変動する（5/6で1~3ダメージ、1/6で自傷6）が、
+ * AIは思考シミュレーション時に常に最高の結果を想定して盤面・打点を評価する。
+ */
+export const FATE_ESTIMATED_DAMAGE = 3;

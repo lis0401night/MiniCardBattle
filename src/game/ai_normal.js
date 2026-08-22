@@ -85,8 +85,6 @@ function createSplitSimToken(execCard, tgtLane, owner = 'red') {
  *   号令で出されたカードがさらに号令や変身を持っていても、同じルールで正しく評価される。
  */
 const METAMORPH_ESTIMATED_POWER = 5;
-/** 運命（fate）スキルのAIシミュレーション用最大見積もりダメージ（相手リーダーに3ダメージ） */
-export const FATE_ESTIMATED_DAMAGE = 3;
 
 /**
  * ボード上の全カードの「無敵（invincible）」スキルの持続ターンを減退・解除する共通ヘルパー
@@ -3110,50 +3108,79 @@ export function getBestSimulatedMove() {
 export function evaluateSimState(state) {
   let myPower = 0;
   let opPower = 0;
-  let utilityScore = 0;
+  let myUtilityScore = 0;
+  let opUtilityScore = 0;
 
-  // 1. 各種数値の集計
+  // 1. 各種数値の集計（パワーおよびユーティリティ価値）
+  // ユーティリティ価値の算出ヘルパー（AI_SKILL_UTILITYテーブル参照）
+  const getSkillUtilityVal = (skillId, isSelf) => {
+    // 瘴気が発動中は回復・吸収系スキルの価値を評価しない（実戦で回復効果が100%無効化されるため）
+    if (
+      ['heal', 'absorb', 'heal_void'].includes(skillId) &&
+      isMiasmaActive(state)
+    ) {
+      return 0;
+    }
+
+    const val = AI_SKILL_UTILITY[skillId];
+    if (val === undefined || val === null) return 0;
+    // 動的評価関数（hack等）の場合は自身のみ評価
+    if (typeof val === 'function') {
+      return isSelf ? val(state, GameState) : 0;
+    }
+    return val;
+  };
+
   for (let i = 0; i < 3; i++) {
+    // ① AI側のカード：パワー集計 ＋ ユーティリティ価値（プラス評価）
     if (state.enemyBoard[i]) {
       const c = state.enemyBoard[i];
       myPower += Number(c.currentPower ?? c.power ?? 0);
 
-      // 4. ユーティリティ価値の算出（AI_SKILL_UTILITYテーブル参照）
-      // skillTriggered = true の場合、アクティブスキルは発動済みなので
-      // パッシブスキルのみ評価する
-      const addUtility = (skillId) => {
-        // 瘴気が発動中は回復・吸収系スキルの価値を評価しない（実戦で回復効果が100%無効化されるため）
-        if (
-          ['heal', 'absorb', 'heal_void'].includes(skillId) &&
-          isMiasmaActive(state)
-        ) {
-          return;
-        }
-
-        const val = AI_SKILL_UTILITY[skillId];
-        if (val === undefined || val === null) return;
-        // 動的評価関数（hack等）の場合は関数を呼び出して値を取得する
-        if (typeof val === 'function') {
-          utilityScore += val(state, GameState);
-        } else {
-          utilityScore += val;
-        }
-      };
       if (Array.isArray(c.skills)) {
         c.skills.forEach((sk) => {
           // アクティブスキル（draw, heal等）は未発動時のみ加算
           if (
             !c.skillTriggered ||
-            !['draw', 'heal', 'bless', 'morph', 'shuffle'].includes(sk.id)
+            ![
+              'draw',
+              'heal',
+              'bless',
+              'morph',
+              'shuffle',
+              'salvage',
+              'explore',
+            ].includes(sk.id)
           ) {
-            addUtility(sk.id);
+            myUtilityScore += getSkillUtilityVal(sk.id, true);
           }
         });
       }
     }
+
+    // ② プレイヤー側のカード：パワー集計 ＋ ユーティリティ価値（マイナス評価：相手の強力スキルを残さない）
     if (state.playerBoard[i]) {
       const opC = state.playerBoard[i];
       opPower += Number(opC.currentPower ?? opC.power ?? 0);
+
+      if (Array.isArray(opC.skills)) {
+        opC.skills.forEach((sk) => {
+          // プレイヤーの場に残っているパッシブスキル（召喚時発動済みのアクティブスキルは除外）
+          if (
+            ![
+              'draw',
+              'heal',
+              'bless',
+              'morph',
+              'shuffle',
+              'salvage',
+              'explore',
+            ].includes(sk.id)
+          ) {
+            opUtilityScore += getSkillUtilityVal(sk.id, false);
+          }
+        });
+      }
     }
   }
 
@@ -3202,8 +3229,9 @@ export function evaluateSimState(state) {
   // 自分のHPが高いほど高評価
   let s6 = state.enemyHP * 100;
 
-  // スロット7: ユーティリティ価値
-  let s7 = (utilityScore + (state.actionUtilityBonus || 0)) * 10;
+  // スロット7: ユーティリティ価値（自分のスキル付加価値 - 相手のスキル脅威度）
+  let s7 =
+    (myUtilityScore - opUtilityScore + (state.actionUtilityBonus || 0)) * 10;
 
   // スロット8: タイブレーク (生存枚数)
   // 自分の枚数が少ないほど高評価（装備一点集中・生贄の高打点を評価）
@@ -4702,14 +4730,17 @@ export function simulateMove(
           simState.enemyBoard[laneIdx] !== null &&
           !hasSkill(simState.enemyBoard[laneIdx], 'arm_self')
         ) {
-          if (!(
+          const unionSkillForCheck =
             playedCard.skills &&
-            playedCard.skills.find((s) => s.id === 'union') &&
-            (simState.enemyBoard[laneIdx].baseId ===
-              playedCard.skills.find((s) => s.id === 'union').targetId ||
-              simState.enemyBoard[laneIdx].id ===
-                playedCard.skills.find((s) => s.id === 'union').targetId)
-          )) {
+            playedCard.skills.find((s) => s.id === 'union');
+          if (
+            !(
+              unionSkillForCheck &&
+              (simState.enemyBoard[laneIdx].baseId ===
+                unionSkillForCheck.targetId ||
+                simState.enemyBoard[laneIdx].id === unionSkillForCheck.targetId)
+            )
+          ) {
             return null;
           }
         }

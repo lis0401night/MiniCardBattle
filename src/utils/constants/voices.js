@@ -130,7 +130,7 @@ export const VOICE_CATEGORIES = {
   human_female_sexy: {
     play: 'assets/audio/voice/voice_human_female_sexy_play.mp3',
     death: 'assets/audio/voice/voice_human_female_sexy_death.mp3',
-    volume: 1.0,
+    volume: 1.2,
   },
   magic: {
     play: 'assets/audio/voice/voice_magic_play.mp3',

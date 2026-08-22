@@ -665,12 +665,12 @@ export async function setPlayerReadyOnly(isReadyStatus) {
  * トランザクションにより、ステータス変更と isReady フラグの消費（false 化）を原子的に実行し、
  * 対戦終了後にロビーへ戻った際の残存データ（status:'battle', isReady:true）による
  * 誤った即時再試合の発火を防止します。
- * @returns {Promise<void>}
+ * @returns {Promise<object|null>} コミット成功時は最新のルームデータ、失敗・中断時は null
  */
 export async function setRoomStatusToBattle() {
-  if (!currentRoomId || !database || !isHost) return;
+  if (!currentRoomId || !database || !isHost) return null;
   const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
-  await runTransaction(roomRef, (room) => {
+  const result = await runTransaction(roomRef, (room) => {
     // ルームが存在しない、または双方の準備完了が確認できない場合はコミットしない
     if (
       !room ||
@@ -693,6 +693,7 @@ export async function setRoomStatusToBattle() {
       },
     };
   });
+  return result && result.committed ? result.snapshot.val() : null;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
+import { ACTIVE_SKILLS, FATE_ESTIMATED_DAMAGE } from '../utils/constants/skills.js';
 import {
   consumeArmSelf,
   getSeededRandom,
@@ -1415,7 +1415,7 @@ export function applyActiveSkillLogic(
       // AI思考シミュレーション時は常に最高の結果（相手リーダーに3ダメージ）として見積もり評価する。
       // ※ 実際の対戦プレイ時におけるダイス抽選（5/6で1~3、1/6で自傷6）およびVFXアニメーション・ポップアップ演出は
       //    「src/game/skillLogic.js」内の「resolveActiveSkillEffect」で実行されます。
-      const fateMaxDmg = 3;
+      const fateMaxDmg = FATE_ESTIMATED_DAMAGE;
       damageLeader(state, oppOwner, fateMaxDmg, 'fate', events);
       break;
     }
