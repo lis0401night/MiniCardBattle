@@ -22,7 +22,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'static',
-    emptyOutDir: true,
+    emptyOutDir: false,
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
       input: {

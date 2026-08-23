@@ -14,6 +14,7 @@ import { UI_IMAGES } from './constants/uiImages.js';
 import { getAllVoicePaths } from './constants/voices.js';
 import { STAGES, getStageImgUrl } from './constants/stages.js';
 import { PLAYMAT_MASTER, getPlaymatImgUrl } from './constants/playmats.js';
+import { AVAILABLE_ICONS, EXTRA_ICONS } from './constants/avatars.js';
 
 let isPreloaded = false;
 
@@ -180,6 +181,15 @@ export async function preloadAllGameResources(onProgress) {
       if (pmThumb) asyncUrlsToLoad.add(pmThumb);
     }
   });
+
+  // F. プロフィール・スキン用アイコン画像およびフレーム（起動完了後に静かに事前キャッシュ）
+  [...AVAILABLE_ICONS, ...EXTRA_ICONS].forEach((item) => {
+    if (item && item.path) {
+      asyncUrlsToLoad.add(appendVersionQuery(item.path));
+    }
+  });
+  asyncUrlsToLoad.add(appendVersionQuery('assets/icons/iconframe_gold.webp'));
+  asyncUrlsToLoad.add(appendVersionQuery('assets/icons/iconframe_red.webp'));
 
   // BGM と SE
   Object.values(SE_PATHS).forEach((path) => {
