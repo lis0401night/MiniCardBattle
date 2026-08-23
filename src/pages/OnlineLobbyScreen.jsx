@@ -50,9 +50,11 @@ export default function OnlineLobbyScreen() {
   const chatEndRef = useRef(null);
   const battleStartTimeoutRef = useRef(null);
   const latestRoomDataRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   // Initial config extraction
   useEffect(() => {
+    isMountedRef.current = true;
     window.reloadOnlineLobbyConfig = () => {
       const storedName =
         localStorage.getItem(PROFILE_NAME_KEY) || DEFAULT_PLAYER_NAME;
@@ -348,6 +350,7 @@ export default function OnlineLobbyScreen() {
         if (getIsHost()) {
           setRoomStatusToBattle()
             .then((startedRoom) => {
+              if (!isMountedRef.current) return;
               const currentRoom = latestRoomDataRef.current;
               if (
                 startedRoom ||
@@ -364,6 +367,16 @@ export default function OnlineLobbyScreen() {
             })
             .catch((e) => {
               console.warn('setRoomStatusToBattle failed:', e);
+              if (!isMountedRef.current) return;
+              const currentRoom = latestRoomDataRef.current;
+              if (
+                !currentRoom ||
+                currentRoom.status === 'battle' ||
+                !currentRoom.host?.isReady ||
+                !currentRoom.client?.isReady
+              ) {
+                return;
+              }
               setBattleStartError(true);
               showAlertModal(
                 '対戦の開始に失敗しました。準備を解除して再試行してください。'
@@ -402,6 +415,7 @@ export default function OnlineLobbyScreen() {
     );
 
     return () => {
+      isMountedRef.current = false;
       clearInterval(heartbeatInterval);
       window.reloadOnlineLobbyConfig = null;
       // ロビー画面から離脱した場合（対戦開始時を除く）はコールバックを解除

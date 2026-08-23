@@ -7,6 +7,17 @@ export const DEFAULT_GRID_GAP_PX = 15;
 export const DEFAULT_GRID_PADDING_PX = 5;
 export const DEFAULT_CARD_ASPECT_RATIO = 1.5;
 
+/** マウント初回の幅推定に使うビューポート比率（実測前のフォールバック） */
+export const INITIAL_WIDTH_VIEWPORT_RATIO = 0.95;
+/** マウント初回の幅推定の上限値（px） */
+export const INITIAL_WIDTH_MAX_PX = 440;
+/** SSR/未取得時のコンテナフォールバック幅（px） */
+export const INITIAL_WIDTH_FALLBACK_PX = 400;
+/** 幅未取得時のフォールバック行高（px） */
+export const DEFAULT_FALLBACK_ROW_HEIGHT_PX = 200;
+/** 仮想スクロールの事前描画バッファ行数 */
+export const DEFAULT_OVERSCAN_ROWS = 6;
+
 /**
  * アイテム一覧を行単位で仮想化（Virtual Scroll）する共通カスタムフック。
  * コンテナ幅の動的測定、列分割、行高の事前計算、TanStack Virtual のセットアップと同期再計算を一元管理する。
@@ -34,13 +45,16 @@ export function useGridVirtualizer({
   gap = DEFAULT_GRID_GAP_PX,
   padding = DEFAULT_GRID_PADDING_PX,
   aspectRatio = DEFAULT_CARD_ASPECT_RATIO,
-  overscan = 6,
-  defaultFallbackHeight = 200,
+  overscan = DEFAULT_OVERSCAN_ROWS,
+  defaultFallbackHeight = DEFAULT_FALLBACK_ROW_HEIGHT_PX,
 }) {
   const listContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(() => {
-    if (typeof window === 'undefined') return 400;
-    return Math.min(Math.round(window.innerWidth * 0.95), 440);
+    if (typeof window === 'undefined') return INITIAL_WIDTH_FALLBACK_PX;
+    return Math.min(
+      Math.round(window.innerWidth * INITIAL_WIDTH_VIEWPORT_RATIO),
+      INITIAL_WIDTH_MAX_PX
+    );
   });
 
   // コンテナ要素のリサイズ監視（クライアント領域幅の変化を即座に検知）

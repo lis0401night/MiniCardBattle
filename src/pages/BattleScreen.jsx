@@ -105,15 +105,23 @@ export default function BattleScreen() {
         if (fullImgUrl) {
           const preImg = new Image();
           preImg.src = fullImgUrl;
-          // デコード済みビットマップがGCで解放されないよう対戦中キャッシュへ保持する（対戦終了時に cleanupBattleState で解放）
-          if (Array.isArray(GameState.battleImageCache)) {
-            GameState.battleImageCache.push(preImg);
-          }
-          if (typeof preImg.decode === 'function') {
-            await Promise.race([
-              preImg.decode().catch(() => {}),
-              new Promise((res) => setTimeout(res, 150)),
-            ]);
+
+          // すでに事前ロードまたは召喚済みでキャッシュされているか確認
+          const isCached =
+            Array.isArray(GameState.battleImageCache) &&
+            GameState.battleImageCache.some((img) => img.src === preImg.src);
+
+          if (!isCached) {
+            // デコード済みビットマップがGCで解放されないよう対戦中キャッシュへ保持する（対戦終了時に cleanupBattleState で解放）
+            if (Array.isArray(GameState.battleImageCache)) {
+              GameState.battleImageCache.push(preImg);
+            }
+            if (typeof preImg.decode === 'function') {
+              await Promise.race([
+                preImg.decode().catch(() => {}),
+                new Promise((res) => setTimeout(res, 150)),
+              ]);
+            }
           }
         }
       }

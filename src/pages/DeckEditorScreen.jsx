@@ -1,11 +1,4 @@
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import MissionListModal from '../components/battle/MissionListModal.jsx';
 import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
@@ -20,6 +13,13 @@ import { GameState } from '../state/gameState.js';
 import CardFilterModal from '../components/common/CardFilterModal.jsx';
 import CardSortModal from '../components/common/CardSortModal.jsx';
 import { useCardFilterSort } from '../hooks/useCardFilterSort.js';
+import {
+  DEFAULT_CARD_ASPECT_RATIO,
+  INITIAL_WIDTH_FALLBACK_PX,
+  INITIAL_WIDTH_MAX_PX,
+  INITIAL_WIDTH_VIEWPORT_RATIO,
+  useGridVirtualizer,
+} from '../hooks/useGridVirtualizer.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
@@ -46,16 +46,10 @@ const SHEET_MIN_PERCENT = 20;
 const SHEET_MAX_PERCENT = 88;
 const SHEET_DEFAULT_PERCENT = 50;
 
-/** カードの縦横比（高さ / 幅）。CSSの `.card { padding-bottom: 150% }` と必ず一致させること */
-const CARD_ASPECT_RATIO = 1.5;
 /** カード一覧コンテナの左右padding合計（px）。CSSの `padding: 10px 5px` と対応 */
 const LIST_HORIZONTAL_PADDING_PX = 10;
-/** マウント初回の幅推定に使うビューポート比率（実測前のフォールバック） */
-const INITIAL_WIDTH_VIEWPORT_RATIO = 0.95;
-/** マウント初回の幅推定の上限値（px） */
-const INITIAL_WIDTH_MAX_PX = 440;
-/** SSR/未取得時のコンテナフォールバック幅（px） */
-const INITIAL_WIDTH_FALLBACK_PX = 400;
+/** カード一覧コンテナの上部padding（px）。CSSの `padding: 10px 5px` と対応 */
+const LIST_TOP_PADDING_PX = 10;
 /** デッキリスト初期フォールバック高さ（px） */
 const INITIAL_DECK_LIST_HEIGHT_PX = 300;
 /** 所持カード一覧の初期フォールバック行高さ（px） */
@@ -280,35 +274,16 @@ export default function DeckEditorScreen({ switchScreen }) {
           (deckListInnerWidth - deckListGap * (deckListCols - 1)) / deckListCols
         )
       : 0;
-  const deckRowHeightPx = deckCardWidthPx * CARD_ASPECT_RATIO; // .card は padding-bottom:150%で縦横比固定
+  const deckRowHeightPx = deckCardWidthPx * DEFAULT_CARD_ASPECT_RATIO; // .card は padding-bottom:150%で縦横比固定
 
   const deckListExtraPaddingMax = Math.max(
     0,
-    deckListSize.height - deckRowHeightPx - LIST_HORIZONTAL_PADDING_PX // リスト上部のpadding 10px分も差し引く
+    deckListSize.height - deckRowHeightPx - LIST_TOP_PADDING_PX // リスト上部のpadding分を差し引く
   );
   const deckListExtraPaddingPx = Math.min(
     sheetMaxHeightPx,
     deckListExtraPaddingMax
   );
-
-  // --- 所持カード一覧の仮想スクロール設定 ---
-  const masterListContainerRef = useRef(null);
-  const [masterListWidth, setMasterListWidth] = useState(
-    getInitialContainerWidth
-  );
-
-  useEffect(() => {
-    const el = masterListContainerRef.current;
-    if (!el) return undefined;
-    const updateSize = () => {
-      const width = el.clientWidth;
-      setMasterListWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
-    };
-    updateSize();
-    const observer = new ResizeObserver(updateSize);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   // デッキ内の各カード枚数をO(1)で取得するための事前集計マップ（スクロール高速化）
   const deckCounts = useMemo(() => {
@@ -321,51 +296,19 @@ export default function DeckEditorScreen({ switchScreen }) {
     return counts;
   }, [deckSelection]);
 
-  // 所持カードを列数（gridCols）ごとにグループ化して行配列を生成
-  const masterCardRows = useMemo(() => {
-    const rows = [];
-    const safeCols = Math.max(1, gridCols);
-    for (let i = 0; i < sortedMasterCards.length; i += safeCols) {
-      rows.push(sortedMasterCards.slice(i, i + safeCols));
-    }
-    return rows;
-  }, [sortedMasterCards, gridCols]);
-
-  // 推定行高さの計算（CardListScreenと100%完全統一：カードの縦横比1.5、gapはuseVirtualizerが管理）
-  const estimatedMasterRowHeight = useMemo(() => {
-    const innerWidth = Math.max(
-      0,
-      masterListWidth - LIST_HORIZONTAL_PADDING_PX
-    );
-    const safeCols = Math.max(1, gridCols);
-    const cardWidthPx = Math.max(
-      0,
-      (innerWidth - gridGap * (safeCols - 1)) / safeCols
-    );
-    return cardWidthPx > 0
-      ? cardWidthPx * CARD_ASPECT_RATIO
-      : INITIAL_MASTER_ROW_HEIGHT_PX;
-  }, [masterListWidth, gridCols, gridGap]);
-
-  // @tanstack/react-virtual による所持カード一覧の行単位仮想化
-  const masterRowVirtualizer = useVirtualizer({
-    count: masterCardRows.length,
-    getScrollElement: () => masterListContainerRef.current,
-    estimateSize: () => estimatedMasterRowHeight,
+  // --- 所持カード一覧の仮想スクロール設定（共通フック useGridVirtualizer による一元管理） ---
+  const {
+    listContainerRef: masterListContainerRef,
+    rowVirtualizer: masterRowVirtualizer,
+    itemRows: masterCardRows,
+  } = useGridVirtualizer({
+    items: sortedMasterCards,
+    cols: gridCols,
     gap: gridGap,
-    overscan: 6,
+    padding: 5,
+    aspectRatio: DEFAULT_CARD_ASPECT_RATIO,
+    defaultFallbackHeight: INITIAL_MASTER_ROW_HEIGHT_PX,
   });
-
-  // 初回マウント時および幅・列数・ギャップ変更時に仮想スクロールキャッシュを同期再計算（初回のGAP狂いを防止）
-  useLayoutEffect(() => {
-    masterRowVirtualizer.measure();
-  }, [
-    masterRowVirtualizer,
-    masterListWidth,
-    gridCols,
-    gridGap,
-    estimatedMasterRowHeight,
-  ]);
 
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
   // battle_dungeon中はデッキ自体にleaderIdが保存されないため、

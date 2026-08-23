@@ -212,6 +212,9 @@ export async function loadAllVoices() {
   await Promise.all(workers);
 }
 
+/** 再生中のフォールバック用クローンHTMLAudioElementを追跡する集合 */
+const activeFallbackVoiceAudios = new Set();
+
 /**
  * デコード済みボイスバッファおよびフォールバックHTML5 Audioキャッシュを完全解放する（対戦終了時用）
  * メニュー画面や選択画面での生PCMメモリ常駐（RAM消費）をゼロにする。
@@ -220,6 +223,19 @@ export function cleanupVoiceBuffers() {
   Object.keys(voiceBuffers).forEach((key) => {
     delete voiceBuffers[key];
   });
+
+  // 再生中のクローン音声があれば即座に停止・解放
+  activeFallbackVoiceAudios.forEach((audio) => {
+    try {
+      audio.pause();
+      audio.src = '';
+      audio.load();
+    } catch {
+      // 一部ブラウザで src 再設定時に例外が発生するため無視する
+    }
+  });
+  activeFallbackVoiceAudios.clear();
+
   Object.keys(voiceAudioCache).forEach((key) => {
     // HTML5 Audio の内部バッファ破棄をブラウザに促してから参照を切る
     const audio = voiceAudioCache[key];
@@ -358,6 +374,17 @@ export async function playCardVoice(categoryOrCard, situation = 'play') {
         p.catch((e) => console.warn('Fallback voice play failed:', e));
     } else {
       const clone = voiceAudio.cloneNode();
+      activeFallbackVoiceAudios.add(clone);
+      clone.addEventListener(
+        'ended',
+        () => activeFallbackVoiceAudios.delete(clone),
+        { once: true }
+      );
+      clone.addEventListener(
+        'error',
+        () => activeFallbackVoiceAudios.delete(clone),
+        { once: true }
+      );
       clone.volume = finalVolume;
       const p = clone.play();
       if (p !== undefined)

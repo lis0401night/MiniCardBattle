@@ -1,11 +1,22 @@
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import { CHARACTERS } from '../../utils/constants/characters.js';
-import { appendVersionQuery } from '../../utils/constants/config.js';
+import {
+  CHARACTERS,
+  getPlayerIconPath,
+  getSkinImage,
+} from '../../utils/constants/characters.js';
+import {
+  appendVersionQuery,
+  MAX_CARD_COPIES,
+} from '../../utils/constants/config.js';
 import {
   getPlaymatImgUrl,
   PLAYMAT_MASTER,
 } from '../../utils/constants/playmats.js';
-import { getCardImgUrl, playSound } from '../../utils/gameUtils.js';
+import {
+  getCardImgUrl,
+  isTransitioning,
+  playSound,
+} from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
 /**
@@ -38,7 +49,7 @@ export default function ExchangeItemCard({
   // アンロック/最大所持状態の判定
   let isUnlocked = false;
   if (isCard) {
-    isUnlocked = (inventory[item.id] || 0) >= 4;
+    isUnlocked = (inventory[item.id] || 0) >= MAX_CARD_COPIES;
   } else if (isPlaymat) {
     isUnlocked = unlockedPlaymats.includes(item.id);
   } else if (isIcon) {
@@ -87,12 +98,16 @@ export default function ExchangeItemCard({
     originalImgUrl = getPlaymatImgUrl(masterClass.id || item.id, false);
     displayName = masterClass.name || item.name;
   } else if (isIcon) {
-    imgUrl = `assets/icons/icon_${item.id}.webp`;
+    imgUrl = getPlayerIconPath({ icon: item.id });
     originalImgUrl = imgUrl;
   } else {
     // スキンの場合（一覧はサムネイル、詳細はフルサイズ）
-    imgUrl = `assets/characters/char_${item.id}_thumb.webp`;
-    originalImgUrl = `assets/characters/char_${item.id}.webp`;
+    imgUrl =
+      getSkinImage(item.charId || item.id, item.id, 'image', true) ||
+      appendVersionQuery(`assets/characters/char_${item.id}_thumb.webp`);
+    originalImgUrl =
+      getSkinImage(item.charId || item.id, item.id, 'image', false) ||
+      appendVersionQuery(`assets/characters/char_${item.id}.webp`);
   }
 
   imgUrl = appendVersionQuery(imgUrl);
@@ -110,6 +125,7 @@ export default function ExchangeItemCard({
    * アイテムカードクリック時の詳細モーダル表示処理
    */
   const handleClick = () => {
+    if (isTransitioning) return;
     playSound(SOUNDS?.seClick);
     if (window.showExchangeDetailModal) {
       window.showExchangeDetailModal({
@@ -217,7 +233,7 @@ export default function ExchangeItemCard({
                 border: '1px solid #facc15',
               }}
             >
-              {inventory[item.id] || 0}/4
+              {inventory[item.id] || 0}/{MAX_CARD_COPIES}
             </div>
             <div
               className="card-power"

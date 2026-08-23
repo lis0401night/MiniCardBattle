@@ -19,19 +19,21 @@ export default function EventIcon({
   className = 'banner-icon',
   alt = '',
 }) {
-  const [hasFailed, setHasFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState(null);
 
-  // 読み込み失敗時はフォールバック画像、正常時は指定画像を採用
-  const currentPath = hasFailed && fallbackSrc ? fallbackSrc : src;
+  // 現在の src が読み込み失敗済みの場合のみフォールバック画像を採用
+  const isUsingFallback =
+    failedSrc === src && Boolean(fallbackSrc) && fallbackSrc !== src;
+  const currentPath = isUsingFallback ? fallbackSrc : src;
   const resolvedSrc = appendVersionQuery(currentPath);
 
   /**
    * 画像読み込み失敗時のハンドラ。
-   * フォールバック画像が存在し、かつまだ切り替えていない場合のみフォールバック状態へ遷移する。
+   * フォールバック画像が存在し、かつまだフォールバック状態でない場合のみ失敗URLを記録する。
    */
   const handleError = () => {
-    if (!hasFailed && fallbackSrc && src !== fallbackSrc) {
-      setHasFailed(true);
+    if (!isUsingFallback && fallbackSrc && src !== fallbackSrc) {
+      setFailedSrc(src);
     }
   };
 

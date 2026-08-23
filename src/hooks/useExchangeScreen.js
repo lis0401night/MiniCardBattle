@@ -25,6 +25,7 @@ import {
   DEFENSE_TOTAL_POINTS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
+  MAX_CARD_COPIES,
 } from '../utils/constants/config.js';
 
 const KEY_MAPPING = {
@@ -146,7 +147,7 @@ export function useExchangeScreen({
     let isAlreadyUnlocked = false;
 
     if (isCard) {
-      isAlreadyUnlocked = (inventory[item.id] || 0) >= 4;
+      isAlreadyUnlocked = (inventory[item.id] || 0) >= MAX_CARD_COPIES;
     } else if (isPlaymat) {
       isAlreadyUnlocked = unlockedPlaymats.includes(item.id);
     } else if (isIcon) {
