@@ -212,11 +212,22 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   const sheetMaxHeightPx = (stackHeightPx * SHEET_MAX_PERCENT) / 100;
 
+/**
+ * コンテナの初期幅を算出するヘルパー（マウント初回の行高さ・GAP計算狂いを防止）
+ */
+const getInitialContainerWidth = () => {
+  if (typeof window === 'undefined') return 400;
+  return Math.min(Math.round(window.innerWidth * 0.95), 440);
+};
+
   // デッキリスト自身の表示領域サイズを計測し、カード1行分の高さを概算する。
   // 余白は「シートを最大まで開いても隠れない量」と「最下段カードの上端が
   // ビューポート上端を超えて見切れない量」の小さい方に制限する。
   const deckListContainerRef = useRef(null);
-  const [deckListSize, setDeckListSize] = useState({ width: 0, height: 0 });
+  const [deckListSize, setDeckListSize] = useState(() => ({
+    width: getInitialContainerWidth(),
+    height: 300,
+  }));
 
   useEffect(() => {
     const el = deckListContainerRef.current;
@@ -255,7 +266,7 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   // --- 所持カード一覧の仮想スクロール設定 ---
   const masterListContainerRef = useRef(null);
-  const [masterListWidth, setMasterListWidth] = useState(0);
+  const [masterListWidth, setMasterListWidth] = useState(getInitialContainerWidth);
 
   useEffect(() => {
     const el = masterListContainerRef.current;
@@ -310,6 +321,11 @@ export default function DeckEditorScreen({ switchScreen }) {
     gap: gridGap,
     overscan: 6,
   });
+
+  // 初回マウント時および幅・列数・ギャップ変更時に仮想スクロールキャッシュを即時再計算（初回のGAP狂いを防止）
+  useEffect(() => {
+    masterRowVirtualizer.measure();
+  }, [masterRowVirtualizer, masterListWidth, gridCols, gridGap, estimatedMasterRowHeight]);
 
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
   // battle_dungeon中はデッキ自体にleaderIdが保存されないため、

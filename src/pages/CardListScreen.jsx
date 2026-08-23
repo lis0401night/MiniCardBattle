@@ -78,7 +78,10 @@ export default function CardListScreen() {
 
   // --- 仮想スクロール設定 ---
   const listContainerRef = useRef(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(() => {
+    if (typeof window === 'undefined') return 400;
+    return Math.min(Math.round(window.innerWidth * 0.95), 440);
+  });
 
   useEffect(() => {
     const el = listContainerRef.current;
@@ -122,6 +125,11 @@ export default function CardListScreen() {
     gap: gridGap,
     overscan: 6,
   });
+
+  // 初回マウント時および幅・列数・ギャップ変更時に仮想スクロールキャッシュを即時再計算（初回のGAP狂いを防止）
+  useEffect(() => {
+    rowVirtualizer.measure();
+  }, [rowVirtualizer, containerWidth, gridCols, gridGap, estimatedRowHeight]);
 
   // タイトルを10回クリックでデバッグ全解放モードを起動するイースターエッグ
   const handleTitleClick = useEasterEgg(() => {
