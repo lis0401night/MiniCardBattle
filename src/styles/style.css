@@ -3225,6 +3225,9 @@ h2 {
   height: 100%;
   background-size: cover;
   background-position: center;
+  object-fit: cover;
+  object-position: center;
+  border-radius: inherit;
   transition: transform 0.3s ease;
   z-index: 0;
 }

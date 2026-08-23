@@ -99,7 +99,7 @@ export default function BattleScreen() {
     });
 
     setSummonAnimationHook(async (card, owner) => {
-      // 召喚カードのフルサイズ画像デコードを待機（未キャッシュ時でも確実に画像を表示させるためのセーフティ）
+      // 召喚カードのフルサイズ画像デコードを待機（確実に画像を描画準備完了させてからアニメーションを開始）
       if (card) {
         const fullImgUrl = getCardImgUrl(card, false);
         if (fullImgUrl) {
@@ -111,17 +111,17 @@ export default function BattleScreen() {
             Array.isArray(GameState.battleImageCache) &&
             GameState.battleImageCache.some((img) => img.src === preImg.src);
 
-          if (!isCached) {
-            // デコード済みビットマップがGCで解放されないよう対戦中キャッシュへ保持する（対戦終了時に cleanupBattleState で解放）
-            if (Array.isArray(GameState.battleImageCache)) {
-              GameState.battleImageCache.push(preImg);
-            }
-            if (typeof preImg.decode === 'function') {
-              await Promise.race([
-                preImg.decode().catch(() => {}),
-                new Promise((res) => setTimeout(res, 150)),
-              ]);
-            }
+          if (!isCached && Array.isArray(GameState.battleImageCache)) {
+            GameState.battleImageCache.push(preImg);
+          }
+
+          if (typeof preImg.decode === 'function') {
+            await Promise.race([
+              preImg.decode().catch(() => {}),
+              new Promise((res) => setTimeout(res, 80)),
+            ]);
+          } else {
+            await new Promise((res) => setTimeout(res, 30));
           }
         }
       }
@@ -766,9 +766,14 @@ export default function BattleScreen() {
         onComplete={handleTurnOrderComplete}
       />
 
-      {/* 召喚アニメーション用DOM */}
-      {summonAnim.active && summonAnim.card && (
-        <div className="summon-anim-overlay">
+      {/* 召喚アニメーション用DOM（初回アニメーションの初期化遅延を防止するため常時マウント） */}
+      <div
+        className="summon-anim-overlay"
+        style={{
+          display: summonAnim.active && summonAnim.card ? 'flex' : 'none',
+        }}
+      >
+        {summonAnim.card && (
           <div
             className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${summonAnim.owner === 'blue' ? 'from-bottom' : 'from-top'}`}
           >
@@ -799,8 +804,8 @@ export default function BattleScreen() {
                 : summonAnim.card.power}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* チュートリアルメッセージUI */}
       {tutorialMessage && (

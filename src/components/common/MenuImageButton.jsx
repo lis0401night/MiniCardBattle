@@ -77,13 +77,36 @@ export default function MenuImageButton({
         onClick={handleClick}
         style={{ width: '100%', height: '100%', flex: 'none', margin: 0 }}
       >
-        <div
-          className="menu-img-bg"
-          style={{
-            backgroundImage: image ? `url('${image}')` : undefined,
-            ...style,
-          }}
-        ></div>
+        {image ? (
+          <img
+            className="menu-img-bg"
+            src={image}
+            alt={label || ''}
+            loading="eager"
+            decoding="sync"
+            draggable={false}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              pointerEvents: 'none',
+              borderRadius: 'inherit',
+              zIndex: 0,
+              ...style,
+            }}
+          />
+        ) : (
+          <div
+            className="menu-img-bg"
+            style={{
+              ...style,
+            }}
+          />
+        )}
         <div className="menu-btn-label">{label}</div>
       </div>
     </div>
