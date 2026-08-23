@@ -84,51 +84,9 @@ export default function BattleScreen() {
     active: false,
     card: null,
     owner: 'blue',
-    isAnimating: false,
-    requestId: 0,
   });
   const summonTimeoutRef = useRef(null);
-  const summonRequestIdRef = useRef(0);
   const summonResolveRef = useRef(null);
-
-  /**
-   * 召喚カード画像の読み込み・画面描画完了ハンドラー
-   * 本番 img 要素の onLoad 完了後、2描画フレーム待機して画像がGPU/画面に確実にペイントされた状態から 1.1 秒の CSS アニメーションを開始する
-   *
-   * @param {number} requestId - 召喚演出のリクエストID
-   */
-  const handleSummonImageLoad = (requestId) => {
-    if (requestId !== summonRequestIdRef.current) return;
-
-    // ブラウザが画面に画像を確実にペイント（Paint）し終えた次のフレームでアニメーションクラスを付与
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (requestId === summonRequestIdRef.current) {
-          setSummonAnim((prev) =>
-            prev.isAnimating ? prev : { ...prev, isAnimating: true }
-          );
-
-          if (summonTimeoutRef.current) clearTimeout(summonTimeoutRef.current);
-          summonTimeoutRef.current = setTimeout(() => {
-            if (requestId === summonRequestIdRef.current) {
-              setSummonAnim({
-                active: false,
-                card: null,
-                owner: 'blue',
-                isAnimating: false,
-                requestId: 0,
-              });
-              if (summonResolveRef.current) {
-                const res = summonResolveRef.current;
-                summonResolveRef.current = null;
-                res();
-              }
-            }
-          }, 1100); // 1.1秒間アニメーションを表示
-        }
-      });
-    });
-  };
 
   // チュートリアルメッセージ表示用
   const [tutorialMessage, setTutorialMessage] = useState(null);
@@ -143,32 +101,77 @@ export default function BattleScreen() {
     });
 
     setSummonAnimationHook((card, owner) => {
+      // 前回のタイマーをクリア
       if (summonTimeoutRef.current) {
         clearTimeout(summonTimeoutRef.current);
         summonTimeoutRef.current = null;
       }
+      // 前回のPromiseをresolve
+      if (summonResolveRef.current) {
+        summonResolveRef.current();
+        summonResolveRef.current = null;
+      }
+
+      if (!card) return Promise.resolve();
+
+      const fullImgUrl = getCardImgUrl(card, false);
+
       return new Promise((resolve) => {
-        if (!card) {
-          resolve();
+        /**
+         * 画像ロード完了後にアニメーション要素をDOMにマウントする
+         * CutinOverlayと完全に同じ方式：ロード完了してからマウント＝アニメーション開始
+         */
+        const startAnimation = () => {
+          summonResolveRef.current = resolve;
+          setSummonAnim({ active: true, card, owner });
+          summonTimeoutRef.current = setTimeout(() => {
+            setSummonAnim({ active: false, card: null, owner: 'blue' });
+            if (summonResolveRef.current) {
+              const res = summonResolveRef.current;
+              summonResolveRef.current = null;
+              res();
+            }
+          }, 1100); // 1.1秒間アニメーションを表示
+        };
+
+        if (!fullImgUrl) {
+          startAnimation();
           return;
         }
-        const requestId = summonRequestIdRef.current + 1;
-        summonRequestIdRef.current = requestId;
-        summonResolveRef.current = resolve;
-        setSummonAnim({
-          active: true,
-          card,
-          owner,
-          isAnimating: false,
-          requestId,
-        });
 
-        // 万が一の画像ロードタイムアウト保険（300ms待ってもonLoadが来ない場合は強制的に進行）
-        summonTimeoutRef.current = setTimeout(() => {
-          if (requestId === summonRequestIdRef.current) {
-            handleSummonImageLoad(requestId);
+        // JavaScript側でnew Image()を使って画像のロード完了を待つ
+        // （React DOMの<img>のonLoadではなく、マウント前にJS側で完了を確認する）
+        const preImg = new Image();
+        let settled = false;
+
+        preImg.onload = () => {
+          if (settled) return;
+          settled = true;
+          startAnimation();
+        };
+
+        preImg.onerror = () => {
+          if (settled) return;
+          settled = true;
+          startAnimation();
+        };
+
+        preImg.src = fullImgUrl;
+
+        // 既にブラウザキャッシュで同期的にロード完了している場合
+        if (preImg.complete && !settled) {
+          settled = true;
+          startAnimation();
+          return;
+        }
+
+        // タイムアウト保険（500ms待ってもonloadが来ない場合は強制進行）
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            startAnimation();
           }
-        }, 300);
+        }, 500);
       });
     });
 
@@ -180,6 +183,14 @@ export default function BattleScreen() {
       setUpdateCardDetailHook(null);
       setSummonAnimationHook(null);
       setTutorialMessageCallback(null);
+      if (summonTimeoutRef.current) {
+        clearTimeout(summonTimeoutRef.current);
+        summonTimeoutRef.current = null;
+      }
+      if (summonResolveRef.current) {
+        summonResolveRef.current();
+        summonResolveRef.current = null;
+      }
       if (GameState.longPressTimer) {
         clearTimeout(GameState.longPressTimer);
         GameState.longPressTimer = null;
@@ -803,20 +814,11 @@ export default function BattleScreen() {
         onComplete={handleTurnOrderComplete}
       />
 
-      {/* 召喚アニメーション用：画像ペイント完了（rAF同期）後にアニメーションクラスを付与して0msから同期スライドイン */}
+      {/* 召喚アニメーション用DOM：画像ロード完了後にマウントされるため、マウント＝アニメーション開始 */}
       {summonAnim.active && summonAnim.card && (
         <div className="summon-anim-overlay">
           <div
-            className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${
-              summonAnim.isAnimating
-                ? summonAnim.owner === 'blue'
-                  ? 'from-bottom'
-                  : 'from-top'
-                : 'summon-anim-standby'
-            }`}
-            style={{
-              opacity: summonAnim.isAnimating ? 1 : 0,
-            }}
+            className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${summonAnim.owner === 'blue' ? 'from-bottom' : 'from-top'}`}
           >
             <img
               className="card-bg"
@@ -824,8 +826,6 @@ export default function BattleScreen() {
               alt={summonAnim.card.name || ''}
               loading="eager"
               decoding="sync"
-              onLoad={() => handleSummonImageLoad(summonAnim.requestId)}
-              onError={() => handleSummonImageLoad(summonAnim.requestId)}
               style={{
                 width: '100%',
                 height: '100%',
