@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   confirmOverwrittenLane,
   dispatchBattleAction,
@@ -84,7 +84,41 @@ export default function BattleScreen() {
     active: false,
     card: null,
     owner: 'blue',
+    isImageReady: false,
+    requestId: 0,
   });
+  const summonTimeoutRef = useRef(null);
+  const summonRequestIdRef = useRef(0);
+  const summonResolveRef = useRef(null);
+
+  /**
+   * 召喚カード画像の読み込み完了ハンドラー
+   * 画像の onLoad 完了を検知してから 1.1 秒タイマーと CSS アニメーションを開始する
+   *
+   * @param {number} requestId - 召喚演出のリクエストID
+   */
+  const handleSummonImageLoad = (requestId) => {
+    if (requestId !== summonRequestIdRef.current) return;
+    setSummonAnim((prev) => ({ ...prev, isImageReady: true }));
+
+    if (summonTimeoutRef.current) clearTimeout(summonTimeoutRef.current);
+    summonTimeoutRef.current = setTimeout(() => {
+      if (requestId === summonRequestIdRef.current) {
+        setSummonAnim({
+          active: false,
+          card: null,
+          owner: 'blue',
+          isImageReady: false,
+          requestId: 0,
+        });
+        if (summonResolveRef.current) {
+          const res = summonResolveRef.current;
+          summonResolveRef.current = null;
+          res();
+        }
+      }
+    }, 1100); // 1.1秒間アニメーションを表示
+  };
 
   // チュートリアルメッセージ表示用
   const [tutorialMessage, setTutorialMessage] = useState(null);
@@ -98,67 +132,33 @@ export default function BattleScreen() {
       setCardDetailColor(color);
     });
 
-    setSummonAnimationHook(async (card, owner) => {
-      // 召喚カードのフルサイズ画像デコードを待機（確実に画像を描画準備完了させてからアニメーションを開始）
-      if (card) {
-        const fullImgUrl = getCardImgUrl(card, false);
-        if (fullImgUrl) {
-          await new Promise((resolve) => {
-            const preImg = new Image();
-            let isResolved = false;
-
-            const onComplete = () => {
-              if (isResolved) return;
-              isResolved = true;
-
-              // デコード済みビットマップがGCで解放されないよう対戦中キャッシュへ保持する
-              const isCached =
-                Array.isArray(GameState.battleImageCache) &&
-                GameState.battleImageCache.some(
-                  (img) => img.src === preImg.src
-                );
-              if (!isCached && Array.isArray(GameState.battleImageCache)) {
-                GameState.battleImageCache.push(preImg);
-              }
-
-              if (typeof preImg.decode === 'function') {
-                preImg.decode().then(resolve).catch(resolve);
-              } else {
-                resolve();
-              }
-            };
-
-            preImg.onload = onComplete;
-            preImg.onerror = () => {
-              if (!isResolved) {
-                isResolved = true;
-                resolve();
-              }
-            };
-            preImg.src = fullImgUrl;
-
-            // すでにブラウザキャッシュから同期的に完了している場合
-            if (preImg.complete) {
-              onComplete();
-            }
-
-            // 万が一のタイムアウト保険（最大200msで強制進行してフリーズを防止）
-            setTimeout(() => {
-              if (!isResolved) {
-                isResolved = true;
-                resolve();
-              }
-            }, 200);
-          });
-        }
+    setSummonAnimationHook((card, owner) => {
+      if (summonTimeoutRef.current) {
+        clearTimeout(summonTimeoutRef.current);
+        summonTimeoutRef.current = null;
       }
-
       return new Promise((resolve) => {
-        setSummonAnim({ active: true, card, owner });
-        setTimeout(() => {
-          setSummonAnim({ active: false, card: null, owner: 'blue' });
+        if (!card) {
           resolve();
-        }, 1100); // 1.1秒間アニメーションを表示
+          return;
+        }
+        const requestId = summonRequestIdRef.current + 1;
+        summonRequestIdRef.current = requestId;
+        summonResolveRef.current = resolve;
+        setSummonAnim({
+          active: true,
+          card,
+          owner,
+          isImageReady: false,
+          requestId,
+        });
+
+        // 万が一の画像ロードタイムアウト保険（300ms待ってもonLoadが来ない場合は強制的にisImageReady=trueにしてアニメーションを進行）
+        summonTimeoutRef.current = setTimeout(() => {
+          if (requestId === summonRequestIdRef.current) {
+            handleSummonImageLoad(requestId);
+          }
+        }, 300);
       });
     });
 
@@ -793,14 +793,20 @@ export default function BattleScreen() {
         onComplete={handleTurnOrderComplete}
       />
 
-      {/* 召喚アニメーション用DOM（初回アニメーションの初期化遅延を防止するため常時マウント） */}
-      <div
-        className="summon-anim-overlay"
-        style={{
-          display: summonAnim.active && summonAnim.card ? 'flex' : 'none',
-        }}
-      >
-        {summonAnim.card && (
+      {/* 召喚アニメーション用：ロード未完了時は隠しimgタグでプリロードを行い、ブラウザの準備完了（onLoad）を検知 */}
+      {summonAnim.active && summonAnim.card && !summonAnim.isImageReady && (
+        <img
+          src={getCardImgUrl(summonAnim.card)}
+          alt=""
+          style={{ display: 'none' }}
+          onLoad={() => handleSummonImageLoad(summonAnim.requestId)}
+          onError={() => handleSummonImageLoad(summonAnim.requestId)}
+        />
+      )}
+
+      {/* 召喚アニメーション用：画像読み込み完了後にアニメーション要素をマウントし、0msから同期スライドイン */}
+      {summonAnim.active && summonAnim.card && summonAnim.isImageReady && (
+        <div className="summon-anim-overlay">
           <div
             className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${summonAnim.owner === 'blue' ? 'from-bottom' : 'from-top'}`}
           >
@@ -831,8 +837,8 @@ export default function BattleScreen() {
                 : summonAnim.card.power}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* チュートリアルメッセージUI */}
       {tutorialMessage && (
