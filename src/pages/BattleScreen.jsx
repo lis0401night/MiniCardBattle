@@ -84,7 +84,7 @@ export default function BattleScreen() {
     active: false,
     card: null,
     owner: 'blue',
-    isImageReady: false,
+    isAnimating: false,
     requestId: 0,
   });
   const summonTimeoutRef = useRef(null);
@@ -92,32 +92,42 @@ export default function BattleScreen() {
   const summonResolveRef = useRef(null);
 
   /**
-   * 召喚カード画像の読み込み完了ハンドラー
-   * 画像の onLoad 完了を検知してから 1.1 秒タイマーと CSS アニメーションを開始する
+   * 召喚カード画像の読み込み・画面描画完了ハンドラー
+   * 本番 img 要素の onLoad 完了後、2描画フレーム待機して画像がGPU/画面に確実にペイントされた状態から 1.1 秒の CSS アニメーションを開始する
    *
    * @param {number} requestId - 召喚演出のリクエストID
    */
   const handleSummonImageLoad = (requestId) => {
     if (requestId !== summonRequestIdRef.current) return;
-    setSummonAnim((prev) => ({ ...prev, isImageReady: true }));
 
-    if (summonTimeoutRef.current) clearTimeout(summonTimeoutRef.current);
-    summonTimeoutRef.current = setTimeout(() => {
-      if (requestId === summonRequestIdRef.current) {
-        setSummonAnim({
-          active: false,
-          card: null,
-          owner: 'blue',
-          isImageReady: false,
-          requestId: 0,
-        });
-        if (summonResolveRef.current) {
-          const res = summonResolveRef.current;
-          summonResolveRef.current = null;
-          res();
+    // ブラウザが画面に画像を確実にペイント（Paint）し終えた次のフレームでアニメーションクラスを付与
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (requestId === summonRequestIdRef.current) {
+          setSummonAnim((prev) =>
+            prev.isAnimating ? prev : { ...prev, isAnimating: true }
+          );
+
+          if (summonTimeoutRef.current) clearTimeout(summonTimeoutRef.current);
+          summonTimeoutRef.current = setTimeout(() => {
+            if (requestId === summonRequestIdRef.current) {
+              setSummonAnim({
+                active: false,
+                card: null,
+                owner: 'blue',
+                isAnimating: false,
+                requestId: 0,
+              });
+              if (summonResolveRef.current) {
+                const res = summonResolveRef.current;
+                summonResolveRef.current = null;
+                res();
+              }
+            }
+          }, 1100); // 1.1秒間アニメーションを表示
         }
-      }
-    }, 1100); // 1.1秒間アニメーションを表示
+      });
+    });
   };
 
   // チュートリアルメッセージ表示用
@@ -149,11 +159,11 @@ export default function BattleScreen() {
           active: true,
           card,
           owner,
-          isImageReady: false,
+          isAnimating: false,
           requestId,
         });
 
-        // 万が一の画像ロードタイムアウト保険（300ms待ってもonLoadが来ない場合は強制的にisImageReady=trueにしてアニメーションを進行）
+        // 万が一の画像ロードタイムアウト保険（300ms待ってもonLoadが来ない場合は強制的に進行）
         summonTimeoutRef.current = setTimeout(() => {
           if (requestId === summonRequestIdRef.current) {
             handleSummonImageLoad(requestId);
@@ -793,22 +803,20 @@ export default function BattleScreen() {
         onComplete={handleTurnOrderComplete}
       />
 
-      {/* 召喚アニメーション用：ロード未完了時は隠しimgタグでプリロードを行い、ブラウザの準備完了（onLoad）を検知 */}
-      {summonAnim.active && summonAnim.card && !summonAnim.isImageReady && (
-        <img
-          src={getCardImgUrl(summonAnim.card)}
-          alt=""
-          style={{ display: 'none' }}
-          onLoad={() => handleSummonImageLoad(summonAnim.requestId)}
-          onError={() => handleSummonImageLoad(summonAnim.requestId)}
-        />
-      )}
-
-      {/* 召喚アニメーション用：画像読み込み完了後にアニメーション要素をマウントし、0msから同期スライドイン */}
-      {summonAnim.active && summonAnim.card && summonAnim.isImageReady && (
+      {/* 召喚アニメーション用：画像ペイント完了（rAF同期）後にアニメーションクラスを付与して0msから同期スライドイン */}
+      {summonAnim.active && summonAnim.card && (
         <div className="summon-anim-overlay">
           <div
-            className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${summonAnim.owner === 'blue' ? 'from-bottom' : 'from-top'}`}
+            className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${
+              summonAnim.isAnimating
+                ? summonAnim.owner === 'blue'
+                  ? 'from-bottom'
+                  : 'from-top'
+                : 'summon-anim-standby'
+            }`}
+            style={{
+              opacity: summonAnim.isAnimating ? 1 : 0,
+            }}
           >
             <img
               className="card-bg"
@@ -816,6 +824,8 @@ export default function BattleScreen() {
               alt={summonAnim.card.name || ''}
               loading="eager"
               decoding="sync"
+              onLoad={() => handleSummonImageLoad(summonAnim.requestId)}
+              onError={() => handleSummonImageLoad(summonAnim.requestId)}
               style={{
                 width: '100%',
                 height: '100%',
