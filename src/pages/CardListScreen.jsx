@@ -78,6 +78,20 @@ export default function CardListScreen() {
 
   // --- 仮想スクロール設定 ---
   const listContainerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = listContainerRef.current;
+    if (!el) return undefined;
+    const updateSize = () => {
+      const width = el.clientWidth;
+      setContainerWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // カードを列数（gridCols）ごとにグループ化して行配列を生成
   const cardRows = useMemo(() => {
@@ -89,13 +103,24 @@ export default function CardListScreen() {
     return rows;
   }, [sortedMasterCards, gridCols]);
 
-  // @tanstack/react-virtual による行単位仮想化
+  // 列数とコンテナ幅に応じた正確な1行の高さを事前計算（アスペクト比 1:1.5、gapはuseVirtualizerが管理）
+  const estimatedRowHeight = useMemo(() => {
+    const innerWidth = Math.max(0, containerWidth - 10); // 左右padding 5pxずつ分
+    const safeCols = Math.max(1, gridCols);
+    const cardWidthPx = Math.max(
+      0,
+      (innerWidth - gridGap * (safeCols - 1)) / safeCols
+    );
+    return cardWidthPx > 0 ? cardWidthPx * 1.5 : 140;
+  }, [containerWidth, gridCols, gridGap]);
+
+  // @tanstack/react-virtual による行単位仮想化（事前計算により動的計測負荷を排除）
   const rowVirtualizer = useVirtualizer({
     count: cardRows.length,
     getScrollElement: () => listContainerRef.current,
-    estimateSize: () => 140, // 初期推定行高さ（実測値で自動更新される）
+    estimateSize: () => estimatedRowHeight,
     gap: gridGap,
-    overscan: 2,
+    overscan: 6,
   });
 
   // タイトルを10回クリックでデバッグ全解放モードを起動するイースターエッグ
@@ -303,8 +328,6 @@ export default function CardListScreen() {
             return (
               <div
                 key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={rowVirtualizer.measureElement}
                 className="card-list-grid-3col"
                 style={{
                   position: 'absolute',
@@ -360,6 +383,11 @@ export default function CardListScreen() {
                               objectFit: 'cover',
                               width: '100%',
                               height: '100%',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              borderRadius: 'inherit',
+                              pointerEvents: 'none',
                             }}
                           />
                         )}

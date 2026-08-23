@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
@@ -75,6 +75,23 @@ export default function TournamentExchangeScreen({ switchScreen }) {
   });
 
   const listContainerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = listContainerRef.current;
+    if (!el) return undefined;
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      const roundedWidth = Math.round(rect.width);
+      setContainerWidth((prev) =>
+        Math.abs(prev - roundedWidth) > 1 ? roundedWidth : prev
+      );
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // 交換アイテムを3列ごとに行配列へ分割
   const itemRows = useMemo(() => {
@@ -87,13 +104,22 @@ export default function TournamentExchangeScreen({ switchScreen }) {
     return rows;
   }, []);
 
+  // 3列表示用の正確な1行高さを事前計算（アスペクト比 1:1.5、gapはuseVirtualizerが管理）
+  const estimatedRowHeight = useMemo(() => {
+    const innerWidth = Math.max(0, containerWidth - 10); // 左右padding 5pxずつ分
+    const cols = 3;
+    const gap = 15;
+    const cardWidthPx = Math.max(0, (innerWidth - gap * (cols - 1)) / cols);
+    return cardWidthPx > 0 ? cardWidthPx * 1.5 : 200;
+  }, [containerWidth]);
+
   // @tanstack/react-virtual による行単位仮想化
   const rowVirtualizer = useVirtualizer({
     count: itemRows.length,
     getScrollElement: () => listContainerRef.current,
-    estimateSize: () => 140,
+    estimateSize: () => estimatedRowHeight,
     gap: 15,
-    overscan: 2,
+    overscan: 6,
   });
 
   return (
@@ -137,8 +163,6 @@ export default function TournamentExchangeScreen({ switchScreen }) {
             return (
               <div
                 key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={rowVirtualizer.measureElement}
                 className="card-list-grid-3col"
                 style={{
                   position: 'absolute',

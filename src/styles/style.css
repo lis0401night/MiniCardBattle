@@ -685,7 +685,7 @@ h2 {
 
   position: relative;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: none;
 }
 
 .card-list-grid-3col .card {
@@ -696,11 +696,13 @@ h2 {
   left: 0;
   margin: 0 !important;
   display: block !important;
+  transition: none !important;
 }
 
 @media (hover: hover) {
   .card-list-grid-3col .deck-card-item:hover {
     transform: scale(1.05);
+    transition: transform 0.2s ease-out;
     z-index: 10;
   }
 }

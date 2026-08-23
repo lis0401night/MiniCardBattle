@@ -222,8 +222,9 @@ export default function DeckEditorScreen({ switchScreen }) {
     const el = deckListContainerRef.current;
     if (!el) return undefined;
     const updateSize = () => {
-      const rect = el.getBoundingClientRect();
-      setDeckListSize({ width: rect.width, height: rect.height });
+      const width = el.clientWidth;
+      const height = el.clientHeight;
+      setDeckListSize({ width, height });
     };
     updateSize();
     const observer = new ResizeObserver(updateSize);
@@ -241,7 +242,7 @@ export default function DeckEditorScreen({ switchScreen }) {
           (deckListInnerWidth - deckListGap * (deckListCols - 1)) / deckListCols
         )
       : 0;
-  const deckRowHeightPx = deckCardWidthPx * 1.5 + deckListGap; // .card は padding-bottom:150%で縦横比固定
+  const deckRowHeightPx = deckCardWidthPx * 1.5; // .card は padding-bottom:150%で縦横比固定
 
   const deckListExtraPaddingMax = Math.max(
     0,
@@ -254,6 +255,31 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   // --- 所持カード一覧の仮想スクロール設定 ---
   const masterListContainerRef = useRef(null);
+  const [masterListWidth, setMasterListWidth] = useState(0);
+
+  useEffect(() => {
+    const el = masterListContainerRef.current;
+    if (!el) return undefined;
+    const updateSize = () => {
+      const width = el.clientWidth;
+      setMasterListWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // デッキ内の各カード枚数をO(1)で取得するための事前集計マップ（スクロール高速化）
+  const deckCounts = useMemo(() => {
+    const counts = {};
+    (deckSelection || []).forEach((c) => {
+      if (c && c.id) {
+        counts[c.id] = (counts[c.id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [deckSelection]);
 
   // 所持カードを列数（gridCols）ごとにグループ化して行配列を生成
   const masterCardRows = useMemo(() => {
@@ -265,10 +291,16 @@ export default function DeckEditorScreen({ switchScreen }) {
     return rows;
   }, [sortedMasterCards, gridCols]);
 
-  // 推定行高さの計算（カードの縦横比1.5 + ギャップ）
+  // 推定行高さの計算（CardListScreenと100%完全統一：カードの縦横比1.5、gapはuseVirtualizerが管理）
   const estimatedMasterRowHeight = useMemo(() => {
-    return deckRowHeightPx > 0 ? deckRowHeightPx : 120;
-  }, [deckRowHeightPx]);
+    const innerWidth = Math.max(0, masterListWidth - 10);
+    const safeCols = Math.max(1, gridCols);
+    const cardWidthPx = Math.max(
+      0,
+      (innerWidth - gridGap * (safeCols - 1)) / safeCols
+    );
+    return cardWidthPx > 0 ? cardWidthPx * 1.5 : 140;
+  }, [masterListWidth, gridCols, gridGap]);
 
   // @tanstack/react-virtual による所持カード一覧の行単位仮想化
   const masterRowVirtualizer = useVirtualizer({
@@ -276,7 +308,7 @@ export default function DeckEditorScreen({ switchScreen }) {
     getScrollElement: () => masterListContainerRef.current,
     estimateSize: () => estimatedMasterRowHeight,
     gap: gridGap,
-    overscan: 2,
+    overscan: 6,
   });
 
   const deck = GameState.decks?.[GameState.currentDeckIndex] || {};
@@ -976,10 +1008,6 @@ export default function DeckEditorScreen({ switchScreen }) {
                       <div
                         className={`card blue${rarityClass}`}
                         style={{
-                          position: 'relative',
-                          display: 'block',
-                          overflow: 'hidden',
-                          padding: 0,
                           opacity: isBanned ? '0.4' : '1',
                           border: isBanned ? '3px solid #ef4444' : undefined,
                           boxShadow: isBanned ? '0 0 10px #ef4444' : undefined,
@@ -1234,8 +1262,6 @@ export default function DeckEditorScreen({ switchScreen }) {
                     return (
                       <div
                         key={virtualRow.key}
-                        data-index={virtualRow.index}
-                        ref={masterRowVirtualizer.measureElement}
                         className="card-list-grid-3col"
                         style={{
                           position: 'absolute',
@@ -1252,9 +1278,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                           const ownedCount = inventory[template.id] || 0;
                           const isOwned = ownedCount > 0;
 
-                          const inDeckCount = deckSelection.filter(
-                            (c) => c.id === template.id
-                          ).length;
+                          const inDeckCount = deckCounts[template.id] || 0;
                           const remaining = ownedCount - inDeckCount;
                           const canAdd =
                             isOwned &&
@@ -1297,11 +1321,7 @@ export default function DeckEditorScreen({ switchScreen }) {
                               <div
                                 className={`card blue${rarityClass}`}
                                 style={{
-                                  position: 'relative',
-                                  display: 'block',
                                   opacity,
-                                  overflow: 'hidden',
-                                  padding: 0,
                                   border: isBanned
                                     ? '3px solid #ef4444'
                                     : undefined,
