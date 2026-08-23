@@ -1,9 +1,5 @@
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import {
-  CHARACTERS,
-  getPlayerIconPath,
-  getSkinImage,
-} from '../../utils/constants/characters.js';
+import { CHARACTERS } from '../../utils/constants/characters.js';
 import {
   appendVersionQuery,
   MAX_CARD_COPIES,
@@ -98,16 +94,14 @@ export default function ExchangeItemCard({
     originalImgUrl = getPlaymatImgUrl(masterClass.id || item.id, false);
     displayName = masterClass.name || item.name;
   } else if (isIcon) {
-    imgUrl = getPlayerIconPath({ icon: item.id });
+    imgUrl = appendVersionQuery(`assets/icons/icon_${item.id}.webp`);
     originalImgUrl = imgUrl;
   } else {
     // スキンの場合（一覧はサムネイル、詳細はフルサイズ）
-    imgUrl =
-      getSkinImage(item.charId || item.id, item.id, 'image', true) ||
-      appendVersionQuery(`assets/characters/char_${item.id}_thumb.webp`);
-    originalImgUrl =
-      getSkinImage(item.charId || item.id, item.id, 'image', false) ||
-      appendVersionQuery(`assets/characters/char_${item.id}.webp`);
+    imgUrl = appendVersionQuery(`assets/characters/char_${item.id}_thumb.webp`);
+    originalImgUrl = appendVersionQuery(
+      `assets/characters/char_${item.id}.webp`
+    );
   }
 
   imgUrl = appendVersionQuery(imgUrl);
@@ -245,33 +239,15 @@ export default function ExchangeItemCard({
             >
               {masterClass.power}
             </div>
+            {window.renderSkillTag && (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: window.renderSkillTag(masterClass),
+                }}
+              ></div>
+            )}
           </>
         )}
-      </div>
-
-      <div
-        className="card-name"
-        style={{
-          fontSize: '0.8rem',
-          marginTop: '4px',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          color: '#cbd5e1',
-          textAlign: 'center',
-        }}
-      >
-        {displayName}
-      </div>
-      <div
-        style={{
-          fontSize: '0.75rem',
-          color: isUnlocked ? '#94a3b8' : canAfford ? '#facc15' : '#ef4444',
-          fontWeight: 'bold',
-          textAlign: 'center',
-        }}
-      >
-        {isUnlocked ? '交換完了' : `${item.cost} Pt`}
       </div>
     </div>
   );
