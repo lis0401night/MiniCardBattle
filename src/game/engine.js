@@ -2848,18 +2848,14 @@ export function applyLeaderSkillLogic(
         damageCard(state, oppOwner, i, 4, 'android_high_volley', events, true);
       }
     }
-    // 敵リーダーに2ダメージ
-    damageLeader(state, oppOwner, 2, 'android_high_volley', events);
+    // 敵リーダーに4ダメージ
+    damageLeader(state, oppOwner, 4, 'android_high_volley', events);
   } else if (action === 'dragon_high_ritual') {
-    // ===== 龍神演義 =====
-    // 効果①：場のすべてのカード（両陣営）に2ダメージ（免疫は無効）
+    // ===== 焦熱のプレリュード =====
+    // 効果①：敵の場のすべてのカードに2ダメージ（免疫は無効）
     events.push({ type: 'leader_skill', skill: action, side: owner });
     for (let i = 0; i < 3; i++) {
-      // 自分の場のカードにも2ダメージ
-      if (board[i]) {
-        damageCard(state, owner, i, 2, 'dragon_high_ritual', events, true);
-      }
-      // 相手の場のカードにも2ダメージ
+      // 相手の場のカードに2ダメージ
       if (eBoard[i]) {
         damageCard(state, oppOwner, i, 2, 'dragon_high_ritual', events, true);
       }

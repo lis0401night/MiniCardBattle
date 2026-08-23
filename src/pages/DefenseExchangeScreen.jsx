@@ -155,17 +155,17 @@ export default function DefenseExchangeScreen() {
   });
 
   const listContainerRef = useRef(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(() => {
+    if (typeof window === 'undefined') return 400;
+    return Math.min(Math.round(window.innerWidth * 0.95), 440);
+  });
 
   useEffect(() => {
     const el = listContainerRef.current;
     if (!el) return undefined;
     const updateSize = () => {
-      const rect = el.getBoundingClientRect();
-      const roundedWidth = Math.round(rect.width);
-      setContainerWidth((prev) =>
-        Math.abs(prev - roundedWidth) > 1 ? roundedWidth : prev
-      );
+      const width = el.clientWidth;
+      setContainerWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
     };
     updateSize();
     const observer = new ResizeObserver(updateSize);
@@ -200,6 +200,11 @@ export default function DefenseExchangeScreen() {
     gap: 15,
     overscan: 6,
   });
+
+  // 初回マウント時および幅変更時に仮想スクロールキャッシュを即時再計算
+  useEffect(() => {
+    rowVirtualizer.measure();
+  }, [rowVirtualizer, containerWidth, estimatedRowHeight]);
 
   return (
     <CompactScreenLayout
@@ -347,37 +352,27 @@ export default function DefenseExchangeScreen() {
                         }
                       }}
                     >
-                      <div
-                        className={`card blue${rarityClass}`}
-                        style={{
-                          width: '80px',
-                          height: '120px',
-                          position: 'relative',
-                          display: 'block',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          className="card-bg"
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            position: 'relative',
-                          }}
-                        >
+                      <div className={`card blue${rarityClass}`}>
+                        {imgUrl && (
                           <img
+                            className="card-bg"
                             src={imgUrl}
                             alt={itemObj.name}
                             loading="lazy"
+                            decoding="async"
                             style={{
-                              width: '100%',
-                              height: '100%',
                               objectFit: 'cover',
                               objectPosition: 'top center',
-                              display: 'block',
+                              width: '100%',
+                              height: '100%',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              borderRadius: 'inherit',
+                              pointerEvents: 'none',
                             }}
                           />
-                        </div>
+                        )}
 
                         {itemInfo.type === 'card' && (
                           <div

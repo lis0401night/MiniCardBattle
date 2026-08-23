@@ -107,14 +107,14 @@ export const LEADER_SKILLS = {
   // --- 高難易度用リーダースキル ---
   android_high_volley: {
     name: '一斉射撃',
-    desc: '(SP:4) 敵の場のすべてのカードに4ダメージ、敵リーダーに2ダメージを与える。',
-    cost: 4,
+    desc: '(SP:3) 敵の場のすべてのカードに4ダメージ、敵リーダーに4ダメージを与える。',
+    cost: 3,
     action: 'android_high_volley',
   },
   dragon_high_ritual: {
     name: '焦熱のプレリュード',
-    desc: '(SP:4) 場のすべてのカードに2ダメージ、自分のレーンに「イグニス(P:7/伝説)」を1体配置する。',
-    cost: 4,
+    desc: '(SP:3) 敵の場のすべてのカードに2ダメージ、自分のレーンに「イグニス(P:7/伝説)」を1体配置する。',
+    cost: 3,
     action: 'dragon_high_ritual',
   },
   evil_march: {
