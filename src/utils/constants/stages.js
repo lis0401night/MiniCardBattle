@@ -1,4 +1,5 @@
 import { GameState } from '../../state/gameState.js';
+import { appendVersionQuery } from './config.js';
 
 /**
  * Mini Card Battle - Stage Data
@@ -75,4 +76,16 @@ export function resolveBattleStageId({
     enemyConfig?.id?.replace('_high', '') ||
     'android'
   );
+}
+
+/**
+ * ステージ背景画像のURLを取得する（キャッシュバスティング・サムネイル対応）
+ * @param {string} stageId - ステージID（例: 'android', 'dragon'）
+ * @param {boolean} [useThumb=false] - サムネイル画像（_thumb.webp）を取得するかどうか
+ * @returns {string} 画像パス
+ */
+export function getStageImgUrl(stageId, useThumb = false) {
+  if (!stageId || stageId === 'random') return '';
+  const suffix = useThumb ? '_thumb.webp' : '.webp';
+  return appendVersionQuery(`assets/stages/stage_${stageId}${suffix}`);
 }

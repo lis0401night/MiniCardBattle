@@ -40,7 +40,12 @@ import {
   HANDICAP_TYPES,
 } from '../../utils/constants/fortuneHandicaps.js';
 import { LEADER_SKILLS } from '../../utils/constants/leaderSkills.js';
-import { STAGES, resolveBattleStageId } from '../../utils/constants/stages.js';
+import {
+  STAGES,
+  resolveBattleStageId,
+  getStageImgUrl,
+} from '../../utils/constants/stages.js';
+import { getPlaymatImgUrl } from '../../utils/constants/playmats.js';
 import { toDeckObjects } from '../../utils/deckUtils.js';
 import {
   checkIsFreeMode,
@@ -405,14 +410,24 @@ export function prepareBattle() {
         ? toDeckObjects(snapshotSource, GameState.premiumCards)
         : null;
 
-    const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
+    // 対戦で使用される初期デッキのカードに加え、スキルやリーダースキルで生成される全トークンカードも事前ロード対象に含める
+    const tokenCards = CARD_MASTER.filter(
+      (c) => c.isToken || (c.id && c.id.startsWith('token_'))
+    );
+    const allCards = [
+      ...GameState.playerDeck,
+      ...GameState.enemyDeck,
+      ...tokenCards,
+    ];
     const cardUrls = [];
     allCards.forEach((c) => {
       if (!c) return;
-      // フルサイズ画像および盤面表示用サムネイル画像の両方を事前ロード対象に追加
-      if (c.imgUrl) cardUrls.push(c.imgUrl);
+      // フルサイズ画像および盤面表示用サムネイル画像の両方を事前ロード対象に確実に追加
+      const fullUrl = getCardImgUrl(c, false);
       const thumbUrl = getCardImgUrl(c, true);
+      if (fullUrl) cardUrls.push(fullUrl);
       if (thumbUrl) cardUrls.push(thumbUrl);
+      if (c.imgUrl) cardUrls.push(c.imgUrl);
 
       const lookupId = c.baseId || c.id;
       // プレミアム版が存在するカードについては、設定や同期状況に関わらず通常版・プレミアム版双方の画像URL（フル＆サムネ）を事前ロード対象に追加
@@ -443,6 +458,25 @@ export function prepareBattle() {
     // 全VFX演出画像（スキル演出、カットイン、ジョーカー演出等）
     const vfxUrls = getAllVfxImageUrls();
 
+    // 対戦で使用するステージ背景画像（フルサイズ）
+    const battleStageId = resolveBattleStageId();
+    const stageImageUrl = getStageImgUrl(battleStageId, false);
+    const stageUrls = stageImageUrl ? [stageImageUrl] : [];
+
+    // 対戦で使用する自プレイヤーおよび敵のプレイマット画像（フルサイズ）
+    const playmatUrls = [];
+    const playerPlaymatId =
+      GameState.selectedPlaymatId || GameState.playerConfig?.playmat;
+    if (playerPlaymatId) {
+      const playerPmUrl = getPlaymatImgUrl(playerPlaymatId, false);
+      if (playerPmUrl) playmatUrls.push(playerPmUrl);
+    }
+    const enemyPlaymatId = GameState.enemyConfig?.playmat;
+    if (enemyPlaymatId) {
+      const enemyPmUrl = getPlaymatImgUrl(enemyPlaymatId, false);
+      if (enemyPmUrl) playmatUrls.push(enemyPmUrl);
+    }
+
     // 重複を排除した対戦用全画像アセットURL配列
     const battleImageUrls = Array.from(
       new Set([
@@ -450,6 +484,8 @@ export function prepareBattle() {
         ...playerLeaderUrls,
         ...enemyLeaderUrls,
         ...vfxUrls,
+        ...stageUrls,
+        ...playmatUrls,
       ])
     );
 
@@ -549,22 +585,37 @@ export function prepareBattle() {
       return;
     }
 
+    // デコード済みHTMLImageElementを対戦中保持する配列を初期化（GCによるテクスチャ解放を防止）
+    GameState.battleImageCache = [];
+
     // iOS (WebKit) の瞬間メモリスパイクを防止するため、画像の同時デコード数を制限する
     const IMG_CONCURRENCY_LIMIT = 4;
     let imgIndex = 0;
-    const loadNextImage = () => {
+    const loadNextImage = async () => {
       if (imgIndex >= battleImageUrls.length) return;
       const url = battleImageUrls[imgIndex++];
       const img = new Image();
-      img.onload = () => {
-        updateProgress();
-        loadNextImage();
-      };
-      img.onerror = () => {
-        updateProgress();
-        loadNextImage();
-      };
       img.src = url;
+      if (GameState.battleImageCache) {
+        GameState.battleImageCache.push(img);
+      }
+
+      try {
+        // img.decode() でGPU/メモリへのピクセル展開（デコード）を確実に完了させる
+        if (typeof img.decode === 'function') {
+          await img.decode();
+        } else {
+          await new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        }
+      } catch {
+        // 画像破損やデコード失敗時も対戦進行をブロックしない
+      } finally {
+        updateProgress();
+        loadNextImage();
+      }
     };
     for (
       let i = 0;

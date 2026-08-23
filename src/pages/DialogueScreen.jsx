@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { showNextDialogue, skipStoryDialogue } from '../services/uiDialogue.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
-import { STAGES } from '../utils/constants/stages.js';
+import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
 import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
 
 /**
@@ -73,49 +73,59 @@ export default function DialogueScreen() {
     }
   };
 
-  let bgName = 'background_select.webp';
+  let bgUrl = appendVersionQuery('assets/backgrounds/background_select.webp');
   if (GameState.gameMode === 'tournament') {
     if (GameState.appState === 'pre_dialogue') {
-      bgName = 'background_tournament01.webp';
+      bgUrl = appendVersionQuery(
+        'assets/backgrounds/background_tournament01.webp'
+      );
     } else {
-      bgName = 'background_tournament02.webp';
+      bgUrl = appendVersionQuery(
+        'assets/backgrounds/background_tournament02.webp'
+      );
     }
   } else if (
     GameState.gameMode === 'battle_dungeon' ||
     GameState.gameMode === 'dungeon'
   ) {
     if (GameState.appState === 'dungeon_intro_dialogue') {
-      bgName = 'background_challenge02.webp';
+      bgUrl = appendVersionQuery(
+        'assets/backgrounds/background_challenge02.webp'
+      );
     } else {
-      bgName = 'background_challenge.webp';
+      bgUrl = appendVersionQuery(
+        'assets/backgrounds/background_challenge.webp'
+      );
     }
   } else if (GameState.gameMode === 'event_satan_high') {
-    bgName = 'background_satan.webp';
+    bgUrl = getStageImgUrl('satan', false);
     // 高難易度モード（通常・イベント）用の背景
   } else if (
     GameState.gameMode === 'high_difficulty' ||
     checkIsHighDiffMode(GameState.gameMode)
   ) {
-    bgName = 'background_highdifficulty.webp';
+    bgUrl = appendVersionQuery(
+      'assets/backgrounds/background_highdifficulty.webp'
+    );
   } else if (checkIsFortuneMode(GameState.gameMode)) {
     // 運命の邂逅イベント：対戦相手固有のステージ背景を優先参照する。
     // 背景画像はCSS背景のためonErrorで救済できない。STAGESに定義済みのIDのみ採用する。
-    const stageId =
-      [
-        GameState.selectedStageId,
-        GameState.enemyConfig?.stageId,
-        GameState.enemyConfig?.id,
-      ].find((candidateId) => candidateId && STAGES?.[candidateId]) ||
-      'fortune01';
-    bgName = `background_${stageId}.webp`;
+    const stageId = [
+      GameState.selectedStageId,
+      GameState.enemyConfig?.stageId,
+      GameState.enemyConfig?.id,
+    ].find((candidateId) => candidateId && STAGES?.[candidateId]);
+    bgUrl = stageId
+      ? getStageImgUrl(stageId, false)
+      : appendVersionQuery('assets/backgrounds/background_fortune01.webp');
   } else if (GameState.gameMode === 'defense_attack') {
-    bgName = 'background_defense.webp';
+    bgUrl = appendVersionQuery('assets/backgrounds/background_defense.webp');
   } else if (GameState.gameMode && GameState.gameMode.startsWith('story')) {
     // 魔王城到着後（第6戦の勝利後、すなわち第7戦ゼノン以降）は background_story02.webp を使用
     if (GameState.battleCount >= 7) {
-      bgName = 'background_story02.webp';
+      bgUrl = appendVersionQuery('assets/backgrounds/background_story02.webp');
     } else {
-      bgName = 'background_story01.webp';
+      bgUrl = appendVersionQuery('assets/backgrounds/background_story01.webp');
     }
   }
 
@@ -124,7 +134,7 @@ export default function DialogueScreen() {
       id="screen-dialogue"
       className="screen active"
       style={{
-        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${appendVersionQuery(`assets/backgrounds/${bgName}`)}')`,
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.9)), url('${bgUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         position: 'relative',

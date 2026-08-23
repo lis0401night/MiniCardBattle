@@ -3,7 +3,7 @@
  */
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.9.10';
+export const GAME_VERSION = '0.3.9.11';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -309,7 +309,7 @@ export function getScreenBackgroundStyle(imagePath) {
  */
 export function getStageBackgroundStyle(stageId) {
   return {
-    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.3)), url('${appendVersionQuery(`assets/backgrounds/background_${stageId}.webp`)}')`,
+    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.3)), url('${appendVersionQuery(`assets/stages/stage_${stageId}.webp`)}')`,
   };
 }
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;

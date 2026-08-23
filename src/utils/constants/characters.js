@@ -1409,9 +1409,15 @@ CHARACTERS.satan.event_high = {
  * @param {string|Object} charIdOrObj - キャラクターIDまたはキャラクターオブジェクト
  * @param {string} skinId - スキンID ('default', 'summer' etc.)
  * @param {string} type - 画像タイプ ('image', 'imageLose', 'icon', 'iconDamage')
+ * @param {boolean} [useThumb=false] - サムネイル画像（_thumb.webp）を取得するかどうか
  * @returns {string} 画像パス
  */
-export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
+export function getSkinImage(
+  charIdOrObj,
+  skinId = 'default',
+  type = 'image',
+  useThumb = false
+) {
   const char =
     typeof charIdOrObj === 'string' ? CHARACTERS[charIdOrObj] : charIdOrObj;
   if (!char) return '';
@@ -1422,8 +1428,18 @@ export function getSkinImage(charIdOrObj, skinId = 'default', type = 'image') {
     return skin[type] || char[type] || '';
   };
 
-  const path = getRawPath();
-  return path ? appendVersionQuery(path) : '';
+  let path = getRawPath();
+  if (!path) return '';
+
+  if (
+    useThumb &&
+    path.includes('assets/characters/') &&
+    !path.includes('_thumb.webp')
+  ) {
+    path = path.replace('.webp', '_thumb.webp');
+  }
+
+  return appendVersionQuery(path);
 }
 
 export { BOSS_CHARACTER_IDS };

@@ -8,6 +8,8 @@ sharp.cache(false);
 const targetDirs = [
   { dir: './public/assets/cards', prefix: 'card_' },
   { dir: './public/assets/characters', prefix: 'char_' },
+  { dir: './public/assets/boards', prefix: 'board_' },
+  { dir: './public/assets/stages', prefix: 'stage_' },
 ];
 
 async function generateThumbnails() {

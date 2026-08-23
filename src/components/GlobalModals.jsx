@@ -43,7 +43,7 @@ import {
 } from '../utils/constants/config.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
-import { STAGES } from '../utils/constants/stages.js';
+import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
 
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { syncUserProfile } from '../utils/apiUtils.js';
@@ -56,7 +56,11 @@ import {
   getPlayerIconPath,
   getSkinImage,
 } from '../utils/constants/characters.js';
-import { ownedPlaymats, PLAYMAT_MASTER } from '../utils/constants/playmats.js';
+import {
+  ownedPlaymats,
+  PLAYMAT_MASTER,
+  getPlaymatImgUrl,
+} from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
@@ -631,7 +635,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           type: 'stage',
           name,
           id,
-          image: `assets/backgrounds/background_${id}.webp`,
+          image: getStageImgUrl(id, false),
           canClose: false,
         });
         triggerCloseTimer('stage', id);
@@ -2124,7 +2128,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         }}
                       >
                         <img
-                          src={appendVersionQuery(p.image)}
+                          src={getPlaymatImgUrl(p, true)}
                           style={{
                             width: '100%',
                             height: '100%',

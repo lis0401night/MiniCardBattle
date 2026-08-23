@@ -161,7 +161,7 @@ export default function CharacterSelectScreen() {
               ? 'default'
               : GameState.playerSkins?.[char.id] || 'default';
             const bgImage = getSkinImage
-              ? getSkinImage(char, skinIdToUse, 'image')
+              ? getSkinImage(char, skinIdToUse, 'image', true)
               : char.image;
             return (
               <div

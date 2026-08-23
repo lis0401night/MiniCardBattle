@@ -844,6 +844,16 @@ export function cleanupBattleState() {
   // 5. デコード済みボイスバッファの完全解放（メニュー巡回中の生PCMメモリ常駐をゼロにする）
   cleanupVoiceBuffers();
 
+  // 6. デコード済み対戦用画像キャッシュ（HTMLImageElement）の完全解放（GC回収とWebKitテクスチャパージを促進）
+  if (Array.isArray(GameState.battleImageCache)) {
+    GameState.battleImageCache.forEach((img) => {
+      if (img) {
+        img.src = '';
+      }
+    });
+  }
+  GameState.battleImageCache = null;
+
   // ※ BGMバッファは sounds.js の LRUキャッシュ（MAX_CACHED_BGMS = 2）によって
   //    自動管理・維持されるため、ここでの明示的パージは行わない（再戦時の再デコード負荷を防止）。
 }

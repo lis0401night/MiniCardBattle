@@ -12,6 +12,8 @@ import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import { VFX_DATA } from './constants/vfx.js';
 import { UI_IMAGES } from './constants/uiImages.js';
 import { getAllVoicePaths } from './constants/voices.js';
+import { STAGES, getStageImgUrl } from './constants/stages.js';
+import { PLAYMAT_MASTER, getPlaymatImgUrl } from './constants/playmats.js';
 
 let isPreloaded = false;
 
@@ -148,6 +150,36 @@ export async function preloadAllGameResources(onProgress) {
     'assets/icons/icon_exclamation.webp',
   ];
   extraUiParts.forEach((part) => asyncUrlsToLoad.add(appendVersionQuery(part)));
+
+  // C. キャラクター選択用立ち絵サムネイル画像（起動完了後に静かに事前キャッシュ）
+  Object.values(CHARACTERS).forEach((char) => {
+    if (char) {
+      const defaultThumb = getSkinImage(char, 'default', 'image', true);
+      if (defaultThumb) asyncUrlsToLoad.add(defaultThumb);
+      if (char.skins) {
+        Object.keys(char.skins).forEach((skinKey) => {
+          const skinThumb = getSkinImage(char, skinKey, 'image', true);
+          if (skinThumb) asyncUrlsToLoad.add(skinThumb);
+        });
+      }
+    }
+  });
+
+  // D. ステージ選択用背景サムネイル画像（起動完了後に静かに事前キャッシュ）
+  Object.keys(STAGES).forEach((stageId) => {
+    if (stageId && stageId !== 'random') {
+      const stageThumb = getStageImgUrl(stageId, true);
+      if (stageThumb) asyncUrlsToLoad.add(stageThumb);
+    }
+  });
+
+  // E. プレイマット選択用サムネイル画像（起動完了後に静かに事前キャッシュ）
+  PLAYMAT_MASTER.forEach((pm) => {
+    if (pm) {
+      const pmThumb = getPlaymatImgUrl(pm, true);
+      if (pmThumb) asyncUrlsToLoad.add(pmThumb);
+    }
+  });
 
   // BGM と SE
   Object.values(SE_PATHS).forEach((path) => {

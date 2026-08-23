@@ -140,6 +140,8 @@ export const GameState = {
     sacrifice_count: 0,
     power_10: false,
   },
+  // 対戦用画像のデコード済み参照キャッシュ（GC破棄防止用・対戦終了時に完全解放）
+  battleImageCache: null,
 };
 
 // Global fallback for browser debugging

@@ -4,7 +4,11 @@ import BackButton from '../components/BackButton.jsx';
 import { confirmStageSelect, goBackFromStage } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
-import { STAGES, canShowUnlockableStage } from '../utils/constants/stages.js';
+import {
+  STAGES,
+  canShowUnlockableStage,
+  getStageImgUrl,
+} from '../utils/constants/stages.js';
 import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
 
 export default function StageSelectScreen() {
@@ -113,7 +117,7 @@ export default function StageSelectScreen() {
                 key={stage.id}
                 className="char-card"
                 style={{
-                  backgroundImage: `url('${appendVersionQuery(`assets/backgrounds/background_${stage.id}.webp`)}')`,
+                  backgroundImage: `url('${getStageImgUrl(stage.id, true)}')`,
                 }}
                 onClick={() => handleSelect(stage.id)}
               >

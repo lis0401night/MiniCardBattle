@@ -5,6 +5,7 @@
  * 基本プレイマットは手書きで定義し、スキン系プレイマットは
  * スキンマスタ（skins.js）から自動生成する。
  */
+import { appendVersionQuery } from './config.js';
 import { SKIN_MASTER, buildPlaymatId } from './skins.js';
 
 // ---------------------------------------------------------------------------
@@ -152,4 +153,32 @@ export let ownedPlaymats = []; // ['android', 'dragon', ...]
  */
 export function setOwnedPlaymats(newList) {
   ownedPlaymats = newList;
+}
+
+/**
+ * プレイマットの画像パスを取得する（キャッシュバスティング・サムネイル対応）
+ * @param {string|Object} playmatOrId - プレイマットIDまたはプレイマットオブジェクト
+ * @param {boolean} [useThumb=false] - サムネイル画像（_thumb.webp）を取得するかどうか
+ * @returns {string} 画像パス
+ */
+export function getPlaymatImgUrl(playmatOrId, useThumb = false) {
+  if (!playmatOrId) return '';
+  let path = '';
+  if (typeof playmatOrId === 'object' && playmatOrId.image) {
+    path = playmatOrId.image;
+  } else {
+    const pm = PLAYMAT_MASTER.find((p) => p.id === playmatOrId);
+    path = pm
+      ? pm.image
+      : `assets/boards/board_${String(playmatOrId).replace('pm_', '')}.webp`;
+  }
+  if (!path) return '';
+  if (
+    useThumb &&
+    path.includes('assets/boards/') &&
+    !path.includes('_thumb.webp')
+  ) {
+    path = path.replace('.webp', '_thumb.webp');
+  }
+  return appendVersionQuery(path);
 }

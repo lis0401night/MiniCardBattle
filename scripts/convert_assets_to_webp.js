@@ -7,6 +7,7 @@ sharp.cache(false);
 
 const targetDirs = [
   './public/assets/backgrounds',
+  './public/assets/stages',
   './public/assets/characters',
   './public/assets/icons',
   './public/assets/cards',

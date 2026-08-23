@@ -12,7 +12,10 @@ import {
   TOURNAMENT_TOTAL_POINTS_KEY,
   appendVersionQuery,
 } from '../utils/constants/config.js';
-import { PLAYMAT_MASTER } from '../utils/constants/playmats.js';
+import {
+  PLAYMAT_MASTER,
+  getPlaymatImgUrl,
+} from '../utils/constants/playmats.js';
 import { getCardImgUrl, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
@@ -235,18 +238,19 @@ export default function TournamentExchangeScreen({ switchScreen }) {
                     displayName = masterClass.name || item.name;
                     displayDesc = masterClass.flavor || item.description;
                   } else if (isPlaymat) {
-                    imgUrl =
-                      masterClass.image ||
-                      `assets/boards/board_${item.id.replace('pm_', '')}.webp`;
-                    originalImgUrl = imgUrl;
+                    imgUrl = getPlaymatImgUrl(masterClass.id || item.id, true);
+                    originalImgUrl = getPlaymatImgUrl(
+                      masterClass.id || item.id,
+                      false
+                    );
                     displayName = masterClass.name || item.name;
                   } else if (isIcon) {
                     imgUrl = `assets/icons/icon_${item.id}.webp`;
                     originalImgUrl = imgUrl;
                   } else {
-                    // スキンの場合
-                    imgUrl = `assets/characters/char_${item.id}.webp`;
-                    originalImgUrl = imgUrl;
+                    // スキンの場合（一覧はサムネイル、詳細はフルサイズ）
+                    imgUrl = `assets/characters/char_${item.id}_thumb.webp`;
+                    originalImgUrl = `assets/characters/char_${item.id}.webp`;
                   }
 
                   imgUrl = appendVersionQuery(imgUrl);

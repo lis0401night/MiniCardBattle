@@ -98,7 +98,22 @@ export default function BattleScreen() {
       setCardDetailColor(color);
     });
 
-    setSummonAnimationHook((card, owner) => {
+    setSummonAnimationHook(async (card, owner) => {
+      // 召喚カードのフルサイズ画像デコードを待機（未キャッシュ時でも確実に画像を表示させるためのセーフティ）
+      if (card) {
+        const fullImgUrl = getCardImgUrl(card, false);
+        if (fullImgUrl) {
+          const preImg = new Image();
+          preImg.src = fullImgUrl;
+          if (typeof preImg.decode === 'function') {
+            await Promise.race([
+              preImg.decode().catch(() => {}),
+              new Promise((res) => setTimeout(res, 150)),
+            ]);
+          }
+        }
+      }
+
       return new Promise((resolve) => {
         setSummonAnim({ active: true, card, owner });
         setTimeout(() => {
