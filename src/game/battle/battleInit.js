@@ -69,6 +69,7 @@ import {
   registerDecodedBgm,
   SOUNDS,
 } from '../../utils/sounds.js';
+import { loadAllVoices } from '../../utils/constants/voices.js';
 import { isTutorialMode, runTutorialFlow } from '../tutorialEngine.js';
 import { drawCard, playCard } from './battleCombat.js';
 import {
@@ -497,6 +498,11 @@ export function prepareBattle() {
         finishLoading();
       }
     };
+
+    // --- カードボイスの事前デコード（バルトアンデルス等の変身スキルに対応するため全ボイスを展開。4並列制限でスパイクを防止） ---
+    loadAllVoices().catch((e) => {
+      console.warn('Failed to preload battle voices:', e);
+    });
 
     // --- BGMのロードとデコード処理 ---
     const { bgmKey } = resolveStageAndBgm();

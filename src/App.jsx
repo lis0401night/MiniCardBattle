@@ -197,6 +197,15 @@ const SCREEN_COMPONENTS = {
   'screen-debug-battle': DebugBattleScreen,
 };
 
+/** 対戦演出・Overlayコンポーネントが必要な画面IDのセット */
+const BATTLE_RELATED_SCREENS = new Set([
+  'screen-battle',
+  'screen-battle-dungeon',
+  'screen-debug-battle',
+  'screen-dialogue',
+  'screen-continue',
+]);
+
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('screen-title');
   const [loadingText, setLoadingText] = useState('LOADING...');
@@ -287,6 +296,11 @@ export default function App() {
   // 未登録の画面IDの場合はタイトル画面をフォールバック表示
   const FinalScreenComponent = ScreenComponent || TitleScreen;
 
+  // 対戦画面、または対戦マッチング画面表示中のみ対戦用Overlay（VFX、カットイン、ダメージポップアップ等）をマウント
+  // メニュー画面や選択画面では完全にアンマウントし、WebKitのDOM・テクスチャメモリを確実に解放する
+  const isBattleActive =
+    BATTLE_RELATED_SCREENS.has(currentScreen) || matchingState.show;
+
   return (
     <>
       <FinalScreenComponent
@@ -298,10 +312,14 @@ export default function App() {
         rulesVisible={rulesVisible}
         setRulesVisible={setRulesVisible}
       />
-      <DamageOverlay />
-      <RewardOverlay />
-      <CutinOverlay />
-      <VfxOverlay />
+      {isBattleActive && (
+        <>
+          <DamageOverlay />
+          <RewardOverlay />
+          <CutinOverlay />
+          <VfxOverlay />
+        </>
+      )}
       <div id="fade-overlay" className="fade-overlay"></div>
       {matchingState.show && (
         <MatchingScreen

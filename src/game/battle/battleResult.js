@@ -33,6 +33,7 @@ import {
   incrementStat,
 } from '../../utils/constants/achievements.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../../utils/sounds.js';
+import { cleanupVoiceBuffers } from '../../utils/constants/voices.js';
 import { cleanupTutorial, handleTutorialEnd } from '../tutorialEngine.js';
 import {
   PLAYER_TALKS,
@@ -839,6 +840,9 @@ export function cleanupBattleState() {
     clearTimeout(GameState.longPressTimer);
     GameState.longPressTimer = null;
   }
+
+  // 5. デコード済みボイスバッファの完全解放（メニュー巡回中の生PCMメモリ常駐をゼロにする）
+  cleanupVoiceBuffers();
 
   // ※ BGMバッファは sounds.js の LRUキャッシュ（MAX_CACHED_BGMS = 2）によって
   //    自動管理・維持されるため、ここでの明示的パージは行わない（再戦時の再デコード負荷を防止）。

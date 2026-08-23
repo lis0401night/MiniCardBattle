@@ -3,9 +3,9 @@ import {
   SE_PATHS,
   shouldSkipAudioPreload,
   loadSE,
-  loadVoice,
   loadBgm,
   audioCtx,
+  resolveAssetPath,
 } from './sounds.js';
 import { appendVersionQuery } from './constants/config.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
@@ -195,8 +195,9 @@ export async function preloadAllGameResources(onProgress) {
             resolve();
           }
         } else if (isVoice) {
-          // カードボイスの場合は Web Audio API で事前デコードして voiceBuffers に常駐キャッシュする
-          loadVoice(url).then(resolve).catch(resolve);
+          // 起動時は音声ファイルを fetch してブラウザ/ServiceWorkerキャッシュへ保存（HTTPキャッシュ）するのみとし、
+          // RAMへの生PCMデコード展開は対戦開始時（prepareBattle）まで遅延させて起動時常駐メモリを削減する
+          fetch(resolveAssetPath(url)).then(resolve).catch(resolve);
         } else {
           // BGM（タイトルBGMなど）の場合は、Web Audio API での事前デコードと HTML5 Audio 双方をロードする
           const bgmKey = Object.keys(AUDIO_INSTANCES).find((k) => {

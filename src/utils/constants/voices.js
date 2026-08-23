@@ -177,6 +177,54 @@ export function getAllVoicePaths() {
 // ボイス再生用の関数
 export const voiceAudioCache = {};
 
+/**
+ * 全カードボイスをWeb Audio APIで非同期デコードし、voiceBuffersにキャッシュする（対戦開始時用）
+ * バルトアンデルス等の変身スキルに対応するため全ボイスを展開するが、
+ * 瞬間的なCPU/メモリのスパイクを防止するため同時実行数を4並列に制限して順次デコードする。
+ *
+ * @returns {Promise<void>}
+ */
+export async function loadAllVoices() {
+  const paths = getAllVoicePaths();
+  const concurrency = 4;
+  let index = 0;
+
+  const worker = async () => {
+    while (index < paths.length) {
+      const url = paths[index++];
+      try {
+        if (!voiceBuffers[url]) {
+          const buffer = await loadAndDecodeAudio(url);
+          if (buffer) {
+            voiceBuffers[url] = buffer;
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to preload voice: ${url}`, e);
+      }
+    }
+  };
+
+  const workers = [];
+  for (let i = 0; i < concurrency; i++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+}
+
+/**
+ * デコード済みボイスバッファおよびフォールバックHTML5 Audioキャッシュを完全解放する（対戦終了時用）
+ * メニュー画面や選択画面での生PCMメモリ常駐（RAM消費）をゼロにする。
+ */
+export function cleanupVoiceBuffers() {
+  Object.keys(voiceBuffers).forEach((key) => {
+    delete voiceBuffers[key];
+  });
+  Object.keys(voiceAudioCache).forEach((key) => {
+    delete voiceAudioCache[key];
+  });
+}
+
 // プレミアムカード用ボイスタイプ変更テーブル
 // カードによって別のタイプのボイスを再生する場合に使用
 export const PREMIUM_VOICE_MAP = {

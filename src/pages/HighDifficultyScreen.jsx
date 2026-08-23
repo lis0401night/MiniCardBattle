@@ -47,6 +47,11 @@ export default function HighDifficultyScreen() {
       >
         {highEventChars.map((char) => {
           const eventConf = char.event_high;
+          const iconSrc =
+            eventConf.id === 'satan_high'
+              ? char.icon
+              : `assets/icons/icon_${eventConf.id}.webp`;
+
           return (
             <button
               key={eventConf.id}
@@ -59,16 +64,20 @@ export default function HighDifficultyScreen() {
             >
               <div className="banner-icon-wrapper">
                 <img
-                  src={`assets/icons/icon_${eventConf.id}.webp`}
+                  src={iconSrc}
                   onError={(e) => {
                     e.target.src = char.icon;
                   }}
                   className="banner-icon"
+                  decoding="async"
+                  loading="lazy"
                   alt=""
                 />
                 <img
                   src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`}
                   className="banner-icon-frame"
+                  decoding="async"
+                  loading="lazy"
                   alt="frame"
                 />
               </div>
