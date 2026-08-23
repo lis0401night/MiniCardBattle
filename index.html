@@ -422,6 +422,17 @@
         // Safariの共有メニューやブラウザ拡張機能などが引き起こす、ゲームと無関係なクロスオリジンエラーを無視する
         if (msg === 'Script error.' && line === 0) return true;
 
+        // ResizeObserverの無害なブラウザ仕様ループ通知はスキップする
+        var strMsg = String(msg || '');
+        if (
+          strMsg.indexOf(
+            'ResizeObserver loop completed with undelivered notifications'
+          ) !== -1 ||
+          strMsg.indexOf('ResizeObserver loop limit exceeded') !== -1
+        ) {
+          return true;
+        }
+
         // エラーログをサーバーに送信
         _sendErrorLog(
           'unhandled_error',
@@ -436,19 +447,38 @@
         }
       };
       window.addEventListener('unhandledrejection', function (event) {
-        // エラーログをサーバーに送信
         var reason = event.reason;
+        var strReason = String(reason || '');
+        if (
+          strReason.indexOf(
+            'ResizeObserver loop completed with undelivered notifications'
+          ) !== -1 ||
+          strReason.indexOf('ResizeObserver loop limit exceeded') !== -1
+        ) {
+          return;
+        }
+
+        // エラーログをサーバーに送信
         var stack = reason && reason.stack ? reason.stack : '';
-        _sendErrorLog('unhandled_rejection', String(reason), stack);
+        _sendErrorLog('unhandled_rejection', strReason, stack);
 
         alert('Unhandled Promise Rejection: ' + event.reason);
       });
       const origConsoleError = console.error;
       console.error = function (...args) {
         origConsoleError.apply(console, args);
-        // Ignore benign React DevTools errors or warnings
+        // Ignore benign React DevTools errors or warnings, or ResizeObserver loop notifications
         const msg = args.join(' ');
-        if (msg.includes('Warning:') || msg.includes('react-devtools')) return;
+        if (
+          msg.includes('Warning:') ||
+          msg.includes('react-devtools') ||
+          msg.includes(
+            'ResizeObserver loop completed with undelivered notifications'
+          ) ||
+          msg.includes('ResizeObserver loop limit exceeded')
+        ) {
+          return;
+        }
         // React render crash alert
         if (
           msg.includes('Uncaught') ||

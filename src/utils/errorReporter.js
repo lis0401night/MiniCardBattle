@@ -66,6 +66,16 @@ function getUUID() {
  */
 export function reportError(type, message, stack = '', extra = {}) {
   try {
+    const strMsg = String(message || '');
+    if (
+      strMsg.includes(
+        'ResizeObserver loop completed with undelivered notifications'
+      ) ||
+      strMsg.includes('ResizeObserver loop limit exceeded')
+    ) {
+      return;
+    }
+
     // レートリミットチェック
     if (reportCount >= MAX_REPORTS_PER_SESSION) return;
 
