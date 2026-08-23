@@ -772,13 +772,24 @@ export default function BattleScreen() {
           <div
             className={`summon-anim-card card ${summonAnim.card.owner || summonAnim.owner} rarity-${summonAnim.card.rarity || 1} ${summonAnim.owner === 'blue' ? 'from-bottom' : 'from-top'}`}
           >
-            <div
+            <img
               className="card-bg"
+              src={getCardImgUrl(summonAnim.card)}
+              alt={summonAnim.card.name || ''}
+              loading="eager"
+              decoding="sync"
               style={{
-                backgroundImage: `url('${getCardImgUrl(summonAnim.card)}')`,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                borderRadius: 'inherit',
+                pointerEvents: 'none',
                 filter: summonAnim.card.filter || 'none',
               }}
-            ></div>
+            />
             <div
               className="card-power"
               style={{ fontSize: '3.5rem', right: '10px', bottom: '5px' }}
