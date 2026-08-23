@@ -1,4 +1,3 @@
-import { GameState } from '../../state/gameState.js';
 import { appendVersionQuery } from './config.js';
 
 /**
@@ -49,7 +48,7 @@ export function canShowUnlockableStage(stageId) {
 }
 
 /**
- * バトル画面・マッチング画面・BGM初期化で共通利用するステージID解決関数。
+ * バトル画面・マッチング画面・BGM初期化で共通利用するステージID解決関数（純粋関数）。
  * ゲームモードや選択状態、敵設定から一元的にステージIDを決定する（DRY徹底・フォールバック整合）。
  * @param {object} [params={}] - 判定パラメータ
  * @param {string} [params.gameMode] - ゲームモード
@@ -58,9 +57,9 @@ export function canShowUnlockableStage(stageId) {
  * @returns {string} 決定されたステージID
  */
 export function resolveBattleStageId({
-  gameMode = GameState.gameMode,
-  selectedStageId = GameState.selectedStageId,
-  enemyConfig = GameState.enemyConfig,
+  gameMode,
+  selectedStageId,
+  enemyConfig,
 } = {}) {
   // 1. ダンジョン・トーナメント等のモード固定ステージ
   if (gameMode === 'battle_dungeon') return 'dungeon';
@@ -88,4 +87,17 @@ export function getStageImgUrl(stageId, useThumb = false) {
   if (!stageId || stageId === 'random') return '';
   const suffix = useThumb ? '_thumb.webp' : '.webp';
   return appendVersionQuery(`assets/stages/stage_${stageId}${suffix}`);
+}
+
+/**
+ * ステージ用の背景スタイルオブジェクトを生成します。
+ * @param {string} stageId - ステージID
+ * @returns {object} CSSスタイルオブジェクト
+ */
+export function getStageBackgroundStyle(stageId) {
+  const url = getStageImgUrl(stageId, false);
+  if (!url) return {};
+  return {
+    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.3)), url('${url}')`,
+  };
 }

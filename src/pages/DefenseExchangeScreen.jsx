@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-
+import { useEffect, useState } from 'react';
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
+import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
@@ -154,57 +153,11 @@ export default function DefenseExchangeScreen() {
     }
   });
 
-  const listContainerRef = useRef(null);
-  const [containerWidth, setContainerWidth] = useState(() => {
-    if (typeof window === 'undefined') return 400;
-    return Math.min(Math.round(window.innerWidth * 0.95), 440);
-  });
-
-  useEffect(() => {
-    const el = listContainerRef.current;
-    if (!el) return undefined;
-    const updateSize = () => {
-      const width = el.clientWidth;
-      setContainerWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
-    };
-    updateSize();
-    const observer = new ResizeObserver(updateSize);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // 交換アイテムを3列ごとに行配列へ分割
-  const itemRows = useMemo(() => {
-    const rows = [];
-    const cols = 3;
-    for (let i = 0; i < exchangeItems.length; i += cols) {
-      rows.push(exchangeItems.slice(i, i + cols));
-    }
-    return rows;
-  }, [exchangeItems]);
-
-  // 3列表示用の正確な1行高さを事前計算（アスペクト比 1:1.5、gapはuseVirtualizerが管理）
-  const estimatedRowHeight = useMemo(() => {
-    const innerWidth = Math.max(0, containerWidth - 10); // 左右padding 5pxずつ分
-    const cols = 3;
-    const gap = 15;
-    const cardWidthPx = Math.max(0, (innerWidth - gap * (cols - 1)) / cols);
-    return cardWidthPx > 0 ? cardWidthPx * 1.5 : 200;
-  }, [containerWidth]);
-
-  // @tanstack/react-virtual による行単位仮想化
-  const rowVirtualizer = useVirtualizer({
-    count: itemRows.length,
-    getScrollElement: () => listContainerRef.current,
-    estimateSize: () => estimatedRowHeight,
-    gap: 15,
-    overscan: 6,
-  });
-
-  // 初回マウント時および幅変更時に仮想スクロールキャッシュを即時再計算
-  useEffect(() => {
-    rowVirtualizer.measure();
-  }, [rowVirtualizer, containerWidth, estimatedRowHeight]);
+  // 仮想化グリッドフックの利用
+  const { listContainerRef, rowVirtualizer, itemRows, gridCols, gridGap } =
+    useGridVirtualizer({
+      items: exchangeItems || [],
+    });
 
   return (
     <CompactScreenLayout
@@ -246,6 +199,8 @@ export default function DefenseExchangeScreen() {
             return (
               <div
                 key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
                 className="card-list-grid-3col"
                 style={{
                   position: 'absolute',
@@ -254,8 +209,8 @@ export default function DefenseExchangeScreen() {
                   width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '15px',
+                  gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                  gap: `${gridGap}px`,
                 }}
               >
                 {row.map((itemInfo, localIdx) => {

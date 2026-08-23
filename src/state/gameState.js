@@ -104,14 +104,26 @@ export const GameState = {
   battlePhase: BATTLE_PHASE.INIT,
   turnSubPhase: null, // ターン内サブフェイズの追跡（STATUS_COUNTDOWN, COMBAT, DRAW等）
   actionQueue: [],
+  pendingChoices: [], // 選択待機キュー（オンプレイ選択など）
   combatStep: 0,
   aiDecision: null,
   selectedBoardLaneIndex: null,
   selectedBoardSide: null,
+  // ディスカード処理中の一時状態
   isDiscardingMode: false,
   discardMaxCount: 0,
   discardSelectedIndices: [],
+  isDiscardingExact: false,
+  // 「配置（Place）」処理中の一時状態（対戦終了時に cleanupBattleState で解放）
   isPlacementMode: false,
+  placementCount: 0,
+  placementToken: null,
+  placementSelectedLanes: [],
+  // スキル対象選択中の一時状態
+  isEnemyTargetMode: false,
+  isAlliedTargetMode: false,
+  enemyTargetSkillId: null,
+  targetSelectResolve: null,
   battleCount: 1,
   storyQueue: [],
   dialogueQueue: [],

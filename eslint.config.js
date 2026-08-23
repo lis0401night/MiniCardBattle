@@ -56,7 +56,6 @@ export default [
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/immutability': 'off',
       'react-hooks/refs': 'off',
-      'react-hooks/incompatible-library': 'off',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',
@@ -67,6 +66,20 @@ export default [
           argsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+  // TanStack Virtual (@tanstack/react-virtual) を使用するファイルのみ、
+  // React Compiler 非互換ライブラリ警告を限定的に無効化
+  {
+    files: [
+      'src/components/GlobalModals.jsx',
+      'src/components/common/RankingScreen.jsx',
+      'src/hooks/useGridVirtualizer.js',
+      'src/pages/CardListScreen.jsx',
+      'src/pages/DeckEditorScreen.jsx',
+    ],
+    rules: {
+      'react-hooks/incompatible-library': 'off',
     },
   },
   prettierConfig,

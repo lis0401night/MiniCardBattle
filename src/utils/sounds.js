@@ -304,6 +304,22 @@ export async function loadVoice(url) {
   }
 }
 
+/** BGMアセットの相対パス接頭辞（キー正規化の基準） */
+export const BGM_ASSET_PREFIX = 'assets/audio/bgm/';
+
+/**
+ * BGMのURLまたはパスを、キャッシュキーとして使う相対パスへ正規化する。
+ * （フルURLやクエリパラメータ付きURLから基準相対パスを安全に抽出）
+ * @param {string} url - BGMのURLまたはパス
+ * @returns {string} 正規化された相対パス
+ */
+export function normalizeBgmKey(url) {
+  if (!url || typeof url !== 'string') return '';
+  const idx = url.indexOf(BGM_ASSET_PREFIX);
+  const path = idx >= 0 ? url.substring(idx) : url;
+  return path.split('?')[0];
+}
+
 /**
  * デコード済みBGMバッファの最大保持数 (iOS等のRAM保護のため最大2曲に制限)
  */
@@ -317,30 +333,24 @@ const bgmAccessHistory = [];
  */
 export function registerDecodedBgm(accessedUrl, buffer) {
   if (!accessedUrl || !buffer) return;
-  decodedBgms[accessedUrl] = buffer;
-
-  // 相対パスのエイリアスも保持
-  let relativePath = accessedUrl;
-  if (accessedUrl.includes('assets/audio/bgm/')) {
-    relativePath = accessedUrl.substring(
-      accessedUrl.indexOf('assets/audio/bgm/')
-    );
-    decodedBgms[relativePath] = buffer;
+  const key = normalizeBgmKey(accessedUrl);
+  decodedBgms[key] = buffer;
+  if (accessedUrl !== key) {
+    decodedBgms[accessedUrl] = buffer;
   }
 
   // アクセス履歴を更新（最新のものを末尾へ）
-  const normalizedKey = relativePath;
-  const existingIndex = bgmAccessHistory.indexOf(normalizedKey);
+  const existingIndex = bgmAccessHistory.indexOf(key);
   if (existingIndex !== -1) {
     bgmAccessHistory.splice(existingIndex, 1);
   }
-  bgmAccessHistory.push(normalizedKey);
+  bgmAccessHistory.push(key);
 
   // 保持上限を超えた古いBGMバッファを破棄してメモリ解放
   while (bgmAccessHistory.length > MAX_CACHED_BGMS) {
     const oldestKey = bgmAccessHistory.shift();
     Object.keys(decodedBgms).forEach((k) => {
-      if (k.includes(oldestKey) || oldestKey.includes(k)) {
+      if (normalizeBgmKey(k) === oldestKey) {
         delete decodedBgms[k];
       }
     });
@@ -353,14 +363,13 @@ export function registerDecodedBgm(accessedUrl, buffer) {
  * @param {string|string[]} [keepUrls=[]] - 保持するBGMのURLまたはパス（省略時は全削除）
  */
 export function cleanupOldDecodedBgms(keepUrls = []) {
-  const keepList = (Array.isArray(keepUrls) ? keepUrls : [keepUrls]).filter(
-    Boolean
-  );
+  const keepList = (Array.isArray(keepUrls) ? keepUrls : [keepUrls])
+    .filter(Boolean)
+    .map(normalizeBgmKey);
+
   Object.keys(decodedBgms).forEach((key) => {
-    const shouldKeep = keepList.some(
-      (keepUrl) => keepUrl && (key.includes(keepUrl) || keepUrl.includes(key))
-    );
-    if (!shouldKeep) {
+    const normalized = normalizeBgmKey(key);
+    if (!keepList.includes(normalized)) {
       delete decodedBgms[key];
     }
   });
@@ -368,11 +377,7 @@ export function cleanupOldDecodedBgms(keepUrls = []) {
   // アクセス履歴も同期
   for (let i = bgmAccessHistory.length - 1; i >= 0; i--) {
     const histKey = bgmAccessHistory[i];
-    const shouldKeep = keepList.some(
-      (keepUrl) =>
-        keepUrl && (histKey.includes(keepUrl) || keepUrl.includes(histKey))
-    );
-    if (!shouldKeep) {
+    if (!keepList.includes(histKey)) {
       bgmAccessHistory.splice(i, 1);
     }
   }

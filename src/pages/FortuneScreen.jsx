@@ -1,4 +1,5 @@
 import BackButton from '../components/BackButton.jsx';
+import EventIcon from '../components/common/EventIcon.jsx';
 import { selectFortuneTarget } from '../services/uiMainCore.js';
 import {
   CHARACTERS,
@@ -6,7 +7,10 @@ import {
 } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { getScreenBackgroundStyle } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  getScreenBackgroundStyle,
+} from '../utils/constants/config.js';
 
 /** 運命の邂逅イベントの表示順定義 */
 const FORTUNE_DISPLAY_ORDER = ['automata', 'valkyria'];
@@ -74,17 +78,19 @@ export default function FortuneScreen() {
               }}
             >
               <div className="banner-icon-wrapper">
-                <img
+                <EventIcon
                   src={`assets/icons/icon_${eventConf.id}.webp`}
-                  onError={(e) => {
-                    e.target.src = char.icon;
-                  }}
+                  fallbackSrc={char.icon}
                   className="banner-icon"
                   alt=""
                 />
                 <img
-                  src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`}
+                  src={appendVersionQuery(
+                    `assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`
+                  )}
                   className="banner-icon-frame"
+                  decoding="async"
+                  loading="lazy"
                   alt="frame"
                 />
               </div>

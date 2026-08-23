@@ -3,7 +3,7 @@
  */
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.9.12';
+export const GAME_VERSION = '0.3.9.13';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -302,16 +302,6 @@ export function getScreenBackgroundStyle(imagePath) {
   return getVersionedBackgroundStyle(imagePath, 0.7, 0.9);
 }
 
-/**
- * ステージ用の背景スタイルオブジェクトを生成します。
- * @param {string} stageId - ステージID
- * @returns {object} CSSスタイルオブジェクト
- */
-export function getStageBackgroundStyle(stageId) {
-  return {
-    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.3)), url('${appendVersionQuery(`assets/stages/stage_${stageId}.webp`)}')`,
-  };
-}
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;
 
 // 運命の邂逅 交換所ラインナップ

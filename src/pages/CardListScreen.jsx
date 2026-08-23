@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
@@ -127,7 +127,7 @@ export default function CardListScreen() {
   });
 
   // 初回マウント時および幅・列数・ギャップ変更時に仮想スクロールキャッシュを即時再計算（初回のGAP狂いを防止）
-  useEffect(() => {
+  useLayoutEffect(() => {
     rowVirtualizer.measure();
   }, [rowVirtualizer, containerWidth, gridCols, gridGap, estimatedRowHeight]);
 
@@ -336,6 +336,8 @@ export default function CardListScreen() {
             return (
               <div
                 key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
                 className="card-list-grid-3col"
                 style={{
                   position: 'absolute',

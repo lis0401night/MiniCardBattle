@@ -57,6 +57,19 @@ function getUUID() {
 }
 
 /**
+ * ResizeObserver のブラウザ仕様による無害なループ通知かどうかを判定する。
+ *
+ * @param {*} message - 判定対象のエラーメッセージ
+ * @returns {boolean} 無害なループ通知であれば true
+ */
+export function isResizeObserverNotification(message) {
+  const str = String(message || '').trim();
+  return /^(?:Uncaught\s+(?:Error:\s+|(?:\w+Error:\s+))?)?ResizeObserver loop (?:completed with undelivered notifications|limit exceeded)\.?$/i.test(
+    str
+  );
+}
+
+/**
  * エラーをサーバーに送信する。
  *
  * @param {string} type - エラー種別 ('react_boundary' | 'unhandled_error' | 'unhandled_rejection')
@@ -66,13 +79,7 @@ function getUUID() {
  */
 export function reportError(type, message, stack = '', extra = {}) {
   try {
-    const strMsg = String(message || '');
-    if (
-      strMsg.includes(
-        'ResizeObserver loop completed with undelivered notifications'
-      ) ||
-      strMsg.includes('ResizeObserver loop limit exceeded')
-    ) {
+    if (isResizeObserverNotification(message)) {
       return;
     }
 

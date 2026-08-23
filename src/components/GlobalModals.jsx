@@ -286,6 +286,12 @@ function FavoriteCardDisplay({
   );
 }
 
+// お気に入りカード選択グリッドのレイアウト定数（計算とスタイルの単一情報源）
+const FAV_GRID_COLS = 3;
+const FAV_GRID_GAP_PX = 15;
+const FAV_GRID_PADDING_PX = 5;
+const FAV_CARD_ASPECT_RATIO = 1.5;
+
 /**
  * お気に入りカード選択モーダルコンポーネント
  * @tanstack/react-virtual によるグリッド仮想スクロールとサムネイル画像で超高速・省メモリ表示
@@ -333,20 +339,20 @@ function FavoriteCardSelectionModal({
   // 3列ごとに行配列へ分割
   const itemRows = useMemo(() => {
     const rows = [];
-    const cols = 3;
-    for (let i = 0; i < allItems.length; i += cols) {
-      rows.push(allItems.slice(i, i + cols));
+    for (let i = 0; i < allItems.length; i += FAV_GRID_COLS) {
+      rows.push(allItems.slice(i, i + FAV_GRID_COLS));
     }
     return rows;
   }, [allItems]);
 
-  // 3列表示用の正確な1行高さを事前計算（アスペクト比 1:1.5、gapは15px）
+  // 3列表示用の正確な1行高さを事前計算
   const estimatedRowHeight = useMemo(() => {
-    const innerWidth = Math.max(0, containerWidth - 10);
-    const cols = 3;
-    const gap = 15;
-    const cardWidthPx = Math.max(0, (innerWidth - gap * (cols - 1)) / cols);
-    return cardWidthPx > 0 ? cardWidthPx * 1.5 : 180;
+    const innerWidth = Math.max(0, containerWidth - FAV_GRID_PADDING_PX * 2);
+    const cardWidthPx = Math.max(
+      0,
+      (innerWidth - FAV_GRID_GAP_PX * (FAV_GRID_COLS - 1)) / FAV_GRID_COLS
+    );
+    return cardWidthPx > 0 ? cardWidthPx * FAV_CARD_ASPECT_RATIO : 180;
   }, [containerWidth]);
 
   // @tanstack/react-virtual による行単位仮想化
@@ -354,7 +360,7 @@ function FavoriteCardSelectionModal({
     count: itemRows.length,
     getScrollElement: () => listContainerRef.current,
     estimateSize: () => estimatedRowHeight,
-    gap: 15,
+    gap: FAV_GRID_GAP_PX,
     overscan: 4,
   });
 
@@ -404,7 +410,7 @@ function FavoriteCardSelectionModal({
             flex: 1,
             overflowY: 'auto',
             maxHeight: '380px',
-            padding: '5px',
+            padding: `${FAV_GRID_PADDING_PX}px`,
             position: 'relative',
           }}
         >
@@ -428,8 +434,8 @@ function FavoriteCardSelectionModal({
                     width: '100%',
                     transform: `translateY(${virtualRow.start}px)`,
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '15px',
+                    gridTemplateColumns: `repeat(${FAV_GRID_COLS}, 1fr)`,
+                    gap: `${FAV_GRID_GAP_PX}px`,
                   }}
                 >
                   {row.map((item) => {
@@ -2728,7 +2734,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         }}
                       >
                         <img
-                          src={skinDef.icon}
+                          src={getSkinImage(charDetailData.id, skinId, 'icon')}
                           className="banner-icon"
                           alt={skinDef.name}
                         />

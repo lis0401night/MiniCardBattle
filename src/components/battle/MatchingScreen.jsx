@@ -3,11 +3,11 @@ import { GameState } from '../../state/gameState.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import { appendVersionQuery } from '../../utils/constants/config.js';
 import {
   getStageBackgroundStyle,
-  appendVersionQuery,
-} from '../../utils/constants/config.js';
-import { resolveBattleStageId } from '../../utils/constants/stages.js';
+  resolveBattleStageId,
+} from '../../utils/constants/stages.js';
 import './MatchingScreen.css';
 
 const TIMING = {
@@ -134,7 +134,11 @@ export default function MatchingScreen({
   const eData = parseName(enemy.name);
 
   // バトルのステージIDを決定（initBattleStateと同じ共通ロジック）
-  const stageId = resolveBattleStageId({ enemyConfig: enemy });
+  const stageId = resolveBattleStageId({
+    gameMode: GameState.gameMode,
+    selectedStageId: GameState.selectedStageId,
+    enemyConfig: enemy,
+  });
 
   return (
     <div className={`matching-screen-container ${visible ? 'show' : ''}`}>

@@ -194,7 +194,7 @@ let prepareBattleGeneration = 0;
  * @returns {{ stageId: string, bgmKey: string }} ステージIDとBGMキー
  */
 function resolveStageAndBgm() {
-  const stageId = resolveBattleStageId();
+  const stageId = resolveBattleStageId(GameState);
   const stageData = STAGES[stageId];
   let bgmKey = stageData && stageData.bgm ? stageData.bgm : 'bgmBattle';
   if (GameState.gameMode === 'story' && GameState.enemyConfig?.id === 'satan') {
@@ -410,15 +410,8 @@ export function prepareBattle() {
         ? toDeckObjects(snapshotSource, GameState.premiumCards)
         : null;
 
-    // 対戦で使用される初期デッキのカードに加え、スキルやリーダースキルで生成される全トークンカードも事前ロード対象に含める
-    const tokenCards = CARD_MASTER.filter(
-      (c) => c.isToken || (c.id && c.id.startsWith('token_'))
-    );
-    const allCards = [
-      ...GameState.playerDeck,
-      ...GameState.enemyDeck,
-      ...tokenCards,
-    ];
+    // 対戦で使用される初期デッキのカード（フルサイズ＋サムネイル）
+    const allCards = [...GameState.playerDeck, ...GameState.enemyDeck];
     const cardUrls = [];
     allCards.forEach((c) => {
       if (!c) return;
@@ -443,6 +436,16 @@ export function prepareBattle() {
       }
     });
 
+    // トークンカードは盤面表示用サムネイルのみ事前ロードし、フルサイズは召喚時のオンデマンド先読みに委ねてメモリ常駐量を抑制する
+    const tokenCards = CARD_MASTER.filter(
+      (c) => c.isToken || (c.id && c.id.startsWith('token_'))
+    );
+    tokenCards.forEach((c) => {
+      if (!c) return;
+      const thumbUrl = getCardImgUrl(c, true);
+      if (thumbUrl) cardUrls.push(thumbUrl);
+    });
+
     // 対戦で使用する自プレイヤーおよび敵リーダーのカットイン・立ち絵・スキン画像
     const playerSkin = GameState.playerSkins?.[GameState.playerConfig?.id];
     const enemySkin = GameState.enemySkins?.[GameState.enemyConfig?.id];
@@ -458,8 +461,9 @@ export function prepareBattle() {
     // 全VFX演出画像（スキル演出、カットイン、ジョーカー演出等）
     const vfxUrls = getAllVfxImageUrls();
 
-    // 対戦で使用するステージ背景画像（フルサイズ）
-    const battleStageId = resolveBattleStageId();
+    // 対戦で使用するステージ背景画像およびBGMの決定（二重評価を防ぎ整合性を担保）
+    const { stageId: battleStageId, bgmKey: battleBgmKey } =
+      resolveStageAndBgm();
     const stageImageUrl = getStageImgUrl(battleStageId, false);
     const stageUrls = stageImageUrl ? [stageImageUrl] : [];
 
@@ -541,9 +545,7 @@ export function prepareBattle() {
     });
 
     // --- BGMのロードとデコード処理 ---
-    const { bgmKey } = resolveStageAndBgm();
-
-    const bgmAudio = AUDIO_INSTANCES[bgmKey];
+    const bgmAudio = AUDIO_INSTANCES[battleBgmKey];
     if (bgmAudio && bgmAudio.src) {
       let fetchUrl = bgmAudio.src;
       if (fetchUrl.includes('assets/audio/bgm/')) {

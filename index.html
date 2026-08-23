@@ -418,18 +418,24 @@
         } catch (e) {}
       }
 
+      /**
+       * ResizeObserver のブラウザ仕様による無害なループ通知かどうかを判定する。
+       * @param {*} value - エラーメッセージまたはエラー値
+       * @returns {boolean} ResizeObserver の無害なループ通知なら true
+       */
+      function isResizeObserverNotification(value) {
+        var str = String(value || '').trim();
+        return /^(?:Uncaught\s+(?:Error:\s+|(?:\w+Error:\s+))?)?ResizeObserver loop (?:completed with undelivered notifications|limit exceeded)\.?$/i.test(
+          str
+        );
+      }
+
       window.onerror = function (msg, url, line, col, error) {
         // Safariの共有メニューやブラウザ拡張機能などが引き起こす、ゲームと無関係なクロスオリジンエラーを無視する
         if (msg === 'Script error.' && line === 0) return true;
 
         // ResizeObserverの無害なブラウザ仕様ループ通知はスキップする
-        var strMsg = String(msg || '');
-        if (
-          strMsg.indexOf(
-            'ResizeObserver loop completed with undelivered notifications'
-          ) !== -1 ||
-          strMsg.indexOf('ResizeObserver loop limit exceeded') !== -1
-        ) {
+        if (isResizeObserverNotification(msg)) {
           return true;
         }
 
@@ -448,13 +454,8 @@
       };
       window.addEventListener('unhandledrejection', function (event) {
         var reason = event.reason;
-        var strReason = String(reason || '');
-        if (
-          strReason.indexOf(
-            'ResizeObserver loop completed with undelivered notifications'
-          ) !== -1 ||
-          strReason.indexOf('ResizeObserver loop limit exceeded') !== -1
-        ) {
+        var strReason = String(reason);
+        if (isResizeObserverNotification(strReason)) {
           return;
         }
 
@@ -466,19 +467,16 @@
       });
       const origConsoleError = console.error;
       console.error = function (...args) {
-        origConsoleError.apply(console, args);
         // Ignore benign React DevTools errors or warnings, or ResizeObserver loop notifications
         const msg = args.join(' ');
         if (
           msg.includes('Warning:') ||
           msg.includes('react-devtools') ||
-          msg.includes(
-            'ResizeObserver loop completed with undelivered notifications'
-          ) ||
-          msg.includes('ResizeObserver loop limit exceeded')
+          isResizeObserverNotification(msg)
         ) {
           return;
         }
+        origConsoleError.apply(console, args);
         // React render crash alert
         if (
           msg.includes('Uncaught') ||

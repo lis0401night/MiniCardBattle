@@ -221,6 +221,17 @@ export function cleanupVoiceBuffers() {
     delete voiceBuffers[key];
   });
   Object.keys(voiceAudioCache).forEach((key) => {
+    // HTML5 Audio の内部バッファ破棄をブラウザに促してから参照を切る
+    const audio = voiceAudioCache[key];
+    if (audio) {
+      try {
+        audio.pause();
+        audio.src = '';
+        audio.load();
+      } catch {
+        // 一部ブラウザで src 再設定時に例外が発生するため無視する
+      }
+    }
     delete voiceAudioCache[key];
   });
 }

@@ -21,7 +21,10 @@ import {
 import { evaluateMission } from '../game/missionLogic.js';
 import { showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
-import { resolveBattleStageId } from '../utils/constants/stages.js';
+import {
+  getStageBackgroundStyle,
+  resolveBattleStageId,
+} from '../utils/constants/stages.js';
 import {
   checkShowMissionButton,
   getCardImgUrl,
@@ -30,10 +33,7 @@ import {
   playSound,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import {
-  DECK_SIZE,
-  getStageBackgroundStyle,
-} from '../utils/constants/config.js';
+import { DECK_SIZE } from '../utils/constants/config.js';
 
 import Board from '../components/battle/Board.jsx';
 import EnemyArea from '../components/battle/EnemyArea.jsx';
@@ -105,6 +105,10 @@ export default function BattleScreen() {
         if (fullImgUrl) {
           const preImg = new Image();
           preImg.src = fullImgUrl;
+          // デコード済みビットマップがGCで解放されないよう対戦中キャッシュへ保持する（対戦終了時に cleanupBattleState で解放）
+          if (Array.isArray(GameState.battleImageCache)) {
+            GameState.battleImageCache.push(preImg);
+          }
           if (typeof preImg.decode === 'function') {
             await Promise.race([
               preImg.decode().catch(() => {}),
@@ -410,7 +414,7 @@ export default function BattleScreen() {
     }
   };
 
-  const stageId = resolveBattleStageId();
+  const stageId = resolveBattleStageId(GameState);
   const battleStyle = {
     backgroundColor: '#0f172a',
     ...getStageBackgroundStyle(stageId),

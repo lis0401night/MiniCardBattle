@@ -362,7 +362,13 @@ export default function OnlineLobbyScreen() {
                 '対戦の開始条件を確認できませんでした。準備を解除して再試行してください。'
               );
             })
-            .catch((e) => console.warn('setRoomStatusToBattle failed:', e));
+            .catch((e) => {
+              console.warn('setRoomStatusToBattle failed:', e);
+              setBattleStartError(true);
+              showAlertModal(
+                '対戦の開始に失敗しました。準備を解除して再試行してください。'
+              );
+            });
         }
       }
     };

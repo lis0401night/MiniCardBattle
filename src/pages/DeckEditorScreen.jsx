@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 import MissionListModal from '../components/battle/MissionListModal.jsx';
@@ -39,6 +45,21 @@ import { SOUNDS } from '../utils/sounds.js';
 const SHEET_MIN_PERCENT = 20;
 const SHEET_MAX_PERCENT = 88;
 const SHEET_DEFAULT_PERCENT = 50;
+
+/** カードの縦横比（高さ / 幅）。CSSの `.card { padding-bottom: 150% }` と必ず一致させること */
+const CARD_ASPECT_RATIO = 1.5;
+/** カード一覧コンテナの左右padding合計（px）。CSSの `padding: 10px 5px` と対応 */
+const LIST_HORIZONTAL_PADDING_PX = 10;
+/** マウント初回の幅推定に使うビューポート比率（実測前のフォールバック） */
+const INITIAL_WIDTH_VIEWPORT_RATIO = 0.95;
+/** マウント初回の幅推定の上限値（px） */
+const INITIAL_WIDTH_MAX_PX = 440;
+/** SSR/未取得時のコンテナフォールバック幅（px） */
+const INITIAL_WIDTH_FALLBACK_PX = 400;
+/** デッキリスト初期フォールバック高さ（px） */
+const INITIAL_DECK_LIST_HEIGHT_PX = 300;
+/** 所持カード一覧の初期フォールバック行高さ（px） */
+const INITIAL_MASTER_ROW_HEIGHT_PX = 140;
 
 /**
  * デッキ編集画面の所持フィルター既定値
@@ -216,8 +237,11 @@ export default function DeckEditorScreen({ switchScreen }) {
    * コンテナの初期幅を算出するヘルパー（マウント初回の行高さ・GAP計算狂いを防止）
    */
   const getInitialContainerWidth = () => {
-    if (typeof window === 'undefined') return 400;
-    return Math.min(Math.round(window.innerWidth * 0.95), 440);
+    if (typeof window === 'undefined') return INITIAL_WIDTH_FALLBACK_PX;
+    return Math.min(
+      Math.round(window.innerWidth * INITIAL_WIDTH_VIEWPORT_RATIO),
+      INITIAL_WIDTH_MAX_PX
+    );
   };
 
   // デッキリスト自身の表示領域サイズを計測し、カード1行分の高さを概算する。
@@ -226,7 +250,7 @@ export default function DeckEditorScreen({ switchScreen }) {
   const deckListContainerRef = useRef(null);
   const [deckListSize, setDeckListSize] = useState(() => ({
     width: getInitialContainerWidth(),
-    height: 300,
+    height: INITIAL_DECK_LIST_HEIGHT_PX,
   }));
 
   useEffect(() => {
@@ -245,7 +269,10 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   const deckListCols = gridCols;
   const deckListGap = gridGap;
-  const deckListInnerWidth = Math.max(0, deckListSize.width - 10); // 左右padding 5pxずつ分
+  const deckListInnerWidth = Math.max(
+    0,
+    deckListSize.width - LIST_HORIZONTAL_PADDING_PX
+  ); // 左右padding 5pxずつ分
   const deckCardWidthPx =
     deckListCols > 0
       ? Math.max(
@@ -253,11 +280,11 @@ export default function DeckEditorScreen({ switchScreen }) {
           (deckListInnerWidth - deckListGap * (deckListCols - 1)) / deckListCols
         )
       : 0;
-  const deckRowHeightPx = deckCardWidthPx * 1.5; // .card は padding-bottom:150%で縦横比固定
+  const deckRowHeightPx = deckCardWidthPx * CARD_ASPECT_RATIO; // .card は padding-bottom:150%で縦横比固定
 
   const deckListExtraPaddingMax = Math.max(
     0,
-    deckListSize.height - deckRowHeightPx - 10 // リスト上部のpadding 10px分も差し引く
+    deckListSize.height - deckRowHeightPx - LIST_HORIZONTAL_PADDING_PX // リスト上部のpadding 10px分も差し引く
   );
   const deckListExtraPaddingPx = Math.min(
     sheetMaxHeightPx,
@@ -306,13 +333,18 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   // 推定行高さの計算（CardListScreenと100%完全統一：カードの縦横比1.5、gapはuseVirtualizerが管理）
   const estimatedMasterRowHeight = useMemo(() => {
-    const innerWidth = Math.max(0, masterListWidth - 10);
+    const innerWidth = Math.max(
+      0,
+      masterListWidth - LIST_HORIZONTAL_PADDING_PX
+    );
     const safeCols = Math.max(1, gridCols);
     const cardWidthPx = Math.max(
       0,
       (innerWidth - gridGap * (safeCols - 1)) / safeCols
     );
-    return cardWidthPx > 0 ? cardWidthPx * 1.5 : 140;
+    return cardWidthPx > 0
+      ? cardWidthPx * CARD_ASPECT_RATIO
+      : INITIAL_MASTER_ROW_HEIGHT_PX;
   }, [masterListWidth, gridCols, gridGap]);
 
   // @tanstack/react-virtual による所持カード一覧の行単位仮想化
@@ -324,8 +356,8 @@ export default function DeckEditorScreen({ switchScreen }) {
     overscan: 6,
   });
 
-  // 初回マウント時および幅・列数・ギャップ変更時に仮想スクロールキャッシュを即時再計算（初回のGAP狂いを防止）
-  useEffect(() => {
+  // 初回マウント時および幅・列数・ギャップ変更時に仮想スクロールキャッシュを同期再計算（初回のGAP狂いを防止）
+  useLayoutEffect(() => {
     masterRowVirtualizer.measure();
   }, [
     masterRowVirtualizer,

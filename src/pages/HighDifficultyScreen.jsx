@@ -1,4 +1,5 @@
 import BackButton from '../components/BackButton.jsx';
+import EventIcon from '../components/common/EventIcon.jsx';
 import { selectHighDifficultyTarget } from '../services/uiMainCore.js';
 import {
   CHARACTERS,
@@ -6,8 +7,15 @@ import {
 } from '../utils/constants/characters.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { getScreenBackgroundStyle } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  getScreenBackgroundStyle,
+} from '../utils/constants/config.js';
 
+/**
+ * 高難易度イベントのキャラクター選択画面コンポーネント。
+ * @returns {JSX.Element} 高難易度選択画面
+ */
 export default function HighDifficultyScreen() {
   // サタンを先頭に表示するため、satanを優先ソート
   const highEventChars = Object.values(CHARACTERS)
@@ -63,18 +71,16 @@ export default function HighDifficultyScreen() {
               }}
             >
               <div className="banner-icon-wrapper">
-                <img
+                <EventIcon
                   src={iconSrc}
-                  onError={(e) => {
-                    e.target.src = char.icon;
-                  }}
+                  fallbackSrc={char.icon}
                   className="banner-icon"
-                  decoding="async"
-                  loading="lazy"
                   alt=""
                 />
                 <img
-                  src={`assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`}
+                  src={appendVersionQuery(
+                    `assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`
+                  )}
                   className="banner-icon-frame"
                   decoding="async"
                   loading="lazy"

@@ -239,7 +239,11 @@ export async function preloadAllGameResources(onProgress) {
         } else if (isVoice) {
           // 起動時は音声ファイルを fetch してブラウザ/ServiceWorkerキャッシュへ保存（HTTPキャッシュ）するのみとし、
           // RAMへの生PCMデコード展開は対戦開始時（prepareBattle）まで遅延させて起動時常駐メモリを削減する
-          fetch(resolveAssetPath(url)).then(resolve).catch(resolve);
+          // ※ボディを読み切らないとキャッシュへの格納が中断されるため、必ず blob() まで消費する
+          fetch(resolveAssetPath(url))
+            .then((res) => (res.ok ? res.blob() : null))
+            .then(() => resolve())
+            .catch(() => resolve());
         } else {
           // BGM（タイトルBGMなど）の場合は、Web Audio API での事前デコードと HTML5 Audio 双方をロードする
           const bgmKey = Object.keys(AUDIO_INSTANCES).find((k) => {
