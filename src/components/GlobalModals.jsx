@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
 import {
@@ -281,6 +282,346 @@ function FavoriteCardDisplay({
       onClick={onClick}
     >
       {placeholderText}
+    </div>
+  );
+}
+
+/**
+ * お気に入りカード選択モーダルコンポーネント
+ * @tanstack/react-virtual によるグリッド仮想スクロールとサムネイル画像で超高速・省メモリ表示
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen - モーダルが開いているか
+ * @param {Function} props.onClose - モーダルを閉じるコールバック
+ * @param {Object|null} props.favoriteCardState - 現在選択中のお気に入りカード情報
+ * @param {Function} props.setFavoriteCardState - お気に入りカード更新関数
+ * @param {Array<Object>} props.ownedMasterCards - プレイヤー所持カード配列
+ * @param {Object} props.favCardPremiumMap - プレミアム表示状態マップ
+ * @param {Function} props.setFavCardPremiumMap - プレミアム表示状態更新関数
+ * @returns {JSX.Element|null}
+ */
+function FavoriteCardSelectionModal({
+  isOpen,
+  onClose,
+  favoriteCardState,
+  setFavoriteCardState,
+  ownedMasterCards,
+  favCardPremiumMap,
+  setFavCardPremiumMap,
+}) {
+  const listContainerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(380);
+
+  useEffect(() => {
+    const el = listContainerRef.current;
+    if (!el) return undefined;
+    const updateSize = () => {
+      const width = el.clientWidth;
+      setContainerWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isOpen]);
+
+  // 全アイテム配列（先頭に未設定枠）
+  const allItems = useMemo(() => {
+    return [{ id: 'none', isNone: true }, ...(ownedMasterCards || [])];
+  }, [ownedMasterCards]);
+
+  // 3列ごとに行配列へ分割
+  const itemRows = useMemo(() => {
+    const rows = [];
+    const cols = 3;
+    for (let i = 0; i < allItems.length; i += cols) {
+      rows.push(allItems.slice(i, i + cols));
+    }
+    return rows;
+  }, [allItems]);
+
+  // 3列表示用の正確な1行高さを事前計算（アスペクト比 1:1.5、gapは15px）
+  const estimatedRowHeight = useMemo(() => {
+    const innerWidth = Math.max(0, containerWidth - 10);
+    const cols = 3;
+    const gap = 15;
+    const cardWidthPx = Math.max(0, (innerWidth - gap * (cols - 1)) / cols);
+    return cardWidthPx > 0 ? cardWidthPx * 1.5 : 180;
+  }, [containerWidth]);
+
+  // @tanstack/react-virtual による行単位仮想化
+  const rowVirtualizer = useVirtualizer({
+    count: itemRows.length,
+    getScrollElement: () => listContainerRef.current,
+    estimateSize: () => estimatedRowHeight,
+    gap: 15,
+    overscan: 4,
+  });
+
+  useEffect(() => {
+    rowVirtualizer.measure();
+  }, [rowVirtualizer, containerWidth, estimatedRowHeight]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="modal-overlay"
+      style={{ zIndex: 2100, display: 'flex' }}
+      onClick={onClose}
+    >
+      <div
+        className="skill-modal-box modal-pop-animation"
+        style={{
+          width: '95%',
+          maxWidth: '440px',
+          padding: '20px',
+          maxHeight: '85dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#1e293b',
+          borderRadius: '16px',
+          border: '2px solid #334155',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3
+          style={{
+            color: '#eab308',
+            margin: '0 0 15px 0',
+            fontSize: '1.15rem',
+            textAlign: 'center',
+          }}
+        >
+          お気に入りカード選択
+        </h3>
+
+        {/* 仮想化カード一覧グリッド */}
+        <div
+          ref={listContainerRef}
+          className="card-list-container"
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            maxHeight: '380px',
+            padding: '5px',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const row = itemRows[virtualRow.index] || [];
+              return (
+                <div
+                  key={virtualRow.key}
+                  className="card-list-grid-3col"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '15px',
+                  }}
+                >
+                  {row.map((item) => {
+                    if (item.isNone) {
+                      const isNoneSelected =
+                        !favoriteCardState || !favoriteCardState.cardId;
+                      return (
+                        <div
+                          key="none"
+                          className="deck-card-item gallery-card-wrapper"
+                          style={{
+                            position: 'relative',
+                            cursor: 'pointer',
+                            borderRadius: '8px',
+                            border: isNoneSelected
+                              ? '3px solid #eab308'
+                              : 'none',
+                            boxShadow: isNoneSelected
+                              ? '0 0 12px #eab308'
+                              : 'none',
+                            transform: isNoneSelected ? 'scale(1.03)' : 'none',
+                            transition: 'transform 0.15s',
+                          }}
+                          onClick={() => {
+                            playSound?.(SOUNDS?.seClick);
+                            setFavoriteCardState(null);
+                            onClose();
+                          }}
+                        >
+                          <div
+                            className="card blue"
+                            style={{
+                              background: 'rgba(15, 23, 42, 0.85)',
+                              position: 'relative',
+                            }}
+                          >
+                            <span
+                              style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                fontSize: '1rem',
+                                fontWeight: 'bold',
+                                color: '#cbd5e1',
+                                textAlign: 'center',
+                                width: '100%',
+                                lineHeight: '1',
+                                margin: 0,
+                                padding: 0,
+                                pointerEvents: 'none',
+                              }}
+                            >
+                              未設定
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const card = item;
+                    const unlockedPremiumList =
+                      GameState.unlockedPremiumCards || [];
+                    const hasPremiumUnlocked = unlockedPremiumList.includes(
+                      card.id
+                    );
+
+                    const isCardPremium = determineIsCardPremium(
+                      card.id,
+                      hasPremiumUnlocked,
+                      favCardPremiumMap,
+                      favoriteCardState,
+                      GameState.premiumCards
+                    );
+
+                    const isSelected =
+                      favoriteCardState?.cardId === card.id &&
+                      !!favoriteCardState?.isPremium === isCardPremium;
+
+                    const rarityClass = card.rarity
+                      ? ` rarity-${card.rarity}`
+                      : '';
+
+                    return (
+                      <div
+                        key={card.id}
+                        className="deck-card-item gallery-card-wrapper"
+                        style={{
+                          position: 'relative',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          border: isSelected ? '3px solid #eab308' : 'none',
+                          boxShadow: isSelected ? '0 0 12px #eab308' : 'none',
+                          transform: isSelected ? 'scale(1.03)' : 'none',
+                          transition: 'transform 0.15s',
+                        }}
+                        onClick={() => {
+                          playSound?.(SOUNDS?.seClick);
+                          setFavoriteCardState({
+                            cardId: card.id,
+                            isPremium: isCardPremium,
+                          });
+                          onClose();
+                        }}
+                      >
+                        <div className={`card blue${rarityClass}`}>
+                          <img
+                            className="card-bg"
+                            src={getCardImgUrl(
+                              {
+                                ...card,
+                                isPremium: isCardPremium,
+                              },
+                              true
+                            )}
+                            alt={card.name}
+                            style={{
+                              objectFit: 'cover',
+                              width: '100%',
+                              height: '100%',
+                            }}
+                          />
+
+                          {hasPremiumUnlocked && (
+                            <div
+                              className="premium-toggle-icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playSound?.(SOUNDS?.seClick);
+                                const nextPremium = !isCardPremium;
+                                setFavCardPremiumMap((prev) => ({
+                                  ...prev,
+                                  [card.id]: nextPremium,
+                                }));
+                                if (favoriteCardState?.cardId === card.id) {
+                                  setFavoriteCardState({
+                                    cardId: card.id,
+                                    isPremium: nextPremium,
+                                  });
+                                }
+                              }}
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                left: '4px',
+                                background: 'rgba(0,0,0,0.85)',
+                                color: isCardPremium ? '#d946ef' : '#94a3b8',
+                                padding: '2px 6px',
+                                borderRadius: '10px',
+                                fontSize: '0.8rem',
+                                zIndex: 7,
+                                border: `1px solid ${isCardPremium ? '#d946ef' : '#475569'}`,
+                                cursor: 'pointer',
+                              }}
+                              title={
+                                isCardPremium
+                                  ? '通常版に切り替え'
+                                  : 'プレミアム版に切り替え'
+                              }
+                            >
+                              ✨
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: '15px',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <button
+            className="btn"
+            style={{ background: '#475569', margin: 0 }}
+            onClick={() => {
+              playSound?.(SOUNDS?.seClick);
+              onClose();
+            }}
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -3807,236 +4148,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       )}
 
       {/* Dedicated Favorite Card Selection Modal */}
-      {favCardModalOpen && (
-        <div
-          className="modal-overlay"
-          style={{ zIndex: 2100, display: 'flex' }}
-          onClick={() => setFavCardModalOpen(false)}
-        >
-          <div
-            className="skill-modal-box modal-pop-animation"
-            style={{
-              width: '95%',
-              maxWidth: '440px',
-              padding: '20px',
-              maxHeight: '85dvh',
-              display: 'flex',
-              flexDirection: 'column',
-              background: '#1e293b',
-              borderRadius: '16px',
-              border: '2px solid #334155',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3
-              style={{
-                color: '#eab308',
-                margin: '0 0 15px 0',
-                fontSize: '1.15rem',
-                textAlign: 'center',
-              }}
-            >
-              お気に入りカード選択
-            </h3>
-
-            {/* カード一覧グリッド */}
-            <div
-              className="card-list-container"
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                maxHeight: '380px',
-                padding: '5px',
-              }}
-            >
-              <div className="card-list-grid-3col">
-                {/* 未設定（解除）選択枠 */}
-                <div
-                  key="none"
-                  className="deck-card-item gallery-card-wrapper"
-                  style={{
-                    position: 'relative',
-                    cursor: 'pointer',
-                    borderRadius: '8px',
-                    border:
-                      !favoriteCardState || !favoriteCardState.cardId
-                        ? '3px solid #eab308'
-                        : 'none',
-                    boxShadow:
-                      !favoriteCardState || !favoriteCardState.cardId
-                        ? '0 0 12px #eab308'
-                        : 'none',
-                    transform:
-                      !favoriteCardState || !favoriteCardState.cardId
-                        ? 'scale(1.03)'
-                        : 'none',
-                    transition: 'transform 0.15s',
-                  }}
-                  onClick={() => {
-                    playSound?.(SOUNDS?.seClick);
-                    setFavoriteCardState(null);
-                    setFavCardModalOpen(false);
-                  }}
-                >
-                  <div
-                    className="card blue"
-                    style={{
-                      background: 'rgba(15, 23, 42, 0.85)',
-                      position: 'relative',
-                    }}
-                  >
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        color: '#cbd5e1',
-                        textAlign: 'center',
-                        width: '100%',
-                        lineHeight: '1',
-                        margin: 0,
-                        padding: 0,
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      未設定
-                    </span>
-                  </div>
-                </div>
-
-                {ownedMasterCards.map((card) => {
-                  const unlockedPremiumList =
-                    GameState.unlockedPremiumCards || [];
-                  const hasPremiumUnlocked = unlockedPremiumList.includes(
-                    card.id
-                  );
-
-                  const isCardPremium = determineIsCardPremium(
-                    card.id,
-                    hasPremiumUnlocked,
-                    favCardPremiumMap,
-                    favoriteCardState,
-                    GameState.premiumCards
-                  );
-
-                  const isSelected =
-                    favoriteCardState?.cardId === card.id &&
-                    !!favoriteCardState?.isPremium === isCardPremium;
-
-                  const rarityClass = card.rarity
-                    ? ` rarity-${card.rarity}`
-                    : '';
-
-                  return (
-                    <div
-                      key={card.id}
-                      className="deck-card-item gallery-card-wrapper"
-                      style={{
-                        position: 'relative',
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        border: isSelected ? '3px solid #eab308' : 'none',
-                        boxShadow: isSelected ? '0 0 12px #eab308' : 'none',
-                        transform: isSelected ? 'scale(1.03)' : 'none',
-                        transition: 'transform 0.15s',
-                      }}
-                      onClick={() => {
-                        playSound?.(SOUNDS?.seClick);
-                        const newFav = {
-                          cardId: card.id,
-                          isPremium: isCardPremium,
-                        };
-                        setFavoriteCardState(newFav);
-                        setFavCardModalOpen(false);
-                      }}
-                    >
-                      <div className={`card blue${rarityClass}`}>
-                        <img
-                          className="card-bg"
-                          src={getCardImgUrl({
-                            ...card,
-                            isPremium: isCardPremium,
-                          })}
-                          alt={card.name}
-                          style={{
-                            objectFit: 'cover',
-                            width: '100%',
-                            height: '100%',
-                          }}
-                        />
-
-                        {/* プレミアム版が解禁されているカードのみ切り替えボタンを表示 */}
-                        {hasPremiumUnlocked && (
-                          <div
-                            className="premium-toggle-icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              playSound?.(SOUNDS?.seClick);
-                              const nextPremium = !isCardPremium;
-                              setFavCardPremiumMap((prev) => ({
-                                ...prev,
-                                [card.id]: nextPremium,
-                              }));
-                              if (favoriteCardState?.cardId === card.id) {
-                                setFavoriteCardState({
-                                  cardId: card.id,
-                                  isPremium: nextPremium,
-                                });
-                              }
-                            }}
-                            style={{
-                              position: 'absolute',
-                              top: '4px',
-                              left: '4px',
-                              background: 'rgba(0,0,0,0.85)',
-                              color: isCardPremium ? '#d946ef' : '#94a3b8',
-                              padding: '2px 6px',
-                              borderRadius: '10px',
-                              fontSize: '0.8rem',
-                              zIndex: 7,
-                              border: `1px solid ${isCardPremium ? '#d946ef' : '#475569'}`,
-                              cursor: 'pointer',
-                            }}
-                            title={
-                              isCardPremium
-                                ? '通常版に切り替え'
-                                : 'プレミアム版に切り替え'
-                            }
-                          >
-                            ✨
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div
-              style={{
-                marginTop: '15px',
-                display: 'flex',
-                justifyContent: 'center',
-              }}
-            >
-              <button
-                className="btn"
-                style={{ background: '#475569', margin: 0 }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  setFavCardModalOpen(false);
-                }}
-              >
-                閉じる
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* お気に入りカード選択モーダル（仮想スクロール＋サムネイル） */}
+      <FavoriteCardSelectionModal
+        isOpen={favCardModalOpen}
+        onClose={() => setFavCardModalOpen(false)}
+        favoriteCardState={favoriteCardState}
+        setFavoriteCardState={setFavoriteCardState}
+        ownedMasterCards={ownedMasterCards}
+        favCardPremiumMap={favCardPremiumMap}
+        setFavCardPremiumMap={setFavCardPremiumMap}
+      />
 
       {/* 他プレイヤー閲覧専用プロフィールモーダル */}
       {viewProfileData && (
