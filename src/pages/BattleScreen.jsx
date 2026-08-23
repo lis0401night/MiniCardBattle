@@ -103,26 +103,53 @@ export default function BattleScreen() {
       if (card) {
         const fullImgUrl = getCardImgUrl(card, false);
         if (fullImgUrl) {
-          const preImg = new Image();
-          preImg.src = fullImgUrl;
+          await new Promise((resolve) => {
+            const preImg = new Image();
+            let isResolved = false;
 
-          // すでに事前ロードまたは召喚済みでキャッシュされているか確認
-          const isCached =
-            Array.isArray(GameState.battleImageCache) &&
-            GameState.battleImageCache.some((img) => img.src === preImg.src);
+            const onComplete = () => {
+              if (isResolved) return;
+              isResolved = true;
 
-          if (!isCached && Array.isArray(GameState.battleImageCache)) {
-            GameState.battleImageCache.push(preImg);
-          }
+              // デコード済みビットマップがGCで解放されないよう対戦中キャッシュへ保持する
+              const isCached =
+                Array.isArray(GameState.battleImageCache) &&
+                GameState.battleImageCache.some(
+                  (img) => img.src === preImg.src
+                );
+              if (!isCached && Array.isArray(GameState.battleImageCache)) {
+                GameState.battleImageCache.push(preImg);
+              }
 
-          if (typeof preImg.decode === 'function') {
-            await Promise.race([
-              preImg.decode().catch(() => {}),
-              new Promise((res) => setTimeout(res, 80)),
-            ]);
-          } else {
-            await new Promise((res) => setTimeout(res, 30));
-          }
+              if (typeof preImg.decode === 'function') {
+                preImg.decode().then(resolve).catch(resolve);
+              } else {
+                resolve();
+              }
+            };
+
+            preImg.onload = onComplete;
+            preImg.onerror = () => {
+              if (!isResolved) {
+                isResolved = true;
+                resolve();
+              }
+            };
+            preImg.src = fullImgUrl;
+
+            // すでにブラウザキャッシュから同期的に完了している場合
+            if (preImg.complete) {
+              onComplete();
+            }
+
+            // 万が一のタイムアウト保険（最大200msで強制進行してフリーズを防止）
+            setTimeout(() => {
+              if (!isResolved) {
+                isResolved = true;
+                resolve();
+              }
+            }, 200);
+          });
         }
       }
 
