@@ -336,7 +336,7 @@ export const SKILLS = {
     desc: (val) => [
       {
         type: 'text',
-        value: `相手リーダーにダメージを与えた時、相手の手札の最大パワーのカード${val || 1}枚を捨て、同数`,
+        value: `相手リーダーに戦闘ダメージを与えた時、相手の手札の最大パワーのカード${val || 1}枚を捨て、同数`,
       },
       { type: 'link', value: `「虚空（パワー0）」`, targetId: 'token_void' },
       { type: 'text', value: 'を加える。（同値の場合は左優先）' },
@@ -426,7 +426,7 @@ export const SKILLS = {
     name: '移動',
     icon: '🏃',
     desc: () =>
-      '自分のターン開始時に隣のレーンに移動できる。（防御が付与されている場合は無効）',
+      '自分のターン開始時、隣のレーンに移動できる。（防御が付与されている場合は無効）',
   },
   freeze: {
     name: '凍結',
@@ -443,7 +443,7 @@ export const SKILLS = {
     name: '神出',
     icon: '🚪',
     desc: () =>
-      '自分のターン開始時にランダムな自分の空きレーンに移動する。（防御が付与されている場合は無効）',
+      '自分のターン開始時、ランダムな自分の空きレーンに移動する。（防御が付与されている場合は無効）',
   },
   brutal: {
     name: '暴虐',
@@ -454,7 +454,7 @@ export const SKILLS = {
     name: '吸収',
     icon: '💖',
     desc: () =>
-      '戦闘で敵にダメージを与えた時、その数値の半分リーダーを回復する（端数切り捨て）。',
+      '戦闘ダメージを与えた時、自分リーダーのHPをその数値の半分回復する（端数切り捨て）。',
   },
   decay: {
     name: '減衰',
@@ -968,15 +968,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: 'ターン開始時',
-        skills: [
-          'growth',
-          'intercept',
-          'awake',
-          'samsara',
-          'contract',
-          'move',
-          'teleport',
-        ],
+        skills: ['growth', 'intercept', 'awake', 'samsara', 'move', 'teleport'],
       },
       {
         name: '肩代わり',
@@ -1000,7 +992,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: 'デメリット',
-        skills: ['defender', 'explode', 'brutal'],
+        skills: ['defender', 'explode', 'brutal', 'contract'],
       },
     ],
   },
