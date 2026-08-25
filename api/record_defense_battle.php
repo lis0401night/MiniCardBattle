@@ -66,6 +66,30 @@ if (isset($data['attacker_deck']) && is_array($data['attacker_deck'])) {
         }
     }
 }
+
+// 防衛側キャラクター・スキン・デッキのサニタイズ（リクエスト優先）
+$defender_character = isset($data['defender_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['defender_character']) : '';
+$defender_skin = isset($data['defender_skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['defender_skin']) : '';
+$defender_deck = [];
+if (isset($data['defender_deck']) && is_array($data['defender_deck'])) {
+    foreach ($data['defender_deck'] as $item) {
+        if (count($defender_deck) >= 20) break;
+        if (is_string($item)) {
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
+            if (!empty($cleaned_id)) {
+                $defender_deck[] = $cleaned_id;
+            }
+        } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
+            if (!empty($cleaned_id)) {
+                $defender_deck[] = [
+                    'id' => $cleaned_id,
+                    'isPremium' => !empty($item['isPremium']),
+                ];
+            }
+        }
+    }
+}
 $result = $data['result']; // 'win' (攻撃成功) / 'lose' (攻撃失敗) / 'draw' (引き分け)
 if (!in_array($result, ['win', 'lose', 'draw'], true)) {
     echo json_encode(['success' => false, 'error' => 'Invalid result value']);
@@ -105,6 +129,39 @@ if ($fileSize > 0 && preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $conte
 }
 
 if ($playerData) {
+    // 防衛側情報のフォールバック解決（リクエストにない場合はターゲットプレイヤーデータから補完）
+    if ($defender_character === '') {
+        $defender_character = preg_replace('/[^a-z0-9_]/', '', (string)($playerData['character'] ?? 'android'));
+    }
+    if ($defender_character === '') {
+        $defender_character = 'android';
+    }
+    if ($defender_skin === '') {
+        $defender_skin = preg_replace('/[^a-z0-9_]/', '', (string)($playerData['skin'] ?? 'default'));
+    }
+    if ($defender_skin === '') {
+        $defender_skin = 'default';
+    }
+    if (empty($defender_deck) && isset($playerData['deck']) && is_array($playerData['deck'])) {
+        foreach ($playerData['deck'] as $item) {
+            if (count($defender_deck) >= 20) break;
+            if (is_string($item)) {
+                $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
+                if (!empty($cleaned_id)) {
+                    $defender_deck[] = $cleaned_id;
+                }
+            } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
+                $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
+                if (!empty($cleaned_id)) {
+                    $defender_deck[] = [
+                        'id' => $cleaned_id,
+                        'isPremium' => !empty($item['isPremium']),
+                    ];
+                }
+            }
+        }
+    }
+
     $history = isset($playerData['defense_history']) && is_array($playerData['defense_history']) 
         ? $playerData['defense_history'] 
         : [];
@@ -117,6 +174,9 @@ if ($playerData) {
         'attackerSkin' => $attacker_skin,
         'attackerTotalPoints' => $attacker_total_points,
         'attackerDeck' => $attacker_deck,
+        'defenderCharacter' => $defender_character,
+        'defenderSkin' => $defender_skin,
+        'defenderDeck' => $defender_deck,
         'timestamp' => time(),
     ];
 
@@ -161,6 +221,8 @@ EOT;
         $logRecord = $newRecord;
         $logRecord['targetUuid'] = $target_uuid;
         $logRecord['targetName'] = $playerData['name'] ?? '防衛プレイヤー';
+        $logRecord['targetCharacter'] = $defender_character;
+        $logRecord['targetSkin'] = $defender_skin;
 
         array_unshift($recentBattles, $logRecord);
         // 最大2000件に制限

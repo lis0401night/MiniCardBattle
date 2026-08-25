@@ -131,6 +131,7 @@ export const GameState = {
   pendingCharId: null,
   lastBattleResult: null,
   battleStartPlayerDeckObjects: null,
+  battleStartEnemyDeckObjects: null,
   longPressTimer: null,
   selectedStageId: null,
   extraTurnCount: 0,

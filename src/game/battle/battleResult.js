@@ -354,6 +354,20 @@ function resolveDefenseResult() {
     const attackerTotalPoints =
       parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
 
+    const defenderDeckObjects =
+      Array.isArray(GameState.battleStartEnemyDeckObjects) &&
+      GameState.battleStartEnemyDeckObjects.length > 0
+        ? GameState.battleStartEnemyDeckObjects
+        : toDeckObjects(
+            GameState.enemyDeckSelection || GameState.enemyDeck,
+            GameState.enemyConfig?.premiumCards || []
+          );
+    const defenderCharacter =
+      GameState.enemyConfig?.character ||
+      GameState.enemyConfig?.id ||
+      'android';
+    const defenderSkin = GameState.enemyConfig?.skin || 'default';
+
     recordDefenseBattleToServer(enemyUuid, {
       attackerUuid: getOrCreateUUID(),
       attackerName,
@@ -361,6 +375,9 @@ function resolveDefenseResult() {
       attackerSkin,
       attackerTotalPoints,
       attackerDeck: attackerDeckObjects,
+      defenderCharacter,
+      defenderSkin,
+      defenderDeck: defenderDeckObjects,
       result: GameState.lastBattleResult,
     }).catch((err) => console.error('Failed to record defense battle:', err));
   }
@@ -808,6 +825,7 @@ export function cleanupBattleState() {
   GameState.actionQueue = [];
   GameState.pendingChoices = [];
   GameState.battleStartPlayerDeckObjects = null;
+  GameState.battleStartEnemyDeckObjects = null;
   GameState.aiDecision = null;
 
   // 2. モード系フラグおよび選択リゾルバのクリア

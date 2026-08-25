@@ -392,7 +392,7 @@ export async function syncUserProfile(
  * 防衛戦の対戦結果を防衛対象者(targetUuid)のサーバー防衛履歴へ送信します。
  *
  * @param {string} targetUuid - 防衛者のUUID
- * @param {Object} data - { attackerName, attackerCharacter, attackerSkin, attackerTotalPoints, attackerDeck, result }
+ * @param {Object} data - { attackerName, attackerCharacter, attackerSkin, attackerTotalPoints, attackerDeck, defenderCharacter, defenderSkin, defenderDeck, result }
  * @returns {Promise<boolean>} 成功したかどうか
  */
 export async function recordDefenseBattleToServer(targetUuid, data) {
@@ -412,6 +412,9 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
           attacker_skin: data.attackerSkin || 'default',
           attacker_total_points: data.attackerTotalPoints,
           attacker_deck: data.attackerDeck,
+          defender_character: data.defenderCharacter,
+          defender_skin: data.defenderSkin || 'default',
+          defender_deck: data.defenderDeck,
           result: data.result,
         }),
         keepalive: true,
@@ -437,20 +440,13 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
 
 /**
  * アプリ起動時のハートビートをサーバに送信します。
- * プレイヤーの存在をサーバに登録し、最終アクセス日時を更新します。
- * 1日1回制限: LocalStorageに最終送信日を保存し、同日中の重複送信を防止します。
+ * プレイヤーの存在・プロフィール・所持カード・プレミアム解放・全登録デッキをサーバに登録・同期し、
+ * 最終アクセス日時（タイムスタンプ）を更新します。
  *
- * @returns {Promise<boolean>} 送信成功したかどうか（スキップ時もtrueを返す）
+ * @returns {Promise<boolean>} 送信成功したかどうか
  */
 export async function sendHeartbeat() {
   try {
-    // 1日1回制限: 本日既に送信済みならスキップ
-    const today = new Date().toDateString();
-    const lastSent = localStorage.getItem(LAST_HEARTBEAT_KEY);
-    if (lastSent === today) {
-      return true;
-    }
-
     const uuid = getOrCreateUUID();
     if (!uuid) return false;
 
@@ -458,12 +454,60 @@ export async function sendHeartbeat() {
     const name = resolvePlayerName();
     const icon = resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY));
 
+    // 所持カード（インベントリ）をLocalStorage/GameStateから取得
+    let inventory = {};
+    try {
+      const invSaved = localStorage.getItem('mini_card_battle_inventory');
+      if (invSaved) {
+        inventory = JSON.parse(invSaved);
+      } else if (GameState.playerInventory) {
+        inventory = GameState.playerInventory;
+      }
+    } catch {
+      inventory = GameState.playerInventory || {};
+    }
+
+    // 解放済みプレミアムカードをLocalStorage/GameStateから取得
+    let unlockedPremiumCards = [];
+    try {
+      const premSaved = localStorage.getItem(
+        'mini_card_battle_unlocked_premium'
+      );
+      if (premSaved) {
+        unlockedPremiumCards = JSON.parse(premSaved);
+      } else if (GameState.unlockedPremiumCards) {
+        unlockedPremiumCards = GameState.unlockedPremiumCards;
+      }
+    } catch {
+      unlockedPremiumCards = GameState.unlockedPremiumCards || [];
+    }
+
+    // 全登録デッキ一覧をLocalStorage/GameStateから取得
+    let registeredDecks = [];
+    try {
+      const decksSaved = localStorage.getItem('mini_card_battle_decks');
+      if (decksSaved) {
+        registeredDecks = JSON.parse(decksSaved);
+      } else if (Array.isArray(GameState.decks) && GameState.decks.length > 0) {
+        registeredDecks = GameState.decks;
+      }
+    } catch {
+      registeredDecks = Array.isArray(GameState.decks) ? GameState.decks : [];
+    }
+
     const result = await fetchWithTimeout(
       'api/heartbeat.php',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid, name, icon }),
+        body: JSON.stringify({
+          uuid,
+          name,
+          icon,
+          inventory,
+          unlocked_premium_cards: unlockedPremiumCards,
+          registered_decks: registeredDecks,
+        }),
         keepalive: true,
       },
       HEARTBEAT_TIMEOUT_MS,
@@ -480,8 +524,8 @@ export async function sendHeartbeat() {
 
     if (!result) return false;
     if (result.success) {
-      // 送信成功時に最終送信日を記録
-      localStorage.setItem(LAST_HEARTBEAT_KEY, today);
+      // 送信成功時にタイムスタンプを記録
+      localStorage.setItem(LAST_HEARTBEAT_KEY, String(Date.now()));
       console.log(
         `ハートビート送信成功${result.isNewPlayer ? '（新規プレイヤー登録）' : ''}`
       );

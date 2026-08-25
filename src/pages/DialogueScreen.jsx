@@ -21,6 +21,10 @@ export default function DialogueScreen() {
   const stillStep = d.stillStep !== undefined ? d.stillStep : 0;
 
   const isStoryMode = GameState.gameMode === 'story';
+  const isHighDiffMode = checkIsHighDiffMode(GameState.gameMode);
+  const isFortuneMode = checkIsFortuneMode(GameState.gameMode);
+  const isSupportedMode = isStoryMode || isHighDiffMode || isFortuneMode;
+
   const isStillShowing = !!(isSatanCastleStill || d.stillEffect || d.hideBox);
   const isValidState =
     GameState.appState === 'story_intro' ||
@@ -28,14 +32,16 @@ export default function DialogueScreen() {
     GameState.appState === 'dungeon_talk_dialogue' ||
     (GameState.appState === 'pre_dialogue' &&
       !GameState.isSimplifiedDialogue) ||
-    (GameState.appState === 'post_dialogue' &&
+    (isStoryMode &&
+      GameState.appState === 'post_dialogue' &&
       GameState.lastBattleResult === 'win');
   const isAfterSatanDefeated =
+    isStoryMode &&
     GameState.battleCount >= 10 &&
     GameState.appState === 'post_dialogue' &&
     GameState.lastBattleResult === 'win';
   const showSkipButton =
-    isStoryMode && !isStillShowing && isValidState && !isAfterSatanDefeated;
+    isSupportedMode && !isStillShowing && isValidState && !isAfterSatanDefeated;
 
   const [backviewSrc, setBackviewSrc] = useState('');
 

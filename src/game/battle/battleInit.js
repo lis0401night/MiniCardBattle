@@ -397,7 +397,7 @@ export function prepareBattle() {
       GameState.enemyDeck = GameState.enemyDeck || [];
     }
 
-    // バトル開始時点のプレイヤー使用デッキのスナップショットを保存（防衛履歴送信などの正確性向上）
+    // バトル開始時点のプレイヤー・敵使用デッキのスナップショットを保存（防衛履歴送信などの正確性向上）
     // ※ 例外発生時でも前戦の古いスナップショットが残留せず、常に最新または適切な状態へ更新されるように try-catch 外で実行
     const snapshotSource =
       Array.isArray(GameState.playerDeckSelection) &&
@@ -408,6 +408,20 @@ export function prepareBattle() {
     GameState.battleStartPlayerDeckObjects =
       Array.isArray(snapshotSource) && snapshotSource.length > 0
         ? toDeckObjects(snapshotSource, GameState.premiumCards)
+        : null;
+
+    const enemySnapshotSource =
+      Array.isArray(GameState.enemyDeckSelection) &&
+      GameState.enemyDeckSelection.length > 0
+        ? GameState.enemyDeckSelection
+        : GameState.enemyDeck;
+
+    GameState.battleStartEnemyDeckObjects =
+      Array.isArray(enemySnapshotSource) && enemySnapshotSource.length > 0
+        ? toDeckObjects(
+            enemySnapshotSource,
+            GameState.enemyConfig?.premiumCards || []
+          )
         : null;
 
     // 対戦で使用される初期デッキのカード（フルサイズ＋サムネイル）

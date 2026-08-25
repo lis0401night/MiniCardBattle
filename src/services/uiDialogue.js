@@ -8,6 +8,8 @@ import {
   switchScreen,
   getCardImgUrl,
   currentBgmAudio,
+  checkIsFortuneMode,
+  checkIsHighDiffMode,
 } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { setupEventConfrontation } from '../game/events.js';
@@ -702,10 +704,15 @@ export function startSatanCastleStillTest(charId) {
 }
 
 /**
- * ストーリーモードの会話をスキップし、次のバトル前会話（簡易会話形式）に進む
+ * 会話（ストーリー・高難易度イベント・運命の邂逅イベント）をスキップし、次のバトル前会話（簡易会話形式）またはメニュー画面に進む
+ * @returns {void}
  */
 export function skipStoryDialogue() {
-  if (GameState.gameMode !== 'story') return;
+  const isStory = GameState.gameMode === 'story';
+  const isHighDiff = checkIsHighDiffMode(GameState.gameMode);
+  const isFortune = checkIsFortuneMode(GameState.gameMode);
+
+  if (!isStory && !isHighDiff && !isFortune) return;
 
   // クリックSEを再生
   playSound(SOUNDS.seClick);
@@ -713,6 +720,60 @@ export function skipStoryDialogue() {
   // ダイアログ処理中フラグをリセット
   GameState.isProcessing = false;
 
+  // --- 高難易度イベント / 運命の邂逅イベントの場合 ---
+  if (isHighDiff || isFortune) {
+    if (
+      GameState.appState === 'story_intro' ||
+      (GameState.appState === 'pre_dialogue' && !GameState.isSimplifiedDialogue)
+    ) {
+      // 戦闘前会話スキップ：ストーリーモードと同様に簡易戦闘前会話（敵・味方各1行の掛け合い）を構築
+      GameState.appState = 'pre_dialogue';
+      GameState.isSimplifiedDialogue = true;
+
+      let introText =
+        getDialogue(
+          GameState.enemyConfig,
+          GameState.playerConfig,
+          'intro',
+          'enemy'
+        ) || '・・・・';
+
+      if (
+        GameState.enemyConfig?.id === 'satan' &&
+        !GameState.enemyConfig.isShadow
+      ) {
+        introText =
+          '……よくぞここまで辿り着いたな。' +
+          getDialogue(
+            GameState.enemyConfig,
+            GameState.playerConfig,
+            'intro',
+            'enemy'
+          );
+      }
+
+      const playerIntroText = getDialogue(
+        GameState.playerConfig,
+        GameState.enemyConfig,
+        'intro',
+        'player'
+      );
+
+      // dialogueQueueに簡易会話をセット（敵台詞 -> プレイヤー台詞）
+      GameState.dialogueQueue = [
+        { speaker: 'enemy', text: introText },
+        { speaker: 'player', text: playerIntroText },
+      ];
+
+      // 画面のフェード遷移と会話画面のセットアップ
+      performFadeTransition(() => {
+        setupDialogueScreen();
+      });
+    }
+    return;
+  }
+
+  // --- ストーリーモードの場合 ---
   let targetBattleCount = GameState.battleCount;
 
   if (GameState.appState === 'story_intro') {
