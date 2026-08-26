@@ -82,7 +82,7 @@ function sanitizeInventory($inventory): array {
     }
     $sanitized = [];
     foreach ($inventory as $cardId => $count) {
-        $safeCardId = preg_replace('/[^a-z0-9_]/', '', (string) $cardId);
+        $safeCardId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $cardId);
         $intCount = intval($count);
         if ($safeCardId !== '' && $intCount > 0) {
             $sanitized[$safeCardId] = min($intCount, 99);
@@ -104,7 +104,7 @@ function sanitizeUnlockedPremiumCards($unlockedPremium): array {
     }
     $sanitized = [];
     foreach ($unlockedPremium as $cardId) {
-        $safeCardId = preg_replace('/[^a-z0-9_]/', '', (string) $cardId);
+        $safeCardId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $cardId);
         if ($safeCardId !== '') {
             $sanitized[] = $safeCardId;
         }
@@ -149,13 +149,13 @@ function sanitizeRegisteredDecks($decks): array {
             foreach ($deck['cards'] as $cardEntry) {
                 if (count($cards) >= 20) break;
                 if (is_array($cardEntry)) {
-                    $cId = preg_replace('/[^a-z0-9_]/', '', (string) ($cardEntry['id'] ?? ''));
+                    $cId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) ($cardEntry['id'] ?? ''));
                     $isPrem = !empty($cardEntry['isPremium']);
                     if ($cId !== '') {
                         $cards[] = $isPrem ? ['id' => $cId, 'isPremium' => true] : $cId;
                     }
                 } else {
-                    $cId = preg_replace('/[^a-z0-9_]/', '', (string) $cardEntry);
+                    $cId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $cardEntry);
                     if ($cId !== '') {
                         $cards[] = $cId;
                     }
