@@ -2767,6 +2767,35 @@ export const CARD_MASTER = [
     flavor: 'かつて天を突く巨躯を貫き、大地に縫い留めたとされる神器。',
   },
   {
+    id: 'gaston',
+    obtain: ['exchange_high'],
+    name: '傲慢な銃士',
+    rarity: 3,
+    power: 3,
+    skills: [
+      { id: 'legendary' },
+      { id: 'hero', value: 2 },
+      { id: 'snipe', value: 2 },
+    ],
+    voiceCategory: 'human_male_ikemen',
+    flavor:
+      '村一番の狩人を自負する男。その腕前以上に、揺るぎない自信だけは誰にも負けない。',
+  },
+  {
+    id: 'rosenberg',
+    obtain: ['exchange_high'],
+    name: 'ローゼンベルク',
+    rarity: 3,
+    power: 4,
+    skills: [
+      { id: 'legendary' },
+      { id: 'awake_legendary', value: 8, summonId: 'token_thebeast' },
+    ],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '野獣の力をその身に宿した女暗殺者。静かな殺意の奥で、獣性が獲物を待ち続ける。',
+  },
+  {
     id: 'badwolf',
     obtain: ['exchange_defense'],
     name: '幻影の狼',
@@ -3753,6 +3782,16 @@ export const CARD_MASTER = [
     isToken: true,
     voiceCategory: 'machine_new',
     flavor: '暴走した自律人形',
+  },
+  {
+    id: 'token_thebeast',
+    obtain: ['token'],
+    name: 'ザ・ビースト',
+    power: 8,
+    isToken: true,
+    voiceCategory: 'beast',
+    skills: [{ id: 'legendary' }],
+    flavor: '内なる野獣の姿',
   },
 ];
 

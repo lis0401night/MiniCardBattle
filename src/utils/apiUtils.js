@@ -1,4 +1,8 @@
-import { getOrCreateUUID, resolvePlayerName } from './gameUtils.js';
+import {
+  getOrCreateUUID,
+  loadHighDifficultyClearedData,
+  resolvePlayerName,
+} from './gameUtils.js';
 import { resolveValidIconId } from './constants/avatars.js';
 import { GameState } from '../state/gameState.js';
 import { loadFortuneClearedData } from './constants/fortuneRewards.js';
@@ -12,6 +16,8 @@ import {
   DEFENSE_WINS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
+  HIGH_DIFFICULTY_POINTS_KEY,
+  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   DUNGEON_MAX_STREAK_KEY,
   LAST_HEARTBEAT_KEY,
   PROFILE_ICON_KEY,
@@ -243,6 +249,23 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       if (serverPlayerData) {
         sPts = serverPlayerData.fortune_points || 0;
         sTotal = serverPlayerData.fortune_total_points || 0;
+      }
+    } else if (mode === 'high_difficulty') {
+      localPts =
+        parseInt(localStorage.getItem(HIGH_DIFFICULTY_POINTS_KEY), 10) || 0;
+      localTotal =
+        parseInt(localStorage.getItem(HIGH_DIFFICULTY_TOTAL_POINTS_KEY), 10) ||
+        0;
+      const cleared = loadHighDifficultyClearedData();
+
+      endpoint = 'update_high_difficulty_points.php';
+      extraData = {
+        high_difficulty_cleared: JSON.stringify(cleared),
+      };
+
+      if (serverPlayerData) {
+        sPts = serverPlayerData.high_difficulty_points || 0;
+        sTotal = serverPlayerData.high_difficulty_total_points || 0;
       }
     } else {
       return null;

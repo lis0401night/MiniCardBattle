@@ -320,6 +320,13 @@
                   <th
                     class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
                     style="min-width: 80px"
+                    onclick="window.sortBy('high_difficulty')"
+                  >
+                    高難易度ポイント
+                  </th>
+                  <th
+                    class="p-2 md:p-3 text-center cursor-pointer hover:text-indigo-500 transition-colors"
+                    style="min-width: 80px"
                     onclick="window.sortBy('fortune')"
                   >
                     運命ポイント
@@ -1376,6 +1383,7 @@
           defense: 'total_points',
           challenge: 'challenge_total_points',
           tournament: 'tournament_total_points',
+          high_difficulty: 'high_difficulty_total_points',
           fortune: 'fortune_total_points',
           defense_wins: 'defense_wins',
           grade: 'fortune_max_total_cost',
@@ -1459,6 +1467,9 @@
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-violet-600">${formatNumber(p.tournament_total_points || 0)}</div>
+              </td>
+              <td class="p-2 md:p-3 text-center">
+                <div class="text-[11px] font-black text-rose-600">${formatNumber(p.high_difficulty_total_points || 0)}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-sky-600">${formatNumber(p.fortune_total_points || 0)}</div>
@@ -1606,6 +1617,7 @@
           p.total_points || 0,
           p.challenge_total_points || 0,
           p.tournament_total_points || 0,
+          p.high_difficulty_total_points || 0,
           p.fortune_total_points || 0,
           1 // ゼロ除算防止
         );
@@ -1633,6 +1645,14 @@
             gradient: 'from-violet-500 to-purple-500',
             current: p.tournament_points || 0,
             total: p.tournament_total_points || 0,
+            extra: null,
+          },
+          {
+            label: '高難易度ポイント',
+            color: 'rose',
+            gradient: 'from-rose-500 to-red-500',
+            current: p.high_difficulty_points || 0,
+            total: p.high_difficulty_total_points || 0,
             extra: null,
           },
           {

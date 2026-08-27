@@ -3,7 +3,7 @@
  */
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.10';
+export const GAME_VERSION = '0.3.11';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -82,6 +82,12 @@ export const TURN_ORDER_START_DELAY_MS = 1000;
 export const ONLINE_BATTLE_START_DELAY_MS = 1000;
 export const FORTUNE_POINTS_KEY = 'mini_card_battle_fortune_points';
 export const FORTUNE_TOTAL_POINTS_KEY = 'mini_card_battle_fortune_total_points';
+export const HIGH_DIFFICULTY_POINTS_KEY =
+  'mini_card_battle_high_difficulty_points';
+export const HIGH_DIFFICULTY_TOTAL_POINTS_KEY =
+  'mini_card_battle_high_difficulty_total_points';
+export const HIGH_DIFFICULTY_CLEARED_KEY =
+  'mini_card_battle_high_difficulty_cleared';
 export const DUNGEON_MAX_STREAK_KEY = 'mini_card_battle_dungeon_max_streak';
 export const LAST_HEARTBEAT_KEY = 'mini_card_battle_last_heartbeat'; // ハートビート最終送信日（1日1回制限用）
 export const DECK_EDIT_GRID_DENSITY_KEY =
@@ -320,4 +326,177 @@ export const FORTUNE_EXCHANGE_LINEUP = [
   { id: 'berserkir', type: 'card', cost: 3 },
   { id: 'fenrir', type: 'card', cost: 1 },
   { id: 'dwarf', type: 'card', cost: 1 },
+];
+
+/**
+ * 高難易度イベント 交換所ラインナップ
+ * 各カードに対応した限定プレイマット（10点）、限定アイコン（10点）および限定カード（2点）
+ * @type {Array<{id: string, type: 'playmat'|'icon'|'card'|'skin', name?: string, cost: number}>}
+ */
+export const HIGH_DIFFICULTY_EXCHANGE_LINEUP = [
+  // プレイマット（10点）
+  {
+    id: 'pm_card_scientist',
+    type: 'playmat',
+    name: '世紀の天才科学者',
+    description:
+      '彼女の右に出る技術者はいない。その性格の難しさにさえ目を瞑れば、だが。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_hellkite',
+    type: 'playmat',
+    name: 'ヘルカイトの君主',
+    description:
+      '「黒き影が空を覆う時、古き王国は灰となる」というただの御伽話。だがある日空は黒く染まり、伝説は業火と共に舞い降りた。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_duelist',
+    type: 'playmat',
+    name: '血濡れの決闘者',
+    description:
+      '無慈悲に命を刈り取る殺戮者。肉体が切り刻まれようと、血の海で最後まで立ち尽くし標的を屠る。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_cthulhu',
+    type: 'playmat',
+    name: '大いなる支配者',
+    description:
+      'その姿を視認した瞬間、あらゆる物理法則は崩壊を始める。無限の絶望を増殖させていく絶対の主。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_elfking',
+    type: 'playmat',
+    name: 'エルフの王',
+    description:
+      '千年の時を統べるエルフの王。彼の声が響く時、森の全てが呼応し、侵略者をなぎ払う軍勢と化す。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_goddess',
+    type: 'playmat',
+    name: '勝利の女神',
+    description:
+      '戦場を舞う美しき女神。彼女が微笑む時、勝利の天秤は静かに傾き、受けるべき傷は運命の導きによって癒やしへと変わる。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_doll',
+    type: 'playmat',
+    name: '人形館の主',
+    description:
+      '洋館の奥深くに座す精巧な少女の人形。足を踏み入れた客人をもてなし、二度と外へ帰ることのない調度品へと変えていく。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_gorgon',
+    type: 'playmat',
+    name: '魔眼の勇者',
+    description:
+      '蛇の髪を持つ美しき戦乙女。その一瞥を受けた者は石と化し、剣の一閃は必殺の一撃となる。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_seimei',
+    type: 'playmat',
+    name: '天眼の陰陽師',
+    description:
+      '森羅万象を見通すその眼差しに、死角はない。涼やかな指先が印を結べば、標的は抗う間もなく縛に就く。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  {
+    id: 'pm_card_cleopatra',
+    type: 'playmat',
+    name: '最後の女王',
+    description:
+      '傾きゆく帝国を、美貌と知略で支え続けた統治者。彼女が下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へ消えた。',
+    cost: PLAYMAT_EXCHANGE_COST,
+  },
+  // アイコン（10点）
+  {
+    id: 'card_scientist',
+    type: 'icon',
+    name: '世紀の天才科学者',
+    description:
+      '彼女の右に出る技術者はいない。その性格の難しさにさえ目を瞑れば、だが。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_hellkite',
+    type: 'icon',
+    name: 'ヘルカイトの君主',
+    description:
+      '「黒き影が空を覆う時、古き王国は灰となる」というただの御伽話。だがある日空は黒く染まり、伝説は業火と共に舞い降りた。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_duelist',
+    type: 'icon',
+    name: '血濡れの決闘者',
+    description:
+      '無慈悲に命を刈り取る殺戮者。肉体が切り刻まれようと、血の海で最後まで立ち尽くし標的を屠る。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_cthulhu',
+    type: 'icon',
+    name: '大いなる支配者',
+    description:
+      'その姿を視認した瞬間、あらゆる物理法則は崩壊を始める。無限の絶望を増殖させていく絶対の主。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_elfking',
+    type: 'icon',
+    name: 'エルフの王',
+    description:
+      '千年の時を統べるエルフの王。彼の声が響く時、森の全てが呼応し、侵略者をなぎ払う軍勢と化す。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_goddess',
+    type: 'icon',
+    name: '勝利の女神',
+    description:
+      '戦場を舞う美しき女神。彼女が微笑む時、勝利の天秤は静かに傾き、受けるべき傷は運命の導きによって癒やしへと変わる。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_doll',
+    type: 'icon',
+    name: '人形館の主',
+    description:
+      '洋館の奥深くに座す精巧な少女の人形。足を踏み入れた客人をもてなし、二度と外へ帰ることのない調度品へと変えていく。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_gorgon',
+    type: 'icon',
+    name: '魔眼の勇者',
+    description:
+      '蛇の髪を持つ美しき戦乙女。その一瞥を受けた者は石と化し、剣の一閃は必殺の一撃となる。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_seimei',
+    type: 'icon',
+    name: '天眼の陰陽師',
+    description:
+      '森羅万象を見通すその眼差しに、死角はない。涼やかな指先が印を結べば、標的は抗う間もなく縛に就く。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  {
+    id: 'card_cleopatra',
+    type: 'icon',
+    name: '最後の女王',
+    description:
+      '傾きゆく帝国を、美貌と知略で支え続けた統治者。彼女が下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へ消えた。',
+    cost: ICON_EXCHANGE_COST,
+  },
+  // カード
+  { id: 'gaston', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
+  { id: 'rosenberg', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
 ];

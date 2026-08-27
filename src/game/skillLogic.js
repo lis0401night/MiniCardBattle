@@ -386,6 +386,7 @@ export async function resolveActiveSkillEffect(
       hack: '改竄',
       grant_deadly: '付与(必殺)',
       grant_sturdy: '付与(頑丈)',
+      awake_legendary: '覚醒(伝説)',
     };
     if (!EXCLUDE_POPUP_SKILLS.includes(skillId)) {
       if (cEl) createDamagePopup(cEl, labels[skillId] || 'スキル', '#facc15');
@@ -3683,7 +3684,7 @@ export async function triggerStartTurnPassive(owner, lane) {
       triggered = true;
     }
 
-    if (sk.id === 'awake') {
+    if (sk.id === 'awake' || sk.id === 'awake_legendary') {
       const val = sk.value || 1;
       // エンジンのロジックを流用してイベントを生成
       const currentState = {
@@ -3706,14 +3707,7 @@ export async function triggerStartTurnPassive(owner, lane) {
       };
 
       let awakeEvents = [];
-      applyActiveSkillLogic(
-        currentState,
-        owner,
-        lane,
-        'awake',
-        val,
-        awakeEvents
-      );
+      applyActiveSkillLogic(currentState, owner, lane, sk.id, val, awakeEvents);
 
       // 盤面の状態を同期
       if (owner === 'blue') {

@@ -25,6 +25,8 @@ import {
   DEFENSE_TOTAL_POINTS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
+  HIGH_DIFFICULTY_POINTS_KEY,
+  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   MAX_CARD_COPIES,
 } from '../utils/constants/config.js';
 
@@ -44,6 +46,10 @@ const KEY_MAPPING = {
   fortune: {
     points: FORTUNE_POINTS_KEY,
     total: FORTUNE_TOTAL_POINTS_KEY,
+  },
+  high_difficulty: {
+    points: HIGH_DIFFICULTY_POINTS_KEY,
+    total: HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   },
 };
 

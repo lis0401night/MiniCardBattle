@@ -18,8 +18,10 @@ import {
   getDialogue,
   getOrCreateUUID,
   getSeededRandom,
+  loadHighDifficultyClearedData,
   playSound,
   resolvePlayerName,
+  saveHighDifficultyClearedData,
   stopAllBGM,
   switchScreen,
 } from '../../utils/gameUtils.js';
@@ -62,6 +64,8 @@ import {
   DEFENSE_TARGETS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
+  HIGH_DIFFICULTY_POINTS_KEY,
+  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   MAX_CARD_COPIES,
 } from '../../utils/constants/config.js';
 import {
@@ -565,6 +569,76 @@ function resolveFortuneRewards() {
 }
 
 /**
+ * 高難易度イベント（超級）の報酬およびポイント計算・更新処理を実行する。
+ * 初回クリア時は 10 Pt、2回目以降は 2 Pt を付与する。
+ * @returns {boolean} 処理を完結し、後続のドロップ抽選等をスキップする場合は true
+ */
+function resolveHighDifficultyRewards() {
+  if (!(
+    GameState.lastBattleResult === 'win' &&
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
+  )) {
+    return false;
+  }
+
+  const highCharId = extractEventCharacterId(GameState.gameMode, '_high');
+  const clearedData = loadHighDifficultyClearedData();
+  const isFirstClear = !clearedData[highCharId];
+  const earnedPts = isFirstClear ? 10 : 2;
+
+  let currentPts =
+    parseInt(localStorage.getItem(HIGH_DIFFICULTY_POINTS_KEY), 10) || 0;
+  let totalPts =
+    parseInt(localStorage.getItem(HIGH_DIFFICULTY_TOTAL_POINTS_KEY), 10) || 0;
+  currentPts += earnedPts;
+  totalPts += earnedPts;
+
+  localStorage.setItem(HIGH_DIFFICULTY_POINTS_KEY, String(currentPts));
+  localStorage.setItem(HIGH_DIFFICULTY_TOTAL_POINTS_KEY, String(totalPts));
+
+  let updatedClearedData = clearedData;
+  if (isFirstClear) {
+    updatedClearedData = saveHighDifficultyClearedData(highCharId);
+  }
+
+  savePointsToServer(
+    'update_high_difficulty_points.php',
+    currentPts,
+    totalPts,
+    {
+      high_difficulty_cleared: JSON.stringify(updatedClearedData),
+    }
+  ).catch((err) =>
+    console.error('高難易度ポイントの同期送信に失敗しました:', err)
+  );
+
+  // 実績・クリア回数のインクリメント
+  if (typeof incrementStat === 'function') {
+    incrementStat('eventClear', `${highCharId}_high`);
+  }
+
+  playSound(SOUNDS.seSkill);
+  showPointAcquisitionModal({
+    title: isFirstClear ? '高難易度 初回クリア！' : '高難易度 クリア！',
+    message: isFirstClear
+      ? `初回クリアボーナスとして高難易度ポイントを ${earnedPts} Pt 獲得しました！`
+      : `高難易度ポイントを ${earnedPts} Pt 獲得しました！`,
+    points: earnedPts,
+    totalPoints: totalPts,
+    color: '#ef4444',
+    darkColor: '#dc2626',
+    onClose: () => {
+      cleanupBattleState();
+      GameState.appState = 'post_dialogue';
+      setupDialogueScreen();
+    },
+  });
+
+  return true;
+}
+
+/**
  * バトル勝利時のカードドロップ抽選および報酬画面への遷移を実行する。
  * @returns {boolean} 報酬画面を表示した場合は true
  */
@@ -751,15 +825,10 @@ export function endBattle() {
         }
       }
 
-      if (
-        GameState.gameMode?.startsWith('event_') &&
-        GameState.gameMode?.endsWith('_high') &&
-        typeof incrementStat === 'function'
-      ) {
-        const charId = extractEventCharacterId(GameState.gameMode, '_high');
-        incrementStat('eventClear', `${charId}_high`);
+      // resolveHighDifficultyRewards: 高難易度イベントのポイント付与・モーダル
+      if (resolveHighDifficultyRewards()) {
+        return;
       }
-
       // resolveFortuneRewards: 内部のコールバックまたは同期パスでcleanupBattleState実行
       if (resolveFortuneRewards()) {
         return;

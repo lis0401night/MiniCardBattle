@@ -1150,6 +1150,7 @@ export function processActionSequence(
                 'ambush',
                 'resurrect',
                 'awake',
+                'awake_legendary',
                 'clone',
                 'split',
                 'forge',

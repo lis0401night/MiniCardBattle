@@ -10,6 +10,7 @@ import {
   LOW_TIER_PICK_COUNT,
   MID_TIER_PICK_COUNT,
   PROFILE_NAME_KEY,
+  HIGH_DIFFICULTY_CLEARED_KEY,
 } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import { setCurrentScreen } from './errorReporter.js';
@@ -1499,4 +1500,39 @@ export function resolveAssetUrl(url) {
   }
 
   return url;
+}
+
+/**
+ * 高難易度イベントの初回クリア状況マップを取得する。
+ * 各ボスの初回ボーナス（10Pt）受け取り済み判定用。
+ *
+ * @returns {Record<string, boolean>} ボスIDをキーとするクリア状況マップ (例: { android: true, satan: true })
+ */
+export function loadHighDifficultyClearedData() {
+  try {
+    const raw = localStorage.getItem(HIGH_DIFFICULTY_CLEARED_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) || {};
+  } catch (e) {
+    console.error('高難易度クリア状態の読み込みに失敗しました:', e);
+    return {};
+  }
+}
+
+/**
+ * 高難易度イベントの特定ボスをクリア済みにマークして保存する。
+ *
+ * @param {string} charId - クリアしたボスのキャラクターID
+ * @returns {Record<string, boolean>} 更新後のクリア状況マップ
+ */
+export function saveHighDifficultyClearedData(charId) {
+  if (!charId) return loadHighDifficultyClearedData();
+  const current = loadHighDifficultyClearedData();
+  current[charId] = true;
+  try {
+    localStorage.setItem(HIGH_DIFFICULTY_CLEARED_KEY, JSON.stringify(current));
+  } catch (e) {
+    console.error('高難易度クリア状態の保存に失敗しました:', e);
+  }
+  return current;
 }

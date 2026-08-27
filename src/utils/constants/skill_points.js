@@ -290,6 +290,10 @@ export const SKILL_POINTS = {
     base: -5,
     multiplier: 1,
   },
+  awake_legendary: {
+    base: -5,
+    multiplier: 1,
+  },
   cleave: {
     base: 0,
     multiplier: 0,

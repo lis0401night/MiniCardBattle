@@ -31,6 +31,8 @@ import {
   DEFENSE_WINS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
+  HIGH_DIFFICULTY_POINTS_KEY,
+  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
 } from '../../utils/constants/config.js';
 
 const RANK_ACCENTS = {
@@ -120,6 +122,8 @@ export default function RankingScreen({
               syncMode = 'defense';
             } else if (baseField?.includes('fortune')) {
               syncMode = 'fortune';
+            } else if (baseField?.includes('high_difficulty')) {
+              syncMode = 'high_difficulty';
             }
 
             if (syncMode && myData) {
@@ -146,6 +150,9 @@ export default function RankingScreen({
                   myData.fortune_total_cost_valkyria =
                     syncResult.fortune_max_total_cost_valkyria ??
                     myData.fortune_total_cost_valkyria;
+                } else if (syncMode === 'high_difficulty') {
+                  myData.high_difficulty_points = syncResult.points;
+                  myData.high_difficulty_total_points = syncResult.totalPoints;
                 }
               }
             }
@@ -196,6 +203,17 @@ export default function RankingScreen({
                 clearedDataValkyria.maxTotalCost || 0;
               const fortuneTotalCost = fortuneTotalCostAutomata;
 
+              const highDifficultyPts =
+                parseInt(
+                  localStorage.getItem(HIGH_DIFFICULTY_POINTS_KEY),
+                  10
+                ) || 0;
+              const highDifficultyTotalPts =
+                parseInt(
+                  localStorage.getItem(HIGH_DIFFICULTY_TOTAL_POINTS_KEY),
+                  10
+                ) || 0;
+
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
                 const res = await syncModePoints('challenge', null);
@@ -214,6 +232,12 @@ export default function RankingScreen({
                   fortuneTotalCostValkyria > 0)
               ) {
                 const res = await syncModePoints('fortune', null);
+                hasCreated = Boolean(res);
+              } else if (
+                syncMode === 'high_difficulty' &&
+                highDifficultyTotalPts > 0
+              ) {
+                const res = await syncModePoints('high_difficulty', null);
                 hasCreated = Boolean(res);
               }
 
@@ -242,6 +266,8 @@ export default function RankingScreen({
                   fortune_total_cost: fortuneTotalCost,
                   fortune_total_cost_automata: fortuneTotalCostAutomata,
                   fortune_total_cost_valkyria: fortuneTotalCostValkyria,
+                  high_difficulty_points: highDifficultyPts,
+                  high_difficulty_total_points: highDifficultyTotalPts,
                 };
                 activePlayers.push(virtualPlayer);
               }

@@ -512,6 +512,9 @@ export async function playEvents(events) {
             if (ev.source === 'awake') {
               createDamagePopup(cEl, '覚醒', '#facc15');
             }
+            if (ev.source === 'awake_legendary') {
+              createDamagePopup(cEl, '覚醒(伝説)', '#facc15');
+            }
           }
         }, 50);
 

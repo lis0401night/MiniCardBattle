@@ -18,7 +18,10 @@ export default function HighDifficultyRulesScreen() {
       <div className="rule-box">
         <ul>
           <li>特別な対戦相手と戦うモードです。</li>
-          <li>ここでしか手に入らない限定の報酬を手に入れましょう。</li>
+          <li>
+            勝利することで高難易度ポイントを獲得できます（初回クリア: 10
+            Pt、2回目以降: 2 Pt）。
+          </li>
           <li
             style={{ color: '#fb7185', marginTop: '10px', listStyle: 'none' }}
           >

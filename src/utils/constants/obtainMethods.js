@@ -9,6 +9,7 @@ export const OBTAIN_METHOD_MAP = {
   exchange_challenge: '交換所（試練の宮殿）',
   exchange_tournament: '交換所（夢幻の闘技祭）',
   exchange_fortune: '交換所（運命の邂逅）',
+  exchange_high: '交換所（高難易度）',
   achievement: '実績',
   token: 'トークン（特殊効果による配置）',
   gacha: 'ガチャなど',

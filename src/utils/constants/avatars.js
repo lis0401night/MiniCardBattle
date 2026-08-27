@@ -82,12 +82,91 @@ function generateSkinIcons(skinMaster) {
 }
 
 /**
+ * カード関連の解放アイコン一覧
+ * 各カード名に対応したアイコン定義
+ * @type {Array<{id: string, name: string, path: string}>}
+ */
+const CARD_ICONS = [
+  {
+    id: 'card_scientist',
+    name: '世紀の天才科学者',
+    path: iconPath('card_scientist'),
+    description:
+      '彼女の右に出る技術者はいない。その性格の難しさにさえ目を瞑れば、だが。',
+  },
+  {
+    id: 'card_hellkite',
+    name: 'ヘルカイトの君主',
+    path: iconPath('card_hellkite'),
+    description:
+      '「黒き影が空を覆う時、古き王国は灰となる」というただの御伽話。だがある日空は黒く染まり、伝説は業火と共に舞い降りた。',
+  },
+  {
+    id: 'card_duelist',
+    name: '血濡れの決闘者',
+    path: iconPath('card_duelist'),
+    description:
+      '無慈悲に命を刈り取る殺戮者。肉体が切り刻まれようと、血の海で最後まで立ち尽くし標的を屠る。',
+  },
+  {
+    id: 'card_cthulhu',
+    name: '大いなる支配者',
+    path: iconPath('card_cthulhu'),
+    description:
+      'その姿を視認した瞬間、あらゆる物理法則は崩壊を始める。無限の絶望を増殖させていく絶対の主。',
+  },
+  {
+    id: 'card_elfking',
+    name: 'エルフの王',
+    path: iconPath('card_elfking'),
+    description:
+      '千年の時を統べるエルフの王。彼の声が響く時、森の全てが呼応し、侵略者をなぎ払う軍勢と化す。',
+  },
+  {
+    id: 'card_goddess',
+    name: '勝利の女神',
+    path: iconPath('card_goddess'),
+    description:
+      '戦場を舞う美しき女神。彼女が微笑む時、勝利の天秤は静かに傾き、受けるべき傷は運命の導きによって癒やしへと変わる。',
+  },
+  {
+    id: 'card_doll',
+    name: '人形館の主',
+    path: iconPath('card_doll'),
+    description:
+      '洋館の奥深くに座す精巧な少女の人形。足を踏み入れた客人をもてなし、二度と外へ帰ることのない調度品へと変えていく。',
+  },
+  {
+    id: 'card_gorgon',
+    name: '魔眼の勇者',
+    path: iconPath('card_gorgon'),
+    description:
+      '蛇の髪を持つ美しき戦乙女。その一瞥を受けた者は石と化し、剣の一閃は必殺の一撃となる。',
+  },
+  {
+    id: 'card_seimei',
+    name: '天眼の陰陽師',
+    path: iconPath('card_seimei'),
+    description:
+      '森羅万象を見通すその眼差しに、死角はない。涼やかな指先が印を結べば、標的は抗う間もなく縛に就く。',
+  },
+  {
+    id: 'card_cleopatra',
+    name: '最後の女王',
+    path: iconPath('card_cleopatra'),
+    description:
+      '傾きゆく帝国を、美貌と知略で支え続けた統治者。彼女が下した最後の冷徹な決断は、かつての栄華と共に歴史の闇へ消えた。',
+  },
+];
+
+/**
  * 解放報酬等で追加されるアイコン一覧
- * スキンマスタ（skins.js）から自動生成 + 個別追加分
+ * スキンマスタ（skins.js）から自動生成 + 個別追加分 + カードアイコン分
  * @type {Array<{id: string, name: string, path: string}>}
  */
 export const EXTRA_ICONS = [
   ...STANDALONE_EXTRA_ICONS,
+  ...CARD_ICONS,
   ...generateSkinIcons(SKIN_MASTER),
 ];
 

@@ -1535,7 +1535,10 @@ export function applyActiveSkillLogic(
       // カード本体またはスキルから召喚IDを取得
       const skillForSummonId = c.skills?.find(
         (s) =>
-          (s.id === 'summon' || s.id === 'awake' || s.id === 'split') &&
+          (s.id === 'summon' ||
+            s.id === 'awake' ||
+            s.id === 'awake_legendary' ||
+            s.id === 'split') &&
           s.summonId
       );
       tIdEngine = c.summonId || skillForSummonId?.summonId;
@@ -1615,11 +1618,14 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'awake': {
-      // 覚醒: 同レーンにトークンを配置し、元のカードを墓地へ送る（変身/置換）
+    case 'awake':
+    case 'awake_legendary': {
+      // 覚醒 / 覚醒(伝説): 同レーンにトークンを配置し、元のカードを墓地へ送る（変身/置換）
       const awakeVal = val || 1;
       let awakeTid = null;
-      const awakeSkill = c.skills?.find((s) => s.id === 'awake');
+      const awakeSkill = c.skills?.find(
+        (s) => s.id === 'awake' || s.id === 'awake_legendary'
+      );
       awakeTid = awakeSkill?.summonId || 'token_dragon';
 
       const awakeTpl = CARD_MASTER.find((m) => m.id === awakeTid);
@@ -1637,7 +1643,9 @@ export function applyActiveSkillLogic(
         isToken: true,
         baseId: awakeTid,
         imgUrl: `assets/cards/card_${awakeTid}.webp`,
-        skills: [], // トークンは能力を持たない
+        skills: awakeTpl.skills
+          ? JSON.parse(JSON.stringify(awakeTpl.skills))
+          : [],
       };
 
       // 旧カードを盤面から除外（墓地へ送る）
@@ -1650,7 +1658,7 @@ export function applyActiveSkillLogic(
         side: owner,
         lane: l,
         card: JSON.parse(JSON.stringify(awakeToken)),
-        source: 'awake',
+        source: sid,
       });
       break;
     }
@@ -5415,9 +5423,14 @@ export function applyPassiveSkillLogic(
         source: 'samsara',
       });
     }
-    if (hasSkill(c, 'awake')) {
-      const v = getSkillValue(c, 'awake') || 1;
-      const awakeSkill = c.skills?.find((s) => s.id === 'awake');
+    if (hasSkill(c, 'awake') || hasSkill(c, 'awake_legendary')) {
+      const currentAwakeSkillId = hasSkill(c, 'awake_legendary')
+        ? 'awake_legendary'
+        : 'awake';
+      const v = getSkillValue(c, currentAwakeSkillId) || 1;
+      const awakeSkill = c.skills?.find(
+        (s) => s.id === 'awake' || s.id === 'awake_legendary'
+      );
       const summonId = awakeSkill?.summonId || 'token_dragon';
 
       // 同レーンにトークンを配置（Place）
@@ -5429,7 +5442,16 @@ export function applyPassiveSkillLogic(
         summonId,
         value: v,
       });
-      applyActiveSkillLogic(state, side, i, 'awake', v, events, [], i);
+      applyActiveSkillLogic(
+        state,
+        side,
+        i,
+        currentAwakeSkillId,
+        v,
+        events,
+        [],
+        i
+      );
     }
   }
   processDestructionTriggers(state, events);

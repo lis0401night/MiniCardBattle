@@ -93,9 +93,22 @@ export default function ExchangeItemCard({
     imgUrl = getPlaymatImgUrl(masterClass.id || item.id, true);
     originalImgUrl = getPlaymatImgUrl(masterClass.id || item.id, false);
     displayName = masterClass.name || item.name;
+    displayDesc = masterClass.description || item.description;
+    if (!displayDesc && String(item.id).startsWith('pm_card_')) {
+      const cardId = String(item.id).replace('pm_card_', '');
+      const card = CARD_MASTER.find((c) => c.id === cardId);
+      if (card) displayDesc = card.flavor;
+    }
   } else if (isIcon) {
     imgUrl = appendVersionQuery(`assets/icons/icon_${item.id}.webp`);
     originalImgUrl = imgUrl;
+    displayName = item.name;
+    displayDesc = item.description;
+    if (!displayDesc && String(item.id).startsWith('card_')) {
+      const cardId = String(item.id).replace('card_', '');
+      const card = CARD_MASTER.find((c) => c.id === cardId);
+      if (card) displayDesc = card.flavor;
+    }
   } else {
     // スキンの場合（一覧はサムネイル、詳細はフルサイズ）
     imgUrl = appendVersionQuery(`assets/characters/char_${item.id}_thumb.webp`);

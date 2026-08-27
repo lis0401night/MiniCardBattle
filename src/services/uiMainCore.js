@@ -904,6 +904,24 @@ export function showHighDifficultyRules() {
   switchScreen('screen-high-difficulty-rules');
 }
 
+/**
+ * 高難易度イベントのランキング画面を表示する
+ * @returns {void}
+ */
+export function showHighDifficultyRanking() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-high-difficulty-ranking');
+}
+
+/**
+ * 高難易度イベントの交換所画面を表示する
+ * @returns {void}
+ */
+export function showHighDifficultyExchange() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-high-difficulty-exchange');
+}
+
 export function handleSatanBattle() {
   playSound(SOUNDS.seClick);
   startGameMode('event_satan_high');

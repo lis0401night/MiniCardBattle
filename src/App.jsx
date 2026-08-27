@@ -10,6 +10,8 @@ import GalleryMenuScreen from './pages/GalleryMenuScreen.jsx';
 import HighDifficultyMenuScreen from './pages/HighDifficultyMenuScreen.jsx';
 import HighDifficultyRulesScreen from './pages/HighDifficultyRulesScreen.jsx';
 import HighDifficultyScreen from './pages/HighDifficultyScreen.jsx';
+import HighDifficultyExchangeScreen from './pages/HighDifficultyExchangeScreen.jsx';
+import HighDifficultyRankingScreen from './pages/HighDifficultyRankingScreen.jsx';
 import ModeSelectScreen from './pages/ModeSelectScreen.jsx';
 import OptionsScreen from './pages/OptionsScreen.jsx';
 import RulesScreen from './pages/RulesScreen.jsx';
@@ -145,6 +147,8 @@ const SCREEN_COMPONENTS = {
   'screen-high-difficulty-menu': HighDifficultyMenuScreen,
   'screen-high-difficulty': HighDifficultyScreen,
   'screen-high-difficulty-rules': HighDifficultyRulesScreen,
+  'screen-high-difficulty-exchange': HighDifficultyExchangeScreen,
+  'screen-high-difficulty-ranking': HighDifficultyRankingScreen,
   'screen-card-list': CardListScreen,
   'screen-achievements': AchievementsScreen,
   'screen-glossary': GlossaryScreen,

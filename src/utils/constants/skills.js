@@ -592,7 +592,9 @@ export const SKILLS = {
       const summonId =
         sk?.summonId ||
         (Array.isArray(sk?.skills)
-          ? sk.skills.find((s) => s.id === 'awake')?.summonId
+          ? sk.skills.find(
+              (s) => s.id === 'awake' || s.id === 'awake_legendary'
+            )?.summonId
           : null);
       const summonCard = summonId
         ? CARD_MASTER.find((c) => c.id === summonId)
@@ -609,6 +611,35 @@ export const SKILLS = {
         ];
       }
       return `自分のターン開始時、同じレーンにパワー${val}のトークンを配置する。`;
+    },
+  },
+  awake_legendary: {
+    name: '覚醒(伝説)',
+    icon: '💎',
+    desc: (val, sk) => {
+      const summonId =
+        sk?.summonId ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find(
+              (s) => s.id === 'awake' || s.id === 'awake_legendary'
+            )?.summonId
+          : null) ||
+        'token_thebeast';
+      const summonCard = summonId
+        ? CARD_MASTER.find((c) => c.id === summonId)
+        : null;
+      if (summonCard) {
+        return [
+          { type: 'text', value: '自分のターン開始時、同じレーンに' },
+          {
+            type: 'link',
+            value: `「${summonCard.name}（パワー${val}/伝説）」`,
+            targetId: summonId,
+          },
+          { type: 'text', value: 'を配置する。' },
+        ];
+      }
+      return `自分のターン開始時、同じレーンにパワー${val}の伝説トークンを配置する。`;
     },
   },
   cleave: {
@@ -850,6 +881,7 @@ export const PASSIVE_SKILLS = [
   'grave_keeper',
   'miasma',
   'awake',
+  'awake_legendary',
   'startup',
   'intercept',
   'teleport',
@@ -968,7 +1000,15 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: 'ターン開始時',
-        skills: ['growth', 'intercept', 'awake', 'samsara', 'move', 'teleport'],
+        skills: [
+          'growth',
+          'intercept',
+          'awake',
+          'awake_legendary',
+          'samsara',
+          'move',
+          'teleport',
+        ],
       },
       {
         name: '肩代わり',

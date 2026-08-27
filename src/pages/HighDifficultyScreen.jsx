@@ -5,7 +5,10 @@ import {
   CHARACTERS,
   BOSS_CHARACTER_IDS,
 } from '../utils/constants/characters.js';
-import { playSound } from '../utils/gameUtils.js';
+import {
+  loadHighDifficultyClearedData,
+  playSound,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
   appendVersionQuery,
@@ -14,9 +17,13 @@ import {
 
 /**
  * 高難易度イベントのキャラクター選択画面コンポーネント。
+ * 各ボスの選択と獲得可能ポイント（初回10Pt / 2回目以降2Pt）を表示する。
+ *
  * @returns {JSX.Element} 高難易度選択画面
  */
 export default function HighDifficultyScreen() {
+  const clearedData = loadHighDifficultyClearedData();
+
   // サタンを先頭に表示するため、satanを優先ソート
   const highEventChars = Object.values(CHARACTERS)
     .filter((c) => c.event_high)
@@ -60,6 +67,9 @@ export default function HighDifficultyScreen() {
               ? char.icon
               : `assets/icons/icon_${eventConf.id}.webp`;
 
+          const isCleared = !!clearedData[char.id];
+          const winPoints = isCleared ? 2 : 10;
+
           return (
             <button
               key={eventConf.id}
@@ -70,29 +80,50 @@ export default function HighDifficultyScreen() {
                 selectHighDifficultyTarget?.(char.id);
               }}
             >
-              <div className="banner-icon-wrapper">
-                <EventIcon
-                  src={iconSrc}
-                  fallbackSrc={char.icon}
-                  className="banner-icon"
-                  alt=""
-                />
-                <img
-                  src={appendVersionQuery(
-                    `assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`
-                  )}
-                  className="banner-icon-frame"
-                  decoding="async"
-                  loading="lazy"
-                  alt="frame"
-                />
-              </div>
-              <span
-                className="banner-text"
-                style={{ color: char.color || '#fff' }}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
               >
-                {eventConf.name}
-              </span>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div className="banner-icon-wrapper">
+                    <EventIcon
+                      src={iconSrc}
+                      fallbackSrc={char.icon}
+                      className="banner-icon"
+                      alt=""
+                    />
+                    <img
+                      src={appendVersionQuery(
+                        `assets/icons/iconframe_${BOSS_CHARACTER_IDS.includes(char.id) ? 'red' : 'gold'}.webp`
+                      )}
+                      className="banner-icon-frame"
+                      decoding="async"
+                      loading="lazy"
+                      alt="frame"
+                    />
+                  </div>
+                  <span
+                    className="banner-text"
+                    style={{ color: char.color || '#fff' }}
+                  >
+                    {eventConf.name}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    color: '#10b981',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    marginRight: '5px',
+                  }}
+                >
+                  Win +{winPoints}
+                </div>
+              </div>
             </button>
           );
         })}

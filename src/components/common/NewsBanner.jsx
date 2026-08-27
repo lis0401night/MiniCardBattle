@@ -40,6 +40,8 @@ const ALLOWED_SHORTCUTS = [
   'screen-high-difficulty-menu',
   'screen-high-difficulty',
   'screen-high-difficulty-rules',
+  'screen-high-difficulty-exchange',
+  'screen-high-difficulty-ranking',
   'screen-card-list',
   'screen-achievements',
   'screen-exchange',

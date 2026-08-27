@@ -12,6 +12,12 @@ import { SOUNDS } from '../utils/sounds.js';
 
 const MAX_TOTAL_HANDICAP_POINTS = 24;
 
+/**
+ * 運命の邂逅（Fortuneモード）専用の特級目標（ハンディキャップ）設定画面コンポーネント。
+ * 各目標のON/OFF切り替えおよび合計目標値の確認を提供する。
+ *
+ * @returns {JSX.Element} 特級目標設定画面
+ */
 export default function FortuneHandicapScreen() {
   const enemyCharId =
     typeof GameState !== 'undefined' && GameState.gameMode
@@ -250,14 +256,14 @@ export default function FortuneHandicapScreen() {
 
                 <div
                   style={{
-                    color: '#10b981',
+                    color: isON ? '#fb923c' : '#94a3b8',
                     fontWeight: 'bold',
-                    fontSize: '0.9rem',
+                    fontSize: '0.95rem',
                     marginRight: '12px',
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  +{item.cost}pt
+                  +{item.cost}
                 </div>
 
                 <button
