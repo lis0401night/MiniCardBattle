@@ -174,7 +174,7 @@ export function resolveFortuneMaxCostAutomata(serverPlayerData) {
 /**
  * 特定のゲームモードのポイント情報をローカルとサーバーで同期・復旧します。
  *
- * @param {string} mode - 'challenge', 'tournament', 'defense', 'fortune' のいずれか
+ * @param {string} mode - 'challenge', 'tournament', 'defense', 'fortune', 'high_difficulty' のいずれか
  * @param {Object} serverPlayerData - サーバーから取得した当該UUIDのプレイヤーデータオブジェクト(未指定の場合はスキップ)
  * @returns {Promise<Object|null>} 同期後の { points, totalPoints, ...extraData } または同期不要なら null
  */
