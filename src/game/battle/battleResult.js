@@ -65,6 +65,7 @@ import {
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
   HIGH_DIFFICULTY_POINTS_KEY,
+  HIGH_DIFFICULTY_REWARD_POINTS,
   HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   MAX_CARD_COPIES,
 } from '../../utils/constants/config.js';
@@ -370,7 +371,13 @@ function resolveDefenseResult() {
       GameState.enemyConfig?.character ||
       GameState.enemyConfig?.id ||
       'android';
-    const defenderSkin = GameState.enemyConfig?.skin || 'default';
+    // 敵スキンは enemyConfig だけでなく enemySkins マップにも保持されるため両方を参照
+    // 解決できない場合は空文字を送り、サーバー側でのプレイヤーデータ補完フォールバックに委ねる
+    const defenderCharId = GameState.enemyConfig?.id;
+    const defenderSkin =
+      GameState.enemyConfig?.skin ||
+      (defenderCharId ? GameState.enemySkins?.[defenderCharId] : null) ||
+      '';
 
     recordDefenseBattleToServer(enemyUuid, {
       attackerUuid: getOrCreateUUID(),
@@ -570,7 +577,8 @@ function resolveFortuneRewards() {
 
 /**
  * 高難易度イベント（超級）の報酬およびポイント計算・更新処理を実行する。
- * 初回クリア時は 10 Pt、2回目以降は 2 Pt を付与する。
+ * 初回クリア時は HIGH_DIFFICULTY_REWARD_POINTS.FIRST_CLEAR、
+ * 2回目以降は HIGH_DIFFICULTY_REWARD_POINTS.REPEAT_CLEAR を付与する。
  * @returns {boolean} 処理を完結し、後続のドロップ抽選等をスキップする場合は true
  */
 function resolveHighDifficultyRewards() {
@@ -585,7 +593,9 @@ function resolveHighDifficultyRewards() {
   const highCharId = extractEventCharacterId(GameState.gameMode, '_high');
   const clearedData = loadHighDifficultyClearedData();
   const isFirstClear = !clearedData[highCharId];
-  const earnedPts = isFirstClear ? 10 : 2;
+  const earnedPts = isFirstClear
+    ? HIGH_DIFFICULTY_REWARD_POINTS.FIRST_CLEAR
+    : HIGH_DIFFICULTY_REWARD_POINTS.REPEAT_CLEAR;
 
   let currentPts =
     parseInt(localStorage.getItem(HIGH_DIFFICULTY_POINTS_KEY), 10) || 0;

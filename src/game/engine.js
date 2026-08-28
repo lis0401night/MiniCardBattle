@@ -235,6 +235,112 @@ export function damageLeader(state, side, amount, source, events, lane = null) {
 }
 
 /**
+ * リーダーHPの回復を適用する共通関数
+ * 【瘴気】場に「瘴気」を持つカードが存在する場合、回復せず同量のダメージを受ける（戦乙女の加護も自動適用）。
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} side - 対象陣営 ('blue' | 'red')
+ * @param {number} amount - 回復量
+ * @param {string} source - 発生元スキルID（イベントの source に記録）
+ * @param {Array} events - イベントログの追加先配列
+ * @param {number|null} [lane=null] - 演出用のレーン番号
+ */
+export function healLeader(state, side, amount, source, events, lane = null) {
+  if (amount <= 0) return;
+
+  if (isMiasmaActive(state)) {
+    // 瘴気: 回復する代わりにダメージを受ける（damageLeader内で戦乙女の加護も自動判定）
+    damageLeader(state, side, amount, source, events, lane);
+    return;
+  }
+
+  if (side === 'blue') {
+    state.playerHP = Math.min(state.playerMaxHP || 20, state.playerHP + amount);
+  } else {
+    state.enemyHP = Math.min(state.enemyMaxHP || 20, state.enemyHP + amount);
+  }
+  events.push({
+    type: 'heal_player',
+    side,
+    amount,
+    source,
+    lane,
+  });
+}
+
+/**
+ * 戦闘処理中のローカル defHP に対して回復を適用する共通ヘルパー
+ * ※ state.xxxHP を直接変更すると戦闘処理末尾の defHP 書き戻しで上書きされるため、更新後の defHP を戻り値で返す。
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {number} defHP - 現在の防御側リーダーHP
+ * @param {string} defSide - 防御側陣営 ('blue' | 'red')
+ * @param {number} maxHP - 防御側の最大HP
+ * @param {number} amount - 回復量
+ * @param {string} source - 発生元スキルID
+ * @param {Array} events - イベントログの追加先配列
+ * @param {number|null} [lane=null] - 演出用のレーン番号
+ * @returns {number} 更新後の defHP
+ */
+export function healDefenderLeaderHP(
+  state,
+  defHP,
+  defSide,
+  maxHP,
+  amount,
+  source,
+  events,
+  lane = null
+) {
+  if (amount <= 0) return defHP;
+
+  if (isMiasmaActive(state)) {
+    // 瘴気: 回復する代わりにダメージを受ける。戦乙女の加護は全ダメージを無効化する。
+    if (isValkyriaGuardActive(state, defSide)) {
+      events.push({
+        type: 'valkyria_guard_block',
+        side: defSide,
+        amount,
+        source,
+      });
+      return defHP;
+    }
+    events.push({
+      type: 'damage_player',
+      side: defSide,
+      amount,
+      source,
+      lane,
+    });
+    return defHP - amount;
+  }
+
+  events.push({
+    type: 'heal_player',
+    side: defSide,
+    amount,
+    source,
+    lane,
+  });
+  return Math.min(maxHP || 20, defHP + amount);
+}
+
+/**
+ * 指定レーンが封印されているかを判定する共通関数
+ * 【共通最優先ルール】封印されたレーンは「召喚」「配置」のどちらの手段であっても配置不可。
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} owner - 陣営 ('blue' | 'red')
+ * @param {number} lane - レーンインデックス (0 | 1 | 2)
+ * @returns {boolean} 封印されている場合は true
+ */
+export function isLaneSealed(state, owner, lane) {
+  const sealedLanes =
+    owner === 'blue' ? state?.playerSealedLanes : state?.enemySealedLanes;
+  return Boolean(sealedLanes && sealedLanes[lane] > 0);
+}
+
+/**
  * 盤面上のカードにダメージを適用し、各種ブロック（戦乙女の加護・無効/回避）およびダメージイベントを記録する共通関数
  *
  * 判定順序（加護優先）:
@@ -881,20 +987,7 @@ export function applyActiveSkillLogic(
         : 0;
       if (voidCount > 0) {
         const hAmt = (val || 3) * voidCount;
-        if (isMiasmaActive(state)) {
-          // 瘴気: 回復する代わりにダメージを受ける
-          damageLeader(state, owner, hAmt, 'heal_void', events);
-        } else {
-          if (owner === 'blue')
-            state.playerHP = Math.min(state.playerMaxHP, state.playerHP + hAmt);
-          else state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + hAmt);
-          events.push({
-            type: 'heal_player',
-            side: owner,
-            amount: hAmt,
-            source: 'heal_void',
-          });
-        }
+        healLeader(state, owner, hAmt, 'heal_void', events);
       }
       break;
     }
@@ -1397,17 +1490,7 @@ export function applyActiveSkillLogic(
     }
     case 'heal': {
       const hAmt = val || 3;
-      if (hAmt > 0) {
-        if (isMiasmaActive(state)) {
-          // 瘴気: 回復する代わりにダメージを受ける
-          damageLeader(state, owner, hAmt, 'heal', events);
-        } else {
-          if (owner === 'blue')
-            state.playerHP = Math.min(state.playerMaxHP, state.playerHP + hAmt);
-          else state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + hAmt);
-          events.push({ type: 'heal_player', side: owner, amount: hAmt });
-        }
-      }
+      healLeader(state, owner, hAmt, 'heal', events);
       break;
     }
     case 'sacrifice': {
@@ -1629,17 +1712,15 @@ export function applyActiveSkillLogic(
     case 'awake':
     case 'awake_legendary': {
       // 封印（seal）されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる（最優先グローバル制約）
-      const sealedLanes =
-        owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-      if (sealedLanes && sealedLanes[l] > 0) break;
+      if (isLaneSealed(state, owner, l)) break;
 
       // 覚醒 / 覚醒(伝説): 同レーンにトークンを配置し、元のカードを墓地へ送る（変身/置換）
       const awakeVal = val || 1;
-      let awakeTid = null;
-      const awakeSkill = c.skills?.find(
-        (s) => s.id === 'awake' || s.id === 'awake_legendary'
-      );
-      awakeTid = awakeSkill?.summonId || 'token_dragon';
+      // 解決対象のスキルIDと同一のスキルから summonId を取得する
+      const awakeSkill = c.skills?.find((s) => s.id === sid);
+      const awakeTid =
+        awakeSkill?.summonId ||
+        (sid === 'awake_legendary' ? 'token_thebeast' : 'token_dragon');
 
       const awakeTpl = CARD_MASTER.find((m) => m.id === awakeTid);
       if (!awakeTpl) break;
@@ -2392,25 +2473,7 @@ function executeFlameHealLeaderSkill(
   const oppOwner = isBlue ? 'red' : 'blue';
   events.push({ type: 'leader_skill', skill: action, side: owner });
   damageLeader(state, oppOwner, damageAmount, action, events);
-  if (isMiasmaActive(state)) {
-    // 瘴気: 回復する代わりにダメージを受ける
-    damageLeader(state, owner, damageAmount, action, events);
-  } else {
-    if (isBlue) {
-      state.playerHP = Math.min(
-        state.playerMaxHP,
-        state.playerHP + damageAmount
-      );
-    } else {
-      state.enemyHP = Math.min(state.enemyMaxHP, state.enemyHP + damageAmount);
-    }
-    events.push({
-      type: 'heal_player',
-      side: owner,
-      amount: damageAmount,
-      source: action,
-    });
-  }
+  healLeader(state, owner, damageAmount, action, events);
 }
 
 export function applyLeaderSkillLogic(
@@ -4560,68 +4623,21 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     // [3] 吸収 (リーダーダメージも含む実際の与ダメージに基づく)
     if (totalActualDmgToDef > 0 && hasSkill(aC, 'absorb')) {
       const healAmt = Math.floor(totalActualDmgToDef / 2);
-      if (healAmt > 0) {
-        if (isMiasmaActive(state)) {
-          damageLeader(state, attackerSide, healAmt, 'absorb', events);
-        } else {
-          if (attackerSide === 'blue')
-            state.playerHP = Math.min(
-              state.playerMaxHP || 20,
-              state.playerHP + healAmt
-            );
-          else
-            state.enemyHP = Math.min(
-              state.enemyMaxHP || 20,
-              state.enemyHP + healAmt
-            );
-          events.push({
-            type: 'heal_player',
-            side: attackerSide,
-            amount: healAmt,
-            source: 'absorb',
-            lane: aLane,
-          });
-        }
-      }
+      healLeader(state, attackerSide, healAmt, 'absorb', events, aLane);
     }
 
     if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'absorb')) {
       const healAmt = Math.floor(dmgToAtk / 2);
-      if (healAmt > 0) {
-        if (isMiasmaActive(state)) {
-          if (isValkyriaGuardActive(state, defSide)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: defSide,
-              amount: healAmt,
-              source: 'absorb',
-            });
-          } else {
-            defHP -= healAmt;
-            events.push({
-              type: 'damage_player',
-              side: defSide,
-              amount: healAmt,
-              source: 'absorb',
-              lane: l,
-            });
-          }
-        } else {
-          // 【重要】defHPに加算する。state.xxxHPを直接変更するとdefHP書き戻しで上書きされる。
-          defHP = Math.min(
-            (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) ||
-              20,
-            defHP + healAmt
-          );
-          events.push({
-            type: 'heal_player',
-            side: defSide,
-            amount: healAmt,
-            source: 'absorb',
-            lane: l,
-          });
-        }
-      }
+      defHP = healDefenderLeaderHP(
+        state,
+        defHP,
+        defSide,
+        attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP,
+        healAmt,
+        'absorb',
+        events,
+        l
+      );
     }
 
     // [4] 貫通: 通常攻撃と同様に「分配ダメージ - 防御者パワー」の差分をリーダーに与える
@@ -4662,29 +4678,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           applyExtort(aC, defSide, attackerSide, aLane, events, state);
           if (hasSkill(aC, 'absorb')) {
             const healAmt = Math.floor(totalPierceDmg / 2);
-            if (healAmt > 0) {
-              if (isMiasmaActive(state)) {
-                damageLeader(state, attackerSide, healAmt, 'absorb', events);
-              } else {
-                if (attackerSide === 'blue')
-                  state.playerHP = Math.min(
-                    state.playerMaxHP || 20,
-                    state.playerHP + healAmt
-                  );
-                else
-                  state.enemyHP = Math.min(
-                    state.enemyMaxHP || 20,
-                    state.enemyHP + healAmt
-                  );
-                events.push({
-                  type: 'heal_player',
-                  side: attackerSide,
-                  amount: healAmt,
-                  source: 'absorb',
-                  lane: aLane,
-                });
-              }
-            }
+            healLeader(state, attackerSide, healAmt, 'absorb', events, aLane);
           }
         }
       }
@@ -5086,67 +5080,20 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     if (dmgToDef > 0 && hasSkill(aC, 'absorb')) {
       const healAmt = Math.floor(dmgToDef / 2);
-      if (healAmt > 0) {
-        if (isMiasmaActive(state)) {
-          damageLeader(state, attackerSide, healAmt, 'absorb', events);
-        } else {
-          if (attackerSide === 'blue')
-            state.playerHP = Math.min(
-              state.playerMaxHP || 20,
-              state.playerHP + healAmt
-            );
-          else
-            state.enemyHP = Math.min(
-              state.enemyMaxHP || 20,
-              state.enemyHP + healAmt
-            );
-          events.push({
-            type: 'heal_player',
-            side: attackerSide,
-            amount: healAmt,
-            source: 'absorb',
-            lane: aLane,
-          });
-        }
-      }
+      healLeader(state, attackerSide, healAmt, 'absorb', events, aLane);
     }
     if (dmgToAtk > 0 && originalTarget && hasSkill(originalTarget, 'absorb')) {
       const healAmt = Math.floor(dmgToAtk / 2);
-      if (healAmt > 0) {
-        if (isMiasmaActive(state)) {
-          if (isValkyriaGuardActive(state, defSide)) {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: defSide,
-              amount: healAmt,
-              source: 'absorb',
-            });
-          } else {
-            defHP -= healAmt;
-            events.push({
-              type: 'damage_player',
-              side: defSide,
-              amount: healAmt,
-              source: 'absorb',
-              lane: dLane,
-            });
-          }
-        } else {
-          // 【重要】defHPに加算する。state.xxxHPを直接変更するとL3819のdefHP書き戻しで上書きされる。
-          defHP = Math.min(
-            (attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP) ||
-              20,
-            defHP + healAmt
-          );
-          events.push({
-            type: 'heal_player',
-            side: defSide,
-            amount: healAmt,
-            source: 'absorb',
-            lane: dLane,
-          });
-        }
-      }
+      defHP = healDefenderLeaderHP(
+        state,
+        defHP,
+        defSide,
+        attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP,
+        healAmt,
+        'absorb',
+        events,
+        dLane
+      );
     }
 
     if (hasSkill(aC, 'pierce')) {
@@ -5172,29 +5119,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
           if (hasSkill(aC, 'absorb')) {
             const healAmt = Math.floor(pDmg / 2);
-            if (healAmt > 0) {
-              if (isMiasmaActive(state)) {
-                damageLeader(state, attackerSide, healAmt, 'absorb', events);
-              } else {
-                if (attackerSide === 'blue')
-                  state.playerHP = Math.min(
-                    state.playerMaxHP || 20,
-                    state.playerHP + healAmt
-                  );
-                else
-                  state.enemyHP = Math.min(
-                    state.enemyMaxHP || 20,
-                    state.enemyHP + healAmt
-                  );
-                events.push({
-                  type: 'heal_player',
-                  side: attackerSide,
-                  amount: healAmt,
-                  source: 'absorb',
-                  lane: aLane,
-                });
-              }
-            }
+            healLeader(state, attackerSide, healAmt, 'absorb', events, aLane);
           }
         }
       }
@@ -5259,29 +5184,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 
     if (finalDmg > 0 && hasSkill(aC, 'absorb')) {
       const healAmt = Math.floor(finalDmg / 2);
-      if (healAmt > 0) {
-        if (isMiasmaActive(state)) {
-          damageLeader(state, attackerSide, healAmt, 'absorb', events);
-        } else {
-          if (attackerSide === 'blue')
-            state.playerHP = Math.min(
-              state.playerMaxHP || 20,
-              state.playerHP + healAmt
-            );
-          else
-            state.enemyHP = Math.min(
-              state.enemyMaxHP || 20,
-              state.enemyHP + healAmt
-            );
-          events.push({
-            type: 'heal_player',
-            side: attackerSide,
-            amount: healAmt,
-            source: 'absorb',
-            lane: aLane,
-          });
-        }
-      }
+      healLeader(state, attackerSide, healAmt, 'absorb', events, aLane);
     }
   }
 
@@ -5500,9 +5403,7 @@ export function applyPassiveSkillLogic(
       });
     }
     if (hasSkill(c, 'awake') || hasSkill(c, 'awake_legendary')) {
-      const sealedLanes =
-        side === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-      if (sealedLanes && sealedLanes[i] > 0) {
+      if (isLaneSealed(state, side, i)) {
         // 封印されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
         continue;
       }
@@ -5510,10 +5411,13 @@ export function applyPassiveSkillLogic(
         ? 'awake_legendary'
         : 'awake';
       const v = getSkillValue(c, currentAwakeSkillId) || 1;
-      const awakeSkill = c.skills?.find(
-        (s) => s.id === 'awake' || s.id === 'awake_legendary'
-      );
-      const summonId = awakeSkill?.summonId || 'token_dragon';
+      // 解決対象のスキルIDと同一のスキルから summonId を取得する
+      const awakeSkill = c.skills?.find((s) => s.id === currentAwakeSkillId);
+      const summonId =
+        awakeSkill?.summonId ||
+        (currentAwakeSkillId === 'awake_legendary'
+          ? 'token_thebeast'
+          : 'token_dragon');
 
       // 同レーンにトークンを配置（Place）
       events.push({

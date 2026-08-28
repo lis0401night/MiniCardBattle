@@ -704,6 +704,43 @@ export function startSatanCastleStillTest(charId) {
 }
 
 /**
+ * 簡易戦闘前会話（敵・プレイヤー各1行の掛け合い）キューを構築する共通ヘルパー
+ * ミラーマッチ（影）時の専用台詞判定やサタン戦専用前口上の付与を一元化する。
+ *
+ * @returns {Array<{ speaker: string, text: string }>} 簡易会話キュー配列
+ */
+function buildSimplifiedIntroQueue() {
+  const enemy = GameState.enemyConfig;
+  const player = GameState.playerConfig;
+
+  // 影（ミラーマッチ）の場合は台詞を伏せ、専用の驚愕台詞を使用
+  if (enemy?.isShadow) {
+    return [
+      { speaker: 'enemy', text: '・・・・' },
+      {
+        speaker: 'player',
+        text: player?.mirrorIntro || 'なっ、自分自身だと……！？',
+      },
+    ];
+  }
+
+  const enemyIntro = getDialogue(enemy, player, 'intro', 'enemy') || '・・・・';
+  // サタン戦のみ、到達を称える専用の前口上を付与
+  const introText =
+    enemy?.id === 'satan'
+      ? `……よくぞここまで辿り着いたな。${enemyIntro}`
+      : enemyIntro;
+
+  const playerIntroText =
+    getDialogue(player, enemy, 'intro', 'player') || '・・・・';
+
+  return [
+    { speaker: 'enemy', text: introText },
+    { speaker: 'player', text: playerIntroText },
+  ];
+}
+
+/**
  * 会話（ストーリー・高難易度イベント・運命の邂逅イベント）をスキップし、次のバトル前会話（簡易会話形式）またはメニュー画面に進む
  * @returns {void}
  */
@@ -730,40 +767,8 @@ export function skipStoryDialogue() {
       GameState.appState = 'pre_dialogue';
       GameState.isSimplifiedDialogue = true;
 
-      let introText =
-        getDialogue(
-          GameState.enemyConfig,
-          GameState.playerConfig,
-          'intro',
-          'enemy'
-        ) || '・・・・';
-
-      if (
-        GameState.enemyConfig?.id === 'satan' &&
-        !GameState.enemyConfig.isShadow
-      ) {
-        introText =
-          '……よくぞここまで辿り着いたな。' +
-          getDialogue(
-            GameState.enemyConfig,
-            GameState.playerConfig,
-            'intro',
-            'enemy'
-          );
-      }
-
-      const playerIntroText = getDialogue(
-        GameState.playerConfig,
-        GameState.enemyConfig,
-        'intro',
-        'player'
-      );
-
       // dialogueQueueに簡易会話をセット（敵台詞 -> プレイヤー台詞）
-      GameState.dialogueQueue = [
-        { speaker: 'enemy', text: introText },
-        { speaker: 'player', text: playerIntroText },
-      ];
+      GameState.dialogueQueue = buildSimplifiedIntroQueue();
 
       // 画面のフェード遷移と会話画面のセットアップ
       performFadeTransition(() => {
@@ -826,40 +831,7 @@ export function skipStoryDialogue() {
   saveStoryProgress();
 
   // 簡易戦闘前会話（フリーバトル形式）の構築
-  let introText =
-    getDialogue(
-      GameState.enemyConfig,
-      GameState.playerConfig,
-      'intro',
-      'enemy'
-    ) || '・・・・';
-  if (GameState.enemyConfig.isShadow) introText = '・・・・';
-
-  const playerIntroText = GameState.enemyConfig.isShadow
-    ? GameState.playerConfig.mirrorIntro || 'なっ、自分自身だと……！？'
-    : getDialogue(
-        GameState.playerConfig,
-        GameState.enemyConfig,
-        'intro',
-        'player'
-      );
-
-  if (GameState.enemyConfig.id === 'satan' && !GameState.enemyConfig.isShadow) {
-    introText =
-      '……よくぞここまで辿り着いたな。' +
-      getDialogue(
-        GameState.enemyConfig,
-        GameState.playerConfig,
-        'intro',
-        'enemy'
-      );
-  }
-
-  // dialogueQueueに簡易会話をセット
-  GameState.dialogueQueue = [
-    { speaker: 'enemy', text: introText },
-    { speaker: 'player', text: playerIntroText },
-  ];
+  GameState.dialogueQueue = buildSimplifiedIntroQueue();
 
   // 画面のフェード遷移と会話画面のセットアップ
   performFadeTransition(() => {

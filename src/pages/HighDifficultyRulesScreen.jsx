@@ -1,4 +1,5 @@
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import { HIGH_DIFFICULTY_REWARD_POINTS } from '../utils/constants/config.js';
 
 /**
  * 高難易度挑戦ルール説明画面
@@ -19,8 +20,9 @@ export default function HighDifficultyRulesScreen() {
         <ul>
           <li>特別な対戦相手と戦うモードです。</li>
           <li>
-            勝利することで高難易度ポイントを獲得できます（初回クリア: 10
-            Pt、2回目以降: 2 Pt）。
+            勝利することで高難易度ポイントを獲得できます（初回クリア:{' '}
+            {HIGH_DIFFICULTY_REWARD_POINTS.FIRST_CLEAR} Pt、2回目以降:{' '}
+            {HIGH_DIFFICULTY_REWARD_POINTS.REPEAT_CLEAR} Pt）。
           </li>
           <li
             style={{ color: '#fb7185', marginTop: '10px', listStyle: 'none' }}

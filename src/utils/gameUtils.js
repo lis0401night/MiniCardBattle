@@ -1512,7 +1512,10 @@ export function loadHighDifficultyClearedData() {
   try {
     const raw = localStorage.getItem(HIGH_DIFFICULTY_CLEARED_KEY);
     if (!raw) return {};
-    return JSON.parse(raw) || {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : {};
   } catch (e) {
     console.error('高難易度クリア状態の読み込みに失敗しました:', e);
     return {};

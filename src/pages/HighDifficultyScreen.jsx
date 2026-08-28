@@ -13,6 +13,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import {
   appendVersionQuery,
   getScreenBackgroundStyle,
+  HIGH_DIFFICULTY_REWARD_POINTS,
 } from '../utils/constants/config.js';
 
 /**
@@ -68,7 +69,9 @@ export default function HighDifficultyScreen() {
               : `assets/icons/icon_${eventConf.id}.webp`;
 
           const isCleared = !!clearedData[char.id];
-          const winPoints = isCleared ? 2 : 10;
+          const winPoints = isCleared
+            ? HIGH_DIFFICULTY_REWARD_POINTS.REPEAT_CLEAR
+            : HIGH_DIFFICULTY_REWARD_POINTS.FIRST_CLEAR;
 
           return (
             <button

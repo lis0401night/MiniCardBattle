@@ -113,6 +113,43 @@ function sanitizeUnlockedPremiumCards($unlockedPremium): array {
     return array_values(array_unique($sanitized));
 }
 
+/** デッキ配列の最大保存枚数 */
+const MAX_RECORDED_DECK_SIZE = 20;
+
+/**
+ * デッキ配列（カードID文字列 または {id, isPremium} オブジェクト）をサニタイズします。
+ * 最大枚数（MAX_RECORDED_DECK_SIZE枚）まで安全な文字（[a-zA-Z0-9_]）のみを抽出・保持します。
+ * 
+ * @param mixed $rawDeck リクエストまたは保存データ由来のデッキ配列
+ * @return array サニタイズ済みデッキ配列
+ */
+function sanitizeDeckList($rawDeck): array {
+    $result = [];
+    if (!is_array($rawDeck)) {
+        return $result;
+    }
+    foreach ($rawDeck as $item) {
+        if (count($result) >= MAX_RECORDED_DECK_SIZE) {
+            break;
+        }
+        if (is_string($item)) {
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
+            if (!empty($cleaned_id)) {
+                $result[] = $cleaned_id;
+            }
+        } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
+            if (!empty($cleaned_id)) {
+                $result[] = [
+                    'id' => $cleaned_id,
+                    'isPremium' => !empty($item['isPremium']),
+                ];
+            }
+        }
+    }
+    return $result;
+}
+
 /**
  * プレイヤーの全登録デッキデータをサニタイズします。
  * 最大30スロットまでのデッキ配列を検証し、各デッキのリーダーIDやカードリストを正規化します。

@@ -613,7 +613,7 @@
         onclick="if (event.target === this) window.closePlayerDetailModal();"
       >
         <div
-          class="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in"
+          class="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-4xl w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl animate-fade-in"
         >
           <!-- モーダルヘッダー -->
           <div
@@ -686,7 +686,7 @@
         onclick="if (event.target === this) window.closeBattleDeckModal();"
       >
         <div
-          class="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in"
+          class="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-4xl w-full max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl animate-fade-in"
         >
           <!-- モーダルヘッダー -->
           <div
@@ -1041,26 +1041,34 @@
             );
           }
 
-          // プレイヤーデータをAPIから取得（ローカル開発環境等でAPIが動かない場合はモックデータへフォールバック）
+          // プレイヤーデータをAPIから取得（モックは明示指定 ?mock=1 またはローカル開発環境のみ許可）
           let data = null;
           let isMock = false;
+          const params = new URLSearchParams(location.search);
+          const allowMock =
+            params.get('mock') === '1' ||
+            ['localhost', '127.0.0.1'].includes(location.hostname);
+          let apiError = null;
 
           try {
             const response = await fetch(
               `../api/get_all_players.php?t=${Date.now()}`
             );
-            if (response.ok) {
-              const resJson = await response.json();
-              if (
-                resJson &&
-                resJson.success &&
-                Array.isArray(resJson.players) &&
-                resJson.players.length > 0
-              ) {
-                data = resJson;
-              }
+            if (!response.ok) {
+              throw new Error(`HTTPエラー (ステータス: ${response.status})`);
             }
+            const resJson = await response.json();
+            if (
+              !resJson ||
+              !resJson.success ||
+              !Array.isArray(resJson.players)
+            ) {
+              throw new Error('APIレスポンス形式が不正です');
+            }
+            // 0件の場合は正常な空データとして扱う
+            data = resJson;
           } catch (fetchErr) {
+            apiError = fetchErr;
             console.warn(
               'API接続不可（ローカル開発環境・PHP未稼働環境）。モックデータを使用します:',
               fetchErr
@@ -1068,6 +1076,12 @@
           }
 
           if (!data) {
+            // モックが許可されない環境（本番等）ではエラーを明示的にスローしてエラー画面を表示
+            if (!allowMock) {
+              throw (
+                apiError || new Error('プレイヤーデータの取得に失敗しました')
+              );
+            }
             isMock = true;
             data = generateMockPlayerData();
           }
@@ -1428,6 +1442,7 @@
             <tr class="hover:bg-indigo-50/30 transition-all border-b border-slate-100 last:border-0 group cursor-pointer ${
               isSelected ? 'player-row-selected' : ''
             } ${isExcluded ? 'opacity-40 bg-slate-50' : ''}"
+                data-uuid="${escapeHtml(p.uuid)}"
                 onclick="window.selectPlayer('${p.uuid}')">
               <td class="p-2 md:p-3 text-center text-[10px] font-black text-slate-300 group-hover:text-indigo-400 transition-colors">${
                 idx + 1
@@ -1549,7 +1564,15 @@
         renderDeck(player);
 
         if (modal) modal.classList.remove('hidden');
-        renderPlayerList(); // 選択中ハイライトの更新
+        // 選択中ハイライトのみを更新する（テーブル全体の全行再描画・スクロール位置喪失を防止）
+        document
+          .querySelectorAll('#player-table-body tr[data-uuid]')
+          .forEach((row) => {
+            row.classList.toggle(
+              'player-row-selected',
+              row.dataset.uuid === uuid
+            );
+          });
       }
 
       /**
@@ -2375,15 +2398,10 @@
           }
 
           // 防衛デッキ集計（同一防衛者の履歴がある場合は最大値を採用）
+          // ※ 過去の対戦履歴（defenderDeck）が存在するデータのみを集計対象とし、現行デッキで過去履歴を汚染しない
           if (rec.targetUuid && !excludedPlayerIds.has(rec.targetUuid)) {
             const targetUuid = rec.targetUuid;
-            let defDeck = rec.defenderDeck;
-            if (!Array.isArray(defDeck) || defDeck.length === 0) {
-              const targetPlayer = allPlayers.find(
-                (p) => p.uuid === targetUuid
-              );
-              defDeck = targetPlayer?.deck;
-            }
+            const defDeck = rec.defenderDeck;
 
             if (Array.isArray(defDeck) && defDeck.length > 0) {
               const deckCardCounts = {};
@@ -2700,10 +2718,11 @@
               : 0;
 
             // 防衛デッキ枚数
-            const defDeck =
-              Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0
-                ? rec.defenderDeck
-                : targetPlayer?.deck || [];
+            const hasHistoricalDefDeck =
+              Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0;
+            const defDeck = hasHistoricalDefDeck
+              ? rec.defenderDeck
+              : targetPlayer?.deck || [];
             const defDeckCount = Array.isArray(defDeck) ? defDeck.length : 0;
 
             return `
@@ -2747,7 +2766,7 @@
                   onclick="window.openBattleDeckModal(${realIdx}, 'defender')"
                   class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 hover:bg-amber-600 hover:text-white border border-amber-200 transition-all shadow-sm flex items-center gap-1.5 mx-auto"
                 >
-                  <span>🛡️ 防衛デッキ (${defDeckCount}枚)</span>
+                  <span>🛡️ ${hasHistoricalDefDeck ? '防衛デッキ' : '現在の登録デッキ'} (${defDeckCount}枚)</span>
                 </button>`
                     : '<span class="text-xs text-slate-400 italic">未登録</span>'
                 }
@@ -2855,6 +2874,8 @@
           : '🛡️ 防衛成功 (攻撃失敗)';
 
         if (deckType === 'defender') {
+          const hasHistoricalDefDeck =
+            Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0;
           const defCharId =
             rec.defenderCharacter ||
             rec.targetCharacter ||
@@ -2864,7 +2885,7 @@
           const defCharName = CHARACTERS[defCharId]?.name || defCharId;
           showGenericDeckModal({
             title: `🛡️ ${rec.targetName || '不明'} の防衛デッキ`,
-            subtitle: `防衛プレイヤー: ${rec.targetName || '不明'} (${defCharName}) | 対戦相手: ${rec.attackerName || '不明'} | 日時: ${formattedDate} | 結果: ${resultLabel}`,
+            subtitle: `${hasHistoricalDefDeck ? '対戦時デッキ' : '⚠️ 履歴なし（現在の登録デッキ）'} | 防衛プレイヤー: ${rec.targetName || '不明'} (${defCharName}) | 対戦相手: ${rec.attackerName || '不明'} | 日時: ${formattedDate} | 結果: ${resultLabel}`,
             cards: deck,
           });
         } else {

@@ -58,6 +58,7 @@ import {
   applyActiveSkillLogic,
   canCardBeDestroyed,
   getDamageBlockType,
+  isLaneSealed,
   isMiasmaActive,
   isValkyriaGuardActive,
   BLOCK_TYPE_EVENT_MAP,
@@ -3688,11 +3689,7 @@ export async function triggerStartTurnPassive(owner, lane) {
     }
 
     if (sk.id === 'awake' || sk.id === 'awake_legendary') {
-      const mySealedLanes =
-        owner === 'blue'
-          ? GameState.playerSealedLanes
-          : GameState.enemySealedLanes;
-      if (mySealedLanes && mySealedLanes[lane] > 0) {
+      if (isLaneSealed(GameState, owner, lane)) {
         // 封印（seal）されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
         continue;
       }
@@ -3722,12 +3719,10 @@ export async function triggerStartTurnPassive(owner, lane) {
       applyActiveSkillLogic(currentState, owner, lane, sk.id, val, awakeEvents);
 
       if (awakeEvents.length > 0) {
-        // 盤面の状態を同期
-        if (owner === 'blue') {
-          GameState.playerBoard = currentState.playerBoard;
-        } else {
-          GameState.enemyBoard = currentState.enemyBoard;
-        }
+        // 覚醒は該当レーンのみを置換する（盤面配列全体の差し替えによる他レーンのカード参照破損を防止）
+        const syncedBoard =
+          owner === 'blue' ? currentState.playerBoard : currentState.enemyBoard;
+        board[lane] = syncedBoard[lane];
 
         events.push(...awakeEvents);
         triggered = true;

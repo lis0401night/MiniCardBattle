@@ -45,51 +45,12 @@ $attacker_uuid = isset($data['attacker_uuid']) ? preg_replace('/[^a-z0-9-]/', ''
 $attacker_name = sanitizePlayerDisplayName($data['attacker_name'] ?? null);
 $attacker_character = isset($data['attacker_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_character']) : 'android';
 $attacker_skin = isset($data['attacker_skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_skin']) : 'default';
-$attacker_total_points = isset($data['attacker_total_points']) ? intval($data['attacker_total_points']) : 0;
-$attacker_deck = [];
-if (isset($data['attacker_deck']) && is_array($data['attacker_deck'])) {
-    foreach ($data['attacker_deck'] as $item) {
-        if (count($attacker_deck) >= 20) break;
-        if (is_string($item)) {
-            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
-            if (!empty($cleaned_id)) {
-                $attacker_deck[] = $cleaned_id;
-            }
-        } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
-            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
-            if (!empty($cleaned_id)) {
-                $attacker_deck[] = [
-                    'id' => $cleaned_id,
-                    'isPremium' => !empty($item['isPremium']),
-                ];
-            }
-        }
-    }
-}
+$attacker_deck = sanitizeDeckList($data['attacker_deck'] ?? null);
 
 // 防衛側キャラクター・スキン・デッキのサニタイズ（リクエスト優先）
 $defender_character = isset($data['defender_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['defender_character']) : '';
 $defender_skin = isset($data['defender_skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['defender_skin']) : '';
-$defender_deck = [];
-if (isset($data['defender_deck']) && is_array($data['defender_deck'])) {
-    foreach ($data['defender_deck'] as $item) {
-        if (count($defender_deck) >= 20) break;
-        if (is_string($item)) {
-            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
-            if (!empty($cleaned_id)) {
-                $defender_deck[] = $cleaned_id;
-            }
-        } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
-            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
-            if (!empty($cleaned_id)) {
-                $defender_deck[] = [
-                    'id' => $cleaned_id,
-                    'isPremium' => !empty($item['isPremium']),
-                ];
-            }
-        }
-    }
-}
+$defender_deck = sanitizeDeckList($data['defender_deck'] ?? null);
 $result = $data['result']; // 'win' (攻撃成功) / 'lose' (攻撃失敗) / 'draw' (引き分け)
 if (!in_array($result, ['win', 'lose', 'draw'], true)) {
     echo json_encode(['success' => false, 'error' => 'Invalid result value']);
@@ -142,24 +103,8 @@ if ($playerData) {
     if ($defender_skin === '') {
         $defender_skin = 'default';
     }
-    if (empty($defender_deck) && isset($playerData['deck']) && is_array($playerData['deck'])) {
-        foreach ($playerData['deck'] as $item) {
-            if (count($defender_deck) >= 20) break;
-            if (is_string($item)) {
-                $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
-                if (!empty($cleaned_id)) {
-                    $defender_deck[] = $cleaned_id;
-                }
-            } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
-                $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
-                if (!empty($cleaned_id)) {
-                    $defender_deck[] = [
-                        'id' => $cleaned_id,
-                        'isPremium' => !empty($item['isPremium']),
-                    ];
-                }
-            }
-        }
+    if (empty($defender_deck)) {
+        $defender_deck = sanitizeDeckList($playerData['deck'] ?? null);
     }
 
     $history = isset($playerData['defense_history']) && is_array($playerData['defense_history']) 

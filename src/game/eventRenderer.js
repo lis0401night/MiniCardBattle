@@ -28,9 +28,15 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import { scanMissionEvents } from './missionLogic.js';
 
-// 狙撃・拡散・迎撃などのVFXトリガー共通処理（DRY原則適用）
 const SNIPE_SKILLS = ['snipe', 'snipe_void', 'spread', 'intercept'];
 const SNIPE_DELAY_SKILLS = ['snipe', 'snipe_void', 'intercept'];
+
+/** 召喚・変身演出のポップアップラベル（source → 表示文字列） */
+const SUMMON_SOURCE_POPUP_LABELS = {
+  split: '分裂',
+  awake: '覚醒',
+  awake_legendary: '覚醒(伝説)',
+};
 
 async function triggerSnipeVfx(source, side, lane) {
   if (!SNIPE_SKILLS.includes(source) || !window.triggerVfx) {
@@ -529,14 +535,9 @@ export async function playEvents(events) {
             `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
           );
           if (cEl) {
-            if (ev.source === 'split') {
-              createDamagePopup(cEl, '分裂', '#facc15');
-            }
-            if (ev.source === 'awake') {
-              createDamagePopup(cEl, '覚醒', '#facc15');
-            }
-            if (ev.source === 'awake_legendary') {
-              createDamagePopup(cEl, '覚醒(伝説)', '#facc15');
+            const popupLabel = SUMMON_SOURCE_POPUP_LABELS[ev.source];
+            if (popupLabel) {
+              createDamagePopup(cEl, popupLabel, '#facc15');
             }
           }
         }, 50);

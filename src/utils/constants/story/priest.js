@@ -262,7 +262,7 @@ export const storyDialogues = {
       post: [
         {
           speaker: 'enemy',
-          text: '見事な呪縛であった、ネフティ。君の刃捌きの妙、実に素晴らしいものであったぞ。お互い、旅を続けよう',
+          text: 'ネフティ。君の術式の妙、実に素晴らしいものでした。お互い、旅を続けよう',
         },
         {
           speaker: 'player',
@@ -1110,7 +1110,7 @@ export const storyDialogues = {
         },
         {
           speaker: 'player',
-          text: '……見事だ、侵入者。魔王サタンの心臓を、ついに我が儀式用ナイフで貫いた。',
+          text: '……見事だ、侵入者。魔王サタンの心臓を、ついに我が古代の呪縛で貫いた。',
         },
         { speaker: 'player', text: '世界の瘴気が晴れ、光が戻っていく……' },
       ],
@@ -1121,7 +1121,7 @@ export const storyDialogues = {
 export const storyEnding = [
   {
     speaker: 'narrator',
-    text: '冷たい刃の一閃が魔王サタンを切り裂き、絶望の象徴が断末魔の叫びと共に完全に消滅した。',
+    text: '古代の呪縛が一斉に収束し、魔王サタンを穿つ。絶望の象徴は断末魔の叫びと共に完全に消滅した。',
   },
   {
     speaker: 'narrator',
