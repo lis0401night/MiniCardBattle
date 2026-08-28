@@ -312,7 +312,7 @@ export function healDefenderLeaderHP(
       source,
       lane,
     });
-    return defHP - amount;
+    return Math.max(0, defHP - amount);
   }
 
   events.push({

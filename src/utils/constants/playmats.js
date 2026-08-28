@@ -6,7 +6,10 @@
  * スキンマスタ（skins.js）から自動生成する。
  */
 import { CARD_MASTER } from './cards.js';
-import { appendVersionQuery } from './config.js';
+import {
+  appendVersionQuery,
+  HIGH_DIFFICULTY_COSMETIC_CARD_IDS,
+} from './config.js';
 import { SKIN_MASTER, buildPlaymatId } from './skins.js';
 
 // ---------------------------------------------------------------------------
@@ -131,30 +134,14 @@ function generateSkinPlaymats(skinMaster) {
 // カード関連プレイマット
 // ---------------------------------------------------------------------------
 
-/**
- * カード関連プレイマット対象カードID一覧
- */
-const CARD_PLAYMAT_TARGET_IDS = [
-  'scientist',
-  'hellkite',
-  'duelist',
-  'cthulhu',
-  'elfking',
-  'goddess',
-  'doll',
-  'gorgon',
-  'seimei',
-  'cleopatra',
-];
-
 const CARD_BY_ID = new Map(CARD_MASTER.map((c) => [c.id, c]));
 
 /**
  * カード関連プレイマット定義
- * CARD_MASTER から動的に生成し、カード名とフレーバーテキストの単一情報源を保証する
+ * CARD_MASTER および HIGH_DIFFICULTY_COSMETIC_CARD_IDS から動的に生成し、カード名とフレーバーテキストの単一情報源を保証する
  * @type {Array<{id: string, name: string, image: string, description: string}>}
  */
-const CARD_PLAYMATS = CARD_PLAYMAT_TARGET_IDS.map((cardId) => {
+const CARD_PLAYMATS = HIGH_DIFFICULTY_COSMETIC_CARD_IDS.map((cardId) => {
   const card = CARD_BY_ID.get(cardId);
   return {
     id: `pm_card_${cardId}`,

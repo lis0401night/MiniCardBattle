@@ -46,6 +46,9 @@ $attacker_name = sanitizePlayerDisplayName($data['attacker_name'] ?? null);
 $attacker_character = isset($data['attacker_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_character']) : 'android';
 $attacker_skin = isset($data['attacker_skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['attacker_skin']) : 'default';
 $attacker_deck = sanitizeDeckList($data['attacker_deck'] ?? null);
+$attacker_total_points = isset($data['attacker_total_points']) && is_numeric($data['attacker_total_points'])
+    ? max(0, (int) $data['attacker_total_points'])
+    : 0;
 
 // 防衛側キャラクター・スキン・デッキのサニタイズ（リクエスト優先）
 $defender_character = isset($data['defender_character']) ? preg_replace('/[^a-z0-9_]/', '', $data['defender_character']) : '';

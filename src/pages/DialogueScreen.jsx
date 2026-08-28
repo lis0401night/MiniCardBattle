@@ -4,6 +4,7 @@ import { showNextDialogue, skipStoryDialogue } from '../services/uiDialogue.js';
 import { GameState } from '../state/gameState.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
 import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
+import { STORY_TOTAL_BATTLES } from '../utils/constants/story/index.js';
 import { checkIsFortuneMode, checkIsHighDiffMode } from '../utils/gameUtils.js';
 
 /**
@@ -37,7 +38,7 @@ export default function DialogueScreen() {
       GameState.lastBattleResult === 'win');
   const isAfterSatanDefeated =
     isStoryMode &&
-    GameState.battleCount >= 10 &&
+    GameState.battleCount >= STORY_TOTAL_BATTLES &&
     GameState.appState === 'post_dialogue' &&
     GameState.lastBattleResult === 'win';
   const showSkipButton =
@@ -149,7 +150,9 @@ export default function DialogueScreen() {
     >
       {/* ストーリー会話スキップボタン */}
       {showSkipButton && (
-        <div
+        <button
+          type="button"
+          aria-label="会話をスキップ"
           id="dialogue-skip-button"
           onClick={(e) => {
             e.stopPropagation();
@@ -170,10 +173,13 @@ export default function DialogueScreen() {
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
+            background: 'none',
+            border: 'none',
+            padding: 0,
           }}
         >
           SKIP►
-        </div>
+        </button>
       )}
 
       {/* 魔王城スチル演出用レイヤー */}

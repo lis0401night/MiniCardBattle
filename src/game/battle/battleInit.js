@@ -392,9 +392,9 @@ export function prepareBattle() {
       }
     } catch (e) {
       console.error('Deck generation error:', e);
-      // エラー時も空のデッキで続行を試みる（フリーズ回避）
-      GameState.playerDeck = GameState.playerDeck || [];
-      GameState.enemyDeck = GameState.enemyDeck || [];
+      // エラー時も空のデッキで続行を試みる（フリーズ回避・前戦の古いデッキ残留防止）
+      GameState.playerDeck = [];
+      GameState.enemyDeck = [];
     }
 
     // バトル開始時点のプレイヤー・敵使用デッキのスナップショットを保存（防衛履歴送信などの正確性向上）

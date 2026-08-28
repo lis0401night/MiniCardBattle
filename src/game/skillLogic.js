@@ -1949,6 +1949,10 @@ export async function resolveActiveSkillEffect(
         await playEvents(miasmaEvents);
       }
     }
+    // 瘴気によって回復がダメージ（damage_player）に変換された場合、致死判定を実施
+    if (events.some((event) => event.type === 'damage_player')) {
+      checkWinCondition();
+    }
   } else if (skillId === 'loss') {
     playSound(SOUNDS.seSkill);
     createDamagePopup(cEl, '喪失', '#8b5cf6');

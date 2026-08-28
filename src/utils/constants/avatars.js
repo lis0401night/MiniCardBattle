@@ -1,4 +1,5 @@
 import { CARD_MASTER } from './cards.js';
+import { HIGH_DIFFICULTY_COSMETIC_CARD_IDS } from './config.js';
 import { SKIN_MASTER, buildSkinId } from './skins.js';
 
 /**
@@ -82,30 +83,14 @@ function generateSkinIcons(skinMaster) {
   return icons;
 }
 
-/**
- * カード関連の解放アイコン対象カードID一覧
- */
-const CARD_ICON_TARGET_IDS = [
-  'scientist',
-  'hellkite',
-  'duelist',
-  'cthulhu',
-  'elfking',
-  'goddess',
-  'doll',
-  'gorgon',
-  'seimei',
-  'cleopatra',
-];
-
 const CARD_BY_ID = new Map(CARD_MASTER.map((c) => [c.id, c]));
 
 /**
  * カード関連の解放アイコン一覧
- * CARD_MASTER から動的に生成し、カード名とフレーバーテキストの単一情報源を保証する
+ * CARD_MASTER および HIGH_DIFFICULTY_COSMETIC_CARD_IDS から動的に生成し、カード名とフレーバーテキストの単一情報源を保証する
  * @type {Array<{id: string, name: string, path: string, description: string}>}
  */
-const CARD_ICONS = CARD_ICON_TARGET_IDS.map((cardId) => {
+const CARD_ICONS = HIGH_DIFFICULTY_COSMETIC_CARD_IDS.map((cardId) => {
   const card = CARD_BY_ID.get(cardId);
   return {
     id: `card_${cardId}`,

@@ -18,6 +18,7 @@ import {
   FORTUNE_TOTAL_POINTS_KEY,
   HIGH_DIFFICULTY_POINTS_KEY,
   HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
+  HIGH_DIFFICULTY_CLEARED_KEY,
   DUNGEON_MAX_STREAK_KEY,
   LAST_HEARTBEAT_KEY,
   PROFILE_ICON_KEY,
@@ -172,6 +173,49 @@ export function resolveFortuneMaxCostAutomata(serverPlayerData) {
 }
 
 /**
+ * サーバーから取得した高難易度クリアデータを安全にパースする
+ * @param {string|Object|null|undefined} raw - サーバーのクリアデータ
+ * @returns {Record<string, boolean>} クリア状況マップ
+ */
+export function parseHighDifficultyClearedData(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * ローカルとサーバーの高難易度クリア状況マップをORマージする
+ * @param {Record<string, boolean>} local - ローカルのクリアマップ
+ * @param {Record<string, boolean>} server - サーバーのクリアマップ
+ * @returns {Record<string, boolean>} マージ後のクリアマップ
+ */
+export function mergeHighDifficultyClearedData(local, server) {
+  return { ...(server || {}), ...(local || {}) };
+}
+
+/**
+ * ローカル側にサーバー未送信の高難易度クリア済みボスが存在するか判定する
+ * @param {Record<string, boolean>} local - ローカルのクリアマップ
+ * @param {Record<string, boolean>} server - サーバーのクリアマップ
+ * @returns {boolean} 未送信データが存在するかどうか
+ */
+export function hasUnsyncedHighDifficultyClear(local, server) {
+  for (const [charId, cleared] of Object.entries(local || {})) {
+    if (cleared && !server?.[charId]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * 特定のゲームモードのポイント情報をローカルとサーバーで同期・復旧します。
  *
  * @param {string} mode - 'challenge', 'tournament', 'defense', 'fortune', 'high_difficulty' のいずれか
@@ -256,11 +300,35 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       localTotal =
         parseInt(localStorage.getItem(HIGH_DIFFICULTY_TOTAL_POINTS_KEY), 10) ||
         0;
-      const cleared = loadHighDifficultyClearedData();
+      const localCleared = loadHighDifficultyClearedData();
+      const serverCleared = serverPlayerData
+        ? parseHighDifficultyClearedData(
+            serverPlayerData.high_difficulty_cleared
+          )
+        : {};
+      const mergedCleared = mergeHighDifficultyClearedData(
+        localCleared,
+        serverCleared
+      );
+
+      // サーバー側にローカル未反映のクリア済みボスがあればローカルのLocalStorageに復元・保存
+      if (
+        serverPlayerData &&
+        Object.keys(mergedCleared).length > Object.keys(localCleared).length
+      ) {
+        try {
+          localStorage.setItem(
+            HIGH_DIFFICULTY_CLEARED_KEY,
+            JSON.stringify(mergedCleared)
+          );
+        } catch (e) {
+          console.error('高難易度クリア状態の復元保存に失敗しました:', e);
+        }
+      }
 
       endpoint = 'update_high_difficulty_points.php';
       extraData = {
-        high_difficulty_cleared: JSON.stringify(cleared),
+        high_difficulty_cleared: JSON.stringify(mergedCleared),
       };
 
       if (serverPlayerData) {
@@ -285,7 +353,21 @@ export async function syncModePoints(mode, serverPlayerData = null) {
           extraData.fortune_max_total_cost_valkyria >
             (serverPlayerData.fortune_max_total_cost_valkyria || 0));
 
-      if (localTotal > sTotal || localPts > sPts || shouldSyncFortuneProgress) {
+      // High Difficultyモードにおいて、ローカルにサーバー未送信のクリア済みボスが存在するか判定
+      const localCleared = loadHighDifficultyClearedData();
+      const serverCleared = parseHighDifficultyClearedData(
+        serverPlayerData.high_difficulty_cleared
+      );
+      const shouldSyncHighDifficultyProgress =
+        mode === 'high_difficulty' &&
+        hasUnsyncedHighDifficultyClear(localCleared, serverCleared);
+
+      if (
+        localTotal > sTotal ||
+        localPts > sPts ||
+        shouldSyncFortuneProgress ||
+        shouldSyncHighDifficultyProgress
+      ) {
         // ポイントおよび進行情報は必ずサーバー値との最大値を送信し、他端末で稼いだ記録の巻き戻しを防ぐ
         const sendPts = Math.max(localPts, sPts);
         const sendTotal = Math.max(localTotal, sTotal);
@@ -325,7 +407,11 @@ export async function syncModePoints(mode, serverPlayerData = null) {
           extraData.fortune_max_total_cost_automata > 0 ||
           extraData.fortune_max_total_cost_valkyria > 0);
 
-      if (localTotal > 0 || hasFortuneProgress) {
+      const hasHighDiffProgress =
+        mode === 'high_difficulty' &&
+        Object.keys(loadHighDifficultyClearedData()).length > 0;
+
+      if (localTotal > 0 || hasFortuneProgress || hasHighDiffProgress) {
         const saved = await savePointsToServer(
           endpoint,
           localPts,

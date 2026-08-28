@@ -609,6 +609,9 @@
       <!-- プレイヤー詳細ポップアップモーダル -->
       <div
         id="player-detail-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-player-title"
         class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 hidden"
         onclick="if (event.target === this) window.closePlayerDetailModal();"
       >
@@ -682,6 +685,9 @@
       <!-- デッキ詳細ポップアップモーダル (対戦履歴・登録デッキ・防衛デッキ兼用) -->
       <div
         id="battle-deck-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-deck-title"
         class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"
         onclick="if (event.target === this) window.closeBattleDeckModal();"
       >
@@ -782,10 +788,15 @@
           `assets/icons/icon_${encodeURIComponent(String(id))}.webp`
         );
 
-      // カードサムネイルのパスを生成する
-      const getCardThumbPath = (id) =>
+      /**
+       * カードサムネイルのパスを生成する（プレミアム対応）
+       * @param {string} id - カードID
+       * @param {boolean} [isPremium=false] - プレミアムカードフラグ
+       * @returns {string} サムネイル画像パス
+       */
+      const getCardThumbPath = (id, isPremium = false) =>
         fixAssetPath(
-          `assets/cards/card_${encodeURIComponent(String(id))}_thumb.webp`
+          `assets/cards/card_${encodeURIComponent(String(id))}${isPremium ? '_premium' : ''}_thumb.webp`
         );
 
       // =============================
@@ -890,6 +901,38 @@
         if (typeof entry === 'string') return entry;
         if (typeof entry === 'object' && entry.id) return String(entry.id);
         return String(entry);
+      }
+
+      // レアリティ表示定数（全セクション共通）
+      const RARITY_COLORS = {
+        1: 'slate',
+        2: 'blue',
+        3: 'purple',
+        4: 'amber',
+        5: 'red',
+      };
+      const RARITY_LABELS = { 1: 'N', 2: 'R', 3: 'SR', 4: 'UR', 5: 'LR' };
+
+      /**
+       * 対戦記録から防衛側のキャラクターIDとスキンIDを解決する共通関数
+       * @param {Object} rec - 対戦記録
+       * @returns {{charId: string, skinId: string}} 防衛側のキャラクターIDおよびスキンID
+       */
+      function resolveDefenderIdentity(rec) {
+        const targetPlayer = allPlayers.find((p) => p.uuid === rec.targetUuid);
+        return {
+          charId:
+            rec.defenderCharacter ||
+            rec.targetCharacter ||
+            targetPlayer?.character ||
+            targetPlayer?.deck_leader ||
+            'android',
+          skinId:
+            rec.defenderSkin ||
+            rec.targetSkin ||
+            targetPlayer?.skin ||
+            'default',
+        };
       }
 
       // =============================
@@ -1107,6 +1150,7 @@
 
           renderPlayerList();
           setupSearch();
+          setupEventDelegation();
         } catch (err) {
           console.error('初期化失敗:', err);
           document.getElementById('loading-overlay').innerHTML =
@@ -1358,6 +1402,61 @@
       }
 
       // =============================
+      // イベント委譲 & キーボード操作
+      // =============================
+      /**
+       * テーブルやモーダル内のボタン操作をイベント委譲で処理するリスナーを登録
+       */
+      function setupEventDelegation() {
+        // プレイヤー一覧テーブル内の操作
+        const tableBody = document.getElementById('player-table-body');
+        if (tableBody) {
+          tableBody.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-action="open-player-detail"]');
+            if (btn && btn.dataset.uuid) {
+              ev.stopPropagation();
+              openPlayerDetailModal(btn.dataset.uuid);
+            }
+          });
+        }
+
+        // 詳細モーダル内の登録デッキ・防衛デッキボタン操作
+        const detailPanel = document.getElementById('detail-panel');
+        if (detailPanel) {
+          detailPanel.addEventListener('click', (ev) => {
+            const regBtn = ev.target.closest(
+              '[data-action="open-registered-deck"]'
+            );
+            if (regBtn && regBtn.dataset.uuid) {
+              ev.stopPropagation();
+              const deckIdx = parseInt(regBtn.dataset.deckIndex, 10) || 0;
+              window.openPlayerRegisteredDeckModal(
+                regBtn.dataset.uuid,
+                deckIdx
+              );
+              return;
+            }
+            const defBtn = ev.target.closest(
+              '[data-action="open-defense-deck"]'
+            );
+            if (defBtn && defBtn.dataset.uuid) {
+              ev.stopPropagation();
+              window.openPlayerDefenseDeckModal(defBtn.dataset.uuid);
+              return;
+            }
+          });
+        }
+
+        // Escapeキーで開いているモーダルを閉じる
+        document.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Escape') {
+            closePlayerDetailModal();
+            closeBattleDeckModal();
+          }
+        });
+      }
+
+      // =============================
       // ソート
       // =============================
       function sortBy(key) {
@@ -1519,10 +1618,11 @@
                   }
                 </div>
               </td>
-              <td class="p-2 md:p-3 text-center" onclick="event.stopPropagation()">
+              <td class="p-2 md:p-3 text-center">
                 <button
                   type="button"
-                  onclick="window.openPlayerDetailModal('${escapeHtml(p.uuid)}')"
+                  data-action="open-player-detail"
+                  data-uuid="${escapeHtml(p.uuid)}"
                   class="px-2.5 py-1 text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-sm flex items-center gap-1 mx-auto"
                   title="プレイヤー詳細モーダルを開く"
                 >
@@ -1564,6 +1664,10 @@
         renderDeck(player);
 
         if (modal) modal.classList.remove('hidden');
+        // 前回表示のスクロール位置を引き継がないよう先頭へ戻す
+        const panel = document.getElementById('detail-panel');
+        if (panel) panel.scrollTop = 0;
+
         // 選択中ハイライトのみを更新する（テーブル全体の全行再描画・スクロール位置喪失を防止）
         document
           .querySelectorAll('#player-table-body tr[data-uuid]')
@@ -1732,9 +1836,17 @@
        * @param {Object} p - プレイヤーデータ
        */
       function renderPremiumCards(p) {
-        const unlockedCards = Array.isArray(p.unlocked_premium_cards)
-          ? p.unlocked_premium_cards
-          : [];
+        // カードIDを正規化し、重複を排除してから集計・描画する
+        const unlockedCards = Array.from(
+          new Set(
+            (Array.isArray(p.unlocked_premium_cards)
+              ? p.unlocked_premium_cards
+              : []
+            )
+              .map((entry) => resolveCardId(entry))
+              .filter(Boolean)
+          )
+        );
         const totalPremiumTargets = PREMIUM_CARD_IDS.length || 0;
         const unlockedCount = unlockedCards.length;
 
@@ -1760,15 +1872,6 @@
           return card || { id: cardId, name: cardId, power: '?', rarity: 0 };
         });
 
-        const RARITY_COLORS = {
-          1: 'slate',
-          2: 'blue',
-          3: 'purple',
-          4: 'amber',
-          5: 'red',
-        };
-        const RARITY_LABELS = { 1: 'N', 2: 'R', 3: 'SR', 4: 'UR', 5: 'LR' };
-
         sectionEl.innerHTML = `
           <div class="space-y-2">
             <div class="flex justify-between items-center">
@@ -1783,7 +1886,7 @@
                     return `
                   <div class="bg-slate-900/80 rounded-lg p-2 border border-fuchsia-500/30 flex flex-col items-center text-center shadow-sm relative group overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-tr from-fuchsia-500/10 to-amber-500/10 pointer-events-none"></div>
-                    <img src="${escapeHtml(getCardThumbPath(c.id))}" class="w-12 h-12 object-cover rounded-md border border-fuchsia-400/50 mb-1.5 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                    <img src="${escapeHtml(getCardThumbPath(c.id, true))}" class="w-12 h-12 object-cover rounded-md border border-fuchsia-400/50 mb-1.5 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                     <div class="text-[10px] font-black text-slate-200 truncate w-full" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
                     <div class="flex items-center gap-1 mt-1">
                       <span class="text-[8px] font-black text-${rarityColor}-400 bg-${rarityColor}-950/60 px-1 rounded border border-${rarityColor}-800/50">${rarityLabel}</span>
@@ -1850,15 +1953,6 @@
           `;
           return;
         }
-
-        const RARITY_COLORS = {
-          1: 'slate',
-          2: 'blue',
-          3: 'purple',
-          4: 'amber',
-          5: 'red',
-        };
-        const RARITY_LABELS = { 1: 'N', 2: 'R', 3: 'SR', 4: 'UR', 5: 'LR' };
 
         // 所持枚数順（降順）・レアリティ順でソート
         const sortedCards = [...validCards].sort((a, b) => {
@@ -2013,7 +2107,9 @@
                           <span class="text-[9px] font-mono text-emerald-400">${cards.length}枚</span>
                           <button
                             type="button"
-                            onclick="event.stopPropagation(); window.openPlayerRegisteredDeckModal('${escapeHtml(p.uuid)}', ${dIdx})"
+                            data-action="open-registered-deck"
+                            data-uuid="${escapeHtml(p.uuid)}"
+                            data-deck-index="${dIdx}"
                             class="text-[9px] font-bold text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-600 px-2 py-0.5 rounded border border-indigo-700/50 transition-all flex items-center gap-1 shadow-sm"
                             title="リッチカード表示で開く"
                           >
@@ -2073,7 +2169,8 @@
                     <span class="text-[9px] font-mono text-amber-400">${p.deck.length}枚</span>
                     <button
                       type="button"
-                      onclick="event.stopPropagation(); window.openPlayerDefenseDeckModal('${escapeHtml(p.uuid)}')"
+                      data-action="open-defense-deck"
+                      data-uuid="${escapeHtml(p.uuid)}"
                       class="text-[9px] font-bold text-amber-300 hover:text-white bg-amber-950/60 hover:bg-amber-600 px-2 py-0.5 rounded border border-amber-700/50 transition-all flex items-center gap-1 shadow-sm"
                       title="リッチカード表示で開く"
                     >
@@ -2358,10 +2455,13 @@
             }
           });
 
-          // プレミアム解放集計
+          // プレミアム解放集計（同一プレイヤー内の重複を排除して加算）
           const unlockedPrem = p.unlocked_premium_cards || [];
           if (Array.isArray(unlockedPrem)) {
-            unlockedPrem.forEach((cId) => {
+            const uniquePrem = new Set(
+              unlockedPrem.map((entry) => resolveCardId(entry)).filter(Boolean)
+            );
+            uniquePrem.forEach((cId) => {
               premiumUnlockedCounts[cId] =
                 (premiumUnlockedCounts[cId] || 0) + 1;
             });
@@ -2492,15 +2592,6 @@
 
         document.getElementById('cards-count').innerText =
           `(${cards.length}種)`;
-
-        const RARITY_COLORS = {
-          1: 'slate',
-          2: 'blue',
-          3: 'purple',
-          4: 'amber',
-          5: 'red',
-        };
-        const RARITY_LABELS = { 1: 'N', 2: 'R', 3: 'SR', 4: 'UR', 5: 'LR' };
 
         const gridHtml = cards
           .map((c) => {
@@ -2689,22 +2780,10 @@
               getIconPath('player');
             const atkIconPath = fixAssetPath(rawAtkIconPath);
 
-            // 防衛キャラクター・アイコン（recのdefenderCharacter/targetCharacter、またはallPlayersからフォールバック解決）
-            const targetPlayer = allPlayers.find(
-              (p) => p.uuid === rec.targetUuid
-            );
-            const defCharId =
-              rec.defenderCharacter ||
-              rec.targetCharacter ||
-              targetPlayer?.character ||
-              targetPlayer?.deck_leader ||
-              'android';
+            // 防衛キャラクター・アイコン（共通関数 resolveDefenderIdentity で解決）
+            const { charId: defCharId, skinId: defSkinId } =
+              resolveDefenderIdentity(rec);
             const defCharObj = CHARACTERS[defCharId] || {};
-            const defSkinId =
-              rec.defenderSkin ||
-              rec.targetSkin ||
-              targetPlayer?.skin ||
-              'default';
             const rawDefIconPath =
               (typeof getSkinImage === 'function' &&
                 getSkinImage(defCharObj, defSkinId, 'icon')) ||
@@ -2795,15 +2874,6 @@
         if (titleEl) titleEl.textContent = title;
         if (subtitleEl) subtitleEl.textContent = subtitle;
 
-        const RARITY_LABELS = { 1: 'N', 2: 'R', 3: 'SR', 4: 'UR', 5: 'LR' };
-        const RARITY_COLORS = {
-          1: 'slate',
-          2: 'emerald',
-          3: 'blue',
-          4: 'amber',
-          5: 'purple',
-        };
-
         const cardsHtml = cards
           .map((entry) => {
             const cardId = resolveCardId(entry);
@@ -2816,7 +2886,7 @@
             const cardName = cardObj ? cardObj.name : cardId;
             const power = cardObj ? cardObj.power : '?';
             const rarity = cardObj ? cardObj.rarity : 1;
-            const thumbUrl = getCardThumbPath(cardId);
+            const thumbUrl = getCardThumbPath(cardId, isPremium);
 
             const rarityColor = RARITY_COLORS[rarity] || 'slate';
             const rarityLabel = RARITY_LABELS[rarity] || '?';
@@ -2876,12 +2946,7 @@
         if (deckType === 'defender') {
           const hasHistoricalDefDeck =
             Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0;
-          const defCharId =
-            rec.defenderCharacter ||
-            rec.targetCharacter ||
-            targetPlayer?.character ||
-            targetPlayer?.deck_leader ||
-            'android';
+          const { charId: defCharId } = resolveDefenderIdentity(rec);
           const defCharName = CHARACTERS[defCharId]?.name || defCharId;
           showGenericDeckModal({
             title: `🛡️ ${rec.targetName || '不明'} の防衛デッキ`,
