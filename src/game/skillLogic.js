@@ -29,7 +29,6 @@ import {
   shuffleArray,
   sleep,
   createGraveKeeperEvents,
-  createMiasmaEvents,
   triggerShakeAnimation,
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
@@ -59,7 +58,6 @@ import {
   canCardBeDestroyed,
   getDamageBlockType,
   isLaneSealed,
-  isMiasmaActive,
   isValkyriaGuardActive,
   BLOCK_TYPE_EVENT_MAP,
 } from './engine.js';
@@ -1941,13 +1939,6 @@ export async function resolveActiveSkillEffect(
     applyActiveSkillLogic(currentState, o, l, skillId, skillValue || 0, events);
     if (events.length > 0) {
       await playEvents(events);
-    }
-    // 瘴気発動中の場合は、ダメージ適用後に瘴気ポップアップを表示
-    if (isMiasmaActive(currentState)) {
-      const miasmaEvents = createMiasmaEvents(GameState);
-      if (miasmaEvents.length > 0) {
-        await playEvents(miasmaEvents);
-      }
     }
     // 瘴気によって回復がダメージ（damage_player）に変換された場合、致死判定を実施
     if (events.some((event) => event.type === 'damage_player')) {

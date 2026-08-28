@@ -329,7 +329,16 @@ export async function playEvents(events) {
             );
             if (cEl) createDamagePopup(cEl, '吸収', '#4ade80');
           }
-          // 盤面の瘴気カード上に「瘴気」ポップアップを表示
+        }
+
+        // 瘴気による回復反転ダメージの場合、盤面の瘴気カード上に「瘴気」ポップアップを同時に表示
+        const isHealReversal =
+          ev.source === 'heal' ||
+          ev.source === 'absorb' ||
+          ev.source === 'god_flame' ||
+          ev.source === 'condemnation';
+
+        if (isHealReversal) {
           ['player', 'enemy'].forEach((sideKey) => {
             const board =
               sideKey === 'player'
@@ -340,7 +349,7 @@ export async function playEvents(events) {
                 const miasmaEl = document.querySelector(
                   `#${sideKey}-lanes .cell[data-lane="${laneIdx}"] .card`
                 );
-                if (miasmaEl) createDamagePopup(miasmaEl, '瘴気', '#7e22ce');
+                if (miasmaEl) createDamagePopup(miasmaEl, '瘴気', '#a8a29e');
               }
             });
           });

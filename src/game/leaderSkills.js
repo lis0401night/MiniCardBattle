@@ -28,7 +28,6 @@ import {
   resolveStartupFade,
   sleep,
   createGraveKeeperEvents,
-  createMiasmaEvents,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -2033,14 +2032,6 @@ export async function executeLeaderSkillAction(
     GameState.enemyBoard = savedEnemyBoard;
 
     await playEvents(events);
-
-    // god_flame / condemnation による回復が「瘴気」で阻害された場合の演出をダメージ演出の後に再生する
-    if (action === 'god_flame' || action === 'condemnation') {
-      const miasmaEvents = createMiasmaEvents(GameState);
-      if (miasmaEvents.length > 0) {
-        await playEvents(miasmaEvents);
-      }
-    }
 
     // リーダースキルによる演出が完了したので、配置したカードの保護フラグを解除
     events.forEach((ev) => {

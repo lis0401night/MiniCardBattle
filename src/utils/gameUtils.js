@@ -606,7 +606,7 @@ export function createGraveKeeperEvents(state) {
  * @returns {Array<Object>} 発生した演出イベントの配列
  */
 export function createMiasmaEvents(state) {
-  return createPassiveSkillPopupEvents(state, 'miasma', '瘴気', '#7e22ce');
+  return createPassiveSkillPopupEvents(state, 'miasma', '瘴気', '#a8a29e');
 }
 
 // 判定補助: 特定のスキルを所持しているか
