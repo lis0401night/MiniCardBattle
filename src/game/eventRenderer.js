@@ -316,6 +316,29 @@ export async function playEvents(events) {
 
         updateHPBar();
         showSpeechBubble(ev.side);
+        if (ev.source === 'absorb') {
+          if (ev.lane !== undefined) {
+            const cEl = document.querySelector(
+              `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+            );
+            if (cEl) createDamagePopup(cEl, '吸収', '#4ade80');
+          }
+          // 盤面の瘴気カード上に「瘴気」ポップアップを表示
+          ['player', 'enemy'].forEach((sideKey) => {
+            const board =
+              sideKey === 'player'
+                ? GameState.playerBoard
+                : GameState.enemyBoard;
+            board.forEach((card, laneIdx) => {
+              if (card && hasSkill(card, 'miasma')) {
+                const miasmaEl = document.querySelector(
+                  `#${sideKey}-lanes .cell[data-lane="${laneIdx}"] .card`
+                );
+                if (miasmaEl) createDamagePopup(miasmaEl, '瘴気', '#7e22ce');
+              }
+            });
+          });
+        }
         if (!isNextDamage) {
           playSound(SOUNDS.seDamage);
           await sleep(300);

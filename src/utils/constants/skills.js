@@ -158,7 +158,8 @@ export const SKILLS = {
   stealth: {
     name: '潜伏',
     icon: '👣',
-    desc: (val) => `召喚時、自身に無敵${val || 1}を付与する。`,
+    desc: (val) =>
+      `召喚時、自身に無敵${val || 1}（戦闘ダメージを受けない）を付与する。`,
   },
   invincible: {
     name: '無敵',
@@ -464,7 +465,8 @@ export const SKILLS = {
   seal: {
     name: '結界',
     icon: '🛑',
-    desc: (val) => `召喚時、正面のレーンを${val}ターン封印する。`,
+    desc: (val) =>
+      `召喚時、正面のレーンを${val}ターン封印（召喚・配置・移動不可）する。`,
   },
   apex: {
     name: '頂点',
@@ -691,7 +693,7 @@ export const SKILLS = {
   miasma: {
     name: '瘴気',
     icon: '☣️',
-    desc: () => '場に居る限り、お互いにHPを回復できない。',
+    desc: () => '場に居る限り、お互いにHPを回復する代わりにダメージを受ける。',
   },
   cull: {
     name: '選別',

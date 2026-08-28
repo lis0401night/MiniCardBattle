@@ -58,6 +58,7 @@ import {
   applyActiveSkillLogic,
   canCardBeDestroyed,
   getDamageBlockType,
+  isMiasmaActive,
   isValkyriaGuardActive,
   BLOCK_TYPE_EVENT_MAP,
 } from './engine.js';
@@ -1922,11 +1923,6 @@ export async function resolveActiveSkillEffect(
       await applyLeaderDamageWithGuard(targetSide, decreeDmg, 'decree', c, o);
     }
   } else if (skillId === 'heal' || skillId === 'heal_void') {
-    const miasmaEvents = createMiasmaEvents(GameState);
-    if (miasmaEvents.length > 0) {
-      await playEvents(miasmaEvents);
-      return;
-    }
     if (cEl) {
       const healText = skillId === 'heal_void' ? '回復(虚)' : '回復';
       createDamagePopup(cEl, healText, '#4ade80');
@@ -1944,6 +1940,13 @@ export async function resolveActiveSkillEffect(
     applyActiveSkillLogic(currentState, o, l, skillId, skillValue || 0, events);
     if (events.length > 0) {
       await playEvents(events);
+    }
+    // 瘴気発動中の場合は、ダメージ適用後に瘴気ポップアップを表示
+    if (isMiasmaActive(currentState)) {
+      const miasmaEvents = createMiasmaEvents(GameState);
+      if (miasmaEvents.length > 0) {
+        await playEvents(miasmaEvents);
+      }
     }
   } else if (skillId === 'loss') {
     playSound(SOUNDS.seSkill);
@@ -3685,6 +3688,15 @@ export async function triggerStartTurnPassive(owner, lane) {
     }
 
     if (sk.id === 'awake' || sk.id === 'awake_legendary') {
+      const mySealedLanes =
+        owner === 'blue'
+          ? GameState.playerSealedLanes
+          : GameState.enemySealedLanes;
+      if (mySealedLanes && mySealedLanes[lane] > 0) {
+        // 封印（seal）されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
+        continue;
+      }
+
       const val = sk.value || 1;
       // エンジンのロジックを流用してイベントを生成
       const currentState = {
@@ -3709,16 +3721,18 @@ export async function triggerStartTurnPassive(owner, lane) {
       let awakeEvents = [];
       applyActiveSkillLogic(currentState, owner, lane, sk.id, val, awakeEvents);
 
-      // 盤面の状態を同期
-      if (owner === 'blue') {
-        GameState.playerBoard = currentState.playerBoard;
-      } else {
-        GameState.enemyBoard = currentState.enemyBoard;
-      }
+      if (awakeEvents.length > 0) {
+        // 盤面の状態を同期
+        if (owner === 'blue') {
+          GameState.playerBoard = currentState.playerBoard;
+        } else {
+          GameState.enemyBoard = currentState.enemyBoard;
+        }
 
-      events.push(...awakeEvents);
-      triggered = true;
-      break; // カードが置換されたので、他のパッシブ処理を中断
+        events.push(...awakeEvents);
+        triggered = true;
+        break; // カードが置換されたので、他のパッシブ処理を中断
+      }
     }
   }
 
