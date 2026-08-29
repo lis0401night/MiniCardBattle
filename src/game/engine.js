@@ -3156,24 +3156,33 @@ export function applyLeaderSkillLogic(
       if (!state._actionQueue) state._actionQueue = [];
       state._actionQueue.push(decision);
 
-      if (canCardBeDestroyed(state, eBoard[targetLane], oppOwner)) {
-        eBoard[targetLane].currentPower = 0;
-        events.push({
-          type: 'deadly',
-          side: oppOwner,
-          lane: targetLane,
-          source: 'targeted_destruction',
-        });
-      } else {
-        events.push({
-          type: isValkyriaGuardActive(state, oppOwner)
-            ? 'valkyria_guard_block'
-            : 'immune_block',
-          side: oppOwner,
-          lane: targetLane,
-          source: 'targeted_destruction',
-        });
-      }
+      const targetCard = eBoard[targetLane];
+
+      // 【能力をなくす処理（沈黙化）】
+      // 破壊前に対象カードのすべてのスキル・一時効果を消去する
+      targetCard.skills = [];
+      targetCard.choices = [];
+      targetCard.choices2 = null;
+      if ('summonId' in targetCard) delete targetCard.summonId;
+      targetCard.stunTurns = 0;
+      targetCard.stunAppliedThisTurn = false;
+
+      events.push({
+        type: 'oblivion_clear',
+        side: oppOwner,
+        lane: targetLane,
+        card: JSON.parse(JSON.stringify(targetCard)),
+      });
+
+      // 【加護・能力をなくして確定破壊】
+      // 対象カードの加護（破壊無効）および全スキルを無視して確定でパワー0（破壊）にする
+      targetCard.currentPower = 0;
+      events.push({
+        type: 'deadly',
+        side: oppOwner,
+        lane: targetLane,
+        source: 'targeted_destruction',
+      });
     }
   } else if (action === 'elf_polarbear_combo') {
     events.push({ type: 'leader_skill', skill: action, side: owner });

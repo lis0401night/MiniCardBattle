@@ -1376,8 +1376,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [
       { id: 'defender' },
-      { id: 'sturdy' },
       { id: 'awake', value: 7, summonId: 'token_angel' },
+      { id: 'sturdy' },
     ],
     voiceCategory: 'stone',
     flavor:
@@ -1651,8 +1651,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [
       { id: 'standby', value: 2 },
-      { id: 'sturdy' },
       { id: 'intercept', value: 2 },
+      { id: 'sturdy' },
     ],
     voiceCategory: 'machine_old',
     flavor:
@@ -1747,7 +1747,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 4,
     skills: [{ id: 'convert', value: 1 }, { id: 'deadly' }, { id: 'pierce' }],
-    voiceCategory: 'sword',
+    voiceCategory: 'horse',
     flavor:
       '主君を持たず、盾の紋章を塗りつぶした傭兵騎士。鍛え上げた槍捌きで過酷な戦場を生き抜く。',
   },
@@ -2248,8 +2248,8 @@ export const CARD_MASTER = [
     power: 6,
     skills: [
       { id: 'defender' },
-      { id: 'guardian' },
       { id: 'artillery', value: 3 },
+      { id: 'guardian' },
     ],
     voiceCategory: 'machine_old',
     flavor:
@@ -2281,8 +2281,8 @@ export const CARD_MASTER = [
     power: 7,
     skills: [
       { id: 'defender' },
-      { id: 'sturdy' },
       { id: 'move' },
+      { id: 'sturdy' },
       { id: 'immune' },
     ],
     voiceCategory: 'machine_old',
@@ -2775,7 +2775,7 @@ export const CARD_MASTER = [
     skills: [
       { id: 'legendary' },
       { id: 'hero', value: 2 },
-      { id: 'snipe', value: 2 },
+      { id: 'snipe', value: 3 },
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
@@ -3003,8 +3003,8 @@ export const CARD_MASTER = [
     skills: [
       { id: 'takeover' },
       { id: 'berserk', value: 4 },
-      { id: 'cleave' },
       { id: 'retaliate', value: 2 },
+      { id: 'cleave' },
     ],
     voiceCategory: 'monster',
     flavor:
@@ -3359,8 +3359,8 @@ export const CARD_MASTER = [
     skills: [
       { id: 'convert', value: 1 },
       { id: 'sacrifice', value: 1 },
-      { id: 'arm_self' },
       { id: 'summon', value: 3, summonId: 'token_whitewolf' },
+      { id: 'arm_self' },
     ],
     voiceCategory: 'human_female_normal',
     flavor:

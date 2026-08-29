@@ -636,6 +636,32 @@ export async function playEvents(events) {
         renderHand();
         break;
       }
+      case 'oblivion_clear': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const targetCard = board[ev.lane];
+        if (targetCard) {
+          targetCard.skills = [];
+          targetCard.choices = [];
+          targetCard.choices2 = null;
+          if ('summonId' in targetCard) delete targetCard.summonId;
+          targetCard.stunTurns = 0;
+          targetCard.stunAppliedThisTurn = false;
+        }
+
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '沈黙', '#cbd5e1');
+        }
+        if (window.updateCardVisualsReact) {
+          window.updateCardVisualsReact(ev.lane, sidePrefix);
+        }
+        playSound(SOUNDS.seSkill);
+        await sleep(200);
+        break;
+      }
       case 'add_skill': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;

@@ -34,7 +34,7 @@ export const LEADER_SKILLS = {
   },
   targeted_destruction: {
     name: '星墜ちの矢',
-    desc: '(SP:4) 相手の場のカード1枚を選び、破壊する。',
+    desc: '(SP:4) 相手の場のカード1枚を選び、加護と能力をなくして破壊する。',
     cost: 4,
     action: 'targeted_destruction',
   },

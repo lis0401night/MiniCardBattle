@@ -2314,11 +2314,13 @@ export function getBestSimulatedMove() {
         pairs = avail.map((l) => [l, l]);
       }
       tokenLanePatterns = pairs.length > 0 ? pairs : [null];
-    } else if (
-      action === 'targeted_destruction' ||
-      action === 'tomb_guard' ||
-      action === 'death_judgment'
-    ) {
+    } else if (action === 'targeted_destruction') {
+      // targeted_destruction は加護・完全耐性に関わらず対象カードを無力化して確定破壊できるため、相手の全カードを候補にする
+      tokenLanePatterns = [0, 1, 2]
+        .filter((l) => opBoard[l] !== null)
+        .map((l) => [l]);
+      if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
+    } else if (action === 'tomb_guard' || action === 'death_judgment') {
       // 相手側に戦乙女の加護が有効な場合、破壊対象は成立しないため空撃ち候補を生成しない
       const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
       if (oppGuarded) {
