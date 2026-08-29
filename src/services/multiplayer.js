@@ -794,14 +794,10 @@ export async function leaveRoom() {
       // 1. DBからルームおよびコードインデックスを原子的に同時削除（先に明示操作を完了させる）
       await removeRoomAndCode(roomId, roomCode);
     } else {
-      // 1. トランザクションを使用して、データが存在する間だけステータスとクライアントを更新する
-      await runTransaction(roomRef, (room) => {
-        if (!room) return undefined; // ルームが既に削除されている場合は書き込みせず中断
-        return {
-          ...room,
-          status: 'waiting',
-          client: null,
-        };
+      // 1. クライアント退室時は対象フィールドをピンポイントで即時更新（ホスト側ハートビートとのトランザクション競合を防止）
+      await update(roomRef, {
+        status: 'waiting',
+        client: null,
       });
     }
 

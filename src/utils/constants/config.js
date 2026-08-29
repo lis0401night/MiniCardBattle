@@ -4,7 +4,7 @@
 import { CARD_MASTER } from './cards.js';
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.11.1';
+export const GAME_VERSION = '0.3.11.2';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -54,6 +54,12 @@ export const UNLOCKED_ICONS_KEY = 'mini_card_battle_unlocked_icons';
 export const OWNED_PLAYMATS_KEY = 'mini_card_battle_owned_playmats';
 export const UNLOCKED_PREMIUM_CARDS_KEY =
   'mini_card_battle_unlocked_premium_cards';
+export const BGM_VOLUME_KEY = 'mini_card_battle_bgm_volume';
+export const SE_VOLUME_KEY = 'mini_card_battle_se_volume';
+export const BGM_MUTED_KEY = 'mini_card_battle_bgm_muted';
+export const SE_MUTED_KEY = 'mini_card_battle_se_muted';
+export const LEGACY_VOLUME_KEY = 'mini_card_battle_volume';
+export const DEFAULT_SOUND_VOLUME = 0.5;
 
 export const CHALLENGE_POINTS_KEY = 'mini_card_battle_challenge_points';
 export const CHALLENGE_TOTAL_POINTS_KEY =

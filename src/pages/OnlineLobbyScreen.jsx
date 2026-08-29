@@ -503,6 +503,7 @@ export default function OnlineLobbyScreen() {
   const isHost = getIsHost();
   const myData = isHost ? host : client;
   const opData = isHost ? client : host;
+  const hasOp = Boolean(opData && opData.name);
 
   const chats = roomData?.chat
     ? Object.values(roomData.chat).sort((a, b) => a.timestamp - b.timestamp)
@@ -519,16 +520,18 @@ export default function OnlineLobbyScreen() {
         )
       : getPlayerIconPath({});
 
-  const opIconId = opData?.leaderConfig?.icon || opData?.icon;
-  const opIcon = opIconId
-    ? getPlayerIconPath({ icon: opIconId })
-    : opData?.leaderConfig?.leaderConfig
-      ? getSkinImage(
-          opData.leaderConfig.leaderConfig,
-          opData.leaderConfig.skin,
-          'icon'
-        )
-      : getPlayerIconPath({});
+  const opIconId = hasOp ? opData?.leaderConfig?.icon || opData?.icon : null;
+  const opIcon = hasOp
+    ? opIconId
+      ? getPlayerIconPath({ icon: opIconId })
+      : opData?.leaderConfig?.leaderConfig
+        ? getSkinImage(
+            opData.leaderConfig.leaderConfig,
+            opData.leaderConfig.skin,
+            'icon'
+          )
+        : getPlayerIconPath({})
+    : getPlayerIconPath({ icon: 'player' });
   const myName = localStorage.getItem(PROFILE_NAME_KEY) || '自分';
 
   return (
@@ -757,45 +760,57 @@ export default function OnlineLobbyScreen() {
         {/* 相手 */}
         <div
           style={{
-            background: 'rgba(30, 41, 59, 0.8)',
+            background: hasOp
+              ? 'rgba(30, 41, 59, 0.8)'
+              : 'rgba(15, 23, 42, 0.5)',
             padding: '15px',
             borderRadius: '12px',
-            border: '1px solid #ef4444',
+            border: hasOp ? '1px solid #ef4444' : '1px dashed #475569',
             display: 'flex',
             alignItems: 'center',
             gap: '15px',
             width: '100%',
             boxSizing: 'border-box',
             alignSelf: 'stretch',
+            transition: 'all 0.2s ease',
           }}
         >
           <div
             className="banner-icon-wrapper"
-            style={{ width: '48px', height: '48px', margin: 0 }}
+            style={{
+              width: '48px',
+              height: '48px',
+              margin: 0,
+              opacity: hasOp ? 1 : 0.35,
+            }}
           >
             <img
               src={opIcon || getPlayerIconPath({ icon: 'player' })}
               className="banner-icon"
-              alt={opData?.name || 'Opponent'}
+              alt={hasOp ? opData.name : 'Waiting'}
             />
-            <img
-              src={getIconFramePath(
-                opData?.leaderConfig?.leaderConfig?.id || 'android'
-              )}
-              className="banner-icon-frame"
-              alt="frame"
-            />
+            {hasOp && (
+              <img
+                src={getIconFramePath(
+                  opData?.leaderConfig?.leaderConfig?.id || 'android'
+                )}
+                className="banner-icon-frame"
+                alt="frame"
+              />
+            )}
           </div>
           <div style={{ flex: 1 }}>
-            <div
-              style={{
-                color: '#ef4444',
-                fontSize: '0.9rem',
-                marginBottom: '5px',
-              }}
-            >
-              {opData ? `${opData.name}` : ''}
-            </div>
+            {hasOp && (
+              <div
+                style={{
+                  color: '#ef4444',
+                  fontSize: '0.9rem',
+                  marginBottom: '5px',
+                }}
+              >
+                {opData.name}
+              </div>
+            )}
             <div
               style={{
                 display: 'flex',
@@ -803,7 +818,7 @@ export default function OnlineLobbyScreen() {
                 alignItems: 'center',
               }}
             >
-              {!opData ? (
+              {!hasOp ? (
                 <div style={{ color: '#94a3b8' }}>
                   対戦相手を待っています...
                 </div>

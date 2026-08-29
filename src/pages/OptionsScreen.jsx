@@ -1,37 +1,41 @@
 import { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { GameState } from '../state/gameState.js';
+import CreditModal from '../components/common/CreditModal.jsx';
+import SerialCodeModal from '../components/common/SerialCodeModal.jsx';
+import { saveDeck } from '../services/deck.js';
+import {
+  showCardAcquisitionModal,
+  showIconAcquisitionModal,
+  showPlaymatAcquisitionModal,
+  showPremiumAcquisitionModal,
+  showSkinAcquisitionModal,
+} from '../services/uiGallery.js';
 import {
   handleOptionsTitleClick,
   reloadGame,
   resetGameData,
   showSyncDataModal,
-  updateVolume,
+  updateBgmMute,
+  updateBgmVolume,
+  updateSeMute,
+  updateSeVolume,
 } from '../services/uiMainCore.js';
-import {
-  playSound,
-  forceSoundReload,
-  getOrCreateUUID,
-} from '../utils/gameUtils.js';
-import { SOUNDS } from '../utils/sounds.js';
-import CreditModal from '../components/common/CreditModal.jsx';
-import SerialCodeModal from '../components/common/SerialCodeModal.jsx';
 import { showAlertModal } from '../services/uiModals.js';
-import { saveDeck } from '../services/deck.js';
+import { GameState } from '../state/gameState.js';
 import {
-  showPlaymatAcquisitionModal,
-  showCardAcquisitionModal,
-  showPremiumAcquisitionModal,
-  showSkinAcquisitionModal,
-  showIconAcquisitionModal,
-} from '../services/uiGallery.js';
+  DEFAULT_SOUND_VOLUME,
+  OWNED_PLAYMATS_KEY,
+  UNLOCKED_ICONS_KEY,
+  UNLOCKED_SKINS_KEY,
+} from '../utils/constants/config.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import {
-  OWNED_PLAYMATS_KEY,
-  UNLOCKED_SKINS_KEY,
-  UNLOCKED_ICONS_KEY,
-} from '../utils/constants/config.js';
+  forceSoundReload,
+  getOrCreateUUID,
+  playSound,
+} from '../utils/gameUtils.js';
+import { SOUNDS } from '../utils/sounds.js';
 
 function addUnlockedLocalItem(storageKey, rewardId) {
   const saved = localStorage.getItem(storageKey);
@@ -51,7 +55,10 @@ function addUnlockedLocalItem(storageKey, rewardId) {
 }
 
 export default function OptionsScreen() {
-  const [volume, setVolume] = useState(0.5);
+  const [bgmVolume, setBgmVolume] = useState(DEFAULT_SOUND_VOLUME);
+  const [seVolume, setSeVolume] = useState(DEFAULT_SOUND_VOLUME);
+  const [isBgmMuted, setIsBgmMuted] = useState(false);
+  const [isSeMuted, setIsSeMuted] = useState(false);
   const [creditVisible, setCreditVisible] = useState(false);
   const [serialVisible, setSerialVisible] = useState(false);
 
@@ -218,8 +225,17 @@ export default function OptionsScreen() {
 
   useEffect(() => {
     const syncVolume = () => {
-      if (typeof GameState.gameVolume !== 'undefined') {
-        setVolume(GameState.gameVolume);
+      if (typeof GameState.bgmVolume !== 'undefined') {
+        setBgmVolume(GameState.bgmVolume);
+      }
+      if (typeof GameState.seVolume !== 'undefined') {
+        setSeVolume(GameState.seVolume);
+      }
+      if (typeof GameState.isBgmMuted !== 'undefined') {
+        setIsBgmMuted(GameState.isBgmMuted);
+      }
+      if (typeof GameState.isSeMuted !== 'undefined') {
+        setIsSeMuted(GameState.isSeMuted);
       }
     };
 
@@ -228,18 +244,42 @@ export default function OptionsScreen() {
     return () => window.removeEventListener('optionsOpened', syncVolume);
   }, []);
 
-  const handleVolumeChange = (e) => {
+  const handleBgmVolumeChange = (e) => {
     const val = parseFloat(e.target.value);
-    setVolume(val);
-    if (typeof updateVolume === 'function') {
-      updateVolume(val);
+    setBgmVolume(val);
+    if (typeof updateBgmVolume === 'function') {
+      updateBgmVolume(val);
     }
   };
 
-  const handleVolumeChangeComplete = (e) => {
-    handleVolumeChange(e);
-    // スライダー操作終了時にテスト音を鳴らして音量の変化をフィードバックする
-    if (typeof playSound === 'function') {
+  const handleBgmMuteChange = (e) => {
+    const checked = e.target.checked;
+    setIsBgmMuted(checked);
+    if (typeof updateBgmMute === 'function') {
+      updateBgmMute(checked);
+    }
+  };
+
+  const handleSeVolumeChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setSeVolume(val);
+    if (typeof updateSeVolume === 'function') {
+      updateSeVolume(val);
+    }
+  };
+
+  const handleSeMuteChange = (e) => {
+    const checked = e.target.checked;
+    setIsSeMuted(checked);
+    if (typeof updateSeMute === 'function') {
+      updateSeMute(checked);
+    }
+  };
+
+  const handleSeVolumeChangeComplete = (e) => {
+    handleSeVolumeChange(e);
+    // スライダー操作終了時にテスト音を鳴らして音量の変化をフィードバックする（ミュート時以外）
+    if (!isSeMuted && typeof playSound === 'function') {
       playSound(SOUNDS.seClick);
     }
   };
@@ -277,7 +317,7 @@ export default function OptionsScreen() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '10px',
+              marginBottom: '14px',
             }}
           >
             <label
@@ -285,6 +325,7 @@ export default function OptionsScreen() {
                 color: '#cbd5e1',
                 fontSize: '0.9rem',
                 margin: 0,
+                fontWeight: 'bold',
               }}
             >
               音量調整
@@ -310,20 +351,138 @@ export default function OptionsScreen() {
               <span style={{ fontSize: '0.9rem' }}>🔄</span> サウンド復旧
             </button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.2rem' }}>🔈</span>
-            <input
-              type="range"
-              id="volume-slider"
-              min="0"
-              max="1"
-              step="0.05"
-              value={volume}
-              onChange={handleVolumeChange}
-              onPointerUp={handleVolumeChangeComplete}
-              style={{ flexGrow: 1, cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: '1.2rem' }}>🔊</span>
+
+          {/* BGM音量スライダー */}
+          <div style={{ marginBottom: '16px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '0.8rem',
+                color: '#94a3b8',
+                marginBottom: '4px',
+              }}
+            >
+              <span>BGM 音量</span>
+              <span>
+                {isBgmMuted ? 'ミュート' : `${Math.round(bgmVolume * 100)}%`}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.1rem' }}>🎵</span>
+              <input
+                type="range"
+                id="bgm-volume-slider"
+                min="0"
+                max="1"
+                step="0.05"
+                value={bgmVolume}
+                onChange={handleBgmVolumeChange}
+                style={{
+                  flexGrow: 1,
+                  cursor: 'pointer',
+                  opacity: isBgmMuted ? 0.5 : 1,
+                }}
+              />
+              <span style={{ fontSize: '1.1rem' }}>🔊</span>
+            </div>
+            {/* BGMミュートチェックボックス */}
+            <div
+              style={{
+                marginTop: '6px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <label
+                htmlFor="bgm-mute-checkbox"
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="bgm-mute-checkbox"
+                  checked={isBgmMuted}
+                  onChange={handleBgmMuteChange}
+                  style={{ cursor: 'pointer' }}
+                />
+                ミュート
+              </label>
+            </div>
+          </div>
+
+          {/* SE音量スライダー */}
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '0.8rem',
+                color: '#94a3b8',
+                marginBottom: '4px',
+              }}
+            >
+              <span>SE 音量</span>
+              <span>
+                {isSeMuted ? 'ミュート' : `${Math.round(seVolume * 100)}%`}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.1rem' }}>💥</span>
+              <input
+                type="range"
+                id="se-volume-slider"
+                min="0"
+                max="1"
+                step="0.05"
+                value={seVolume}
+                onChange={handleSeVolumeChange}
+                onPointerUp={handleSeVolumeChangeComplete}
+                style={{
+                  flexGrow: 1,
+                  cursor: 'pointer',
+                  opacity: isSeMuted ? 0.5 : 1,
+                }}
+              />
+              <span style={{ fontSize: '1.1rem' }}>🔊</span>
+            </div>
+            {/* SEミュートチェックボックス */}
+            <div
+              style={{
+                marginTop: '6px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <label
+                htmlFor="se-mute-checkbox"
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="se-mute-checkbox"
+                  checked={isSeMuted}
+                  onChange={handleSeMuteChange}
+                  style={{ cursor: 'pointer' }}
+                />
+                ミュート
+              </label>
+            </div>
           </div>
         </div>
 

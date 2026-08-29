@@ -2,6 +2,7 @@
  * Mini Card Battle - Sound Management (Web Audio API Optimized)
  */
 import { GameState } from '../state/gameState.js';
+import { DEFAULT_SOUND_VOLUME } from './constants/config.js';
 
 // Web Audio API Context
 export let audioCtx = (() => {
@@ -457,14 +458,18 @@ export async function unlockAudio() {
     // 全てのSEロードの完了を待機（エラーハンドリングは各Promise内で解決済み）
     await Promise.all(promises);
 
-    const baseVol =
+    const isBgmMuted = typeof GameState !== 'undefined' && GameState.isBgmMuted;
+    const bgmVol =
       typeof GameState !== 'undefined' &&
-      typeof GameState.gameVolume !== 'undefined'
-        ? GameState.gameVolume
-        : 0.3;
+      typeof GameState.bgmVolume !== 'undefined'
+        ? GameState.bgmVolume
+        : typeof GameState !== 'undefined' &&
+            typeof GameState.gameVolume !== 'undefined'
+          ? GameState.gameVolume
+          : DEFAULT_SOUND_VOLUME;
 
     // BGM volume sync
-    updateBgmGainNodes(baseVol);
+    updateBgmGainNodes(isBgmMuted ? 0 : bgmVol);
 
     // ダミー再生（サスペンドからの確実な復帰用）
     if (audioCtx) {
@@ -523,6 +528,7 @@ export async function unlockAudio() {
 }
 
 export function playSkillSound(skillId) {
+  if (typeof GameState !== 'undefined' && GameState.isSeMuted) return;
   const backupSound = SOUNDS.seSkill;
   if (!skillId || skillId === 'none') {
     if (typeof window.playSound === 'function') window.playSound(backupSound);
@@ -533,16 +539,19 @@ export function playSkillSound(skillId) {
 
   if (audioCtx && typeof fetch === 'function') {
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const baseVol =
+    const seVol =
       typeof GameState !== 'undefined' &&
-      typeof GameState.gameVolume !== 'undefined'
-        ? GameState.gameVolume
-        : 0.3;
+      typeof GameState.seVolume !== 'undefined'
+        ? GameState.seVolume
+        : typeof GameState !== 'undefined' &&
+            typeof GameState.gameVolume !== 'undefined'
+          ? GameState.gameVolume
+          : DEFAULT_SOUND_VOLUME;
 
     const playBuffer = (buffer) => {
       const source = audioCtx.createBufferSource();
       const gainNode = audioCtx.createGain();
-      gainNode.gain.value = baseVol;
+      gainNode.gain.value = seVol;
       source.buffer = buffer;
       source.connect(gainNode);
       gainNode.connect(audioCtx.destination);

@@ -3776,8 +3776,12 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             alignItems: 'center',
             justifyContent: 'center',
             background: 'rgba(0,0,0,0.9)',
+            cursor: 'pointer',
           }}
-          onClick={() => setSimpleImagePreview(null)}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            setSimpleImagePreview(null);
+          }}
         >
           <img
             src={simpleImagePreview}
@@ -3791,6 +3795,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             alt="Preview"
             onClick={(e) => {
               e.stopPropagation();
+              playSound?.(SOUNDS?.seClick);
               setSimpleImagePreview(null);
             }}
           />

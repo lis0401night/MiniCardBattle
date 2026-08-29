@@ -1,6 +1,7 @@
 import { GameState } from '../../state/gameState.js';
 import { audioCtx, loadAndDecodeAudio, voiceBuffers } from '../sounds.js';
 import { CARD_MASTER } from './cards.js';
+import { DEFAULT_SOUND_VOLUME } from './config.js';
 
 /**
  * Mini Card Battle - Voice Categories
@@ -130,7 +131,7 @@ export const VOICE_CATEGORIES = {
   human_female_sexy: {
     play: 'assets/audio/voice/voice_human_female_sexy_play.mp3',
     death: 'assets/audio/voice/voice_human_female_sexy_death.mp3',
-    volume: 1.2,
+    volume: 1.4,
   },
   magic: {
     play: 'assets/audio/voice/voice_magic_play.mp3',
@@ -315,6 +316,10 @@ export async function playCardVoice(categoryOrCard, situation = 'play') {
     category = categoryOrCard;
   }
 
+  if (typeof GameState !== 'undefined' && GameState.isSeMuted) {
+    return;
+  }
+
   if (
     !category ||
     !VOICE_CATEGORIES[category] ||
@@ -326,7 +331,13 @@ export async function playCardVoice(categoryOrCard, situation = 'play') {
   const audioPath = VOICE_CATEGORIES[category][situation];
   const categoryVolume = VOICE_CATEGORIES[category].volume || 1.0;
   const baseVol =
-    typeof GameState.gameVolume !== 'undefined' ? GameState.gameVolume : 0.3;
+    typeof GameState !== 'undefined' &&
+    typeof GameState.seVolume !== 'undefined'
+      ? GameState.seVolume
+      : typeof GameState !== 'undefined' &&
+          typeof GameState.gameVolume !== 'undefined'
+        ? GameState.gameVolume
+        : DEFAULT_SOUND_VOLUME;
   let finalVolume =
     baseVol * VOICE_SETTINGS.globalVolumeMultiplier * categoryVolume;
   finalVolume = Math.min(1.0, Math.max(0.0, finalVolume));

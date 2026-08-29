@@ -10,6 +10,12 @@ import {
   GAME_KEY_PREFIX,
   RELOAD_CACHE_CLEAR_TIMEOUT_MS,
   APP_STATE_SELECT_ENEMY_DECK,
+  BGM_VOLUME_KEY,
+  SE_VOLUME_KEY,
+  BGM_MUTED_KEY,
+  SE_MUTED_KEY,
+  LEGACY_VOLUME_KEY,
+  DEFAULT_SOUND_VOLUME,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { LEADER_SKILLS } from '../utils/constants/leaderSkills.js';
@@ -60,21 +66,38 @@ const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
  * Mini Card Battle - UI Core (uiMainCore.js)
  */
 
-// 初期ロード時に音量を復元
+// 初期ロード時に音量およびミュート状態（BGM / SE）を復元
 (function () {
-  if (typeof GameState.gameVolume === 'undefined') {
-    GameState.gameVolume = 0.5;
-  }
-  const savedVol = localStorage.getItem('mini_card_battle_volume');
-  if (savedVol !== null) {
-    const parsed = parseFloat(savedVol);
-    GameState.gameVolume = isNaN(parsed) ? 0.5 : parsed;
-  }
-  // Storageから復帰した音量を、既に生成済みの全音声インスタンスに即時適用させる
-  // (関数の巻き上げを利用してここで事前に適用しておく)
+  const savedLegacyVol = localStorage.getItem(LEGACY_VOLUME_KEY);
+  const legacyDefault =
+    savedLegacyVol !== null && !isNaN(parseFloat(savedLegacyVol))
+      ? parseFloat(savedLegacyVol)
+      : DEFAULT_SOUND_VOLUME;
+
+  const savedBgm = localStorage.getItem(BGM_VOLUME_KEY);
+  GameState.bgmVolume =
+    savedBgm !== null && !isNaN(parseFloat(savedBgm))
+      ? parseFloat(savedBgm)
+      : legacyDefault;
+
+  const savedSe = localStorage.getItem(SE_VOLUME_KEY);
+  GameState.seVolume =
+    savedSe !== null && !isNaN(parseFloat(savedSe))
+      ? parseFloat(savedSe)
+      : legacyDefault;
+
+  GameState.isBgmMuted = localStorage.getItem(BGM_MUTED_KEY) === '1';
+  GameState.isSeMuted = localStorage.getItem(SE_MUTED_KEY) === '1';
+
+  GameState.gameVolume = (GameState.bgmVolume + GameState.seVolume) / 2;
+
+  // Storageから復帰した音量・ミュート設定を、既に生成済みの全音声インスタンスに即時適用させる
   setTimeout(() => {
-    if (typeof updateVolume === 'function') {
-      updateVolume(GameState.gameVolume);
+    if (typeof updateBgmVolume === 'function') {
+      updateBgmVolume(GameState.bgmVolume);
+    }
+    if (typeof updateSeVolume === 'function') {
+      updateSeVolume(GameState.seVolume);
     }
   }, 100);
 })();
@@ -113,26 +136,131 @@ export function showProfileSettings() {
   showProfileModal();
 }
 
-export function updateVolume(val) {
-  GameState.gameVolume = parseFloat(val);
-  // すべての Audio インスタンス（BGM/SEのフォールバック等）へ即座に音量を反映 (PC＆非iOS用)
+/**
+ * BGMの音量を更新し、再生中BGMおよびLocalStorageへ反映します。
+ * @param {number|string} val - 設定する音量（0.0〜1.0）
+ */
+export function updateBgmVolume(val) {
+  const numericVal = Math.min(1.0, Math.max(0.0, parseFloat(val) || 0));
+  GameState.bgmVolume = numericVal;
+
+  const effectiveVol = GameState.isBgmMuted ? 0 : numericVal;
+
+  // BGM用 HTML5 Audio インスタンスの音量を更新
   Object.keys(AUDIO_INSTANCES).forEach((key) => {
-    if (
-      AUDIO_INSTANCES[key] &&
-      typeof AUDIO_INSTANCES[key].volume !== 'undefined'
-    ) {
-      try {
-        AUDIO_INSTANCES[key].volume = GameState.gameVolume;
-      } catch {
-        // ignore
+    if (key.startsWith('bgm')) {
+      const audio = AUDIO_INSTANCES[key];
+      if (audio && typeof audio.volume !== 'undefined') {
+        try {
+          audio.volume = effectiveVol;
+        } catch {
+          // ignore
+        }
       }
     }
   });
-  // Web Audio Gain Nodeの更新 (iOSなどモバイル用)
+
+  // Web Audio Gain Node の更新 (iOSなどのWeb Audio再生中BGM用)
   if (typeof window.updateBgmGainNodes === 'function') {
-    window.updateBgmGainNodes(GameState.gameVolume);
+    window.updateBgmGainNodes(effectiveVol);
   }
-  localStorage.setItem('mini_card_battle_volume', GameState.gameVolume);
+
+  localStorage.setItem(BGM_VOLUME_KEY, numericVal);
+}
+
+/**
+ * BGMのミュート（消音）状態を切り替え、LocalStorageへ保存します。
+ * @param {boolean} isMuted - ミュートにするかどうか
+ */
+export function updateBgmMute(isMuted) {
+  GameState.isBgmMuted = !!isMuted;
+  localStorage.setItem(BGM_MUTED_KEY, GameState.isBgmMuted ? '1' : '0');
+
+  const effectiveVol = GameState.isBgmMuted ? 0 : GameState.bgmVolume;
+
+  // BGM用 HTML5 Audio インスタンスの音量を更新
+  Object.keys(AUDIO_INSTANCES).forEach((key) => {
+    if (key.startsWith('bgm')) {
+      const audio = AUDIO_INSTANCES[key];
+      if (audio && typeof audio.volume !== 'undefined') {
+        try {
+          audio.volume = effectiveVol;
+        } catch {
+          // ignore
+        }
+      }
+    }
+  });
+
+  // Web Audio Gain Node の更新
+  if (typeof window.updateBgmGainNodes === 'function') {
+    window.updateBgmGainNodes(effectiveVol);
+  }
+}
+
+/**
+ * SE（効果音・ボイス）の音量を更新し、各音声インスタンスおよびLocalStorageへ反映します。
+ * @param {number|string} val - 設定する音量（0.0〜1.0）
+ */
+export function updateSeVolume(val) {
+  const numericVal = Math.min(1.0, Math.max(0.0, parseFloat(val) || 0));
+  GameState.seVolume = numericVal;
+
+  const effectiveVol = GameState.isSeMuted ? 0 : numericVal;
+
+  // SE用 HTML5 Audio インスタンスの音量を更新
+  Object.keys(AUDIO_INSTANCES).forEach((key) => {
+    if (!key.startsWith('bgm')) {
+      const audio = AUDIO_INSTANCES[key];
+      if (audio && typeof audio.volume !== 'undefined') {
+        try {
+          audio.volume = effectiveVol;
+        } catch {
+          // ignore
+        }
+      }
+    }
+  });
+
+  localStorage.setItem(SE_VOLUME_KEY, numericVal);
+}
+
+/**
+ * SE（効果音・ボイス）のミュート（消音）状態を切り替え、LocalStorageへ保存します。
+ * @param {boolean} isMuted - ミュートにするかどうか
+ */
+export function updateSeMute(isMuted) {
+  GameState.isSeMuted = !!isMuted;
+  localStorage.setItem(SE_MUTED_KEY, GameState.isSeMuted ? '1' : '0');
+
+  const effectiveVol = GameState.isSeMuted ? 0 : GameState.seVolume;
+
+  // SE用 HTML5 Audio インスタンスの音量を更新
+  Object.keys(AUDIO_INSTANCES).forEach((key) => {
+    if (!key.startsWith('bgm')) {
+      const audio = AUDIO_INSTANCES[key];
+      if (audio && typeof audio.volume !== 'undefined') {
+        try {
+          audio.volume = effectiveVol;
+        } catch {
+          // ignore
+        }
+      }
+    }
+  });
+}
+
+/**
+ * 全体音量を更新します（後方互換性用ヘルパー）。
+ * BGM音量とSE音量の両方に同一の音量を適用します。
+ * @param {number|string} val - 設定する音量（0.0〜1.0）
+ */
+export function updateVolume(val) {
+  const numericVal = Math.min(1.0, Math.max(0.0, parseFloat(val) || 0));
+  GameState.gameVolume = numericVal;
+  updateBgmVolume(numericVal);
+  updateSeVolume(numericVal);
+  localStorage.setItem(LEGACY_VOLUME_KEY, numericVal);
 }
 
 export function resetGameData() {

@@ -8,6 +8,7 @@ import {
   UNLOCKED_ICONS_KEY,
   DEFAULT_PLAYER_NAME,
   DEFAULT_PLAYER_ICON,
+  DEFAULT_SOUND_VOLUME,
 } from '../utils/constants/config.js';
 import { safeParseArray } from '../utils/gameUtils.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
@@ -136,7 +137,11 @@ export const GameState = {
   selectedStageId: null,
   extraTurnCount: 0,
   attackSkipCount: 0,
-  gameVolume: 0.5,
+  bgmVolume: DEFAULT_SOUND_VOLUME,
+  seVolume: DEFAULT_SOUND_VOLUME,
+  isBgmMuted: false,
+  isSeMuted: false,
+  gameVolume: DEFAULT_SOUND_VOLUME,
   premiumCards: [],
   unlockedPremiumCards: [],
   selectedPlaymatId: null,
