@@ -12,7 +12,6 @@ import {
   checkIsHighDiffMode,
 } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
-import { setupEventConfrontation } from '../game/events.js';
 import { GameState } from '../state/gameState.js';
 import { saveStoryProgress } from '../game/story.js';
 import { handleProgressionNextStep } from '../game/progression.js';
@@ -590,51 +589,19 @@ export function showContinueScreen() {
   switchScreen('screen-continue');
 }
 
+/**
+ * コンティニューを実行し、戦闘前会話画面をセットアップする。
+ * ストーリー・イベント（高難易度・運命の邂逅）を問わず、再戦時は敵・味方各1行の簡易会話形式で迅速にバトルへ復帰させる。
+ *
+ * @function executeContinue
+ * @returns {void}
+ */
 export function executeContinue() {
   playSound(SOUNDS.seContinue);
   setTimeout(() => {
-    if (GameState.gameMode.startsWith('event_')) {
-      setupEventConfrontation();
-    } else {
-      GameState.appState = 'pre_dialogue';
-      let introText =
-        getDialogue(
-          GameState.enemyConfig,
-          GameState.playerConfig,
-          'intro',
-          'enemy'
-        ) || '・・・・';
-      if (GameState.enemyConfig.isShadow) introText = '・・・・';
-      GameState.dialogueQueue = [
-        { speaker: 'enemy', text: introText },
-        {
-          speaker: 'player',
-          text: GameState.enemyConfig.isShadow
-            ? GameState.playerConfig.mirrorIntro || 'なっ、自分自身だと……！？'
-            : getDialogue(
-                GameState.playerConfig,
-                GameState.enemyConfig,
-                'intro',
-                'player'
-              ),
-        },
-      ];
-      if (
-        GameState.enemyConfig.id === 'satan' &&
-        !GameState.enemyConfig.isShadow
-      ) {
-        introText =
-          '……よくぞここまで辿り着いたな。' +
-          getDialogue(
-            GameState.enemyConfig,
-            GameState.playerConfig,
-            'intro',
-            'enemy'
-          );
-        GameState.dialogueQueue[0].text = introText;
-      }
-      setupDialogueScreen();
-    }
+    GameState.appState = 'pre_dialogue';
+    GameState.dialogueQueue = buildSimplifiedIntroQueue();
+    setupDialogueScreen();
   }, 2000);
 }
 

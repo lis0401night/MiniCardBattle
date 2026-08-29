@@ -71,8 +71,30 @@ function sanitizePlayerDisplayName(?string $name, string $default = '挑戦者',
 }
 
 /**
+ * カードマスタ順序マップ（[cardId => index]）を取得・キャッシュします。
+ * card_order.json（CARD_MASTERから自動生成されるカードID一覧）を読み込み、
+ * カードIDをキー、定義順インデックスを値とする連想配列を返します。
+ * 
+ * @return array<string, int> カードIDマップ
+ */
+function getCardOrderMap(): array {
+    static $cardOrderMap = null;
+    if ($cardOrderMap === null) {
+        $cardOrderMap = [];
+        $orderFile = __DIR__ . '/card_order.json';
+        if (file_exists($orderFile)) {
+            $orderList = json_decode(file_get_contents($orderFile), true);
+            if (is_array($orderList)) {
+                $cardOrderMap = array_flip($orderList);
+            }
+        }
+    }
+    return $cardOrderMap;
+}
+
+/**
  * 所持カード（インベントリ）データをサニタイズします。
- * キーを安全なカードIDに正規化し、枚数を正の整数（1〜99）に制限します。
+ * キーを安全なカードIDに正規化し、カードマスタに存在するカードのみ枚数を正の整数（1〜99）に制限して保持します。
  * 
  * @param mixed $inventory 入力インベントリデータ
  * @return array サニタイズ済みインベントリマップ
@@ -81,11 +103,12 @@ function sanitizeInventory($inventory): array {
     if (!is_array($inventory)) {
         return [];
     }
+    $cardOrderMap = getCardOrderMap();
     $sanitized = [];
     foreach ($inventory as $cardId => $count) {
         $safeCardId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $cardId);
         $intCount = intval($count);
-        if ($safeCardId !== '' && $intCount > 0) {
+        if ($safeCardId !== '' && isset($cardOrderMap[$safeCardId]) && $intCount > 0) {
             $sanitized[$safeCardId] = min($intCount, 99);
         }
     }
@@ -94,7 +117,7 @@ function sanitizeInventory($inventory): array {
 
 /**
  * 解放済みプレミアムカード配列をサニタイズします。
- * 安全なカードIDのみを抽出し、重複を排除します。
+ * カードマスタに存在する安全なカードIDのみを抽出し、重複を排除します。
  * 
  * @param mixed $unlockedPremium 入力プレミアムカード配列
  * @return array サニタイズ済みプレミアムカードID配列
@@ -103,10 +126,11 @@ function sanitizeUnlockedPremiumCards($unlockedPremium): array {
     if (!is_array($unlockedPremium)) {
         return [];
     }
+    $cardOrderMap = getCardOrderMap();
     $sanitized = [];
     foreach ($unlockedPremium as $cardId) {
         $safeCardId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $cardId);
-        if ($safeCardId !== '') {
+        if ($safeCardId !== '' && isset($cardOrderMap[$safeCardId])) {
             $sanitized[] = $safeCardId;
         }
     }
@@ -123,17 +147,7 @@ const MAX_RECORDED_DECK_SIZE = 20;
  * @return array ソート済みカード配列
  */
 function sortDeckCardsByMasterOrder(array $cards): array {
-    static $cardOrderMap = null;
-    if ($cardOrderMap === null) {
-        $cardOrderMap = [];
-        $orderFile = __DIR__ . '/card_order.json';
-        if (file_exists($orderFile)) {
-            $orderList = json_decode(file_get_contents($orderFile), true);
-            if (is_array($orderList)) {
-                $cardOrderMap = array_flip($orderList);
-            }
-        }
-    }
+    $cardOrderMap = getCardOrderMap();
 
     usort($cards, function($a, $b) use ($cardOrderMap) {
         $idA = is_scalar($a) ? (string)$a : ($a['id'] ?? '');
@@ -153,7 +167,7 @@ function sortDeckCardsByMasterOrder(array $cards): array {
 
 /**
  * デッキ配列（カードID文字列 または {id, isPremium} オブジェクト）をサニタイズし、定義順（ID順）にソートします。
- * 最大枚数（MAX_RECORDED_DECK_SIZE枚）まで安全な文字（[a-zA-Z0-9_]）のみを抽出・保持します。
+ * 最大枚数（MAX_RECORDED_DECK_SIZE枚）まで安全な文字（[a-zA-Z0-9_]）かつカードマスタに存在するIDのみを抽出・保持します。
  * 
  * @param mixed $rawDeck リクエストまたは保存データ由来のデッキ配列
  * @return array サニタイズおよびソート済みデッキ配列
@@ -163,18 +177,20 @@ function sanitizeDeckList($rawDeck): array {
     if (!is_array($rawDeck)) {
         return $result;
     }
+    $cardOrderMap = getCardOrderMap();
+
     foreach ($rawDeck as $item) {
         if (count($result) >= MAX_RECORDED_DECK_SIZE) {
             break;
         }
         if (is_scalar($item)) {
             $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $item);
-            if ($cleaned_id !== '') {
+            if ($cleaned_id !== '' && isset($cardOrderMap[$cleaned_id])) {
                 $result[] = $cleaned_id;
             }
         } else if (is_array($item) && isset($item['id']) && is_scalar($item['id'])) {
             $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $item['id']);
-            if ($cleaned_id !== '') {
+            if ($cleaned_id !== '' && isset($cardOrderMap[$cleaned_id])) {
                 $isPrem = !empty($item['isPremium']);
                 $result[] = $isPrem ? ['id' => $cleaned_id, 'isPremium' => true] : $cleaned_id;
             }

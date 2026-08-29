@@ -1,5 +1,10 @@
 import { GameState } from '../../state/gameState.js';
-import { audioCtx, loadAndDecodeAudio, voiceBuffers } from '../sounds.js';
+import {
+  audioCtx,
+  getSeMasterGainNode,
+  loadAndDecodeAudio,
+  voiceBuffers,
+} from '../sounds.js';
 import { CARD_MASTER } from './cards.js';
 import { DEFAULT_SOUND_VOLUME } from './config.js';
 
@@ -253,6 +258,30 @@ export function cleanupVoiceBuffers() {
   });
 }
 
+/**
+ * フォールバック用HTML5 Audioボイスの音量を一括更新します。
+ * @param {number} vol - 実効音量
+ */
+export function updateFallbackVoiceVolume(vol) {
+  activeFallbackVoiceAudios.forEach((audio) => {
+    try {
+      audio.volume = vol;
+    } catch {
+      // ignore
+    }
+  });
+  Object.values(voiceAudioCache).forEach((audio) => {
+    try {
+      audio.volume = vol;
+    } catch {
+      // ignore
+    }
+  });
+}
+if (typeof window !== 'undefined') {
+  window.updateFallbackVoiceVolume = updateFallbackVoiceVolume;
+}
+
 // プレミアムカード用ボイスタイプ変更テーブル
 // カードによって別のタイプのボイスを再生する場合に使用
 export const PREMIUM_VOICE_MAP = {
@@ -357,9 +386,11 @@ export async function playCardVoice(categoryOrCard, situation = 'play') {
         const source = audioCtx.createBufferSource();
         const gainNode = audioCtx.createGain();
         source.buffer = buffer;
-        gainNode.gain.value = finalVolume;
+        gainNode.gain.value =
+          VOICE_SETTINGS.globalVolumeMultiplier * categoryVolume;
         source.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+        const masterGain = getSeMasterGainNode();
+        gainNode.connect(masterGain || audioCtx.destination);
         source.start(0);
         return;
       }

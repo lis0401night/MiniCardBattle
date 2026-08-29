@@ -440,8 +440,19 @@ export function processActionSequence(
                   'explore',
                 ].includes(sk.id)
               ) {
-                // ユーティリティボーナス系スキル (瘴気発動時は回復ボーナスを除外)
-                if (sk.id !== 'heal' || !isMiasmaActive(simState)) {
+                // ユーティリティボーナス系スキル (瘴気発動時は回復ボーナスを除外して実ロジックで自傷シミュレート)
+                if (sk.id === 'heal' && isMiasmaActive(simState)) {
+                  applyActiveSkillLogic(
+                    simState,
+                    'red',
+                    leaderLane,
+                    sk.id,
+                    sk.value,
+                    [],
+                    null,
+                    undefined
+                  );
+                } else {
                   simState.actionUtilityBonus =
                     (simState.actionUtilityBonus || 0) +
                     (AI_SKILL_UTILITY[sk.id] || 0);

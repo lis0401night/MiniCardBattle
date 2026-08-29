@@ -222,6 +222,11 @@ export function updateSeVolume(val) {
     }
   });
 
+  // Web Audio SE/ボイス用ゲインノードの更新
+  if (typeof window.updateSeGainNodes === 'function') {
+    window.updateSeGainNodes(effectiveVol);
+  }
+
   localStorage.setItem(SE_VOLUME_KEY, numericVal);
 }
 
@@ -248,6 +253,11 @@ export function updateSeMute(isMuted) {
       }
     }
   });
+
+  // Web Audio SE/ボイス用ゲインノードの更新
+  if (typeof window.updateSeGainNodes === 'function') {
+    window.updateSeGainNodes(effectiveVol);
+  }
 }
 
 /**

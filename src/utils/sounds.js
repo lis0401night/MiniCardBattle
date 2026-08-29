@@ -422,6 +422,47 @@ export function updateBgmGainNodes(vol) {
 }
 window.updateBgmGainNodes = updateBgmGainNodes; // Fallback exposing
 
+/** Web Audio SE用マスターゲインノード */
+let seMasterGainNode = null;
+
+/**
+ * SE用マスターゲインノードを取得・初期化します（遅延初期化）。
+ * @returns {GainNode|null} SE用マスターゲインノード
+ */
+export function getSeMasterGainNode() {
+  if (!audioCtx) return null;
+  if (!seMasterGainNode) {
+    seMasterGainNode = audioCtx.createGain();
+    const isSeMuted = typeof GameState !== 'undefined' && GameState.isSeMuted;
+    const seVol =
+      typeof GameState !== 'undefined' &&
+      typeof GameState.seVolume !== 'undefined'
+        ? GameState.seVolume
+        : typeof GameState !== 'undefined' &&
+            typeof GameState.gameVolume !== 'undefined'
+          ? GameState.gameVolume
+          : DEFAULT_SOUND_VOLUME;
+    seMasterGainNode.gain.value = isSeMuted ? 0 : seVol;
+    seMasterGainNode.connect(audioCtx.destination);
+  }
+  return seMasterGainNode;
+}
+
+/**
+ * SE・ボイス用ゲインノードの音量を一括更新します。
+ * @param {number} vol - 実効音量（0.0〜1.0）
+ */
+export function updateSeGainNodes(vol) {
+  if (seMasterGainNode) {
+    seMasterGainNode.gain.value = vol;
+  }
+  if (typeof window.updateFallbackVoiceVolume === 'function') {
+    window.updateFallbackVoiceVolume(vol);
+  }
+}
+window.updateSeGainNodes = updateSeGainNodes;
+window.updateWebAudioSeVolume = updateSeGainNodes;
+
 /**
  * モバイルブラウザの音声制限を解除する
  */
@@ -539,22 +580,15 @@ export function playSkillSound(skillId) {
 
   if (audioCtx && typeof fetch === 'function') {
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const seVol =
-      typeof GameState !== 'undefined' &&
-      typeof GameState.seVolume !== 'undefined'
-        ? GameState.seVolume
-        : typeof GameState !== 'undefined' &&
-            typeof GameState.gameVolume !== 'undefined'
-          ? GameState.gameVolume
-          : DEFAULT_SOUND_VOLUME;
 
     const playBuffer = (buffer) => {
       const source = audioCtx.createBufferSource();
       const gainNode = audioCtx.createGain();
-      gainNode.gain.value = seVol;
+      gainNode.gain.value = 1.0;
       source.buffer = buffer;
       source.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+      const masterGain = getSeMasterGainNode();
+      gainNode.connect(masterGain || audioCtx.destination);
       source.start(0);
     };
 

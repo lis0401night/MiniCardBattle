@@ -184,6 +184,8 @@ function createCombatSnapshot() {
     enemyBoard: GameState.enemyBoard.map(cloneCard),
     playerHP: GameState.playerHP,
     enemyHP: GameState.enemyHP,
+    playerMaxHP: GameState.playerMaxHP,
+    enemyMaxHP: GameState.enemyMaxHP,
     playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
     enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
     playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),

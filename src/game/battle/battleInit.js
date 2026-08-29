@@ -310,6 +310,7 @@ export function prepareBattle() {
 
     // プレイマットは loadDeck() 時にデッキ固有のものが GameState.selectedPlaymatId に設定済みなのを使用する
 
+    let deckGenerationFailed = false;
     try {
       setRNGSeed(sessionId); // シードを完全に固定して初期化
 
@@ -392,14 +393,16 @@ export function prepareBattle() {
       }
     } catch (e) {
       console.error('Deck generation error:', e);
+      deckGenerationFailed = true;
       // エラー時も空のデッキで続行を試みる（フリーズ回避・前戦の古いデッキ残留防止）
       GameState.playerDeck = [];
       GameState.enemyDeck = [];
     }
 
     // バトル開始時点のプレイヤー・敵使用デッキのスナップショットを保存（防衛履歴送信などの正確性向上）
-    // ※ 例外発生時でも前戦の古いスナップショットが残留せず、常に最新または適切な状態へ更新されるように try-catch 外で実行
+    // ※ デッキ生成失敗時は実態と異なる選択中デッキを保存せず、空デッキ（実態）をスナップショットに反映
     const snapshotSource =
+      !deckGenerationFailed &&
       Array.isArray(GameState.playerDeckSelection) &&
       GameState.playerDeckSelection.length > 0
         ? GameState.playerDeckSelection
@@ -411,6 +414,7 @@ export function prepareBattle() {
         : null;
 
     const enemySnapshotSource =
+      !deckGenerationFailed &&
       Array.isArray(GameState.enemyDeckSelection) &&
       GameState.enemyDeckSelection.length > 0
         ? GameState.enemyDeckSelection

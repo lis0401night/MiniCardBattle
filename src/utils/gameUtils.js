@@ -19,6 +19,7 @@ import {
   audioCtx,
   cleanupOldDecodedBgms,
   decodedBgms,
+  getSeMasterGainNode,
   isAudioUnlocked,
   loadAndDecodeAudio,
   recreateAudioSystem,
@@ -36,6 +37,40 @@ export let currentBgmAudio = null;
 export let currentWebAudioBgmSource = null;
 export let currentWebAudioBgmGain = null;
 export { decodedBgms };
+
+/**
+ * 現在の GameState から実効BGM音量を算出する（ミュート時は0、それ以外は設定音量）
+ * @returns {number} 実効BGM音量（0.0〜1.0）
+ */
+export function getEffectiveBgmVolume() {
+  const isBgmMuted = typeof GameState !== 'undefined' && GameState.isBgmMuted;
+  const bgmVol =
+    typeof GameState !== 'undefined' &&
+    typeof GameState.bgmVolume !== 'undefined'
+      ? GameState.bgmVolume
+      : typeof GameState !== 'undefined' &&
+          typeof GameState.gameVolume !== 'undefined'
+        ? GameState.gameVolume
+        : DEFAULT_SOUND_VOLUME;
+  return isBgmMuted ? 0 : bgmVol;
+}
+
+/**
+ * 現在の GameState から実効SE音量を算出する（ミュート時は0、それ以外は設定音量）
+ * @returns {number} 実効SE音量（0.0〜1.0）
+ */
+export function getEffectiveSeVolume() {
+  const isSeMuted = typeof GameState !== 'undefined' && GameState.isSeMuted;
+  const seVol =
+    typeof GameState !== 'undefined' &&
+    typeof GameState.seVolume !== 'undefined'
+      ? GameState.seVolume
+      : typeof GameState !== 'undefined' &&
+          typeof GameState.gameVolume !== 'undefined'
+        ? GameState.gameVolume
+        : DEFAULT_SOUND_VOLUME;
+  return isSeMuted ? 0 : seVol;
+}
 
 export const retryPlayBgm = () => {
   // WebAudioが使える場合はHTML5 Audioのplay()は実行しない（二重再生防止）
@@ -59,17 +94,7 @@ export const retryPlayBgm = () => {
           fetchUrl = fetchUrl.substring(fetchUrl.indexOf('assets/audio/bgm/'));
         }
         const buffer = decodedBgms[fetchUrl];
-        const isBgmMuted =
-          typeof GameState !== 'undefined' && GameState.isBgmMuted;
-        const bgmVol =
-          typeof GameState !== 'undefined' &&
-          typeof GameState.bgmVolume !== 'undefined'
-            ? GameState.bgmVolume
-            : typeof GameState !== 'undefined' &&
-                typeof GameState.gameVolume !== 'undefined'
-              ? GameState.gameVolume
-              : DEFAULT_SOUND_VOLUME;
-        const effectiveBgmVol = isBgmMuted ? 0 : bgmVol;
+        const effectiveBgmVol = getEffectiveBgmVolume();
 
         if (buffer) {
           registerDecodedBgm(fetchUrl, buffer);
@@ -84,7 +109,7 @@ export const retryPlayBgm = () => {
                 currentBgmAudio.src.includes(fetchUrl)
               ) {
                 registerDecodedBgm(fetchUrl, buf);
-                startWebAudioBgm(buf, effectiveBgmVol);
+                startWebAudioBgm(buf, getEffectiveBgmVolume());
               }
             })
             .catch((e) => console.warn('Failed to decode BGM on retry', e));
@@ -229,29 +254,10 @@ export async function playSound(audioOrKey) {
       .catch((e) => console.warn('Failed to resume audioCtx', e));
   }
 
-  const isBgmMuted = typeof GameState !== 'undefined' && GameState.isBgmMuted;
   const isSeMuted = typeof GameState !== 'undefined' && GameState.isSeMuted;
 
-  const bgmVol =
-    typeof GameState !== 'undefined' &&
-    typeof GameState.bgmVolume !== 'undefined'
-      ? GameState.bgmVolume
-      : typeof GameState !== 'undefined' &&
-          typeof GameState.gameVolume !== 'undefined'
-        ? GameState.gameVolume
-        : DEFAULT_SOUND_VOLUME;
-
-  const seVol =
-    typeof GameState !== 'undefined' &&
-    typeof GameState.seVolume !== 'undefined'
-      ? GameState.seVolume
-      : typeof GameState !== 'undefined' &&
-          typeof GameState.gameVolume !== 'undefined'
-        ? GameState.gameVolume
-        : DEFAULT_SOUND_VOLUME;
-
-  const effectiveBgmVol = isBgmMuted ? 0 : bgmVol;
-  const effectiveSeVol = isSeMuted ? 0 : seVol;
+  const effectiveBgmVol = getEffectiveBgmVolume();
+  const effectiveSeVol = getEffectiveSeVolume();
 
   // 1. Web Audio (SE) の処理
   let seKey = null;
@@ -272,9 +278,10 @@ export async function playSound(audioOrKey) {
     const source = audioCtx.createBufferSource();
     const gainNode = audioCtx.createGain();
     source.buffer = buffer;
-    gainNode.gain.value = effectiveSeVol;
+    gainNode.gain.value = 1.0;
     source.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    const masterGain = getSeMasterGainNode();
+    gainNode.connect(masterGain || audioCtx.destination);
     source.start(0);
     return;
   }
@@ -318,15 +325,16 @@ export async function playSound(audioOrKey) {
 
           const playWebAudioBgm = () => {
             const buffer = decodedBgms[fetchUrl];
+            const currentEffectiveBgmVol = getEffectiveBgmVolume();
             if (buffer) {
               registerDecodedBgm(fetchUrl, buffer);
-              startWebAudioBgm(buffer, effectiveBgmVol);
+              startWebAudioBgm(buffer, currentEffectiveBgmVol);
             } else {
               loadAndDecodeAudio(audio.src)
                 .then((buf) => {
                   if (buf && currentBgmAudio === audio) {
                     registerDecodedBgm(fetchUrl, buf);
-                    startWebAudioBgm(buf, effectiveBgmVol);
+                    startWebAudioBgm(buf, getEffectiveBgmVolume());
                   }
                 })
                 .catch((e) => console.warn('Failed to decode BGM:', e));

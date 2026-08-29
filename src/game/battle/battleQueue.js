@@ -257,6 +257,8 @@ function generateSyncState() {
   return {
     playerHP: GameState.playerHP,
     enemyHP: GameState.enemyHP,
+    playerMaxHP: GameState.playerMaxHP,
+    enemyMaxHP: GameState.enemyMaxHP,
     playerSP: GameState.playerSP,
     enemySP: GameState.enemySP,
     playerSealedLanes: JSON.parse(
@@ -297,6 +299,12 @@ function applySyncState(state) {
   // 送られてきた状態の player と enemy を反転させてローカルに適用しなければならない。
   GameState.playerHP = state.enemyHP || 0;
   GameState.enemyHP = state.playerHP || 0;
+  if (typeof state.enemyMaxHP !== 'undefined') {
+    GameState.playerMaxHP = state.enemyMaxHP;
+  }
+  if (typeof state.playerMaxHP !== 'undefined') {
+    GameState.enemyMaxHP = state.playerMaxHP;
+  }
   GameState.playerSP = state.enemySP || 0;
   GameState.enemySP = state.playerSP || 0;
 
