@@ -68,7 +68,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'dinosaur',
-    obtain: ['initial', 'dragon_easy', 'priest_easy'],
+    obtain: ['initial', 'dragon_easy', 'devilhunter_easy'],
     name: '古代の大蜥蜴',
     rarity: 1,
     power: 8,
@@ -89,7 +89,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'scorpion',
-    obtain: ['initial', 'cleric_easy', 'devilhunter_easy'],
+    obtain: ['initial', 'cleric_easy', 'priest_easy'],
     name: '黒サソリ',
     rarity: 1,
     power: 3,
@@ -310,7 +310,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mechanic',
-    obtain: ['android_normal', 'android_hard', 'android_high'],
+    obtain: ['android_normal', 'android_hard'],
     name: 'ダクト街の技師',
     rarity: 1,
     power: 4,
@@ -564,15 +564,15 @@ export const CARD_MASTER = [
       '自由と引き換えに記憶を捨てた囚人。鉄面の下で正気をすり減らし、ただ破壊の衝動に従って暴れ狂う。',
   },
   {
-    id: 'cook',
+    id: 'franken',
     obtain: ['devilhunter_normal'],
-    name: '恐怖の調理長',
+    name: 'オールドヘイヴンの怪物',
     rarity: 1,
-    power: 5,
-    skills: [{ id: 'execute' }, { id: 'heal', value: 4 }],
-    voiceCategory: 'human_male_warrior',
+    power: 8,
+    skills: [{ id: 'standby', value: 2 }],
+    voiceCategory: 'giant',
     flavor:
-      '彼の作る肉シチューは絶品だが、何の肉を使っているかは誰も聞こうとしない。',
+      '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。',
   },
   {
     id: 'necromancer',
@@ -681,15 +681,15 @@ export const CARD_MASTER = [
       '闇を以て闇を制する異端の術士。彼女が札をきる時、悪霊は光ではなく、より深い漆黒の結界へと封じ込められる。',
   },
   {
-    id: 'crocodile',
+    id: 'vulture',
     obtain: ['priest_easy'],
-    name: 'クロコダイル',
+    name: '屍肉漁り',
     rarity: 1,
-    power: 6,
-    skills: [{ id: 'standby', value: 1 }],
-    voiceCategory: 'beast',
+    power: 4,
+    skills: [{ id: 'recurse', value: 4 }],
+    voiceCategory: 'bird',
     flavor:
-      '太古の昔より大河の主として君臨し続ける巨大な爬虫類。その強靭なる顎は全てを噛み砕き、圧倒的な存在感は全てを威圧する。',
+      '過酷な砂漠では死すら無駄にならない。屍を貪る禿鷹の胃袋で、命は新たな形へと生まれ変わる。',
   },
   {
     id: 'drifter',
@@ -987,7 +987,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'cop',
-    obtain: ['android_normal', 'android_hard'],
+    obtain: ['android_normal', 'android_hard', 'android_high'],
     name: 'ボーダー・エンフォーサー',
     rarity: 2,
     power: 4,
@@ -1395,17 +1395,6 @@ export const CARD_MASTER = [
       '闇夜を切り裂く一条の光。神の教えを胸に刻み、冒涜者を容赦なく浄化する、悪魔に恐れられし裁きの代行者。',
   },
   {
-    id: 'specter',
-    obtain: ['devilhunter_easy'],
-    name: '魂の徴税人',
-    rarity: 2,
-    power: 7,
-    skills: [{ id: 'takeover' }, { id: 'pierce' }, { id: 'extort', value: 2 }],
-    voiceCategory: 'undead',
-    flavor:
-      '慈悲はない。情状酌量もない。冥府の帳簿の帳尻を合わせるため、それは今日も無作為に魂を削り取っていく。',
-  },
-  {
     id: 'bat',
     obtain: ['devilhunter_easy', 'devilhunter_normal', 'devilhunter_hard'],
     name: '吸血コウモリ',
@@ -1417,15 +1406,26 @@ export const CARD_MASTER = [
       '影から忍び寄り、静かに獲物の命を啜る。その羽ばたきが聞こえた時、既に逃げ場は失われている。',
   },
   {
-    id: 'franken',
-    obtain: ['devilhunter_normal', 'devilhunter_hard'],
-    name: 'オールドヘイヴンの怪物',
+    id: 'cook',
+    obtain: ['devilhunter_easy'],
+    name: '恐怖の調理長',
     rarity: 2,
-    power: 8,
-    skills: [{ id: 'standby', value: 2 }],
-    voiceCategory: 'giant',
+    power: 5,
+    skills: [{ id: 'execute' }, { id: 'heal', value: 5 }],
+    voiceCategory: 'human_male_warrior',
     flavor:
-      '見捨てられた街の地下深くに眠る禁断の造物。動き出せば、その怪力で全てを粉砕する。',
+      '彼の作る肉シチューは絶品だが、何の肉を使っているかは誰も聞こうとしない。',
+  },
+  {
+    id: 'specter',
+    obtain: ['devilhunter_normal', 'devilhunter_hard'],
+    name: '魂の徴税人',
+    rarity: 2,
+    power: 7,
+    skills: [{ id: 'takeover' }, { id: 'pierce' }, { id: 'extort', value: 2 }],
+    voiceCategory: 'undead',
+    flavor:
+      '慈悲はない。情状酌量もない。冥府の帳簿の帳尻を合わせるため、それは今日も無作為に魂を削り取っていく。',
   },
   {
     id: 'plaguedoctor',
@@ -1664,7 +1664,10 @@ export const CARD_MASTER = [
     name: '鳶の神官',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'recurse', value: 4 }],
+    skills: [
+      { id: 'burial', value: 2 },
+      { id: 'recurse', value: 2 },
+    ],
     voiceCategory: 'human_female_cool',
     flavor:
       '空高く舞う鳶の目を持ち、過去と未来を見通す冷徹なる巫女。神秘の呪文で、途切れた運命の糸を再び紡ぐ。',

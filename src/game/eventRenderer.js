@@ -649,17 +649,24 @@ export async function playEvents(events) {
           targetCard.stunAppliedThisTurn = false;
         }
 
-        const cEl = document.querySelector(
-          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
-        );
-        if (cEl) {
-          createDamagePopup(cEl, '沈黙', '#cbd5e1');
-        }
         if (window.updateCardVisualsReact) {
           window.updateCardVisualsReact(ev.lane, sidePrefix);
         }
-        playSound(SOUNDS.seSkill);
-        await sleep(200);
+
+        if (
+          !ev.silent &&
+          ev.source !== 'targeted_destruction' &&
+          ev.source !== 'elf_polarbear_combo'
+        ) {
+          const cEl = document.querySelector(
+            `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+          );
+          if (cEl) {
+            createDamagePopup(cEl, '沈黙', '#cbd5e1');
+          }
+          playSound(SOUNDS.seSkill);
+          await sleep(200);
+        }
         break;
       }
       case 'add_skill': {

@@ -249,7 +249,7 @@ export function healLeader(state, side, amount, source, events, lane = null) {
   if (amount <= 0) return;
 
   if (isMiasmaActive(state)) {
-    // 瘴気: 回復する代わりにダメージを受ける（damageLeader内で戦乙女の加護も自動判定）
+    // 瘴気: 回復する代わりに同じ値のダメージを受ける（damageLeader内で戦乙女の加護も自動判定）
     damageLeader(state, side, amount, source, events, lane);
     return;
   }
@@ -295,7 +295,7 @@ export function healDefenderLeaderHP(
   if (amount <= 0) return defHP;
 
   if (isMiasmaActive(state)) {
-    // 瘴気: 回復する代わりにダメージを受ける。戦乙女の加護は全ダメージを無効化する。
+    // 瘴気: 回復する代わりに同じ値のダメージを受ける。戦乙女の加護は全ダメージを無効化する。
     if (isValkyriaGuardActive(state, defSide)) {
       events.push({
         type: 'valkyria_guard_block',
@@ -3171,18 +3171,29 @@ export function applyLeaderSkillLogic(
         type: 'oblivion_clear',
         side: oppOwner,
         lane: targetLane,
+        source: 'targeted_destruction',
+        silent: true,
         card: JSON.parse(JSON.stringify(targetCard)),
       });
 
-      // 【加護・能力をなくして確定破壊】
-      // 対象カードの加護（破壊無効）および全スキルを無視して確定でパワー0（破壊）にする
-      targetCard.currentPower = 0;
-      events.push({
-        type: 'deadly',
-        side: oppOwner,
-        lane: targetLane,
-        source: 'targeted_destruction',
-      });
+      if (canCardBeDestroyed(state, targetCard, oppOwner)) {
+        targetCard.currentPower = 0;
+        events.push({
+          type: 'deadly',
+          side: oppOwner,
+          lane: targetLane,
+          source: 'targeted_destruction',
+        });
+      } else {
+        events.push({
+          type: isValkyriaGuardActive(state, oppOwner)
+            ? 'valkyria_guard_block'
+            : 'immune_block',
+          side: oppOwner,
+          lane: targetLane,
+          source: 'targeted_destruction',
+        });
+      }
     }
   } else if (action === 'elf_polarbear_combo') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
@@ -3234,10 +3245,30 @@ export function applyLeaderSkillLogic(
       state._actionQueue.push(decision);
     }
 
-    // パート1: 相手のカードの破壊（選ばれた場合のみ）
+    // パート1: 相手のカードの能力消去および破壊（選ばれた場合のみ）
     if (targetLane !== -1 && eBoard[targetLane] !== null) {
-      if (canCardBeDestroyed(state, eBoard[targetLane], oppOwner)) {
-        eBoard[targetLane].currentPower = 0;
+      const targetCard = eBoard[targetLane];
+
+      // 【能力をなくす処理（沈黙化）】
+      // 破壊前に対象カードのすべてのスキル・一時効果を消去する
+      targetCard.skills = [];
+      targetCard.choices = [];
+      targetCard.choices2 = null;
+      if ('summonId' in targetCard) delete targetCard.summonId;
+      targetCard.stunTurns = 0;
+      targetCard.stunAppliedThisTurn = false;
+
+      events.push({
+        type: 'oblivion_clear',
+        side: oppOwner,
+        lane: targetLane,
+        source: 'elf_polarbear_combo',
+        silent: true,
+        card: JSON.parse(JSON.stringify(targetCard)),
+      });
+
+      if (canCardBeDestroyed(state, targetCard, oppOwner)) {
+        targetCard.currentPower = 0;
         events.push({
           type: 'deadly',
           side: oppOwner,

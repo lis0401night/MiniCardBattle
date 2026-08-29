@@ -390,7 +390,7 @@ function generateHighDifficultyCosmeticExchangeItems() {
 
 /**
  * 高難易度イベント 交換所ラインナップ
- * 各カードに対応した限定プレイマット（10点）、限定アイコン（10点）および限定カード（2点）
+ * 各カードに対応した限定プレイマット（10点）、限定アイコン（5点）および限定カード（5点）
  * @type {Array<{id: string, type: 'playmat'|'icon'|'card'|'skin', name?: string, cost: number}>}
  */
 export const HIGH_DIFFICULTY_EXCHANGE_LINEUP = [

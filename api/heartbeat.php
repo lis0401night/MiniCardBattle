@@ -89,17 +89,6 @@ if (empty($player_data)) {
     $player_data = createDefaultPlayerData($uuid, $name);
     $player_data['icon'] = $icon;
     $player_data['lastAccessAt'] = $timestamp;
-    if (isset($data['inventory'])) {
-        $player_data['inventory'] = sanitizeInventory($data['inventory']);
-    }
-    $rawUnlockedPremium = $data['unlocked_premium_cards'] ?? $data['unlockedPremiumCards'] ?? null;
-    if ($rawUnlockedPremium !== null) {
-        $player_data['unlocked_premium_cards'] = sanitizeUnlockedPremiumCards($rawUnlockedPremium);
-    }
-    $rawDecks = $data['registered_decks'] ?? $data['decks'] ?? null;
-    if ($rawDecks !== null) {
-        $player_data['registered_decks'] = sanitizeRegisteredDecks($rawDecks);
-    }
 } else {
     // 既存データの更新
     $player_data['lastAccessAt'] = $timestamp;
@@ -109,18 +98,10 @@ if (empty($player_data)) {
     if (isset($data['icon'])) {
         $player_data['icon'] = $icon;
     }
-    if (isset($data['inventory'])) {
-        $player_data['inventory'] = sanitizeInventory($data['inventory']);
-    }
-    $rawUnlockedPremium = $data['unlocked_premium_cards'] ?? $data['unlockedPremiumCards'] ?? null;
-    if ($rawUnlockedPremium !== null) {
-        $player_data['unlocked_premium_cards'] = sanitizeUnlockedPremiumCards($rawUnlockedPremium);
-    }
-    $rawDecks = $data['registered_decks'] ?? $data['decks'] ?? null;
-    if ($rawDecks !== null) {
-        $player_data['registered_decks'] = sanitizeRegisteredDecks($rawDecks);
-    }
 }
+
+// インベントリ・プレミアム解放・登録デッキの更新を一元適用
+applyPlayerCollectionUpdates($player_data, $data);
 
 $data_json = json_encode($player_data);
 $js_content = <<<EOT

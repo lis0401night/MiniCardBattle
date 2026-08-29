@@ -54,6 +54,7 @@ export const CARD_ID_MIGRATION_MAP = {
   hammer: 'catoblepas',
   ippondatara: 'tomoe',
   flagellant: 'curtain',
+  crocodile: 'vulture',
 };
 
 export function migrateCardId(id) {

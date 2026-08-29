@@ -34,7 +34,7 @@ export const LEADER_SKILLS = {
   },
   targeted_destruction: {
     name: '星墜ちの矢',
-    desc: '(SP:4) 相手の場のカード1枚を選び、加護と能力をなくして破壊する。',
+    desc: '(SP:4) 相手の場のカード1枚を選び、能力をなくしてから破壊する。',
     cost: 4,
     action: 'targeted_destruction',
   },
@@ -131,7 +131,7 @@ export const LEADER_SKILLS = {
   },
   elf_polarbear_combo: {
     name: '連携攻撃',
-    desc: '(SP:2) 相手の場のカード1枚を選び、破壊し、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。',
+    desc: '(SP:2) 相手の場のカード1枚を選び、能力をなくして破壊する。その後、自分のレーンに「ヴォイテク(P:4/伝説/貫通)」を1体配置する。',
     cost: 2,
     action: 'elf_polarbear_combo',
   },

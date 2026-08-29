@@ -2314,20 +2314,28 @@ export function getBestSimulatedMove() {
         pairs = avail.map((l) => [l, l]);
       }
       tokenLanePatterns = pairs.length > 0 ? pairs : [null];
-    } else if (action === 'targeted_destruction') {
-      // targeted_destruction は加護・完全耐性に関わらず対象カードを無力化して確定破壊できるため、相手の全カードを候補にする
-      tokenLanePatterns = [0, 1, 2]
-        .filter((l) => opBoard[l] !== null)
-        .map((l) => [l]);
-      if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
-    } else if (action === 'tomb_guard' || action === 'death_judgment') {
+    } else if (
+      action === 'targeted_destruction' ||
+      action === 'tomb_guard' ||
+      action === 'death_judgment'
+    ) {
       // 相手側に戦乙女の加護が有効な場合、破壊対象は成立しないため空撃ち候補を生成しない
       const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
       if (oppGuarded) {
         tokenLanePatterns = [];
       } else {
         tokenLanePatterns = [0, 1, 2]
-          .filter((l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune'))
+          .filter((l) => {
+            if (opBoard[l] === null) return false;
+            // targeted_destruction は能力を無力化してから破壊するため immune も対象にできる
+            if (
+              action !== 'targeted_destruction' &&
+              hasSkill(opBoard[l], 'immune')
+            ) {
+              return false;
+            }
+            return true;
+          })
           .map((l) => [l]);
         if (tokenLanePatterns.length === 0) tokenLanePatterns = [null];
       }
@@ -2366,11 +2374,10 @@ export function getBestSimulatedMove() {
     } else if (action === 'elf_polarbear_combo') {
       const oppGuarded = isValkyriaGuardActive(GameState, 'blue');
       // 加護中や対象不在でも「ヴォイテクの配置」は有効なため、破壊対象なし(-1)の候補を必ず残す
+      // 能力を無力化してから破壊するため immune も対象にできる
       const enemyOcc = oppGuarded
         ? []
-        : [0, 1, 2].filter(
-            (l) => opBoard[l] !== null && !hasSkill(opBoard[l], 'immune')
-          );
+        : [0, 1, 2].filter((l) => opBoard[l] !== null);
       const myAvail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
       let combs = [];
       for (let m of myAvail) {

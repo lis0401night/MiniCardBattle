@@ -117,11 +117,46 @@ function sanitizeUnlockedPremiumCards($unlockedPremium): array {
 const MAX_RECORDED_DECK_SIZE = 20;
 
 /**
- * デッキ配列（カードID文字列 または {id, isPremium} オブジェクト）をサニタイズします。
+ * カード配列（カードID文字列 または {id, isPremium} オブジェクト）を CARD_MASTER の定義順（ID順）にソート（正規化）します。
+ * 
+ * @param array $cards カード配列
+ * @return array ソート済みカード配列
+ */
+function sortDeckCardsByMasterOrder(array $cards): array {
+    static $cardOrderMap = null;
+    if ($cardOrderMap === null) {
+        $cardOrderMap = [];
+        $orderFile = __DIR__ . '/card_order.json';
+        if (file_exists($orderFile)) {
+            $orderList = json_decode(file_get_contents($orderFile), true);
+            if (is_array($orderList)) {
+                $cardOrderMap = array_flip($orderList);
+            }
+        }
+    }
+
+    usort($cards, function($a, $b) use ($cardOrderMap) {
+        $idA = is_scalar($a) ? (string)$a : ($a['id'] ?? '');
+        $idB = is_scalar($b) ? (string)$b : ($b['id'] ?? '');
+        $idxA = $cardOrderMap[$idA] ?? PHP_INT_MAX;
+        $idxB = $cardOrderMap[$idB] ?? PHP_INT_MAX;
+        if ($idxA !== $idxB) {
+            return $idxA <=> $idxB;
+        }
+        $premA = is_array($a) && !empty($a['isPremium']) ? 1 : 0;
+        $premB = is_array($b) && !empty($b['isPremium']) ? 1 : 0;
+        return $premA <=> $premB;
+    });
+
+    return $cards;
+}
+
+/**
+ * デッキ配列（カードID文字列 または {id, isPremium} オブジェクト）をサニタイズし、定義順（ID順）にソートします。
  * 最大枚数（MAX_RECORDED_DECK_SIZE枚）まで安全な文字（[a-zA-Z0-9_]）のみを抽出・保持します。
  * 
  * @param mixed $rawDeck リクエストまたは保存データ由来のデッキ配列
- * @return array サニタイズ済みデッキ配列
+ * @return array サニタイズおよびソート済みデッキ配列
  */
 function sanitizeDeckList($rawDeck): array {
     $result = [];
@@ -132,22 +167,20 @@ function sanitizeDeckList($rawDeck): array {
         if (count($result) >= MAX_RECORDED_DECK_SIZE) {
             break;
         }
-        if (is_string($item)) {
-            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item);
-            if (!empty($cleaned_id)) {
+        if (is_scalar($item)) {
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $item);
+            if ($cleaned_id !== '') {
                 $result[] = $cleaned_id;
             }
-        } else if (is_array($item) && isset($item['id']) && is_string($item['id'])) {
-            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', $item['id']);
-            if (!empty($cleaned_id)) {
-                $result[] = [
-                    'id' => $cleaned_id,
-                    'isPremium' => !empty($item['isPremium']),
-                ];
+        } else if (is_array($item) && isset($item['id']) && is_scalar($item['id'])) {
+            $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $item['id']);
+            if ($cleaned_id !== '') {
+                $isPrem = !empty($item['isPremium']);
+                $result[] = $isPrem ? ['id' => $cleaned_id, 'isPremium' => true] : $cleaned_id;
             }
         }
     }
-    return $result;
+    return sortDeckCardsByMasterOrder($result);
 }
 
 /**
@@ -182,24 +215,8 @@ function sanitizeRegisteredDecks($decks): array {
             $leaderId = 'android';
         }
 
-        $cards = [];
-        if (isset($deck['cards']) && is_array($deck['cards'])) {
-            foreach ($deck['cards'] as $cardEntry) {
-                if (count($cards) >= 20) break;
-                if (is_array($cardEntry)) {
-                    $cId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) ($cardEntry['id'] ?? ''));
-                    $isPrem = !empty($cardEntry['isPremium']);
-                    if ($cId !== '') {
-                        $cards[] = $isPrem ? ['id' => $cId, 'isPremium' => true] : $cId;
-                    }
-                } else {
-                    $cId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $cardEntry);
-                    if ($cId !== '') {
-                        $cards[] = $cId;
-                    }
-                }
-            }
-        }
+        // カード配列の正規化は共通関数へ一元化（上限は MAX_RECORDED_DECK_SIZE）
+        $cards = sanitizeDeckList($deck['cards'] ?? null);
 
         $sanitizedDeck = [
             'name' => $name,
@@ -218,4 +235,26 @@ function sanitizeRegisteredDecks($decks): array {
     }
     return $sanitized;
 }
+
+/**
+ * プレイヤーデータに対して、リクエストから渡されたインベントリ、プレミアム解放カード、登録デッキの更新を適用します。
+ * キャメルケース・スネークケースの別名キー解決を一元化します。
+ * 
+ * @param array &$player_data 更新対象のプレイヤーデータ配列（参照渡し）
+ * @param array $data リクエスト本文データ
+ */
+function applyPlayerCollectionUpdates(array &$player_data, array $data): void {
+    if (isset($data['inventory'])) {
+        $player_data['inventory'] = sanitizeInventory($data['inventory']);
+    }
+    $rawUnlockedPremium = $data['unlocked_premium_cards'] ?? $data['unlockedPremiumCards'] ?? null;
+    if ($rawUnlockedPremium !== null) {
+        $player_data['unlocked_premium_cards'] = sanitizeUnlockedPremiumCards($rawUnlockedPremium);
+    }
+    $rawDecks = $data['registered_decks'] ?? $data['decks'] ?? null;
+    if ($rawDecks !== null) {
+        $player_data['registered_decks'] = sanitizeRegisteredDecks($rawDecks);
+    }
+}
+
 
