@@ -621,7 +621,7 @@ export function drawCard(owner) {
           window.triggerVfx('anm_deck_reset_joker', owner);
         }
 
-        showSpeechBubble(owner);
+        showSpeechBubble(owner, damage);
         updateHPBar();
         checkWinCondition();
       }

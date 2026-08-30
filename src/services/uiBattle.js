@@ -329,17 +329,19 @@ export function triggerFinishVisuals() {
 
 /**
  * リーダーへの直接ダメージ時に吹き出しとダメージアイコンを表示する
- * battle.jsの直接攻撃処理から呼ばれる
+ * 直接攻撃処理やスキルダメージから呼ばれる
  * @param {string} target - 'blue'（プレイヤー）or 'red'（敵）
+ * @param {number|null} [damageAmount=null] - 受けたダメージ量（小ダメージ / 大ダメージの台詞分岐用）
  */
-export function showSpeechBubble(target) {
+export function showSpeechBubble(target, damageAmount = null) {
   const config =
     target === 'blue' ? GameState.playerConfig : GameState.enemyConfig;
   let msg = getDialogue(
     config,
     null,
     'damage',
-    target === 'blue' ? 'player' : 'enemy'
+    target === 'blue' ? 'player' : 'enemy',
+    damageAmount
   );
 
   // シャドウ（ドッペルゲンガー）は無言

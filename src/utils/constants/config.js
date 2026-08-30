@@ -4,7 +4,7 @@
 import { CARD_MASTER } from './cards.js';
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.11.2';
+export const GAME_VERSION = '0.3.11.3';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -16,6 +16,16 @@ export const APP_STATE_SELECT_ENEMY_DECK = 'select_enemy_deck';
 export const VERSION_CHECK_TIMEOUT_MS = 3000; // バージョン自動チェック時のAbortタイムアウト時間 (ms)
 export const MAX_HP = 20;
 export const DECK_SIZE = 20;
+
+/** 大ダメージ（重傷リアクション）と判定する最小ダメージ値 */
+export const HEAVY_DAMAGE_THRESHOLD = 5;
+
+/** 被ダメージリアクションの重症度種別（台詞定義キー） */
+export const DAMAGE_TYPE = {
+  SMALL: 'small', // 小〜中ダメージ (1 〜 4)
+  BIG: 'big', // 大ダメージ (5 以上)
+};
+
 export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
 export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
 /** ボスキャラクターのIDリスト */

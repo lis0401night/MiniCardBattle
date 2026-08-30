@@ -321,7 +321,7 @@ export async function playEvents(events) {
         triggerShakeAnimation(playmat);
 
         updateHPBar();
-        showSpeechBubble(ev.side);
+        showSpeechBubble(ev.side, ev.amount);
         if (ev.source === 'absorb') {
           if (ev.lane !== undefined) {
             const cEl = document.querySelector(

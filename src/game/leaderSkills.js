@@ -1198,7 +1198,7 @@ export async function executeLeaderSkillAction(
       }
 
       updateHPBar();
-      showSpeechBubble(opId);
+      showSpeechBubble(opId, voidDiscarded);
       checkWinCondition();
     }
 

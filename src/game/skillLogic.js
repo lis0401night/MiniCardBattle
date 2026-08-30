@@ -157,7 +157,7 @@ async function applyLeaderDamageWithGuard(
   }
   if (targetHpEl) createDamagePopup(targetHpEl, `-${dmg}`, '#ef4444');
   triggerShakeAnimation(targetPlaymat);
-  showSpeechBubble(targetSide);
+  showSpeechBubble(targetSide, dmg);
 
   playSound(SOUNDS.seDamage);
 
@@ -1673,7 +1673,7 @@ export async function resolveActiveSkillEffect(
 
         playSound(SOUNDS.seDamage);
         updateHPBar();
-        showSpeechBubble(o); // 被害側（自傷した本人）のセリフ
+        showSpeechBubble(o, dmg); // 被害側（自傷した本人）のセリフ
 
         await sleep(300);
         checkWinCondition();

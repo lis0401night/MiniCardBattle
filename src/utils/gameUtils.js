@@ -12,6 +12,8 @@ import {
   PROFILE_NAME_KEY,
   HIGH_DIFFICULTY_CLEARED_KEY,
   DEFAULT_SOUND_VOLUME,
+  HEAVY_DAMAGE_THRESHOLD,
+  DAMAGE_TYPE,
 } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import { setCurrentScreen } from './errorReporter.js';
@@ -173,11 +175,81 @@ export function createDamagePopup(targetEl, text, color = '#ef4444') {
   setTimeout(() => popup.remove(), 1000);
 }
 
+/**
+ * 台詞定義（文字列、配列、または状況別オブジェクト）から適切な台詞を1つ抽出します。
+ * 被ダメージ時のダメージ値による分岐（DAMAGE_TYPE.SMALL / BIG）に対応します。
+ *
+ * @param {string|Array<string>|Object} entry - 台詞定義データ
+ * @param {string} type - 台詞種別（'intro' | 'win' | 'lose' | 'skill' | 'damage' 等）
+ * @param {Object|null} targetConfig - 対戦相手の設定オブジェクト
+ * @param {number|null} contextValue - ダメージ量などのコンテキスト数値
+ * @returns {string|null} 抽出された台詞文字列（存在しない場合はnull）
+ */
+function resolveDialogueText(entry, type, targetConfig, contextValue) {
+  if (entry === undefined || entry === null) return null;
+  if (typeof entry === 'string') return entry;
+
+  // 被ダメージ時のダメージ量に応じた分岐処理（{ small: [...], big: [...] } 形式）
+  if (type === 'damage') {
+    const damageKey =
+      typeof contextValue === 'number' && contextValue >= HEAVY_DAMAGE_THRESHOLD
+        ? DAMAGE_TYPE.BIG
+        : DAMAGE_TYPE.SMALL;
+
+    // オブジェクト形式 { small: [...], big: [...] } の場合
+    if (typeof entry === 'object' && !Array.isArray(entry)) {
+      const list = entry[damageKey] || entry.default || entry;
+      if (Array.isArray(list) && list.length > 0) {
+        return list[Math.floor(getSeededRandom() * list.length)];
+      }
+      if (typeof list === 'string') return list;
+    }
+  }
+
+  // 通常の配列の場合（ランダム抽出）
+  if (Array.isArray(entry)) {
+    if (entry.length === 0) return null;
+    return entry[Math.floor(getSeededRandom() * entry.length)];
+  }
+
+  // 対戦相手別オブジェクト形式の場合（{ satan: '...', default: '...' }）
+  if (typeof entry === 'object') {
+    if (targetConfig && entry[targetConfig.id]) {
+      const specific = entry[targetConfig.id];
+      if (typeof specific === 'string') return specific;
+      if (Array.isArray(specific) && specific.length > 0) {
+        return specific[Math.floor(getSeededRandom() * specific.length)];
+      }
+    }
+    if (entry.default) {
+      if (typeof entry.default === 'string') return entry.default;
+      if (Array.isArray(entry.default) && entry.default.length > 0) {
+        return entry.default[
+          Math.floor(getSeededRandom() * entry.default.length)
+        ];
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * キャラクターまたはスキンの台詞を取得します。
+ *
+ * @param {Object} speakerConfig - 発話者の設定オブジェクト
+ * @param {Object|null} targetConfig - 対戦相手の設定オブジェクト
+ * @param {string} type - 台詞種別（'intro' | 'win' | 'lose' | 'skill' | 'damage' 等）
+ * @param {string|null} [forceSide=null] - 強制サイド指定（'player' | 'enemy'）
+ * @param {number|null} [contextValue=null] - ダメージ量などのコンテキスト数値
+ * @returns {string} 取得された台詞文字列（見つからない場合は '...'）
+ */
 export function getDialogue(
   speakerConfig,
   targetConfig,
   type,
-  forceSide = null
+  forceSide = null,
+  contextValue = null
 ) {
   if (!speakerConfig) return '...';
 
@@ -216,27 +288,25 @@ export function getDialogue(
     speakerConfig.skins[skinId] &&
     speakerConfig.skins[skinId].dialogue
   ) {
-    const sd = speakerConfig.skins[skinId].dialogue[type];
-    if (sd !== undefined) {
-      if (typeof sd === 'string') return sd;
-      if (Array.isArray(sd))
-        return sd[Math.floor(getSeededRandom() * sd.length)];
-
-      if (targetConfig && sd[targetConfig.id]) return sd[targetConfig.id];
-      if (sd.default) return sd.default;
-    }
+    const skinEntry = speakerConfig.skins[skinId].dialogue[type];
+    const skinText = resolveDialogueText(
+      skinEntry,
+      type,
+      targetConfig,
+      contextValue
+    );
+    if (skinText !== null) return skinText;
   }
 
   if (!speakerConfig.dialogue) return '...';
-  const dict = speakerConfig.dialogue[type];
-  if (dict === undefined) return '...';
-
-  if (typeof dict === 'string') return dict;
-  if (Array.isArray(dict))
-    return dict[Math.floor(getSeededRandom() * dict.length)];
-
-  if (targetConfig && dict[targetConfig.id]) return dict[targetConfig.id];
-  return dict.default || '...';
+  const defaultEntry = speakerConfig.dialogue[type];
+  const text = resolveDialogueText(
+    defaultEntry,
+    type,
+    targetConfig,
+    contextValue
+  );
+  return text !== null ? text : '...';
 }
 
 export async function playSound(audioOrKey) {
