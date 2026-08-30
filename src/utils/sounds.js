@@ -427,11 +427,16 @@ let seMasterGainNode = null;
 
 /**
  * SE用マスターゲインノードを取得・初期化します（遅延初期化）。
+ * オーディオコンテキスト再生成時にも現在の audioCtx に適合したノードを安全に取得・再生成します。
  * @returns {GainNode|null} SE用マスターゲインノード
  */
 export function getSeMasterGainNode() {
   if (!audioCtx) return null;
-  if (!seMasterGainNode) {
+  // 未初期化、または保持しているノードが現在の audioCtx と異なるコンテキストの場合は再作成
+  if (
+    !seMasterGainNode ||
+    (seMasterGainNode.context && seMasterGainNode.context !== audioCtx)
+  ) {
     seMasterGainNode = audioCtx.createGain();
     const isSeMuted = typeof GameState !== 'undefined' && GameState.isSeMuted;
     const seVol =
@@ -619,6 +624,7 @@ export function playSkillSound(skillId) {
 
 /**
  * オーディオコンテキストを強制的に再作成し、すべてのSEやBGMのデコードデータを再ロードする
+ * @returns {Promise<void>}
  */
 export async function recreateAudioSystem() {
   console.log('[Sound] サウンドシステムの強制再構築を開始します...');
@@ -637,6 +643,7 @@ export async function recreateAudioSystem() {
 
   // 2. 状態変数のリセット
   isAudioUnlocked = false;
+  seMasterGainNode = null;
 
   // 3. キャッシュ（SE / BGM / ボイスバッファ）の完全初期化
   // (AudioBufferは古いAudioContextに紐づいているため、新しいコンテキスト再生成時は全て破棄・再デコードが必要)
@@ -664,7 +671,7 @@ export async function recreateAudioSystem() {
   // アンロックを実行（SEアセットの再読み込み＆デコードも内部で走る）
   await unlockAudio();
 
-  // 4. HTML5 Audio (AUDIO_INSTANCES) の強制リロード
+  // 5. HTML5 Audio (AUDIO_INSTANCES) の強制リロード
   Object.keys(AUDIO_INSTANCES).forEach((key) => {
     const audio = AUDIO_INSTANCES[key];
     if (audio instanceof Audio) {

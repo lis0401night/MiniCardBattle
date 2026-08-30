@@ -4,7 +4,7 @@
 import { CARD_MASTER } from './cards.js';
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.11.3';
+export const GAME_VERSION = '0.3.11.4';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';

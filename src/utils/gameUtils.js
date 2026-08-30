@@ -524,7 +524,29 @@ export function stopAllBGM() {
   });
 }
 
+/**
+ * サウンドシステム全体を強制リロード・再構築し、再生状態を復旧します。
+ * 古い Web Audio ノードを切断・破棄し、AudioContext およびバッファを再初期化します。
+ * @returns {Promise<void>}
+ */
 export async function forceSoundReload() {
+  // 古い WebAudio BGM ノードの停止と切断
+  if (currentWebAudioBgmSource) {
+    try {
+      currentWebAudioBgmSource.stop();
+    } catch {}
+    try {
+      currentWebAudioBgmSource.disconnect();
+    } catch {}
+    currentWebAudioBgmSource = null;
+  }
+  if (currentWebAudioBgmGain) {
+    try {
+      currentWebAudioBgmGain.disconnect();
+    } catch {}
+    currentWebAudioBgmGain = null;
+  }
+
   if (typeof recreateAudioSystem === 'function') {
     await recreateAudioSystem();
   }
