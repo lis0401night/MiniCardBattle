@@ -32,6 +32,7 @@ export default defineConfig({
         card_sheet: './tool/card_sheet.html',
         admin_news: './tool/admin_news.html',
         chara_assetmaker: './tool/chara_assetmaker/index.html',
+        premium_card_maker: './tool/premium_card_maker/index.html',
         vfx_spritesheet_tool:
           './tool/vfx_spritesheet_tool/vfx_spritesheet_tool.html',
       },

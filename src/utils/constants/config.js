@@ -4,7 +4,7 @@
 import { CARD_MASTER } from './cards.js';
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.11.4';
+export const GAME_VERSION = '0.3.12';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -139,15 +139,24 @@ export const ICON_EXCHANGE_COST = 5; // アバターアイコン一律
 // 防衛戦 交換所ラインナップ
 export const EXCHANGE_LINEUP = [
   { id: 'cyberdragon', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'cyborgninja', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'dragon', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'dragoon', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'champion', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'assassin', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'empress', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'punisher', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'oldgod', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'hound', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'wolf', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'caller', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'collector', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'vampire', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'djinn', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'witch', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'shogun', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'pharaoh', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'stormpriest', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'motorcycle', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'gungnir', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'dreadnought', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },

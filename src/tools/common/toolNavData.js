@@ -38,6 +38,13 @@ export const TOOL_NAV_ITEMS = [
     path: '/tool/chara_assetmaker/index.html',
   },
   {
+    id: 'premium_card_maker',
+    name: 'プレミアムカード作成',
+    desc: 'MP4トリミング・WebP変換',
+    icon: '✨',
+    path: '/tool/premium_card_maker/index.html',
+  },
+  {
     id: 'vfx_spritesheet_tool',
     name: 'VFX スプライトシート作成',
     desc: '連番/GIF/動画からシート作成',

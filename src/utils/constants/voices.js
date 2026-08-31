@@ -306,6 +306,7 @@ export const PREMIUM_VOICE_MAP = {
   motorcycle: 'human_female_assassin',
   employee: 'human_female_normal',
   babydragon: 'human_female_normal',
+  dragoon: 'human_female_normal',
 };
 
 /**
