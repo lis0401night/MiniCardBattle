@@ -1438,7 +1438,8 @@ export default function PremiumCardMaker() {
                           }}
                         >
                           {crossfadeDuration.toFixed(2)} 秒（約{' '}
-                          {Math.max(2, Math.round(crossfadeDuration * fps))} コマ）
+                          {Math.max(2, Math.round(crossfadeDuration * fps))}{' '}
+                          コマ）
                         </span>
                       </div>
                       <input

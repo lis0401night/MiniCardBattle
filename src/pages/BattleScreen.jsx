@@ -405,6 +405,12 @@ export default function BattleScreen() {
     setRenderVersion((v) => v + 1);
   };
 
+  /**
+   * 手札のカードクリック時のハンドラ
+   * 通常時はカード選択・レーンハイライトを行い、手札破棄モード（isDiscardingMode）時は対象カードの選択・解除を管理します。
+   * 1枚指定（discardMaxCount === 1）時は別のカードをクリックした際に即座に選択対象を差し替えます。
+   * @param {number} idx - クリックされた手札カードのインデックス
+   */
   const handleHandCardClick = (idx) => {
     // 【重要システム処理】手札破棄モード（isDiscardingMode）中は、
     // システムが明示的にプレイヤーへ手札選択を要求しているため、
@@ -427,12 +433,18 @@ export default function BattleScreen() {
 
     if (GameState.isDiscardingMode) {
       if (GameState.discardSelectedIndices.includes(idx)) {
+        // 既に選択されているカードを再クリックした場合は選択解除
         const arrIdx = GameState.discardSelectedIndices.indexOf(idx);
         GameState.discardSelectedIndices.splice(arrIdx, 1);
       } else {
-        if (
+        // 【1枚指定の切り替え対応】1枚指定（discardMaxCount === 1）時は、
+        // 既に別のカードが選択されていても自動的に新しいカードへと選択を差し替える。
+        if (GameState.discardMaxCount === 1) {
+          GameState.discardSelectedIndices = [idx];
+        } else if (
           GameState.discardSelectedIndices.length < GameState.discardMaxCount
         ) {
+          // 複数枚指定時は上限枚数まで選択を追加
           GameState.discardSelectedIndices.push(idx);
         }
       }
