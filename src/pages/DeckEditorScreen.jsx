@@ -1028,7 +1028,6 @@ export default function DeckEditorScreen({ switchScreen }) {
                               position: 'absolute',
                               top: 0,
                               left: 0,
-                              borderRadius: 'inherit',
                               pointerEvents: 'none',
                             }}
                           />
@@ -1345,7 +1344,6 @@ export default function DeckEditorScreen({ switchScreen }) {
                                       position: 'absolute',
                                       top: 0,
                                       left: 0,
-                                      borderRadius: 'inherit',
                                       pointerEvents: 'none',
                                     }}
                                   />

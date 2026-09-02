@@ -98,8 +98,9 @@ export default function PremiumCardMaker() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
-  /** @type {['pingpong', 'forward']} */
-  const [loopMode, setLoopMode] = useState('pingpong'); // 'pingpong' (往復リバース), 'forward' (順方向)
+  /** @type {['seamless', 'pingpong', 'forward']} */
+  const [loopMode, setLoopMode] = useState('seamless'); // 'seamless' (シームレス順ループ), 'pingpong' (往復リバース), 'forward' (順方向)
+  const [crossfadeDuration, setCrossfadeDuration] = useState(0.4); // シームレスクロスフェード秒数 (0.1 ~ 1.0)
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0); // 再生速度倍率 (0.25 ~ 3.0)
 
   // 暗転・フェード設定
@@ -728,7 +729,7 @@ export default function PremiumCardMaker() {
         setProgress({ current: i + 1, total: totalFrames, percent: pct });
       }
 
-      // 2. ループモードに応じたフレームシーケンス構築（往復リバース接続）
+      // 2. ループモードに応じたフレームシーケンス構築
       let finalFrames = forwardFrames;
       let finalThumbFrames = thumbFrames;
 
@@ -740,6 +741,52 @@ export default function PremiumCardMaker() {
         if (includeThumbnail) {
           const reverseThumbFrames = thumbFrames.slice(1, -1).reverse();
           finalThumbFrames = [...thumbFrames, ...reverseThumbFrames];
+        }
+      } else if (loopMode === 'seamless' && forwardFrames.length > 3) {
+        // シームレス順ループ: 末尾数フレームを先頭フレームへ向けて滑らかにクロスフェード合成
+        const fadeFrameCount = Math.max(
+          2,
+          Math.min(
+            Math.round(crossfadeDuration * fps),
+            Math.floor(forwardFrames.length / 2)
+          )
+        );
+
+        /**
+         * フレーム配列の末尾に先頭フレームとのクロスフェードを適用
+         * @param {Array<{canvas: HTMLCanvasElement, durationMs: number}>} framesList
+         * @param {number} w 幅
+         * @param {number} h 高さ
+         */
+        const applySeamlessCrossfade = (framesList, w, h) => {
+          const firstCanvas = framesList[0].canvas;
+          const count = Math.min(fadeFrameCount, framesList.length - 1);
+          const startIndex = framesList.length - count;
+
+          for (let k = 0; k < count; k++) {
+            const idx = startIndex + k;
+            const alpha = (k + 1) / (count + 1); // 0.16 -> 0.33 -> 0.50 -> ...
+            const srcCanvas = framesList[idx].canvas;
+
+            const blendedCanvas = document.createElement('canvas');
+            blendedCanvas.width = w;
+            blendedCanvas.height = h;
+            const ctx = blendedCanvas.getContext('2d');
+
+            // 元フレーム描画
+            ctx.drawImage(srcCanvas, 0, 0);
+            // 先頭フレームをアルファブレンド合成
+            ctx.globalAlpha = alpha;
+            ctx.drawImage(firstCanvas, 0, 0);
+            ctx.globalAlpha = 1.0;
+
+            framesList[idx].canvas = blendedCanvas;
+          }
+        };
+
+        applySeamlessCrossfade(finalFrames, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+        if (includeThumbnail) {
+          applySeamlessCrossfade(finalThumbFrames, THUMB_WIDTH, THUMB_HEIGHT);
         }
       }
 
@@ -827,7 +874,12 @@ export default function PremiumCardMaker() {
         setTimeout(() => downloadBlob(thumbBlob, thumbName), 300);
       }
 
-      const loopLabel = loopMode === 'pingpong' ? '往復リバース' : '順方向';
+      const loopLabel =
+        loopMode === 'seamless'
+          ? 'シームレス順'
+          : loopMode === 'pingpong'
+            ? '往復リバース'
+            : '通常順方向';
       const speedLabel = playbackSpeed !== 1.0 ? ` (${playbackSpeed}x)` : '';
       const fadeLabel = fadeEnabled ? ` + 暗転(${fadeDuration}s)` : '';
       setStatusMessage({
@@ -1148,11 +1200,30 @@ export default function PremiumCardMaker() {
                         setStartTime(currentTime);
                         clearFrameCache();
                       }}
+                      title="現在の再生位置を開始位置に設定"
                     >
                       現在値
                     </button>
                   </div>
-                  <div className="pcm-range-time">{startTime.toFixed(2)}s</div>
+                  <div className="pcm-range-input-wrap">
+                    <input
+                      type="number"
+                      className="pcm-range-input"
+                      min="0"
+                      max={endTime}
+                      step="0.01"
+                      value={Number(startTime.toFixed(2))}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) {
+                          const clamped = Math.max(0, Math.min(val, endTime));
+                          setStartTime(clamped);
+                          clearFrameCache();
+                        }
+                      }}
+                    />
+                    <span className="pcm-range-unit">秒 (s)</span>
+                  </div>
                   <input
                     type="range"
                     className="pcm-seekbar"
@@ -1176,11 +1247,34 @@ export default function PremiumCardMaker() {
                         setEndTime(currentTime);
                         clearFrameCache();
                       }}
+                      title="現在の再生位置を停止位置に設定"
                     >
                       現在値
                     </button>
                   </div>
-                  <div className="pcm-range-time">{endTime.toFixed(2)}s</div>
+                  <div className="pcm-range-input-wrap">
+                    <input
+                      type="number"
+                      className="pcm-range-input"
+                      min={startTime}
+                      max={videoDims.duration || 1}
+                      step="0.01"
+                      value={Number(endTime.toFixed(2))}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) {
+                          const maxDur = videoDims.duration || 999;
+                          const clamped = Math.max(
+                            startTime,
+                            Math.min(val, maxDur)
+                          );
+                          setEndTime(clamped);
+                          clearFrameCache();
+                        }
+                      }}
+                    />
+                    <span className="pcm-range-unit">秒 (s)</span>
+                  </div>
                   <input
                     type="range"
                     className="pcm-seekbar"
@@ -1288,6 +1382,97 @@ export default function PremiumCardMaker() {
                       padding: '8px 12px',
                       borderRadius: '6px',
                       background:
+                        loopMode === 'seamless'
+                          ? 'rgba(59, 130, 246, 0.15)'
+                          : 'rgba(255, 255, 255, 0.03)',
+                      border: `1px solid ${loopMode === 'seamless' ? '#3b82f6' : 'rgba(255, 255, 255, 0.1)'}`,
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="loopMode"
+                      value="seamless"
+                      checked={loopMode === 'seamless'}
+                      onChange={() => setLoopMode('seamless')}
+                    />
+                    <div>
+                      <strong style={{ color: '#60a5fa' }}>
+                        ✨ シームレス順ループ（クロスフェード推奨）
+                      </strong>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        末尾を先頭へ滑らかにフェード合成してループ境目のカクつきを完全解消
+                      </div>
+                    </div>
+                  </label>
+
+                  {loopMode === 'seamless' && (
+                    <div
+                      style={{
+                        padding: '8px 12px',
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        marginTop: '2px',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
+                          フェード接続時間
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '0.8rem',
+                            color: '#60a5fa',
+                            fontFamily: 'monospace',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {crossfadeDuration.toFixed(2)} 秒（約{' '}
+                          {Math.max(2, Math.round(crossfadeDuration * fps))} コマ）
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        className="pcm-seekbar"
+                        min="0.1"
+                        max="1.0"
+                        step="0.05"
+                        value={crossfadeDuration}
+                        onChange={(e) =>
+                          setCrossfadeDuration(parseFloat(e.target.value))
+                        }
+                      />
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          color: '#64748b',
+                          marginTop: '2px',
+                        }}
+                      >
+                        末尾 {crossfadeDuration.toFixed(2)}{' '}
+                        秒を先頭フレームへ溶け込ませて繋ぎ目を消します
+                      </div>
+                    </div>
+                  )}
+
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      background:
                         loopMode === 'pingpong'
                           ? 'rgba(59, 130, 246, 0.15)'
                           : 'rgba(255, 255, 255, 0.03)',
@@ -1304,9 +1489,7 @@ export default function PremiumCardMaker() {
                       onChange={() => setLoopMode('pingpong')}
                     />
                     <div>
-                      <strong style={{ color: '#60a5fa' }}>
-                        🔁 往復リバースループ（推奨）
-                      </strong>
+                      <strong>🔁 往復リバースループ</strong>
                       <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                         停止位置から逆再生して最初に戻す（非ループ動画を自然にループ化）
                       </div>
@@ -1337,7 +1520,7 @@ export default function PremiumCardMaker() {
                       onChange={() => setLoopMode('forward')}
                     />
                     <div>
-                      <strong>🔄 順方向ループ</strong>
+                      <strong>🔄 通常の順方向ループ</strong>
                       <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                         停止位置から先頭へジャンプ（元からシームレスな動画用）
                       </div>

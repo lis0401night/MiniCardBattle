@@ -4,7 +4,7 @@
 import { CARD_MASTER } from './cards.js';
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.3.12';
+export const GAME_VERSION = '0.3.12.1';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -155,8 +155,13 @@ export const EXCHANGE_LINEUP = [
   { id: 'djinn', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'witch', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'shogun', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'fox', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'pharaoh', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'stormpriest', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'voidwalker', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'samael', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'dread', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'darkgeneral', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'motorcycle', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'gungnir', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'dreadnought', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },

@@ -396,7 +396,6 @@ export default function CardListScreen() {
                               position: 'absolute',
                               top: 0,
                               left: 0,
-                              borderRadius: 'inherit',
                               pointerEvents: 'none',
                             }}
                           />

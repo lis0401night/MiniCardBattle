@@ -833,7 +833,6 @@ export default function BattleScreen() {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                borderRadius: 'inherit',
                 pointerEvents: 'none',
                 filter: summonAnim.card.filter || 'none',
               }}

@@ -200,7 +200,6 @@ export default function ExchangeItemCard({
               position: 'absolute',
               top: 0,
               left: 0,
-              borderRadius: 'inherit',
               pointerEvents: 'none',
             }}
           />
