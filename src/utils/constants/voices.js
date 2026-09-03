@@ -307,6 +307,8 @@ export const PREMIUM_VOICE_MAP = {
   employee: 'human_female_normal',
   babydragon: 'human_female_normal',
   dragoon: 'human_female_normal',
+  bountyhunter: 'lizard',
+  cavalry: 'human_male_ikemen',
 };
 
 /**
