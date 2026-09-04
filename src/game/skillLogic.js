@@ -3016,20 +3016,13 @@ export async function resolveActiveSkillEffect(
 
         // 1. 起動（startup）の判定 (合体や装備に優先して処理される)
         if (existingCard && hasSkill(existingCard, 'startup')) {
-          // 起動消滅の特別処理：起動と防御を剥ぎ取る
-          existingCard.skills = (existingCard.skills || []).filter(
-            (s) => s.id !== 'startup' && s.id !== 'defender'
+          handleStartupDispelled(
+            o,
+            existingCard,
+            targetLane,
+            selectedCard,
+            selectedCard.puppetOriginalOwner || oppOwner
           );
-
-          // 支配して重ねたカードを消費して直接墓地に送る
-          await discardCard(o, selectedCard, null, false);
-
-          const targetEl = document.querySelector(
-            `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
-          );
-          if (targetEl) {
-            createDamagePopup(targetEl, '起動', '#38bdf8');
-          }
 
           playSound(SOUNDS.sePlace);
           playCardVoice(selectedCard, 'play');
@@ -3083,33 +3076,15 @@ export async function resolveActiveSkillEffect(
 
         // 3. 装備（canEquipCard）の判定
         if (existingCard && canEquipCard(selectedCard, existingCard)) {
-          const { equipSkills } = applyEquipment(existingCard, selectedCard);
+          // ルール：支配は「配置(Place)」扱いのため、装備由来の召喚時スキルは発動させない
+          applyEquipment(existingCard, selectedCard);
+          existingCard.skillTriggered = true;
 
           if (selectedCard?.voiceCategory) {
             playCardVoice(selectedCard, 'play');
           }
           playSound(SOUNDS.sePlace);
           renderBoard();
-
-          // 装備カードが持っていたアクティブスキルを即時発動させる
-          for (const sk of equipSkills) {
-            if (ACTIVE_SKILLS.includes(sk.id)) {
-              await sleep(50);
-              const enhancedSk = {
-                ...sk,
-                _sourceChoices: selectedCard.choices,
-                _sourceChoices2: selectedCard.choices2,
-              };
-              await resolveActiveSkillEffect(
-                o,
-                targetLane,
-                existingCard,
-                sk.id,
-                sk.value,
-                enhancedSk
-              );
-            }
-          }
 
           await sleep(PLACE_ANIMATION_DURATION);
           await cleanupDestroyedCards(c);

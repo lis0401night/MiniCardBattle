@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
-import { getEventEnemyCharId } from '../utils/gameUtils.js';
+import { getEventEnemyCharId, safeParseArray } from '../utils/gameUtils.js';
 import { GameState } from '../state/gameState.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import {
@@ -24,7 +24,7 @@ const unlockAndShowAcquisition = (
   displayName
 ) => {
   try {
-    const current = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const current = safeParseArray(storageKey);
     if (!current.includes(targetId)) {
       current.push(targetId);
       localStorage.setItem(storageKey, JSON.stringify(current));
@@ -98,18 +98,17 @@ export default function FortuneAchievementScreen() {
 
   const [claimedLevels, setClaimedLevels] = useState(() => {
     try {
-      const saved = localStorage.getItem(claimedLevelsKey);
-      if (saved) return JSON.parse(saved);
+      const saved = safeParseArray(claimedLevelsKey);
+      if (saved.length > 0) return saved;
       // 旧共通キーからのマイグレーション（automataの場合のみ）
       if (enemyCharId === 'automata') {
-        const legacy = localStorage.getItem(
+        const legacy = safeParseArray(
           'mini_card_battle_fortune_claimed_levels'
         );
-        if (legacy) {
-          const parsed = JSON.parse(legacy);
+        if (legacy.length > 0) {
           // 新キーに保存して旧キーは残しておく（他の箇所で参照されている可能性があるため）
-          localStorage.setItem(claimedLevelsKey, JSON.stringify(parsed));
-          return parsed;
+          localStorage.setItem(claimedLevelsKey, JSON.stringify(legacy));
+          return legacy;
         }
       }
       return [];
@@ -126,7 +125,7 @@ export default function FortuneAchievementScreen() {
     if (claimedLevels.includes(4)) {
       try {
         const key = 'mini_card_battle_owned_playmats';
-        const current = JSON.parse(localStorage.getItem(key) || '[]');
+        const current = safeParseArray(key);
         if (!current.includes(enemyCharId)) {
           current.push(enemyCharId);
           localStorage.setItem(key, JSON.stringify(current));

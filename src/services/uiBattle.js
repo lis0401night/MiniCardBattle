@@ -1,6 +1,5 @@
-import { CARD_MASTER } from '../utils/constants/cards.js';
 import { SKILLS } from '../utils/constants/skills.js';
-import { getDialogue, playSound } from '../utils/gameUtils.js';
+import { getDialogue, playSound, resolveCardChoices } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
 import { showAlertModal } from './uiModals.js';
@@ -134,16 +133,8 @@ export function updateCardDetail(c) {
           );
           const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
 
-          const cChoices =
-            c.choices ||
-            (c.baseId
-              ? CARD_MASTER.find((m) => m.id === c.baseId)?.choices
-              : undefined);
-          const cChoices2 =
-            c.choices2 ||
-            (c.baseId
-              ? CARD_MASTER.find((m) => m.id === c.baseId)?.choices2
-              : undefined);
+          const { choices: cChoices, choices2: cChoices2 } =
+            resolveCardChoices(c);
 
           if (
             (sk.id === 'choice' || sk.id === 'force') &&
@@ -160,7 +151,9 @@ export function updateCardDetail(c) {
                       ? ''
                       : cho.value;
                   const cDesc = resolveDesc(
-                    typeof cs.desc === 'function' ? cs.desc(cho.value) : cs.desc
+                    typeof cs.desc === 'function'
+                      ? cs.desc(cho.value, cho)
+                      : cs.desc
                   );
                   subDetailsHtml += `
                                         <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">

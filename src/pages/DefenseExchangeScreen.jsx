@@ -8,7 +8,6 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
-  EXCHANGE_LINEUP,
 } from '../utils/constants/config.js';
 import {
   getCardImgUrl,
@@ -23,13 +22,13 @@ export default function DefenseExchangeScreen() {
     setPoints,
     inventory,
     unlockedPremium = [],
+    lineup,
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'defense',
     pointsLocalKey: DEFENSE_POINTS_KEY,
     pointsTotalLocalKey: DEFENSE_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_points.php',
-    lineup: EXCHANGE_LINEUP,
   });
 
   // タイトルを10回クリックで防衛ポイントを100Pt獲得するイースターエッグ
@@ -63,7 +62,7 @@ export default function DefenseExchangeScreen() {
   // 仮想化グリッドフックの利用
   const { listContainerRef, rowVirtualizer, itemRows, gridCols, gridGap } =
     useGridVirtualizer({
-      items: EXCHANGE_LINEUP || [],
+      items: lineup || [],
     });
 
   return (

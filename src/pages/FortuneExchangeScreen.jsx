@@ -6,7 +6,6 @@ import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import {
-  FORTUNE_EXCHANGE_LINEUP,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
 } from '../utils/constants/config.js';
@@ -25,13 +24,13 @@ export default function FortuneExchangeScreen() {
     unlockedPlaymats,
     unlockedIcons,
     inventory,
+    lineup,
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'fortune',
     pointsLocalKey: FORTUNE_POINTS_KEY,
     pointsTotalLocalKey: FORTUNE_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_fortune_points.php',
-    lineup: FORTUNE_EXCHANGE_LINEUP,
   });
 
   // タイトルを10回クリックで運命の邂逅ポイントを100Pt獲得するイースターエッグ
@@ -68,7 +67,7 @@ export default function FortuneExchangeScreen() {
   // 仮想化グリッドフックの利用
   const { listContainerRef, rowVirtualizer, itemRows, gridCols, gridGap } =
     useGridVirtualizer({
-      items: FORTUNE_EXCHANGE_LINEUP || [],
+      items: lineup || [],
     });
 
   return (

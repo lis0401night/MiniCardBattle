@@ -1748,3 +1748,25 @@ export function saveHighDifficultyClearedData(charId) {
   }
   return current;
 }
+
+/**
+ * カードオブジェクトから選択肢スキル配列（choices / choices2）を解決・取得する共通ユーティリティ関数。
+ * カードインスタンス上に choices / choices2 が直接保持されていない場合、
+ * 正規化ID（baseId || id）をもとに CARD_MASTER から検索してフォールバック解決を行う。
+ *
+ * @param {object|null|undefined} card - 対象のカードオブジェクト
+ * @returns {{ choices: Array|undefined, choices2: Array|undefined }} 解決された choices および choices2 を含むオブジェクト
+ */
+export function resolveCardChoices(card) {
+  if (!card || typeof card !== 'object') {
+    return { choices: undefined, choices2: undefined };
+  }
+  const lookupId = card.baseId || card.id;
+  const master = lookupId
+    ? CARD_MASTER.find((m) => m.id === lookupId)
+    : undefined;
+  const choices = card.choices || master?.choices;
+  const choices2 = card.choices2 || master?.choices2;
+  return { choices, choices2 };
+}
+

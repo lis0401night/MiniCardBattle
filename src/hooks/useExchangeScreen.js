@@ -133,7 +133,17 @@ export function useExchangeScreen({
   const [pointsUpdated, setPointsUpdated] = useState(false);
   const isExchangingRef = useRef(false);
 
+  const ownershipRef = useRef(null);
+  ownershipRef.current = {
+    inventory: GameState.playerInventory || inventory,
+    unlockedSkins,
+    unlockedPlaymats,
+    unlockedIcons,
+    unlockedPremiumCards: unlockedPremium,
+  };
+
   useEffect(() => {
+    let cancelled = false;
     let currentPts = parseInt(localStorage.getItem(pointsLocalKey), 10) || 0;
     let totalPts = parseInt(localStorage.getItem(pointsTotalLocalKey), 10) || 0;
 
@@ -146,6 +156,7 @@ export function useExchangeScreen({
     const fetchPoints = async () => {
       try {
         const result = await fetchPlayerDecks();
+        if (cancelled) return;
         if (result.success && getOrCreateUUID) {
           const myUuid = getOrCreateUUID();
           const myData = result.players?.find((p) => p.uuid === myUuid);
@@ -162,14 +173,10 @@ export function useExchangeScreen({
               mergedCurrent,
               mergedTotal,
               resolvedLineup,
-              {
-                inventory: GameState.playerInventory || inventory,
-                unlockedSkins,
-                unlockedPlaymats,
-                unlockedIcons,
-                unlockedPremiumCards: unlockedPremium,
-              }
+              ownershipRef.current
             );
+
+            if (cancelled) return;
 
             const finalPts = recon.current;
             const finalTotalPts = recon.total;
@@ -194,14 +201,9 @@ export function useExchangeScreen({
               currentPts,
               totalPts,
               resolvedLineup,
-              {
-                inventory: GameState.playerInventory || inventory,
-                unlockedSkins,
-                unlockedPlaymats,
-                unlockedIcons,
-                unlockedPremiumCards: unlockedPremium,
-              }
+              ownershipRef.current
             );
+            if (cancelled) return;
             if (recon.reconciled) {
               setPoints({ current: recon.current, total: recon.total });
               localStorage.setItem(pointsLocalKey, String(recon.current));
@@ -211,10 +213,16 @@ export function useExchangeScreen({
           }
         }
       } catch (err) {
-        console.warn('ポイント取得・同期中にエラーが発生しました:', err);
+        if (!cancelled) {
+          console.warn('ポイント取得・同期中にエラーが発生しました:', err);
+        }
       }
     };
     fetchPoints();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     pointsUpdated,
     apiEndpoint,
@@ -224,11 +232,6 @@ export function useExchangeScreen({
     responsePointsField,
     responseTotalPointsField,
     resolvedLineup,
-    unlockedSkins,
-    unlockedPlaymats,
-    unlockedIcons,
-    unlockedPremium,
-    inventory,
   ]);
 
   /**
@@ -364,6 +367,7 @@ export function useExchangeScreen({
     unlockedIcons,
     unlockedPremium,
     inventory,
+    lineup: resolvedLineup,
     handleExchange,
     pointsUpdated,
     setPointsUpdated,

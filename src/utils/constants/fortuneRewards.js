@@ -12,6 +12,28 @@ export const FORTUNE_GRADE_THRESHOLDS = [
 ];
 
 /**
+ * 特級目標達成時のポイント倍率（獲得ポイント = コスト * 倍率）
+ */
+export const FORTUNE_HANDICAP_POINT_MULTIPLIER = 3;
+
+/**
+ * 達成済み特級目標マップから累計獲得ポイントを計算する
+ * @param {Object|null} clearedMap - { [handicapId]: boolean }
+ * @returns {number} 獲得ポイント
+ */
+export function calculateHandicapPointsFromMap(clearedMap) {
+  if (!clearedMap || typeof clearedMap !== 'object') return 0;
+  let earned = 0;
+  for (const [id, cleared] of Object.entries(clearedMap)) {
+    if (cleared) {
+      const cost = HANDICAP_MASTER[id]?.cost || 0;
+      earned += cost * FORTUNE_HANDICAP_POINT_MULTIPLIER;
+    }
+  }
+  return earned;
+}
+
+/**
  * 合計目標値からレベル（0～5）を判定する
  * @param {number} totalCost - 特級目標の合計コスト
  * @returns {number} 該当するレベル（0～5）
@@ -51,10 +73,10 @@ export function calculateFortuneRewards(
     if (!handicaps[h.id]) return; // 今回ONにしていない
     if (newClearedHandicaps[h.id]) return; // 既に達成済み
 
-    // 初回達成：コストの3倍のポイントを付与 (獲得ポイント = コスト * 3)
+    // 初回達成：コストの3倍のポイントを付与 (獲得ポイント = コスト * 倍率)
     const master = HANDICAP_MASTER[h.id] || h;
     const cost = master.cost || 0;
-    const earned = cost * 3;
+    const earned = cost * FORTUNE_HANDICAP_POINT_MULTIPLIER;
     totalEarned += earned;
     newClearedHandicaps[h.id] = true;
     breakdown.push({

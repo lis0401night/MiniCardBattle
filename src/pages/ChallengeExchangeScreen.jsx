@@ -6,7 +6,6 @@ import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import {
-  CHALLENGE_EXCHANGE_LINEUP,
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
 } from '../utils/constants/config.js';
@@ -25,13 +24,13 @@ export default function ChallengeExchangeScreen() {
     unlockedPlaymats,
     unlockedIcons,
     inventory,
+    lineup,
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'challenge',
     pointsLocalKey: CHALLENGE_POINTS_KEY,
     pointsTotalLocalKey: CHALLENGE_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_challenge_points.php',
-    lineup: CHALLENGE_EXCHANGE_LINEUP,
   });
 
   // タイトルを10回クリックで試練ポイントを100Pt獲得するイースターエッグ
@@ -70,7 +69,7 @@ export default function ChallengeExchangeScreen() {
   // 仮想化グリッドフックの利用
   const { listContainerRef, rowVirtualizer, itemRows, gridCols, gridGap } =
     useGridVirtualizer({
-      items: CHALLENGE_EXCHANGE_LINEUP || [],
+      items: lineup || [],
     });
 
   return (

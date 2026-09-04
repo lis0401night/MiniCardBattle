@@ -7,8 +7,10 @@ import {
 } from './gameUtils.js';
 import { resolveValidIconId } from './constants/avatars.js';
 import { GameState } from '../state/gameState.js';
-import { loadFortuneClearedData } from './constants/fortuneRewards.js';
-import { HANDICAP_MASTER } from './constants/fortuneHandicaps.js';
+import {
+  loadFortuneClearedData,
+  calculateHandicapPointsFromMap,
+} from './constants/fortuneRewards.js';
 import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
@@ -293,21 +295,8 @@ export function calculateFortuneTotalPointsFromCleared(
   const valkData = clearedValkyria || loadFortuneClearedData('valkyria');
 
   let totalEarned = 0;
-
-  const countHandicapPoints = (clearedMap) => {
-    if (!clearedMap || typeof clearedMap !== 'object') return 0;
-    let earned = 0;
-    for (const [id, cleared] of Object.entries(clearedMap)) {
-      if (cleared) {
-        const cost = HANDICAP_MASTER[id]?.cost || 0;
-        earned += cost * 3;
-      }
-    }
-    return earned;
-  };
-
-  totalEarned += countHandicapPoints(autoData?.clearedHandicaps);
-  totalEarned += countHandicapPoints(valkData?.clearedHandicaps);
+  totalEarned += calculateHandicapPointsFromMap(autoData?.clearedHandicaps);
+  totalEarned += calculateHandicapPointsFromMap(valkData?.clearedHandicaps);
 
   return totalEarned;
 }
@@ -455,7 +444,6 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         fortune_max_grade: maxGrade,
         fortune_max_total_cost_automata: clearedAutomata.maxTotalCost || 0,
         fortune_max_total_cost_valkyria: clearedValkyria.maxTotalCost || 0,
-        force_sync_fortune_scores: true,
       };
 
       if (serverPlayerData) {
@@ -512,18 +500,19 @@ export async function syncModePoints(mode, serverPlayerData = null) {
     // サーバーデータが存在する場合
     if (serverPlayerData) {
       const serverAutomataMaxCost =
-        serverPlayerData.fortune_max_total_cost_automata ??
         resolveFortuneMaxCostAutomata(serverPlayerData);
       const serverValkyriaMaxCost =
         serverPlayerData.fortune_max_total_cost_valkyria ?? 0;
 
-      // Fortuneモードにおいて、ポイント以外の進行情報（最大グレードや最大累計コスト）がサーバーと異なるか判定
+      // Fortuneモードにおいて、ローカル側の進行情報（最大グレードや最大累計コスト）がサーバーを上回っているか判定
       const shouldSyncFortuneProgress =
         mode === 'fortune' &&
-        (extraData.fortune_max_grade >
+        ((extraData.fortune_max_grade || 0) >
           (serverPlayerData.fortune_max_grade || 0) ||
-          extraData.fortune_max_total_cost_automata !== serverAutomataMaxCost ||
-          extraData.fortune_max_total_cost_valkyria !== serverValkyriaMaxCost);
+          (extraData.fortune_max_total_cost_automata || 0) >
+            serverAutomataMaxCost ||
+          (extraData.fortune_max_total_cost_valkyria || 0) >
+            serverValkyriaMaxCost);
 
       // High Difficultyモードにおいて、ローカルにサーバー未送信のクリア済みボスが存在するか判定
       const localCleared = loadHighDifficultyClearedData();
@@ -553,6 +542,15 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         localStorage.setItem(pointsTotalKey, String(finalTotal));
       }
 
+      const mergedAutomataMaxCost = Math.max(
+        extraData.fortune_max_total_cost_automata || 0,
+        serverAutomataMaxCost || 0
+      );
+      const mergedValkyriaMaxCost = Math.max(
+        extraData.fortune_max_total_cost_valkyria || 0,
+        serverValkyriaMaxCost || 0
+      );
+
       const syncExtraData =
         mode === 'fortune'
           ? {
@@ -561,11 +559,14 @@ export async function syncModePoints(mode, serverPlayerData = null) {
                 extraData.fortune_max_grade || 0,
                 serverPlayerData.fortune_max_grade || 0
               ),
-              fortune_max_total_cost_automata:
-                extraData.fortune_max_total_cost_automata || 0,
-              fortune_max_total_cost_valkyria:
-                extraData.fortune_max_total_cost_valkyria || 0,
-              force_sync_fortune_scores: true,
+              fortune_max_total_cost_automata: mergedAutomataMaxCost,
+              fortune_max_total_cost_valkyria: mergedValkyriaMaxCost,
+              fortune_max_total_cost: Math.max(
+                extraData.fortune_max_total_cost || 0,
+                serverPlayerData.fortune_max_total_cost || 0,
+                mergedAutomataMaxCost,
+                mergedValkyriaMaxCost
+              ),
             }
           : extraData;
 

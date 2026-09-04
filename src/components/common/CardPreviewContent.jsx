@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
-import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import { SKILLS } from '../../utils/constants/skills.js';
-import { getCardImgUrl, playSound } from '../../utils/gameUtils.js';
+import {
+  getCardImgUrl,
+  playSound,
+  resolveCardChoices,
+} from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
 export default function CardPreviewContent({
@@ -420,17 +423,8 @@ export default function CardPreviewContent({
                         ? s.desc(sk.value, sk)
                         : s.desc;
 
-                    const cardChoices =
-                      card.choices ||
-                      (card.baseId
-                        ? CARD_MASTER.find((m) => m.id === card.baseId)?.choices
-                        : undefined);
-                    const cardChoices2 =
-                      card.choices2 ||
-                      (card.baseId
-                        ? CARD_MASTER.find((m) => m.id === card.baseId)
-                            ?.choices2
-                        : undefined);
+                    const { choices: cardChoices, choices2: cardChoices2 } =
+                      resolveCardChoices(card);
 
                     if (
                       (sk.id === 'choice' || sk.id === 'force') &&

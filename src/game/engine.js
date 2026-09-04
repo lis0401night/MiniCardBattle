@@ -885,6 +885,11 @@ export function applyActiveSkillLogic(
             newInstance.uid = `${owner}_union_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}`;
             newInstance.baseId = mergedCard.id;
             newInstance.owner = owner;
+            newInstance.basePower = mergedCard.power;
+            newInstance.currentPower = mergedCard.power;
+            newInstance.skillTriggered = true; // 支配による配置のため召喚時スキルは不発
+            newInstance.stunTurns = 0;
+            newInstance.stunAppliedThisTurn = false;
             newInstance.unionMaterials = [
               JSON.parse(JSON.stringify(existingCard)),
               JSON.parse(JSON.stringify(stolenCard)),
@@ -912,6 +917,7 @@ export function applyActiveSkillLogic(
           const equipPower = stolenCard.currentPower ?? stolenCard.power ?? 0;
           stolenCard.appliedEquipPower = equipPower;
 
+          targetCard.power = (targetCard.power || 0) + equipPower;
           targetCard.basePower = (targetCard.basePower || 0) + equipPower;
           targetCard.currentPower = (targetCard.currentPower || 0) + equipPower;
 

@@ -6,7 +6,6 @@ import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import {
-  HIGH_DIFFICULTY_EXCHANGE_LINEUP,
   HIGH_DIFFICULTY_POINTS_KEY,
   HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
 } from '../utils/constants/config.js';
@@ -29,13 +28,13 @@ export default function HighDifficultyExchangeScreen({ switchScreen }) {
     unlockedPlaymats,
     unlockedIcons,
     inventory,
+    lineup,
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'high_difficulty',
     pointsLocalKey: HIGH_DIFFICULTY_POINTS_KEY,
     pointsTotalLocalKey: HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_high_difficulty_points.php',
-    lineup: HIGH_DIFFICULTY_EXCHANGE_LINEUP,
   });
 
   /**
@@ -87,7 +86,7 @@ export default function HighDifficultyExchangeScreen({ switchScreen }) {
   // 仮想化グリッドフックの利用（大量アイテム表示時のパフォーマンスを最適化）
   const { listContainerRef, rowVirtualizer, itemRows, gridCols, gridGap } =
     useGridVirtualizer({
-      items: HIGH_DIFFICULTY_EXCHANGE_LINEUP || [],
+      items: lineup || [],
     });
 
   return (

@@ -6,7 +6,6 @@ import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import {
-  TOURNAMENT_EXCHANGE_LINEUP,
   TOURNAMENT_POINTS_KEY,
   TOURNAMENT_TOTAL_POINTS_KEY,
 } from '../utils/constants/config.js';
@@ -27,13 +26,13 @@ export default function TournamentExchangeScreen({ switchScreen }) {
     unlockedPlaymats,
     unlockedIcons,
     inventory,
+    lineup,
     handleExchange,
   } = useExchangeScreen({
     pointsKey: 'tournament',
     pointsLocalKey: TOURNAMENT_POINTS_KEY,
     pointsTotalLocalKey: TOURNAMENT_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_tournament_points.php',
-    lineup: TOURNAMENT_EXCHANGE_LINEUP,
   });
 
   const handleBack = () => {
@@ -80,7 +79,7 @@ export default function TournamentExchangeScreen({ switchScreen }) {
   // 仮想化グリッドフックの利用
   const { listContainerRef, rowVirtualizer, itemRows, gridCols, gridGap } =
     useGridVirtualizer({
-      items: TOURNAMENT_EXCHANGE_LINEUP || [],
+      items: lineup || [],
     });
 
   return (

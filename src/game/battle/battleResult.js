@@ -541,7 +541,6 @@ function resolveFortuneRewards() {
     ),
     fortune_max_total_cost_automata: currentClearedAuto.maxTotalCost || 0,
     fortune_max_total_cost_valkyria: currentClearedValk.maxTotalCost || 0,
-    force_sync_fortune_scores: true,
   };
 
   savePointsToServer(
