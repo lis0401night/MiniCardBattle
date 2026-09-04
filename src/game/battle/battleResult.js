@@ -46,6 +46,7 @@ import {
   getFallbackStoryDialogue,
 } from '../../utils/constants/storyDialogues.js';
 import { getTournamentPostBattleAnnounce } from '../../utils/constants/eventTournamentDialogues.js';
+import { saveTournamentProgress } from '../tournament.js';
 import { getDungeonCharacterDialogue } from '../../utils/constants/battleDungeonCharacter.js';
 import { setupDialogueScreen } from '../../services/uiDialogue.js';
 import {
@@ -521,15 +522,27 @@ function resolveFortuneRewards() {
     result.newMaxTotalCost
   );
 
+  // マキナおよびアンジェの両方の最新クリアデータを取得
+  const currentClearedAuto = loadFortuneClearedData('automata');
+  const currentClearedValk = loadFortuneClearedData('valkyria');
+
+  const overallMaxGrade = Math.max(
+    currentClearedAuto.maxGradeLevel || 0,
+    currentClearedValk.maxGradeLevel || 0,
+    0
+  );
+
   const fortuneSyncExtra = {
-    fortune_max_grade: result.newMaxGradeLevel,
+    fortune_max_grade: overallMaxGrade,
     fortune_cleared: JSON.stringify(result.newClearedHandicaps),
-    fortune_max_total_cost: result.newMaxTotalCost,
+    fortune_max_total_cost: Math.max(
+      currentClearedAuto.maxTotalCost || 0,
+      currentClearedValk.maxTotalCost || 0
+    ),
+    fortune_max_total_cost_automata: currentClearedAuto.maxTotalCost || 0,
+    fortune_max_total_cost_valkyria: currentClearedValk.maxTotalCost || 0,
+    force_sync_fortune_scores: true,
   };
-  if (fortuneCharId) {
-    fortuneSyncExtra[`fortune_max_total_cost_${fortuneCharId}`] =
-      result.newMaxTotalCost;
-  }
 
   savePointsToServer(
     'update_fortune_points.php',
@@ -873,6 +886,7 @@ export function endBattle() {
       } else {
         GameState.tournament.playerLost = true;
       }
+      saveTournamentProgress();
       cleanupBattleState();
       setupDialogueScreen();
       return;

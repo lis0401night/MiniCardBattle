@@ -63,6 +63,9 @@ export {
   resolveOnPlaySkill,
   executeSingleCombat,
   executeCombatPhase,
+  createUnionCard,
+  applyEquipment,
+  triggerRetaliateSkill,
 } from './battleCombat.js';
 
 // --- battleTurn.js: ターン進行制御 ---

@@ -31,6 +31,7 @@ export default function ChallengeExchangeScreen() {
     pointsLocalKey: CHALLENGE_POINTS_KEY,
     pointsTotalLocalKey: CHALLENGE_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_challenge_points.php',
+    lineup: CHALLENGE_EXCHANGE_LINEUP,
   });
 
   // タイトルを10回クリックで試練ポイントを100Pt獲得するイースターエッグ

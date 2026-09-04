@@ -68,6 +68,7 @@ import {
   getOrCreateUUID,
   playSound,
   resolvePlayerName,
+  safeParseArray,
   stopAllBGM,
   togglePremiumCard,
 } from '../utils/gameUtils.js';
@@ -2435,8 +2436,34 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 未選択
               </div>
 
-              {PLAYMAT_MASTER?.filter((p) => ownedPlaymats?.includes(p.id)).map(
-                (p) => {
+              {(() => {
+                const currentOwned =
+                  safeParseArray('mini_card_battle_owned_playmats') ||
+                  GameState.ownedPlaymats ||
+                  ownedPlaymats ||
+                  [];
+                const filtered = PLAYMAT_MASTER?.filter((p) =>
+                  currentOwned.includes(p.id)
+                );
+
+                if (!filtered || filtered.length === 0) {
+                  return (
+                    <div
+                      style={{
+                        color: '#94a3b8',
+                        fontSize: '0.8rem',
+                        textAlign: 'center',
+                        marginTop: '20px',
+                      }}
+                    >
+                      解放済みのプレイマットがありません。
+                      <br />
+                      実績を達成して入手しましょう！
+                    </div>
+                  );
+                }
+
+                return filtered.map((p) => {
                   const isSelected = selectedPlaymatState === p.id;
                   return (
                     <div
@@ -2495,23 +2522,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                       </div>
                     </div>
                   );
-                }
-              )}
-
-              {(!ownedPlaymats || ownedPlaymats.length === 0) && (
-                <div
-                  style={{
-                    color: '#94a3b8',
-                    fontSize: '0.8rem',
-                    textAlign: 'center',
-                    marginTop: '20px',
-                  }}
-                >
-                  解放済みのプレイマットがありません。
-                  <br />
-                  実績を達成して入手しましょう！
-                </div>
-              )}
+                });
+              })()}
             </div>
 
             <div

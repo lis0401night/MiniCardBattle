@@ -31,6 +31,7 @@ export default function FortuneExchangeScreen() {
     pointsLocalKey: FORTUNE_POINTS_KEY,
     pointsTotalLocalKey: FORTUNE_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_fortune_points.php',
+    lineup: FORTUNE_EXCHANGE_LINEUP,
   });
 
   // タイトルを10回クリックで運命の邂逅ポイントを100Pt獲得するイースターエッグ

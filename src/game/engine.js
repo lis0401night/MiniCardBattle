@@ -850,20 +850,70 @@ export function applyActiveSkillLogic(
           });
         }
 
-        if (
-          b[targetLane] &&
+        const existingCard = b[targetLane];
+
+        // 1. 起動（startup）判定
+        if (existingCard && hasSkill(existingCard, 'startup')) {
+          const discardPile =
+            owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+          if (!stolenCard.isToken) {
+            discardPile.push(stolenCard);
+          }
+          resolveStartupFade(
+            owner,
+            existingCard,
+            targetLane,
+            stolenCard,
+            events
+          );
+        } else if (
+          existingCard &&
+          stolenCard.skills &&
+          stolenCard.skills.some((s) => s.id === 'union') &&
+          (existingCard.baseId ===
+            stolenCard.skills.find((s) => s.id === 'union').targetId ||
+            existingCard.id ===
+              stolenCard.skills.find((s) => s.id === 'union').targetId)
+        ) {
+          // 2. 合体（union）判定
+          const unionSkill = stolenCard.skills.find((s) => s.id === 'union');
+          const mergedCard = CARD_MASTER.find(
+            (mc) => mc.id === unionSkill.summonId
+          );
+          if (mergedCard) {
+            const newInstance = JSON.parse(JSON.stringify(mergedCard));
+            newInstance.uid = `${owner}_union_${Math.floor(getSeededRandom() * 1000000000)}_${targetLane}`;
+            newInstance.baseId = mergedCard.id;
+            newInstance.owner = owner;
+            newInstance.unionMaterials = [
+              JSON.parse(JSON.stringify(existingCard)),
+              JSON.parse(JSON.stringify(stolenCard)),
+            ];
+            b[targetLane] = newInstance;
+            events.push({
+              type: 'summon_card',
+              side: owner,
+              lane: targetLane,
+              card: newInstance,
+              source: 'union',
+            });
+          }
+        } else if (
+          existingCard &&
           (hasSkill(stolenCard, 'equip') ||
-            hasSkill(b[targetLane], 'arm_self')) &&
-          !hasSkill(b[targetLane], 'possession') &&
+            hasSkill(existingCard, 'arm_self')) &&
+          !hasSkill(existingCard, 'possession') &&
           !hasSkill(stolenCard, 'possession') &&
-          !hasSkill(b[targetLane], 'reflect') &&
+          !hasSkill(existingCard, 'reflect') &&
           !hasSkill(stolenCard, 'reflect')
         ) {
-          const targetCard = b[targetLane];
-          targetCard.basePower =
-            (targetCard.basePower || 0) + (stolenCard.power || 0);
-          targetCard.currentPower =
-            (targetCard.currentPower || 0) + (stolenCard.power || 0);
+          // 3. 装備判定
+          const targetCard = existingCard;
+          const equipPower = stolenCard.currentPower ?? stolenCard.power ?? 0;
+          stolenCard.appliedEquipPower = equipPower;
+
+          targetCard.basePower = (targetCard.basePower || 0) + equipPower;
+          targetCard.currentPower = (targetCard.currentPower || 0) + equipPower;
 
           if (!targetCard.skills) {
             targetCard.skills = [];
@@ -890,7 +940,7 @@ export function applyActiveSkillLogic(
             source: 'equip',
           });
         } else {
-          const existingCard = b[targetLane];
+          // 4. 通常破棄配置
           if (existingCard) {
             events.push({
               type: 'deadly',
@@ -1424,7 +1474,8 @@ export function applyActiveSkillLogic(
         if (tr.isHost) {
           // 1. 装着されている装備カードを全て解除し、ステータス（パワー）を減算する
           let totalLoss = tgt.equippedCards.reduce(
-            (sum, eq) => sum + (eq.power || 0),
+            (sum, eq) =>
+              sum + (eq.appliedEquipPower ?? eq.currentPower ?? eq.power ?? 0),
             0
           );
           for (const eqC of tgt.equippedCards) {
@@ -1474,6 +1525,25 @@ export function applyActiveSkillLogic(
         events.push({
           type: 'destroy_cards',
           targets: killTargets,
+        });
+
+        // 報復（retaliate）スキル
+        killTargets.forEach(({ side }) => {
+          const alliedBoard =
+            side === 'blue' ? state.playerBoard : state.enemyBoard;
+          alliedBoard.forEach((allyCard, j) => {
+            if (allyCard && hasSkill(allyCard, 'retaliate')) {
+              const buffVal = getSkillValue(allyCard, 'retaliate') || 2;
+              allyCard.currentPower += buffVal;
+              events.push({
+                type: 'power_change',
+                side,
+                lane: j,
+                amount: buffVal,
+                source: 'retaliate',
+              });
+            }
+          });
         });
       }
       break;
@@ -2232,6 +2302,23 @@ export function applyActiveSkillLogic(
             type: 'destroy_cards',
             targets: targets,
           });
+
+          // 報復（retaliate）スキル: 破壊された枚数分、相手陣営の生存カードのパワーを上昇させる
+          targets.forEach(() => {
+            eB.forEach((allyCard, j) => {
+              if (allyCard && hasSkill(allyCard, 'retaliate')) {
+                const buffVal = getSkillValue(allyCard, 'retaliate') || 2;
+                allyCard.currentPower += buffVal;
+                events.push({
+                  type: 'power_change',
+                  side: oppOwner,
+                  lane: j,
+                  amount: buffVal,
+                  source: 'retaliate',
+                });
+              }
+            });
+          });
         }
       }
       break;
@@ -2378,6 +2465,21 @@ export function applyActiveSkillLogic(
             events.push({
               type: 'destroy_cards',
               targets: [{ side: owner, lane: execLane, card: execCard }],
+            });
+
+            // 報復（retaliate）スキル: 自陣カードが破壊された時、自陣の生存カードのパワーを上昇させる
+            b.forEach((allyCard, j) => {
+              if (allyCard && hasSkill(allyCard, 'retaliate')) {
+                const buffVal = getSkillValue(allyCard, 'retaliate') || 2;
+                allyCard.currentPower += buffVal;
+                events.push({
+                  type: 'power_change',
+                  side: owner,
+                  lane: j,
+                  amount: buffVal,
+                  source: 'retaliate',
+                });
+              }
             });
           }
         }

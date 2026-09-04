@@ -201,7 +201,10 @@ export default function RankingScreen({
                 clearedDataAutomata.maxTotalCost || 0;
               const fortuneTotalCostValkyria =
                 clearedDataValkyria.maxTotalCost || 0;
-              const fortuneTotalCost = fortuneTotalCostAutomata;
+              const fortuneTotalCost = Math.max(
+                fortuneTotalCostAutomata,
+                fortuneTotalCostValkyria
+              );
 
               const highDifficultyPts =
                 parseInt(

@@ -783,42 +783,94 @@ export function mergeCardSkills(targetCard, equipSkills) {
   }
 }
 
+/**
+ * 装備解除時などのスキル減算・復元ロジック。
+ * 装備カード由来のスキルを対象カードから削除・減算します。
+ * 対象カード自身が元々マスターデータで所持している固有スキル（伝説、頑丈、貫通などのフラグ系スキルや基礎数値）は、
+ * 誤って消失しないよう保護・維持されます。
+ * @param {object} targetCard - 装備を解除される対象のカード
+ * @param {Array<object>} equipSkills - 解除する装備品が所持していたスキル配列
+ */
 export function unmergeCardSkills(targetCard, equipSkills) {
-  if (!targetCard.skills) return;
+  if (!targetCard || !targetCard.skills || !Array.isArray(equipSkills)) return;
+
+  // 対象カードのマスターデータ（元の基礎定義）を取得
+  const masterId = targetCard.baseId || targetCard.id;
+  const masterCard = CARD_MASTER.find((m) => m.id === masterId);
+  const masterSkills = masterCard?.skills || [];
 
   for (const eqS of equipSkills) {
     const existingInfo = targetCard.skills.find((s) => s.id === eqS.id);
-    if (existingInfo) {
-      if (
-        eqS.value !== undefined &&
-        eqS.value !== null &&
-        existingInfo.value !== undefined &&
-        existingInfo.value !== null
-      ) {
-        existingInfo.value -= eqS.value;
-        if (existingInfo.value <= 0) {
-          targetCard.skills = targetCard.skills.filter(
-            (s) => s !== existingInfo
-          );
+    if (!existingInfo) continue;
+
+    const originalSkill = masterSkills.find((ms) => ms.id === eqS.id);
+
+    // 1. 数値（value）を持つスキルの場合（回復、援護、サルベージ等）
+    if (
+      eqS.value !== undefined &&
+      eqS.value !== null &&
+      existingInfo.value !== undefined &&
+      existingInfo.value !== null
+    ) {
+      existingInfo.value -= eqS.value;
+      // 元々マスターデータで持っていた数値スキルであれば、初期数値を下回らないように保護
+      if (originalSkill && originalSkill.value !== undefined) {
+        if (existingInfo.value < originalSkill.value) {
+          existingInfo.value = originalSkill.value;
         }
-      } else {
+      } else if (existingInfo.value <= 0) {
+        // 元々持っていなかった数値スキルの場合は 0 以下で完全に削除
+        targetCard.skills = targetCard.skills.filter((s) => s !== existingInfo);
+      }
+    } else {
+      // 2. 数値を持たないフラグ系スキル（伝説、頑丈、貫通、必殺、生贄、移動等）の場合
+      // 元々マスターデータで所持していない（装備によってのみ付与されていた）場合のみ削除する
+      if (!originalSkill) {
         targetCard.skills = targetCard.skills.filter((s) => s !== existingInfo);
       }
     }
   }
+
+  // 旧仕様互換プロパティ（targetCard.skill）の同期
+  if (targetCard.skill && targetCard.skill !== 'none') {
+    const stillHasSkill = targetCard.skills.some(
+      (s) => s.id === targetCard.skill
+    );
+    if (!stillHasSkill) {
+      targetCard.skill = targetCard.skills[0]?.id || 'none';
+      targetCard.skillValue = targetCard.skills[0]?.value || 0;
+    }
+  }
 }
 
-// 武装(arm_self)スキルの消費処理
+/**
+ * 武装(arm_self)スキルの消費・維持処理。
+ * 下のカードの武装(1回分)を消費しつつ、上のカード自身が「武装」を持っている場合は
+ * 上のカード由来の新たな「武装(1回分)」を付与して保持します。
+ * 上のカードが「装備(equip)」を持っている場合は、下のカードの武装は消費せず温存します。
+ * @param {object} host - 装備される側のカード（下のカード）
+ * @param {object} equipped - 装備する側のカード（上のカード）
+ */
 export function consumeArmSelf(host, equipped) {
   if (!host || !equipped) return;
+  // 上のカードが「装備(equip)」を持っておらず、下のカードが「武装(arm_self)」を持っていた場合のみ消費判定
   if (!hasSkill(equipped, 'equip') && hasSkill(host, 'arm_self')) {
-    if (host.skill === 'arm_self') {
+    const equippedHasArmSelf = hasSkill(equipped, 'arm_self');
+    if (host.skill === 'arm_self' && !equippedHasArmSelf) {
       host.skill = 'none';
       host.skillValue = 0;
     }
-    host.skills = Array.isArray(host.skills)
-      ? host.skills.filter((s) => s.id !== 'arm_self')
-      : [];
+    if (Array.isArray(host.skills)) {
+      // 下のカードが元々持っていた武装(1回分)を消費
+      host.skills = host.skills.filter((s) => s.id !== 'arm_self');
+      // 上のカード自身が「武装」を持っていた場合は、上のカード由来の新たな「武装(1回分)」を付与して残す
+      if (equippedHasArmSelf) {
+        const armSkill = equipped.skills?.find((s) => s.id === 'arm_self') || {
+          id: 'arm_self',
+        };
+        host.skills.push({ ...armSkill });
+      }
+    }
   }
 }
 
@@ -1141,13 +1193,15 @@ export function applyEquipMerge(targetCard, equipCard) {
     return; // 既に装備済みの場合は重複加算を防ぐ
   }
 
+  const equipPower = equipCard.currentPower ?? equipCard.power ?? 0;
+  equipCard.appliedEquipPower = equipPower;
+
   const equipSkills = (equipCard.skills || []).filter((s) => s.id !== 'equip');
   mergeCardSkills(targetCard, equipSkills);
 
-  targetCard.power = (targetCard.power || 0) + (equipCard.power || 0);
-  targetCard.basePower = (targetCard.basePower || 0) + (equipCard.power || 0);
-  targetCard.currentPower =
-    (targetCard.currentPower || 0) + (equipCard.power || 0);
+  targetCard.power = (targetCard.power || 0) + equipPower;
+  targetCard.basePower = (targetCard.basePower || 0) + equipPower;
+  targetCard.currentPower = (targetCard.currentPower || 0) + equipPower;
 
   targetCard.equippedCards.push(equipCard);
 
@@ -1553,6 +1607,27 @@ export function safeParseArray(key) {
   } catch (e) {
     console.error(`Failed to parse localStorage key "${key}":`, e);
     return [];
+  }
+}
+
+/**
+ * LocalStorageから安全にJSONオブジェクトをパースして読み込む共通ヘルパー
+ * @param {string} key LocalStorageのキー
+ * @returns {Object} パースされたオブジェクト（失敗時や非オブジェクト時は空オブジェクト）
+ */
+export function safeParseObject(key) {
+  try {
+    let raw = localStorage.getItem(key);
+    if (raw && typeof raw === 'string') {
+      raw = raw.replace(/[\u200B-\u200D]/g, '');
+    }
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch (e) {
+    console.error(`Failed to parse object for localStorage key "${key}":`, e);
+    return {};
   }
 }
 

@@ -433,3 +433,15 @@ export const HIGH_DIFFICULTY_EXCHANGE_LINEUP = [
   { id: 'gaston', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'rosenberg', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
 ];
+
+/**
+ * モードキー別の交換所ラインナップ一覧マップ
+ * @type {Record<string, Array<Object>>}
+ */
+export const EXCHANGE_LINEUPS_BY_MODE = Object.freeze({
+  fortune: FORTUNE_EXCHANGE_LINEUP,
+  challenge: CHALLENGE_EXCHANGE_LINEUP,
+  tournament: TOURNAMENT_EXCHANGE_LINEUP,
+  high_difficulty: HIGH_DIFFICULTY_EXCHANGE_LINEUP,
+  defense: EXCHANGE_LINEUP,
+});

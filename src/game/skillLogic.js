@@ -34,11 +34,13 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
+  applyEquipment,
   canEquipCard,
   checkWinCondition,
   cleanupDestroyedCards,
   confirmOverwrittenLane, // 【追加】根本的リファクタリング用
   consumeAIAction,
+  createUnionCard,
   discardCard,
   drawCard,
   executeSingleCombat,
@@ -52,6 +54,7 @@ import {
   waitPlayerHandSelection,
   waitPlayerLaneSelection,
   waitSkillChoice,
+  triggerRetaliateSkill,
 } from './battle/index.js';
 import {
   applyActiveSkillLogic,
@@ -251,6 +254,8 @@ async function executeGroupDestruction(targets) {
       const eB =
         t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
       if (!(await discardCard(t.side, t.card, t.lane, true))) eB[t.lane] = null;
+      // 破壊された陣営の生存カードに対する「報復」スキルの誘発
+      triggerRetaliateSkill(t.side);
     }
   }
   renderBoard();
@@ -1234,6 +1239,8 @@ export async function resolveActiveSkillEffect(
       power: c.power,
       currentPower: c.currentPower,
       skills: inheritedSkills,
+      choices: c.choices ? JSON.parse(JSON.stringify(c.choices)) : undefined,
+      choices2: c.choices2 ? JSON.parse(JSON.stringify(c.choices2)) : undefined,
       stunTurns: stunTurns,
     };
     // AIの場合：actionQueueのtoken_placementからclone用のレーン指定を取り出す
@@ -1331,49 +1338,23 @@ export async function resolveActiveSkillEffect(
         basePower: c.basePower !== undefined ? c.basePower : c.power || 0,
         voiceCategory: c.voiceCategory,
         skills: JSON.parse(JSON.stringify(inheritedSkills)), // スキルを引き継ぐ
+        choices: c.choices ? JSON.parse(JSON.stringify(c.choices)) : undefined, // 選択肢を引き継ぐ
+        choices2: c.choices2
+          ? JSON.parse(JSON.stringify(c.choices2))
+          : undefined,
         skillTriggered: true, // 配置扱いのため、引き継いだ召喚時スキルのバッジを表示しない
         stunTurns: stunTurns,
       };
       const existingCard = board[targetLane];
       if (existingCard && hasSkill(existingCard, 'startup')) {
         handleStartupDispelled(o, existingCard, targetLane, newToken);
-      } else if (
-        existingCard &&
-        (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) &&
-        !hasSkill(existingCard, 'possession') &&
-        !hasSkill(newToken, 'possession') &&
-        !hasSkill(existingCard, 'reflect') &&
-        !hasSkill(newToken, 'reflect')
-      ) {
-        existingCard.power = (existingCard.power || 0) + (newToken.power || 0);
-        existingCard.basePower =
-          (existingCard.basePower || 0) + (newToken.power || 0);
-        existingCard.currentPower =
-          (existingCard.currentPower || 0) + (newToken.power || 0);
-
-        const equipSkills = [];
-        if (
-          newToken.skill &&
-          newToken.skill !== 'none' &&
-          newToken.skill !== 'equip'
-        )
-          equipSkills.push({ id: newToken.skill, value: newToken.skillValue });
-        if (newToken.skills)
-          newToken.skills.forEach((s) => {
-            if (s.id !== 'equip') equipSkills.push(s);
-          });
-        mergeCardSkills(existingCard, equipSkills);
-
-        existingCard.equippedCards = existingCard.equippedCards || [];
-        existingCard.equippedCards.push(newToken);
-
-        // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        consumeArmSelf(existingCard, newToken);
+      } else if (existingCard && canEquipCard(newToken, existingCard)) {
+        applyEquipment(existingCard, newToken);
         events.push({
           type: 'power_change',
           side: o,
           lane: targetLane,
-          amount: newToken.power,
+          amount: newToken.currentPower ?? newToken.power ?? 0,
           source: 'equip',
         });
       } else {
@@ -1723,7 +1704,12 @@ export async function resolveActiveSkillEffect(
           // 1. 装着されている装備カードを全て解除し、墓地（捨て札）へ送る
           let totalPowerLoss = 0;
           for (const eqCard of targetCard.equippedCards) {
-            totalPowerLoss += eqCard.power || 0;
+            const powerLoss =
+              eqCard.appliedEquipPower ??
+              eqCard.currentPower ??
+              eqCard.power ??
+              0;
+            totalPowerLoss += powerLoss;
 
             const equipSkills = [];
             if (
@@ -1759,6 +1745,7 @@ export async function resolveActiveSkillEffect(
             if (!(await discardCard(t.side, targetCard, t.lane, true))) {
               eB[t.lane] = null;
             }
+            triggerRetaliateSkill(t.side);
             targetCardDiscarded = true;
           }
         }
@@ -2200,35 +2187,8 @@ export async function resolveActiveSkillEffect(
             handleStartupDispelled(o, existingCard, targetLane, selectedCard);
           } else if (canEquipCard(selectedCard, board[targetLane])) {
             const targetCard = board[targetLane];
-            // 装備によるパワー加算
-            targetCard.power =
-              (targetCard.power || 0) + (selectedCard.power || 0);
-            targetCard.basePower =
-              (targetCard.basePower || 0) + (selectedCard.power || 0);
-            targetCard.currentPower =
-              (targetCard.currentPower || 0) + (selectedCard.power || 0);
-
-            // スキルの統合
-            if (!targetCard.skills) {
-              targetCard.skills = [];
-            }
-
-            const equipSkills = [];
-            if (selectedCard.skills) {
-              selectedCard.skills.forEach((s) => {
-                if (s.id !== 'equip') equipSkills.push(s);
-              });
-            }
-            mergeCardSkills(targetCard, equipSkills);
+            applyEquipment(targetCard, selectedCard);
             targetCard.skillTriggered = true; // 配置（復活）からの合体のため、追加スキルのバッジは表示しない
-            // ※ユーザー指定に基づき、召喚ではないためアクティブスキルの即発動は行わない
-
-            // 装備したカードは消費されて対象カードにアタッチされる
-            targetCard.equippedCards = targetCard.equippedCards || [];
-            targetCard.equippedCards.push(selectedCard);
-
-            // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            consumeArmSelf(targetCard, selectedCard);
           } else {
             const existingCard = board[targetLane];
             const unionSkill =
@@ -2419,46 +2379,8 @@ export async function resolveActiveSkillEffect(
           } else if (canEquipCard(selectedCard, existingCard)) {
             // 【傀儡＋装備】選択カードが装備スキルを持ち、レーンに既存カードがある場合は装備扱いにする（復活と同じロジック）
             const targetCard = existingCard;
-
-            targetCard.power =
-              (targetCard.power || 0) + (selectedCard.power || 0);
-            targetCard.basePower =
-              (targetCard.basePower || 0) + (selectedCard.power || 0);
-            targetCard.currentPower =
-              (targetCard.currentPower || 0) + (selectedCard.power || 0);
-
-            if (!targetCard.skills) {
-              targetCard.skills =
-                targetCard.skill && targetCard.skill !== 'none'
-                  ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-                  : [];
-              targetCard.skill = 'none';
-            }
-            const equipSkills = [];
-            if (
-              selectedCard.skill &&
-              selectedCard.skill !== 'none' &&
-              selectedCard.skill !== 'equip'
-            ) {
-              equipSkills.push({
-                id: selectedCard.skill,
-                value: selectedCard.skillValue,
-              });
-            }
-            if (selectedCard.skills) {
-              selectedCard.skills.forEach((s) => {
-                if (s.id !== 'equip') equipSkills.push(s);
-              });
-            }
-            mergeCardSkills(targetCard, equipSkills);
-
-            // 装備カードをアタッチ（元の持ち主フラグも引き継ぐ）
-            targetCard.equippedCards = targetCard.equippedCards || [];
             selectedCard.puppetOriginalOwner = oppOwner; // 元の持ち主を記録
-            targetCard.equippedCards.push(selectedCard);
-
-            // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            consumeArmSelf(targetCard, selectedCard);
+            applyEquipment(targetCard, selectedCard);
 
             if (selectedCard?.voiceCategory)
               playCardVoice(selectedCard, 'play');
@@ -2893,70 +2815,7 @@ export async function resolveActiveSkillEffect(
             handleStartupDispelled(o, existingCard, targetLane, topCard);
           } else if (canEquipCard(topCard, board[targetLane])) {
             const targetCard = board[targetLane];
-
-            targetCard.power = (targetCard.power || 0) + (topCard.power || 0);
-            targetCard.basePower =
-              (targetCard.basePower || 0) + (topCard.power || 0);
-            targetCard.currentPower =
-              (targetCard.currentPower || 0) + (topCard.power || 0);
-
-            if (!targetCard.skills) {
-              targetCard.skills =
-                targetCard.skill && targetCard.skill !== 'none'
-                  ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-                  : [];
-              targetCard.skill = 'none';
-            }
-            const equipSkills = [];
-            if (
-              topCard.skill &&
-              topCard.skill !== 'none' &&
-              topCard.skill !== 'equip'
-            ) {
-              equipSkills.push({
-                id: topCard.skill,
-                value: topCard.skillValue,
-              });
-            }
-            if (topCard.skills) {
-              topCard.skills.forEach((s) => {
-                if (s.id !== 'equip') equipSkills.push(s);
-              });
-            }
-            mergeCardSkills(targetCard, equipSkills);
-
-            // 【バグ修正】選択（choice）スキルがある場合は、装備元の選択肢（choices / choices2）を引き継ぐ
-            if (topCard.choices && topCard.choices.length > 0) {
-              targetCard.choices = targetCard.choices || [];
-              topCard.choices.forEach((pc) => {
-                const isDup = targetCard.choices.some(
-                  (tc) =>
-                    tc.id === pc.id &&
-                    tc.value === pc.value &&
-                    tc.choiceGroup === pc.choiceGroup
-                );
-                if (!isDup) targetCard.choices.push({ ...pc });
-              });
-            }
-            if (topCard.choices2 && topCard.choices2.length > 0) {
-              targetCard.choices2 = targetCard.choices2 || [];
-              topCard.choices2.forEach((pc) => {
-                const isDup = targetCard.choices2.some(
-                  (tc) =>
-                    tc.id === pc.id &&
-                    tc.value === pc.value &&
-                    tc.choiceGroup === pc.choiceGroup
-                );
-                if (!isDup) targetCard.choices2.push({ ...pc });
-              });
-            }
-
-            // デッキから出た号令カードを対象にアタッチする
-            targetCard.equippedCards = targetCard.equippedCards || [];
-            targetCard.equippedCards.push(topCard);
-
-            // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-            consumeArmSelf(targetCard, topCard);
+            const { equipSkills } = applyEquipment(targetCard, topCard);
 
             let callEvents = [];
             callEvents.push({
@@ -3115,6 +2974,20 @@ export async function resolveActiveSkillEffect(
           return;
         }
 
+        // 移動先（正面レーン）に既存カードがある場合の確認モーダル表示
+        const existingCard = board[targetLane];
+        if (existingCard) {
+          const proceed = await confirmOverwrittenLane(
+            o,
+            selectedCard,
+            targetLane
+          );
+          if (!proceed) {
+            // キャンセルされた場合は支配処理を中止
+            return;
+          }
+        }
+
         // 支配する対象カードの中央にVFXを再生
         if (window.triggerVfx) {
           await window.triggerVfx('anm_skill_dominate', o, selectedOppLane);
@@ -3139,83 +3012,137 @@ export async function resolveActiveSkillEffect(
           });
         }
 
-        // 装備か通常配置か
-        if (canEquipCard(selectedCard, board[targetLane])) {
-          const targetCard = board[targetLane];
-          targetCard.power =
-            (targetCard.power || 0) + (selectedCard.power || 0);
-          targetCard.basePower =
-            (targetCard.basePower || 0) + (selectedCard.power || 0);
-          targetCard.currentPower =
-            (targetCard.currentPower || 0) + (selectedCard.power || 0);
+        // --- 移動先レーンでの配置・重ね処理 ---
 
-          if (!targetCard.skills) {
-            targetCard.skills =
-              targetCard.skill && targetCard.skill !== 'none'
-                ? [{ id: targetCard.skill, value: targetCard.skillValue }]
-                : [];
-            targetCard.skill = 'none';
-          }
-          const equipSkills = [];
-          if (
-            selectedCard.skill &&
-            selectedCard.skill !== 'none' &&
-            selectedCard.skill !== 'equip'
-          ) {
-            equipSkills.push({
-              id: selectedCard.skill,
-              value: selectedCard.skillValue,
-            });
-          }
-          if (selectedCard.skills) {
-            selectedCard.skills.forEach((s) => {
-              if (s.id !== 'equip') equipSkills.push(s);
-            });
-          }
-          mergeCardSkills(targetCard, equipSkills);
+        // 1. 起動（startup）の判定 (合体や装備に優先して処理される)
+        if (existingCard && hasSkill(existingCard, 'startup')) {
+          // 起動消滅の特別処理：起動と防御を剥ぎ取る
+          existingCard.skills = (existingCard.skills || []).filter(
+            (s) => s.id !== 'startup' && s.id !== 'defender'
+          );
 
-          targetCard.equippedCards = targetCard.equippedCards || [];
-          targetCard.equippedCards.push(selectedCard);
+          // 支配して重ねたカードを消費して直接墓地に送る
+          await discardCard(o, selectedCard, null, false);
 
-          // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-          consumeArmSelf(targetCard, selectedCard);
+          const targetEl = document.querySelector(
+            `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+          );
+          if (targetEl) {
+            createDamagePopup(targetEl, '起動', '#38bdf8');
+          }
+
+          playSound(SOUNDS.sePlace);
+          playCardVoice(selectedCard, 'play');
+          renderBoard();
+          await sleep(PLACE_ANIMATION_DURATION);
+          await cleanupDestroyedCards(c);
+          return;
+        }
+
+        // 2. 合体（union）の判定
+        const unionSkill =
+          selectedCard.skills &&
+          selectedCard.skills.find((s) => s.id === 'union');
+        if (
+          existingCard &&
+          unionSkill &&
+          (existingCard.baseId === unionSkill.targetId ||
+            existingCard.id === unionSkill.targetId)
+        ) {
+          const combineId = unionSkill.summonId;
+          const masterData = CARD_MASTER.find((mc) => mc.id === combineId);
+          if (masterData) {
+            const targetEl = document.querySelector(
+              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+            );
+            if (targetEl) {
+              createDamagePopup(targetEl, '合体！', '#a855f7');
+            }
+            playSound(SOUNDS.seSummon);
+
+            const unionCard = createUnionCard(
+              o,
+              existingCard,
+              selectedCard,
+              masterData
+            );
+            board[targetLane] = unionCard;
+
+            playSound(SOUNDS.sePlace);
+            playCardVoice(unionCard, 'play');
+            renderBoard();
+
+            await resolveOnPlaySkill(o, targetLane, unionCard);
+            await cleanupDestroyedCards(c);
+
+            await sleep(100);
+            renderBoard();
+            return;
+          }
+        }
+
+        // 3. 装備（canEquipCard）の判定
+        if (existingCard && canEquipCard(selectedCard, existingCard)) {
+          const { equipSkills } = applyEquipment(existingCard, selectedCard);
 
           if (selectedCard?.voiceCategory) {
             playCardVoice(selectedCard, 'play');
           }
           playSound(SOUNDS.sePlace);
           renderBoard();
-          await sleep(PLACE_ANIMATION_DURATION);
-          await cleanupDestroyedCards(c);
-        } else {
-          const existingCard = board[targetLane];
-          if (existingCard) {
-            if (!(await discardCard(o, board[targetLane], targetLane, false))) {
-              board[targetLane] = null;
+
+          // 装備カードが持っていたアクティブスキルを即時発動させる
+          for (const sk of equipSkills) {
+            if (ACTIVE_SKILLS.includes(sk.id)) {
+              await sleep(50);
+              const enhancedSk = {
+                ...sk,
+                _sourceChoices: selectedCard.choices,
+                _sourceChoices2: selectedCard.choices2,
+              };
+              await resolveActiveSkillEffect(
+                o,
+                targetLane,
+                existingCard,
+                sk.id,
+                sk.value,
+                enhancedSk
+              );
             }
           }
 
-          board[targetLane] = {
-            ...selectedCard,
-            owner: o,
-            skillTriggered: true, // 配置扱いのため召喚時効果は不発
-            stunTurns: selectedCard.stunTurns || 0,
-            stunAppliedThisTurn: selectedCard.stunAppliedThisTurn || false,
-          };
-
-          if (hasActiveSkill(board[targetLane])) {
-            board[targetLane].isSkillResolving = true;
-          }
-
-          if (board[targetLane]?.voiceCategory) {
-            playCardVoice(board[targetLane], 'play');
-          }
-          playSound(SOUNDS.sePlace);
-          renderBoard();
           await sleep(PLACE_ANIMATION_DURATION);
-          if (board[targetLane]) board[targetLane].isSkillResolving = false;
           await cleanupDestroyedCards(c);
+          return;
         }
+
+        // 4. 通常の上書き配置（または空きレーンへの通常配置）
+        if (existingCard) {
+          if (!(await discardCard(o, existingCard, targetLane, false))) {
+            board[targetLane] = null;
+          }
+        }
+
+        board[targetLane] = {
+          ...selectedCard,
+          owner: o,
+          skillTriggered: true, // 配置扱いのため召喚時効果は不発
+          stunTurns: selectedCard.stunTurns || 0,
+          stunAppliedThisTurn: selectedCard.stunAppliedThisTurn || false,
+        };
+
+        if (hasActiveSkill(board[targetLane])) {
+          board[targetLane].isSkillResolving = true;
+        }
+
+        if (board[targetLane]?.voiceCategory) {
+          playCardVoice(board[targetLane], 'play');
+        }
+        playSound(SOUNDS.sePlace);
+        renderBoard();
+        await sleep(PLACE_ANIMATION_DURATION);
+        if (board[targetLane]) board[targetLane].isSkillResolving = false;
+        await cleanupDestroyedCards(c);
       }
     }
     await sleep(300);
@@ -3319,6 +3246,8 @@ export async function resolveActiveSkillEffect(
               // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
               if (!(await discardCard(oppOwner, targetCard, targetLane, true)))
                 oppBoard[targetLane] = null;
+              // 破壊された陣営の生存カードに対する「報復」スキルの誘発
+              triggerRetaliateSkill(oppOwner);
               renderBoard();
             }
           }
@@ -3421,6 +3350,8 @@ export async function resolveActiveSkillEffect(
             // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
             if (!(await discardCard(o, targetCard, targetLane, true)))
               myBoard[targetLane] = null;
+            // 破壊された陣営の生存カードに対する「報復」スキルの誘発
+            triggerRetaliateSkill(o);
             renderBoard();
           }
         }

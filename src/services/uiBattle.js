@@ -1,3 +1,4 @@
+import { CARD_MASTER } from '../utils/constants/cards.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import { getDialogue, playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -133,12 +134,23 @@ export function updateCardDetail(c) {
           );
           const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
 
+          const cChoices =
+            c.choices ||
+            (c.baseId
+              ? CARD_MASTER.find((m) => m.id === c.baseId)?.choices
+              : undefined);
+          const cChoices2 =
+            c.choices2 ||
+            (c.baseId
+              ? CARD_MASTER.find((m) => m.id === c.baseId)?.choices2
+              : undefined);
+
           if (
-            sk.id === 'choice' &&
-            (Array.isArray(c.choices) || Array.isArray(c.choices2))
+            (sk.id === 'choice' || sk.id === 'force') &&
+            (Array.isArray(cChoices) || Array.isArray(cChoices2))
           ) {
             let subDetailsHtml = '';
-            const targetChoices = sk.choiceGroup === 2 ? c.choices2 : c.choices;
+            const targetChoices = sk.choiceGroup === 2 ? cChoices2 : cChoices;
             if (Array.isArray(targetChoices)) {
               targetChoices.forEach((cho) => {
                 const cs = SKILLS[cho.id];

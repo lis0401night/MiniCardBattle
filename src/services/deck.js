@@ -206,9 +206,27 @@ export function generateDeck(owner, config, sessionId) {
         const charId = recipeId;
         const patterns = TOURNAMENT_DECKS[charId];
         if (patterns && patterns.length > 0) {
-          // ランダムにパターンを選ぶ
-          const patternIdx = Math.floor(Math.random() * patterns.length);
-          recipe = patterns[patternIdx];
+          // 現在の対戦相手（NPC）に紐づく固定の deckPatternIndex を参照
+          const round = GameState.tournament?.round || 1;
+          const currentParticipants =
+            GameState.tournament?.bracketTree?.[round - 1] || [];
+          let opponent = null;
+          for (let i = 0; i < currentParticipants.length; i += 2) {
+            const p1 = currentParticipants[i];
+            const p2 = currentParticipants[i + 1];
+            if (p1?.isPlayer) {
+              opponent = p2;
+              break;
+            } else if (p2?.isPlayer) {
+              opponent = p1;
+              break;
+            }
+          }
+          const patternIdx =
+            typeof opponent?.deckPatternIndex === 'number'
+              ? opponent.deckPatternIndex % patterns.length
+              : 0;
+          recipe = patterns[patternIdx] || patterns[0];
         } else {
           recipe = ENEMY_DECKS[charId] || ENEMY_DECKS.android;
         }
@@ -619,15 +637,46 @@ export function loadDeck() {
   // 所持プレイマットの読み込み
   const playmatsKey = `mini_card_battle_owned_playmats`;
   const playmatsSaved = localStorage.getItem(playmatsKey);
+  let parsedPlaymats = [];
   if (playmatsSaved) {
     try {
-      setOwnedPlaymats(JSON.parse(playmatsSaved));
+      parsedPlaymats = JSON.parse(playmatsSaved);
+      if (!Array.isArray(parsedPlaymats)) parsedPlaymats = [];
     } catch {
-      setOwnedPlaymats([]);
+      parsedPlaymats = [];
     }
-  } else {
-    setOwnedPlaymats([]);
   }
+
+  // 【運命の邂逅・達成報酬プレイマットの自己修復】
+  // マキナ/アンジェのLv4報酬を受取済みの場合、プレイマット所持リストに自動補填・復元
+  let playmatsRecovered = false;
+  const checkAndRecoverFortunePlaymat = (charId) => {
+    try {
+      const key = `mini_card_battle_fortune_claimed_levels_${charId}`;
+      const legacyKey = 'mini_card_battle_fortune_claimed_levels';
+      const claimedRaw =
+        localStorage.getItem(key) ||
+        (charId === 'automata' ? localStorage.getItem(legacyKey) : '[]');
+      const claimed = claimedRaw ? JSON.parse(claimedRaw) : [];
+      if (Array.isArray(claimed) && claimed.includes(4)) {
+        if (!parsedPlaymats.includes(charId)) {
+          parsedPlaymats.push(charId);
+          playmatsRecovered = true;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+  checkAndRecoverFortunePlaymat('automata');
+  checkAndRecoverFortunePlaymat('valkyria');
+
+  if (playmatsRecovered) {
+    localStorage.setItem(playmatsKey, JSON.stringify(parsedPlaymats));
+  }
+  setOwnedPlaymats(parsedPlaymats);
+  GameState.ownedPlaymats = parsedPlaymats;
+
   // 3. デッキのロードと固有設定の適用
 
   if (GameState.gameMode === 'defense_register') {

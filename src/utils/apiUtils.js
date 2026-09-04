@@ -2,10 +2,13 @@ import {
   getOrCreateUUID,
   loadHighDifficultyClearedData,
   resolvePlayerName,
+  safeParseArray,
+  safeParseObject,
 } from './gameUtils.js';
 import { resolveValidIconId } from './constants/avatars.js';
 import { GameState } from '../state/gameState.js';
 import { loadFortuneClearedData } from './constants/fortuneRewards.js';
+import { HANDICAP_MASTER } from './constants/fortuneHandicaps.js';
 import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
@@ -22,6 +25,7 @@ import {
   DUNGEON_MAX_STREAK_KEY,
   LAST_HEARTBEAT_KEY,
   PROFILE_ICON_KEY,
+  EXCHANGE_LINEUPS_BY_MODE,
 } from './constants/config.js';
 
 /** API通信のデフォルトタイムアウト時間 (ms) */
@@ -216,7 +220,150 @@ export function hasUnsyncedHighDifficultyClear(local, server) {
 }
 
 /**
+ * 交換所ラインナップとプレイヤーの所持情報から、消費された累計ポイントを算出します。
+ *
+ * @param {Array<Object>} lineup - 交換所アイテム定義配列
+ * @param {Object|null} [ownership=null] - 所持状況オブジェクト（指定がない場合はLocalStorage/GameStateから取得）
+ * @returns {number} 消費された累計ポイント
+ */
+export function calculateSpentPoints(lineup, ownership = null) {
+  if (!Array.isArray(lineup) || lineup.length === 0) return 0;
+
+  const inventory =
+    ownership?.inventory ??
+    GameState.playerInventory ??
+    safeParseObject('mini_card_battle_inventory');
+  const unlockedSkins =
+    ownership?.unlockedSkins ??
+    GameState.unlockedSkins ??
+    safeParseArray('mini_card_battle_unlocked_skins');
+  const unlockedPlaymats =
+    ownership?.unlockedPlaymats ??
+    GameState.ownedPlaymats ??
+    safeParseArray('mini_card_battle_owned_playmats');
+  const unlockedIcons =
+    ownership?.unlockedIcons ??
+    GameState.unlockedIcons ??
+    safeParseArray('mini_card_battle_unlocked_icons');
+  const unlockedPremium =
+    ownership?.unlockedPremiumCards ??
+    GameState.unlockedPremiumCards ??
+    safeParseArray('mini_card_battle_unlocked_premium');
+
+  let spent = 0;
+  for (const item of lineup) {
+    if (!item || !Number.isFinite(item.cost) || item.cost <= 0) continue;
+
+    if (item.type === 'card') {
+      const count = inventory[item.id] || 0;
+      spent += count * item.cost;
+    } else if (item.type === 'skin') {
+      if (unlockedSkins.includes(item.id)) {
+        spent += item.cost;
+      }
+    } else if (item.type === 'playmat') {
+      if (unlockedPlaymats.includes(item.id)) {
+        spent += item.cost;
+      }
+    } else if (item.type === 'icon') {
+      if (unlockedIcons.includes(item.id)) {
+        spent += item.cost;
+      }
+    } else if (item.type === 'premium') {
+      if (unlockedPremium.includes(item.id)) {
+        spent += item.cost;
+      }
+    }
+  }
+
+  return spent;
+}
+
+/**
+ * 運命の邂逅（Fortuneモード）の特級目標クリアデータから累計獲得ポイントの理論値を算出します。
+ * @param {Object|null} [clearedAutomata=null] - マキナのクリアデータ
+ * @param {Object|null} [clearedValkyria=null] - アンジェのクリアデータ
+ * @returns {number} 特級目標達成による累計獲得ポイント
+ */
+export function calculateFortuneTotalPointsFromCleared(
+  clearedAutomata = null,
+  clearedValkyria = null
+) {
+  const autoData = clearedAutomata || loadFortuneClearedData('automata');
+  const valkData = clearedValkyria || loadFortuneClearedData('valkyria');
+
+  let totalEarned = 0;
+
+  const countHandicapPoints = (clearedMap) => {
+    if (!clearedMap || typeof clearedMap !== 'object') return 0;
+    let earned = 0;
+    for (const [id, cleared] of Object.entries(clearedMap)) {
+      if (cleared) {
+        const cost = HANDICAP_MASTER[id]?.cost || 0;
+        earned += cost * 3;
+      }
+    }
+    return earned;
+  };
+
+  totalEarned += countHandicapPoints(autoData?.clearedHandicaps);
+  totalEarned += countHandicapPoints(valkData?.clearedHandicaps);
+
+  return totalEarned;
+}
+
+/**
+ * 累計ポイントと交換済みアイテム消費ポイントから、所持ポイントの期待値（失われたポイントの復元）を検証・修復します。
+ *
+ * @param {number} currentPoints - 現在の所持ポイント
+ * @param {number} totalPoints - 累計獲得ポイント
+ * @param {Array<Object>} lineup - 当該交換所のラインナップ
+ * @param {Object|null} [ownership=null] - 所持状況オブジェクト
+ * @returns {{ current: number, total: number, spent: number, reconciled: boolean }} 修復後のポイント情報
+ */
+export function reconcilePointsWithPurchases(
+  currentPoints,
+  totalPoints,
+  lineup,
+  ownership = null
+) {
+  const cPts = Math.max(0, parseInt(currentPoints, 10) || 0);
+  const tPts = Math.max(0, parseInt(totalPoints, 10) || 0);
+  const spent = calculateSpentPoints(lineup, ownership);
+
+  // 保存則: totalPoints >= currentPoints + spent
+  // 理論上の最低所持ポイント (期待値) = totalPoints - spent
+  const expectedCurrent = Math.max(0, tPts - spent);
+
+  let finalCurrent = cPts;
+  let finalTotal = tPts;
+  let reconciled = false;
+
+  // 1. 所持ポイントが期待値より少ない場合（ポイント消失状態）
+  // 期待値まで所持ポイントを修復（リファンド）する
+  if (cPts < expectedCurrent) {
+    finalCurrent = expectedCurrent;
+    reconciled = true;
+  }
+
+  // 2. 所持ポイント＋消費ポイントが累計ポイントを超えている場合（累計ポイント記録漏れ等）
+  // 累計ポイントを上方修正する
+  if (finalCurrent + spent > finalTotal) {
+    finalTotal = finalCurrent + spent;
+    reconciled = true;
+  }
+
+  return {
+    current: finalCurrent,
+    total: finalTotal,
+    spent,
+    reconciled,
+  };
+}
+
+/**
  * 特定のゲームモードのポイント情報をローカルとサーバーで同期・復旧します。
+ * 交換済みアイテムと総ポイントに基づくポイント自己修復も自動実行します。
  *
  * @param {string} mode - 'challenge', 'tournament', 'defense', 'fortune', 'high_difficulty' のいずれか
  * @param {Object} serverPlayerData - サーバーから取得した当該UUIDのプレイヤーデータオブジェクト(未指定の場合はスキップ)
@@ -228,12 +375,18 @@ export async function syncModePoints(mode, serverPlayerData = null) {
   try {
     let localPts = 0;
     let localTotal = 0;
+    let pointsKey = '';
+    let pointsTotalKey = '';
     let endpoint = '';
     let extraData = {};
     let sPts = 0;
     let sTotal = 0;
 
+    const lineup = EXCHANGE_LINEUPS_BY_MODE[mode] || [];
+
     if (mode === 'challenge') {
+      pointsKey = CHALLENGE_POINTS_KEY;
+      pointsTotalKey = CHALLENGE_TOTAL_POINTS_KEY;
       localPts = parseInt(localStorage.getItem(CHALLENGE_POINTS_KEY), 10) || 0;
       localTotal =
         parseInt(localStorage.getItem(CHALLENGE_TOTAL_POINTS_KEY), 10) || 0;
@@ -248,6 +401,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         sTotal = serverPlayerData.challenge_total_points || 0;
       }
     } else if (mode === 'tournament') {
+      pointsKey = TOURNAMENT_POINTS_KEY;
+      pointsTotalKey = TOURNAMENT_TOTAL_POINTS_KEY;
       localPts = parseInt(localStorage.getItem(TOURNAMENT_POINTS_KEY), 10) || 0;
       localTotal =
         parseInt(localStorage.getItem(TOURNAMENT_TOTAL_POINTS_KEY), 10) || 0;
@@ -259,6 +414,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         sTotal = serverPlayerData.tournament_total_points || 0;
       }
     } else if (mode === 'defense') {
+      pointsKey = DEFENSE_POINTS_KEY;
+      pointsTotalKey = DEFENSE_TOTAL_POINTS_KEY;
       localPts = parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
       localTotal =
         parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
@@ -272,11 +429,21 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         sTotal = serverPlayerData.total_points || 0;
       }
     } else if (mode === 'fortune') {
+      pointsKey = FORTUNE_POINTS_KEY;
+      pointsTotalKey = FORTUNE_TOTAL_POINTS_KEY;
       localPts = parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
       localTotal =
         parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
       const clearedAutomata = loadFortuneClearedData('automata');
       const clearedValkyria = loadFortuneClearedData('valkyria');
+
+      // クリア済み特級目標から理論上の最低累計ポイントを算出し、ローカルの累計ポイントの下限を保証
+      const minFortuneTotal = calculateFortuneTotalPointsFromCleared(
+        clearedAutomata,
+        clearedValkyria
+      );
+      localTotal = Math.max(localTotal, minFortuneTotal);
+
       const maxGrade = Math.max(
         clearedAutomata.maxGradeLevel || 0,
         clearedValkyria.maxGradeLevel || 0,
@@ -288,6 +455,7 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         fortune_max_grade: maxGrade,
         fortune_max_total_cost_automata: clearedAutomata.maxTotalCost || 0,
         fortune_max_total_cost_valkyria: clearedValkyria.maxTotalCost || 0,
+        force_sync_fortune_scores: true,
       };
 
       if (serverPlayerData) {
@@ -295,6 +463,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         sTotal = serverPlayerData.fortune_total_points || 0;
       }
     } else if (mode === 'high_difficulty') {
+      pointsKey = HIGH_DIFFICULTY_POINTS_KEY;
+      pointsTotalKey = HIGH_DIFFICULTY_TOTAL_POINTS_KEY;
       localPts =
         parseInt(localStorage.getItem(HIGH_DIFFICULTY_POINTS_KEY), 10) || 0;
       localTotal =
@@ -339,19 +509,21 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       return null;
     }
 
-    // サーバーデータが存在する場合、ローカルが進んでいればサーバーを同期して更新
+    // サーバーデータが存在する場合
     if (serverPlayerData) {
       const serverAutomataMaxCost =
+        serverPlayerData.fortune_max_total_cost_automata ??
         resolveFortuneMaxCostAutomata(serverPlayerData);
+      const serverValkyriaMaxCost =
+        serverPlayerData.fortune_max_total_cost_valkyria ?? 0;
 
-      // Fortuneモードにおいて、ポイント以外の進行情報（最大グレードや最大累計コスト）がサーバーより更新されているか判定
+      // Fortuneモードにおいて、ポイント以外の進行情報（最大グレードや最大累計コスト）がサーバーと異なるか判定
       const shouldSyncFortuneProgress =
         mode === 'fortune' &&
         (extraData.fortune_max_grade >
           (serverPlayerData.fortune_max_grade || 0) ||
-          extraData.fortune_max_total_cost_automata > serverAutomataMaxCost ||
-          extraData.fortune_max_total_cost_valkyria >
-            (serverPlayerData.fortune_max_total_cost_valkyria || 0));
+          extraData.fortune_max_total_cost_automata !== serverAutomataMaxCost ||
+          extraData.fortune_max_total_cost_valkyria !== serverValkyriaMaxCost);
 
       // High Difficultyモードにおいて、ローカルにサーバー未送信のクリア済みボスが存在するか判定
       const localCleared = loadHighDifficultyClearedData();
@@ -362,45 +534,71 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         mode === 'high_difficulty' &&
         hasUnsyncedHighDifficultyClear(localCleared, serverCleared);
 
+      // ローカルとサーバーの値をマージした上で、交換済みアイテムと総ポイントの整合性修復を実行
+      const mergedTotal = Math.max(localTotal, sTotal);
+      const mergedCurrent = Math.max(localPts, sPts);
+      const recon = reconcilePointsWithPurchases(
+        mergedCurrent,
+        mergedTotal,
+        lineup
+      );
+      const finalPts = recon.current;
+      const finalTotal = recon.total;
+
+      // ローカルストレージに修復・マージ後の値を保存
+      if (pointsKey) {
+        localStorage.setItem(pointsKey, String(finalPts));
+      }
+      if (pointsTotalKey) {
+        localStorage.setItem(pointsTotalKey, String(finalTotal));
+      }
+
+      const syncExtraData =
+        mode === 'fortune'
+          ? {
+              ...extraData,
+              fortune_max_grade: Math.max(
+                extraData.fortune_max_grade || 0,
+                serverPlayerData.fortune_max_grade || 0
+              ),
+              fortune_max_total_cost_automata:
+                extraData.fortune_max_total_cost_automata || 0,
+              fortune_max_total_cost_valkyria:
+                extraData.fortune_max_total_cost_valkyria || 0,
+              force_sync_fortune_scores: true,
+            }
+          : extraData;
+
+      // サーバー側の値と不一致、または修復・進行情報更新がある場合はサーバーへ同期
       if (
-        localTotal > sTotal ||
-        localPts > sPts ||
+        finalTotal !== sTotal ||
+        finalPts !== sPts ||
+        recon.reconciled ||
         shouldSyncFortuneProgress ||
         shouldSyncHighDifficultyProgress
       ) {
-        // ポイントおよび進行情報は必ずサーバー値との最大値を送信し、他端末で稼いだ記録の巻き戻しを防ぐ
-        const sendPts = Math.max(localPts, sPts);
-        const sendTotal = Math.max(localTotal, sTotal);
-        const syncExtraData =
-          mode === 'fortune'
-            ? {
-                ...extraData,
-                fortune_max_grade: Math.max(
-                  extraData.fortune_max_grade || 0,
-                  serverPlayerData.fortune_max_grade || 0
-                ),
-                fortune_max_total_cost_automata: Math.max(
-                  extraData.fortune_max_total_cost_automata || 0,
-                  serverAutomataMaxCost || 0
-                ),
-                fortune_max_total_cost_valkyria: Math.max(
-                  extraData.fortune_max_total_cost_valkyria || 0,
-                  serverPlayerData.fortune_max_total_cost_valkyria || 0
-                ),
-              }
-            : extraData;
-
         const saved = await savePointsToServer(
           endpoint,
-          sendPts,
-          sendTotal,
+          finalPts,
+          finalTotal,
           syncExtraData
         );
         if (!saved) return null;
-        return { points: sendPts, totalPoints: sendTotal, ...syncExtraData };
+        return { points: finalPts, totalPoints: finalTotal, ...syncExtraData };
       }
     } else {
-      // サーバーデータがない場合（新規プレイヤーかつ初回同期）、ローカルに蓄積されたスコアまたは進行データがあればサーバーに新規構築する
+      // サーバーデータがない場合（新規プレイヤーまたはオフライン時）
+      const recon = reconcilePointsWithPurchases(localPts, localTotal, lineup);
+      const finalPts = recon.current;
+      const finalTotal = recon.total;
+
+      if (pointsKey) {
+        localStorage.setItem(pointsKey, String(finalPts));
+      }
+      if (pointsTotalKey) {
+        localStorage.setItem(pointsTotalKey, String(finalTotal));
+      }
+
       const hasFortuneProgress =
         mode === 'fortune' &&
         (extraData.fortune_max_grade > 0 ||
@@ -411,15 +609,15 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         mode === 'high_difficulty' &&
         Object.keys(loadHighDifficultyClearedData()).length > 0;
 
-      if (localTotal > 0 || hasFortuneProgress || hasHighDiffProgress) {
+      if (finalTotal > 0 || hasFortuneProgress || hasHighDiffProgress) {
         const saved = await savePointsToServer(
           endpoint,
-          localPts,
-          localTotal,
+          finalPts,
+          finalTotal,
           extraData
         );
         if (!saved) return null;
-        return { points: localPts, totalPoints: localTotal, ...extraData };
+        return { points: finalPts, totalPoints: finalTotal, ...extraData };
       }
     }
   } catch (e) {

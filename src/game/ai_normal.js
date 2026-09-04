@@ -801,12 +801,14 @@ export function processActionSequence(
                 hasSkill(board[myL], 'arm_self'))
             ) {
               const targetCard = board[myL];
-              targetCard.power =
-                (targetCard.power || 0) + (selectedCard.power || 0);
-              targetCard.basePower =
-                (targetCard.basePower || 0) + (selectedCard.power || 0);
+              const equipPower =
+                selectedCard.currentPower ?? selectedCard.power ?? 0;
+              selectedCard.appliedEquipPower = equipPower;
+
+              targetCard.power = (targetCard.power || 0) + equipPower;
+              targetCard.basePower = (targetCard.basePower || 0) + equipPower;
               targetCard.currentPower =
-                (targetCard.currentPower || 0) + (selectedCard.power || 0);
+                (targetCard.currentPower || 0) + equipPower;
 
               if (!targetCard.skills) {
                 targetCard.skills = [];

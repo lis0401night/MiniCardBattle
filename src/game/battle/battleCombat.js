@@ -99,6 +99,9 @@ export function applyEquipment(target, equipment, movedIds) {
   target.basePower = (target.basePower || 0) + equipPower;
   target.currentPower = currentPower + equipPower;
 
+  // 装備前の土台カードが元々「移動」スキルを持っていたかを記録
+  const targetHadMove = hasSkill(target, 'move');
+
   // スキルの統合
   const equipSkills = (equipment.skills || []).filter(
     (skill) => skill.id !== 'equip'
@@ -107,38 +110,34 @@ export function applyEquipment(target, equipment, movedIds) {
     mergeCardSkills(target, equipSkills);
   }
 
-  // choiceスキルがある場合は、装備元の選択肢を引き継ぐ
+  // choice / force スキルがある場合は、装備元の選択肢（重複含む全選択肢）を引き継ぐ
   if (equipment.choices && equipment.choices.length > 0) {
     target.choices = target.choices || [];
     equipment.choices.forEach((pc) => {
-      const isDup = target.choices.some(
-        (tc) =>
-          tc.id === pc.id &&
-          tc.value === pc.value &&
-          tc.choiceGroup === pc.choiceGroup
-      );
-      if (!isDup) target.choices.push({ ...pc });
+      target.choices.push({ ...pc });
     });
   }
   if (equipment.choices2 && equipment.choices2.length > 0) {
     target.choices2 = target.choices2 || [];
     equipment.choices2.forEach((pc) => {
-      const isDup = target.choices2.some(
-        (tc) =>
-          tc.id === pc.id &&
-          tc.value === pc.value &&
-          tc.choiceGroup === pc.choiceGroup
-      );
-      if (!isDup) target.choices2.push({ ...pc });
+      target.choices2.push({ ...pc });
     });
   }
+
+  // 装備時に実際に加算したパワー値を記録（解除時に同値を正確に減算するため）
+  equipment.appliedEquipPower = equipPower;
 
   target.equippedCards = target.equippedCards || [];
   target.equippedCards.push(equipment);
   consumeArmSelf(target, equipment);
 
   if (movedIds) {
-    movedIds.add(target.uid || target.id);
+    // 移動した装備カード自身のIDを移動済みに追加
+    movedIds.add(equipment.uid || equipment.id);
+    // 土台カードが元々移動スキルを持っていなかった場合は、装備によって新たに得た移動での即時2重移動を防ぐため移動済みに追加
+    if (!targetHadMove) {
+      movedIds.add(target.uid || target.id);
+    }
   }
 
   return { equipSkills };
@@ -395,6 +394,31 @@ export async function triggerSplitSkill(owner, lane, card) {
 }
 
 /**
+ * 味方カードが破壊された際に、同陣営の生存カードが持つ「報復（retaliate）」スキルを誘発する。
+ * @param {string} owner - 破壊されたカードの所有者 ('blue' | 'red')
+ */
+export function triggerRetaliateSkill(owner) {
+  const alliedBoard =
+    owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const sideLabel = owner === 'blue' ? 'player' : 'enemy';
+
+  for (let j = 0; j < 3; j++) {
+    const ally = alliedBoard[j];
+    if (ally && hasSkill(ally, 'retaliate')) {
+      const buffVal = getSkillValue(ally, 'retaliate') || 2;
+      ally.currentPower += buffVal;
+
+      const allyEl = document.querySelector(
+        `#${sideLabel}-lanes .cell[data-lane="${j}"] .card`
+      );
+      if (allyEl) {
+        createDamagePopup(allyEl, `報復 +${buffVal}`, '#f87171');
+      }
+    }
+  }
+}
+
+/**
  * パワーが0以下になった盤面上のカードを一括検索し、破壊・墓地送り・遺言/爆発スキル処理を行う。
  * @param {object} [excludeCard=null] - クリーニング対象外とするカードオブジェクト
  */
@@ -453,25 +477,7 @@ export async function cleanupDestroyedCards(excludeCard = null) {
       await discardCard(item.owner, item.card, item.index);
 
       // 報復（retaliate）スキルの誘発
-      const ownerSide = item.owner; // 'blue' or 'red'
-      const alliedBoard =
-        ownerSide === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-      const sideLabel = ownerSide === 'blue' ? 'player' : 'enemy';
-
-      for (let j = 0; j < 3; j++) {
-        const ally = alliedBoard[j];
-        if (ally && hasSkill(ally, 'retaliate')) {
-          const buffVal = getSkillValue(ally, 'retaliate') || 2;
-          ally.currentPower += buffVal;
-
-          const allyEl = document.querySelector(
-            `#${sideLabel}-lanes .cell[data-lane="${j}"] .card`
-          );
-          if (allyEl) {
-            createDamagePopup(allyEl, `報復 +${buffVal}`, '#f87171');
-          }
-        }
-      }
+      triggerRetaliateSkill(item.owner);
     }
 
     playSound(SOUNDS.seDestroy);

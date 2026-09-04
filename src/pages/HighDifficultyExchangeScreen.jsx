@@ -35,6 +35,7 @@ export default function HighDifficultyExchangeScreen({ switchScreen }) {
     pointsLocalKey: HIGH_DIFFICULTY_POINTS_KEY,
     pointsTotalLocalKey: HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_high_difficulty_points.php',
+    lineup: HIGH_DIFFICULTY_EXCHANGE_LINEUP,
   });
 
   /**

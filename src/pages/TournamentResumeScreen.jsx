@@ -86,6 +86,9 @@ export default function TournamentResumeScreen() {
     };
   }, [saveData]);
   const currentRound = tState?.round || 1;
+  const isPlayerLost = Boolean(tState?.playerLost);
+  const isChampion = !isPlayerLost && currentRound > 4;
+  const isFinished = isPlayerLost || currentRound > 4;
 
   const handleResume = () => {
     playSound(SOUNDS.seClick);
@@ -224,8 +227,21 @@ export default function TournamentResumeScreen() {
       >
         <div style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
           進行状況:{' '}
-          <span style={{ color: '#facc15', fontWeight: 'bold' }}>
-            {tState?.playerLost ? '敗北済み' : `第 ${currentRound} 回戦`}
+          <span
+            style={{
+              color: isChampion
+                ? '#fbbf24'
+                : isPlayerLost
+                  ? '#ef4444'
+                  : '#facc15',
+              fontWeight: 'bold',
+            }}
+          >
+            {isChampion
+              ? '👑 優勝！（報酬受取可能）'
+              : isPlayerLost
+                ? `第 ${Math.min(currentRound, 4)} 回戦（敗退）`
+                : `第 ${currentRound} 回戦`}
           </span>
         </div>
 
@@ -317,20 +333,24 @@ export default function TournamentResumeScreen() {
           className="btn"
           style={{
             width: '220px',
-            background: 'linear-gradient(45deg, #10b981, #059669)',
+            background: isChampion
+              ? 'linear-gradient(45deg, #f59e0b, #d97706)'
+              : 'linear-gradient(45deg, #10b981, #059669)',
             padding: '12px',
           }}
           onClick={handleResume}
         >
-          再開する
+          {isFinished ? '結果確認・報酬受取' : '再開する'}
         </button>
-        <button
-          className="btn"
-          style={{ width: '220px', background: '#334155', color: '#fff' }}
-          onClick={handleRestart}
-        >
-          リタイア
-        </button>
+        {!isFinished && (
+          <button
+            className="btn"
+            style={{ width: '220px', background: '#334155', color: '#fff' }}
+            onClick={handleRestart}
+          >
+            リタイア
+          </button>
+        )}
       </div>
 
       <BackButton to="screen-tournament-menu" style={{ marginTop: '40px' }} />

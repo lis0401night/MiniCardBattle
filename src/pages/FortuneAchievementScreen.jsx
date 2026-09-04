@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { getEventEnemyCharId } from '../utils/gameUtils.js';
 import { GameState } from '../state/gameState.js';
@@ -8,6 +8,7 @@ import {
   FORTUNE_GRADE_THRESHOLDS,
 } from '../utils/constants/fortuneRewards.js';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
+import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import {
   showCharacterAcquisitionModal,
   showStageAcquisitionModal,
@@ -45,7 +46,14 @@ const unlockAndShowAcquisition = (
         if (!GameState.ownedPlaymats) GameState.ownedPlaymats = [];
         if (!GameState.ownedPlaymats.includes(targetId))
           GameState.ownedPlaymats.push(targetId);
+        setOwnedPlaymats(current);
       }
+    } else if (storageKey === 'mini_card_battle_owned_playmats') {
+      // 既にLocalStorageに入っている場合でもsetOwnedPlaymatsとGameStateに確実に反映
+      if (!GameState.ownedPlaymats) GameState.ownedPlaymats = [];
+      if (!GameState.ownedPlaymats.includes(targetId))
+        GameState.ownedPlaymats.push(targetId);
+      setOwnedPlaymats(current);
     }
   } catch (e) {
     console.error(`Failed to unlock ${targetId} in ${storageKey}:`, e);
@@ -112,6 +120,27 @@ export default function FortuneAchievementScreen() {
 
   /** 現在のキャラクターに対応する報酬定義を取得する */
   const rewards = FORTUNE_REWARDS[enemyCharId] || FORTUNE_REWARDS.automata;
+
+  // 既にLv4報酬受取済みの場合は所持プレイマットの整合性を修復・補填
+  useEffect(() => {
+    if (claimedLevels.includes(4)) {
+      try {
+        const key = 'mini_card_battle_owned_playmats';
+        const current = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!current.includes(enemyCharId)) {
+          current.push(enemyCharId);
+          localStorage.setItem(key, JSON.stringify(current));
+        }
+        if (!GameState.ownedPlaymats) GameState.ownedPlaymats = [];
+        if (!GameState.ownedPlaymats.includes(enemyCharId)) {
+          GameState.ownedPlaymats.push(enemyCharId);
+        }
+        setOwnedPlaymats(current);
+      } catch (e) {
+        console.error('プレイマット自己修復エラー:', e);
+      }
+    }
+  }, [claimedLevels, enemyCharId]);
 
   /**
    * 達成レベルに応じた報酬を付与する

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
+import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import { SKILLS } from '../../utils/constants/skills.js';
@@ -419,13 +420,25 @@ export default function CardPreviewContent({
                         ? s.desc(sk.value, sk)
                         : s.desc;
 
+                    const cardChoices =
+                      card.choices ||
+                      (card.baseId
+                        ? CARD_MASTER.find((m) => m.id === card.baseId)?.choices
+                        : undefined);
+                    const cardChoices2 =
+                      card.choices2 ||
+                      (card.baseId
+                        ? CARD_MASTER.find((m) => m.id === card.baseId)
+                            ?.choices2
+                        : undefined);
+
                     if (
                       (sk.id === 'choice' || sk.id === 'force') &&
-                      (Array.isArray(card.choices) ||
-                        Array.isArray(card.choices2))
+                      (Array.isArray(cardChoices) ||
+                        Array.isArray(cardChoices2))
                     ) {
                       const targetChoices =
-                        sk.choiceGroup === 2 ? card.choices2 : card.choices;
+                        sk.choiceGroup === 2 ? cardChoices2 : cardChoices;
                       if (!Array.isArray(targetChoices)) return null;
                       return (
                         <div key={idx} className="preview-skill-item">

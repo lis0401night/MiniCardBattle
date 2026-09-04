@@ -10,6 +10,7 @@ import {
   getTournamentVenueDialogue,
   getTournamentWinDialogue,
 } from '../utils/constants/eventTournamentDialogues.js';
+import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import { TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/config.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
@@ -63,14 +64,22 @@ export function initTournamentMode() {
   allCharIds.sort(() => Math.random() - 0.5);
   const selectedCharIds = allCharIds.slice(0, TOURNAMENT_REAL_CHARACTER_COUNT);
 
-  const realChars = selectedCharIds.map((charId) => ({
-    id: `npc_${charId}`,
-    isPlayer: false,
-    charId: charId,
-    skin: `${charId}_school`,
-    name: toTournamentName(CHARACTERS[charId].name),
-    isDummy: false,
-  }));
+  const realChars = selectedCharIds.map((charId) => {
+    const patterns = TOURNAMENT_DECKS[charId];
+    const deckPatternIndex =
+      patterns && patterns.length > 0
+        ? Math.floor(Math.random() * patterns.length)
+        : 0;
+    return {
+      id: `npc_${charId}`,
+      isPlayer: false,
+      charId: charId,
+      skin: `${charId}_school`,
+      name: toTournamentName(CHARACTERS[charId].name),
+      isDummy: false,
+      deckPatternIndex,
+    };
+  });
 
   // ダミーを作成
   const dummies = Array.from({ length: TOURNAMENT_DUMMY_CHARACTER_COUNT }).map(
@@ -80,6 +89,7 @@ export function initTournamentMode() {
       charId: 'android', // ダミーのステータスベース
       name: `参加者${i + 1}`, // ダミー感のある名前
       isDummy: true,
+      deckPatternIndex: 0,
     })
   );
 
@@ -300,6 +310,7 @@ export function loadTournamentProgress() {
     try {
       const saveData = JSON.parse(json);
       GameState.tournament = saveData.tournament;
+
       if (saveData.playerConfig) {
         GameState.playerConfig = {
           ...saveData.playerConfig,

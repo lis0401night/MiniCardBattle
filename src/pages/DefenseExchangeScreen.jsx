@@ -1,14 +1,9 @@
-import { useEffect, useState } from 'react';
 import CompactScreenLayout from '../components/common/CompactScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
+import { useExchangeScreen } from '../hooks/useExchangeScreen.js';
 import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
-import { GameState } from '../state/gameState.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import {
-  showCardAcquisitionModal,
-  showPremiumAcquisitionModal,
-} from '../services/uiGallery.js';
+import { savePointsToServer } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   DEFENSE_POINTS_KEY,
@@ -23,102 +18,19 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 
 export default function DefenseExchangeScreen() {
-  const [points, setPoints] = useState(() => ({
-    current: parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0,
-    total: parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0,
-  }));
-  const [exchangeItems, setExchangeItems] = useState(
-    () => EXCHANGE_LINEUP || []
-  );
-  const [inventory, setInventory] = useState(
-    () => GameState.playerInventory || {}
-  );
-  const [unlockedPremium, setUnlockedPremium] = useState(
-    () => GameState.unlockedPremiumCards || []
-  );
-  const [pointsUpdated, setPointsUpdated] = useState(false);
-
-  const updateExchange = () => {
-    const currentPts =
-      parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
-    const totalPts =
-      parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
-    setPoints({ current: currentPts, total: totalPts });
-
-    setInventory(GameState.playerInventory || {});
-    setUnlockedPremium(GameState.unlockedPremiumCards || []);
-    setExchangeItems(EXCHANGE_LINEUP || []);
-  };
-
-  useEffect(() => {
-    updateExchange();
-  }, [pointsUpdated]);
-
-  const handleExchange = async (item) => {
-    // 最終ガード: 所持上限・アンロック済みのチェック
-    const isPremium = item.type === 'premium';
-    let isAlreadyUnlocked = false;
-
-    if (isPremium) {
-      isAlreadyUnlocked = unlockedPremium.includes(item.id);
-    } else {
-      isAlreadyUnlocked = (inventory[item.id] || 0) >= 4;
-    }
-
-    if (isAlreadyUnlocked) {
-      showAlertModal(
-        '既に最大数所持しているか、アンロック済みのアイテムです。'
-      );
-      return;
-    }
-
-    // 最終ガード: ポイント残高チェック
-    if (points.current < item.cost) {
-      showAlertModal('防衛ポイントが不足しています。');
-      return;
-    }
-
-    playSound(SOUNDS?.seCardPlace);
-
-    const newPts = points.current - item.cost;
-
-    // 【CodeRabbit指摘反映・データ整合性保護】サーバーへの同期完了（成功）を待ってからローカルのポイント減算・アイテム付与を確定させる
-    try {
-      await savePointsToServer('update_points.php', newPts, points.total);
-    } catch (e) {
-      console.error('Failed to sync points to server:', e);
-      showAlertModal(
-        'ポイントの同期に失敗しました。通信環境を確認して再試行してください。'
-      );
-      return;
-    }
-
-    localStorage.setItem(DEFENSE_POINTS_KEY, newPts);
-    setPoints((prev) => ({ ...prev, current: newPts }));
-
-    if (item.type === 'premium') {
-      const newUnlocked = [...unlockedPremium, item.id];
-      localStorage.setItem(
-        'mini_card_battle_unlocked_premium',
-        JSON.stringify(newUnlocked)
-      );
-      Object.assign(GameState, { unlockedPremiumCards: newUnlocked });
-      setUnlockedPremium(newUnlocked);
-      showPremiumAcquisitionModal(item.id);
-    } else {
-      const currentCount = inventory[item.id] || 0;
-      const newInventory = { ...inventory, [item.id]: currentCount + 1 };
-      setInventory(newInventory);
-      Object.assign(GameState, { playerInventory: newInventory });
-      localStorage.setItem(
-        'mini_card_battle_inventory',
-        JSON.stringify(newInventory)
-      );
-      showCardAcquisitionModal(item.id);
-    }
-
-    setPointsUpdated((prev) => !prev);
-  };
+  const {
+    points,
+    setPoints,
+    inventory,
+    unlockedPremium = [],
+    handleExchange,
+  } = useExchangeScreen({
+    pointsKey: 'defense',
+    pointsLocalKey: DEFENSE_POINTS_KEY,
+    pointsTotalLocalKey: DEFENSE_TOTAL_POINTS_KEY,
+    apiEndpoint: 'update_points.php',
+    lineup: EXCHANGE_LINEUP,
+  });
 
   // タイトルを10回クリックで防衛ポイントを100Pt獲得するイースターエッグ
   const handleTitleClick = useEasterEgg(() => {
@@ -133,20 +45,15 @@ export default function DefenseExchangeScreen() {
             parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
           cPts += 100;
           tPts += 100;
-          localStorage.setItem(DEFENSE_POINTS_KEY, cPts);
-          localStorage.setItem(DEFENSE_TOTAL_POINTS_KEY, tPts);
+          localStorage.setItem(DEFENSE_POINTS_KEY, String(cPts));
+          localStorage.setItem(DEFENSE_TOTAL_POINTS_KEY, String(tPts));
           setPoints({ current: cPts, total: tPts });
 
           // 共通API同期ユーティリティを介してサーバーと同期
           savePointsToServer('update_points.php', cPts, tPts);
 
           if (showAlertModal) {
-            showAlertModal(
-              '【デバッグ】防衛ポイントを100Pt獲得しました！',
-              () => updateExchange()
-            );
-          } else {
-            updateExchange();
+            showAlertModal('【デバッグ】防衛ポイントを100Pt獲得しました！');
           }
         }
       );
@@ -156,7 +63,7 @@ export default function DefenseExchangeScreen() {
   // 仮想化グリッドフックの利用
   const { listContainerRef, rowVirtualizer, itemRows, gridCols, gridGap } =
     useGridVirtualizer({
-      items: exchangeItems || [],
+      items: EXCHANGE_LINEUP || [],
     });
 
   return (

@@ -33,6 +33,7 @@ export default function TournamentExchangeScreen({ switchScreen }) {
     pointsLocalKey: TOURNAMENT_POINTS_KEY,
     pointsTotalLocalKey: TOURNAMENT_TOTAL_POINTS_KEY,
     apiEndpoint: 'update_tournament_points.php',
+    lineup: TOURNAMENT_EXCHANGE_LINEUP,
   });
 
   const handleBack = () => {
