@@ -3,13 +3,12 @@ import { AI_SKILL_UTILITY } from '../utils/constants/aiSkillValues.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
-  consumeArmSelf,
   getCurrentRNG,
   getSkillValue,
   hasSkill,
-  mergeCardSkills,
   setCurrentRNG,
 } from '../utils/gameUtils.js';
+import { applyEquipment } from './battle/index.js';
 import {
   applyActiveSkillLogic,
   applyLeaderSkillLogic,
@@ -673,23 +672,8 @@ export function processActionSequence(
               !hasSkill(existingCard, 'reflect') &&
               !hasSkill(newToken, 'reflect')
             ) {
-              // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート
-              existingCard.basePower =
-                (existingCard.basePower || 0) + (newToken.currentPower || 0);
-              existingCard.currentPower =
-                (existingCard.currentPower || 0) + (newToken.currentPower || 0);
-              // トークンのスキルを統合（equip自体は除外）
-              let addedSkills = [];
-              if (newToken.skills) {
-                newToken.skills.forEach((s) => {
-                  if (s.id !== 'equip') addedSkills.push(s);
-                });
-              }
-              if (addedSkills.length > 0) {
-                mergeCardSkills(existingCard, addedSkills);
-              }
-              // 武装（arm_self）の消費処理
-              consumeArmSelf(existingCard, newToken);
+              // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート（実行時と同一ロジックを適用）
+              applyEquipment(existingCard, newToken);
             } else if (existingCard) {
               // 装備不可: 既存カードを墓地に移動して上書き
               if (!existingCard.isToken) {
@@ -800,32 +784,8 @@ export function processActionSequence(
               (hasSkill(selectedCard, 'equip') ||
                 hasSkill(board[myL], 'arm_self'))
             ) {
-              const targetCard = board[myL];
-              const equipPower =
-                selectedCard.currentPower ?? selectedCard.power ?? 0;
-              selectedCard.appliedEquipPower = equipPower;
-
-              targetCard.power = (targetCard.power || 0) + equipPower;
-              targetCard.basePower = (targetCard.basePower || 0) + equipPower;
-              targetCard.currentPower =
-                (targetCard.currentPower || 0) + equipPower;
-
-              if (!targetCard.skills) {
-                targetCard.skills = [];
-              }
-              const equipSkills = [];
-              if (selectedCard.skills) {
-                selectedCard.skills.forEach((s) => {
-                  if (s.id !== 'equip') equipSkills.push(s);
-                });
-              }
-              mergeCardSkills(targetCard, equipSkills);
-
-              targetCard.equippedCards = targetCard.equippedCards || [];
-              targetCard.equippedCards.push(selectedCard);
-
-              // 武装（arm_self）の消費処理
-              consumeArmSelf(targetCard, selectedCard);
+              // 装備パワー・スキル統合・武装消費を実行時と同一ロジックで適用する
+              applyEquipment(board[myL], selectedCard);
             } else {
               board[myL] = {
                 ...selectedCard,
@@ -952,20 +912,7 @@ export function processActionSequence(
       ) {
         skillWasHandledByEquip = true;
         const targetCard = existingCard;
-        targetCard.basePower =
-          (targetCard.basePower || 0) + (playedCard.power || 0);
-        targetCard.currentPower =
-          (targetCard.currentPower || 0) + (playedCard.power || 0);
-        let addedSkills = [];
-        if (playedCard.skills)
-          playedCard.skills.forEach((s) => {
-            if (s.id !== 'equip')
-              addedSkills.push({ id: s.id, value: s.value });
-          });
-        mergeCardSkills(targetCard, addedSkills);
-
-        // 武装（arm_self）の消費処理
-        consumeArmSelf(targetCard, playedCard);
+        const { equipSkills } = applyEquipment(targetCard, playedCard);
         let cLanesForEquip = action.cardTokenLanes
           ? [...action.cardTokenLanes]
           : null;
@@ -988,7 +935,7 @@ export function processActionSequence(
         // ※ 復活(resurrect)・傀儡(puppet)による「配置」経路では triggerSkills=false のため、
         //    アクティブスキルの即時発動は行わない（ゲームルール準拠: 配置ではスキル不発）
         if (triggerSkills) {
-          addedSkills.forEach((sk) => {
+          equipSkills.forEach((sk) => {
             // 配置系・復活系スキルは buildSkillBranch 内のアクションで個別管理するため、ここでは即時実行をスキップする
             if (
               [
@@ -4798,21 +4745,8 @@ export function simulateMove(
           existingCard
         ) {
           const targetCard = existingCard;
-          targetCard.basePower =
-            (targetCard.basePower || 0) + (playedCard.power || 0);
-          targetCard.currentPower =
-            (targetCard.currentPower || 0) + (playedCard.power || 0);
-          let addedSkills = [];
-          if (playedCard.skills)
-            playedCard.skills.forEach((s) => {
-              if (s.id !== 'equip')
-                addedSkills.push({ id: s.id, value: s.value });
-            });
-          mergeCardSkills(targetCard, addedSkills);
-
-          // 武装（arm_self）の消費処理
-          consumeArmSelf(targetCard, playedCard);
-          addedSkills.forEach((sk) => {
+          const { equipSkills } = applyEquipment(targetCard, playedCard);
+          equipSkills.forEach((sk) => {
             // 配置系・復活系スキルは個別のアクションとして処理されるため、ここでは即時実行をスキップする
             if (
               [

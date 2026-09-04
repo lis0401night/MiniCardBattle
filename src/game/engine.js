@@ -464,7 +464,12 @@ export function quietDiscardFromBoard(state, owner, lane) {
     targetCard.equippedCards.forEach((eq) => sendToGrave(eq, owner));
   }
   if (targetCard.unionMaterials && targetCard.unionMaterials.length > 0) {
-    targetCard.unionMaterials.forEach((mat) => sendToGrave(mat, owner));
+    targetCard.unionMaterials.forEach((mat) => {
+      if (mat.equippedCards && mat.equippedCards.length > 0) {
+        mat.equippedCards.forEach((nestedEq) => sendToGrave(nestedEq, owner));
+      }
+      sendToGrave(mat, owner);
+    });
   }
   if (targetCard.originalRevertTarget) {
     sendToGrave(targetCard.originalRevertTarget, owner);
@@ -858,8 +863,10 @@ export function applyActiveSkillLogic(
 
         // 1. 起動（startup）判定
         if (existingCard && hasSkill(existingCard, 'startup')) {
+          // 支配で奪ったカードは元の持ち主の墓地へ返す
+          const stolenOwner = stolenCard.puppetOriginalOwner || oppOwner;
           const discardPile =
-            owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+            stolenOwner === 'blue' ? state.playerDiscard : state.enemyDiscard;
           if (!stolenCard.isToken) {
             discardPile.push(stolenCard);
           }
@@ -954,6 +961,8 @@ export function applyActiveSkillLogic(
               lane: targetLane,
               source: 'overwrite',
             });
+            // 上書きされる既存カードを墓地へ送る（装備・合体素材・傀儡の帰属も処理される）
+            quietDiscardFromBoard(state, owner, targetLane);
           }
 
           b[targetLane] = {

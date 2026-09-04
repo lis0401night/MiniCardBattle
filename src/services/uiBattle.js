@@ -1,5 +1,9 @@
 import { SKILLS } from '../utils/constants/skills.js';
-import { getDialogue, playSound, resolveCardChoices } from '../utils/gameUtils.js';
+import {
+  getDialogue,
+  playSound,
+  resolveCardChoices,
+} from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
 import { showAlertModal } from './uiModals.js';
@@ -121,6 +125,8 @@ export function updateCardDetail(c) {
 
     html = '<div class="card-detail-content">';
     if (grouped.length > 0) {
+      const { choices: cChoices, choices2: cChoices2 } = resolveCardChoices(c);
+
       grouped.forEach((sk) => {
         const s = SKILLS[sk.id];
         if (s) {
@@ -132,9 +138,6 @@ export function updateCardDetail(c) {
             typeof s.desc === 'function' ? s.desc(sk.value, sk) : s.desc
           );
           const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
-
-          const { choices: cChoices, choices2: cChoices2 } =
-            resolveCardChoices(c);
 
           if (
             (sk.id === 'choice' || sk.id === 'force') &&

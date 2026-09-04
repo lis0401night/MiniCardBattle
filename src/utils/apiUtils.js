@@ -241,30 +241,65 @@ export function calculateSpentPoints(lineup, ownership = null) {
     value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const toArray = (value) => (Array.isArray(value) ? value : []);
 
+  const rawGameStateInv = GameState.playerInventory;
+  const hasGameStateInv =
+    rawGameStateInv &&
+    typeof rawGameStateInv === 'object' &&
+    Object.keys(rawGameStateInv).length > 0;
   const inventory = toObject(
-    ownership?.inventory ??
-      GameState.playerInventory ??
-      safeParseObject(INVENTORY_KEY)
+    (ownership?.inventory && Object.keys(ownership.inventory).length > 0
+      ? ownership.inventory
+      : null) ??
+      (hasGameStateInv ? rawGameStateInv : safeParseObject(INVENTORY_KEY))
   );
+
+  const rawGameStateSkins = GameState.unlockedSkins;
+  const hasGameStateSkins =
+    Array.isArray(rawGameStateSkins) && rawGameStateSkins.length > 0;
   const unlockedSkins = toArray(
-    ownership?.unlockedSkins ??
-      GameState.unlockedSkins ??
-      safeParseArray(UNLOCKED_SKINS_KEY)
+    (ownership?.unlockedSkins && ownership.unlockedSkins.length > 0
+      ? ownership.unlockedSkins
+      : null) ??
+      (hasGameStateSkins
+        ? rawGameStateSkins
+        : safeParseArray(UNLOCKED_SKINS_KEY))
   );
+
+  const rawGameStatePlaymats = GameState.ownedPlaymats;
+  const hasGameStatePlaymats =
+    Array.isArray(rawGameStatePlaymats) && rawGameStatePlaymats.length > 0;
   const unlockedPlaymats = toArray(
-    ownership?.unlockedPlaymats ??
-      GameState.ownedPlaymats ??
-      safeParseArray(OWNED_PLAYMATS_KEY)
+    (ownership?.unlockedPlaymats && ownership.unlockedPlaymats.length > 0
+      ? ownership.unlockedPlaymats
+      : null) ??
+      (hasGameStatePlaymats
+        ? rawGameStatePlaymats
+        : safeParseArray(OWNED_PLAYMATS_KEY))
   );
+
+  const rawGameStateIcons = GameState.unlockedIcons;
+  const hasGameStateIcons =
+    Array.isArray(rawGameStateIcons) && rawGameStateIcons.length > 0;
   const unlockedIcons = toArray(
-    ownership?.unlockedIcons ??
-      GameState.unlockedIcons ??
-      safeParseArray(UNLOCKED_ICONS_KEY)
+    (ownership?.unlockedIcons && ownership.unlockedIcons.length > 0
+      ? ownership.unlockedIcons
+      : null) ??
+      (hasGameStateIcons
+        ? rawGameStateIcons
+        : safeParseArray(UNLOCKED_ICONS_KEY))
   );
+
+  const rawGameStatePremium = GameState.unlockedPremiumCards;
+  const hasGameStatePremium =
+    Array.isArray(rawGameStatePremium) && rawGameStatePremium.length > 0;
   const unlockedPremium = toArray(
-    ownership?.unlockedPremiumCards ??
-      GameState.unlockedPremiumCards ??
-      safeParseArray(UNLOCKED_PREMIUM_KEY)
+    (ownership?.unlockedPremiumCards &&
+    ownership.unlockedPremiumCards.length > 0
+      ? ownership.unlockedPremiumCards
+      : null) ??
+      (hasGameStatePremium
+        ? rawGameStatePremium
+        : safeParseArray(UNLOCKED_PREMIUM_KEY))
   );
 
   let spent = 0;
@@ -335,19 +370,20 @@ export function reconcilePointsWithPurchases(
   const tPts = Math.max(0, parseInt(totalPoints, 10) || 0);
   const spent = calculateSpentPoints(lineup, ownership);
 
-  // 保存則: totalPoints >= currentPoints + spent
-  // 理論上の最低所持ポイント (期待値) = totalPoints - spent
-  const expectedCurrent = Math.max(0, tPts - spent);
-
   let finalCurrent = cPts;
   let finalTotal = tPts;
   let reconciled = false;
 
   // 1. 所持ポイントが期待値より少ない場合（ポイント消失状態）
-  // 期待値まで所持ポイントを修復（リファンド）する
-  if (cPts < expectedCurrent) {
-    finalCurrent = expectedCurrent;
-    reconciled = true;
+  // ※防御策: spent が 0 の場合、所持データが未ロード/未検出である可能性があり、
+  // cPts < tPts であることのみを理由に全額返還（finalCurrent = tPts）するとポイント増殖バグを招くため、
+  // spent > 0（実際にアイテム所持・消費が確認できた場合）にのみ期待値修復を実行する。
+  if (spent > 0) {
+    const expectedCurrent = Math.max(0, tPts - spent);
+    if (cPts < expectedCurrent) {
+      finalCurrent = expectedCurrent;
+      reconciled = true;
+    }
   }
 
   // 2. 所持ポイント＋消費ポイントが累計ポイントを超えている場合（累計ポイント記録漏れ等）

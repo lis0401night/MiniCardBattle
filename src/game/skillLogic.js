@@ -2191,8 +2191,9 @@ export async function resolveActiveSkillEffect(
             handleStartupDispelled(o, existingCard, targetLane, selectedCard);
           } else if (canEquipCard(selectedCard, board[targetLane])) {
             const targetCard = board[targetLane];
+            // ルール：復活は「配置(Place)」扱いのため、applyEquipment の戻り値 equipSkills は
+            // 意図的に破棄し、装備由来の召喚時アクティブスキルを発動させない
             applyEquipment(targetCard, selectedCard);
-            targetCard.skillTriggered = true; // 配置（復活）からの合体のため、追加スキルのバッジは表示しない
           } else {
             const existingCard = board[targetLane];
             const unionSkill =
@@ -3081,9 +3082,9 @@ export async function resolveActiveSkillEffect(
 
         // 3. 装備（canEquipCard）の判定
         if (existingCard && canEquipCard(selectedCard, existingCard)) {
-          // ルール：支配は「配置(Place)」扱いのため、装備由来の召喚時スキルは発動させない
+          // ルール：支配は「配置(Place)」扱いのため、applyEquipment の戻り値 equipSkills は
+          // 意図的に破棄し、装備由来の召喚時アクティブスキルを発動させない
           applyEquipment(existingCard, selectedCard);
-          existingCard.skillTriggered = true;
 
           if (selectedCard?.voiceCategory) {
             playCardVoice(selectedCard, 'play');

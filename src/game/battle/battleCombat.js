@@ -241,6 +241,25 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
 
   if (card.unionMaterials && card.unionMaterials.length > 0) {
     for (const matCard of card.unionMaterials) {
+      // 合体素材が装備品を保持している場合は、先に装備品を墓地へ返却する
+      if (matCard.equippedCards && matCard.equippedCards.length > 0) {
+        for (const nestedEq of matCard.equippedCards) {
+          const { card: restoredNested, owner: nestedOwner } =
+            restoreCardForDiscard(nestedEq, owner);
+          const nestedDiscardPile =
+            nestedOwner === 'blue'
+              ? GameState.playerDiscard
+              : GameState.enemyDiscard;
+          if (!restoredNested.isToken) {
+            if (typeof window.stripEphemeralSkills === 'function') {
+              window.stripEphemeralSkills(restoredNested);
+            }
+            nestedDiscardPile.push(restoredNested);
+          }
+        }
+        matCard.equippedCards = [];
+      }
+
       const { card: restoredMat, owner: matOwner } = restoreCardForDiscard(
         matCard,
         owner
@@ -248,6 +267,9 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
       const discardPile =
         matOwner === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
       if (!restoredMat.isToken) {
+        if (typeof window.stripEphemeralSkills === 'function') {
+          window.stripEphemeralSkills(restoredMat);
+        }
         discardPile.push(restoredMat);
       }
     }

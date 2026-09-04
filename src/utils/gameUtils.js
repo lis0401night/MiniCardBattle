@@ -837,8 +837,13 @@ export function unmergeCardSkills(targetCard, equipSkills) {
       (s) => s.id === targetCard.skill
     );
     if (!stillHasSkill) {
-      targetCard.skill = targetCard.skills[0]?.id || 'none';
-      targetCard.skillValue = targetCard.skills[0]?.value || 0;
+      // マスターデータに定義されている固有スキルを優先して復元し、存在しない場合は残存スキルへフォールバック
+      const fallback =
+        targetCard.skills.find((s) =>
+          masterSkills.some((ms) => ms.id === s.id)
+        ) || targetCard.skills[0];
+      targetCard.skill = fallback?.id || 'none';
+      targetCard.skillValue = fallback?.value || 0;
     }
   }
 }
@@ -1769,4 +1774,3 @@ export function resolveCardChoices(card) {
   const choices2 = card.choices2 || master?.choices2;
   return { choices, choices2 };
 }
-

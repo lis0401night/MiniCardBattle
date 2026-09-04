@@ -129,26 +129,44 @@ export function useExchangeScreen({
   const [unlockedPremium, setUnlockedPremium] = useState(() =>
     safeParseArray(UNLOCKED_PREMIUM_KEY)
   );
-  const [inventory, setInventory] = useState(
-    () =>
-      GameState.playerInventory ||
-      safeParseObject(INVENTORY_KEY) ||
-      {}
-  );
+  const [inventory, setInventory] = useState(() => {
+    const rawGameInv = GameState.playerInventory;
+    if (
+      rawGameInv &&
+      typeof rawGameInv === 'object' &&
+      Object.keys(rawGameInv).length > 0
+    ) {
+      return rawGameInv;
+    }
+    return safeParseObject(INVENTORY_KEY) || {};
+  });
   const [pointsUpdated, setPointsUpdated] = useState(false);
   const isExchangingRef = useRef(false);
 
   // 所持情報はレンダリングごとの派生値として算出する（レンダリング中の ref 変更を避ける）
-  const ownership = useMemo(
-    () => ({
-      inventory: GameState.playerInventory || inventory,
+  const ownership = useMemo(() => {
+    const rawGameInv = GameState.playerInventory;
+    const effectiveInv =
+      rawGameInv &&
+      typeof rawGameInv === 'object' &&
+      Object.keys(rawGameInv).length > 0
+        ? rawGameInv
+        : inventory;
+
+    return {
+      inventory: effectiveInv,
       unlockedSkins,
       unlockedPlaymats,
       unlockedIcons,
       unlockedPremiumCards: unlockedPremium,
-    }),
-    [inventory, unlockedSkins, unlockedPlaymats, unlockedIcons, unlockedPremium]
-  );
+    };
+  }, [
+    inventory,
+    unlockedSkins,
+    unlockedPlaymats,
+    unlockedIcons,
+    unlockedPremium,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -317,38 +335,26 @@ export function useExchangeScreen({
         showCardAcquisitionModal(item.id);
       } else if (item.type === 'playmat') {
         const newUnlocked = [...unlockedPlaymats, item.id];
-        localStorage.setItem(
-          OWNED_PLAYMATS_KEY,
-          JSON.stringify(newUnlocked)
-        );
+        localStorage.setItem(OWNED_PLAYMATS_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { ownedPlaymats: newUnlocked });
         setOwnedPlaymats(newUnlocked);
         setUnlockedPlaymats(newUnlocked);
         showPlaymatAcquisitionModal(item.name, item.id);
       } else if (item.type === 'icon') {
         const newUnlocked = [...unlockedIcons, item.id];
-        localStorage.setItem(
-          UNLOCKED_ICONS_KEY,
-          JSON.stringify(newUnlocked)
-        );
+        localStorage.setItem(UNLOCKED_ICONS_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { unlockedIcons: newUnlocked });
         setUnlockedIcons(newUnlocked);
         showIconAcquisitionModal(item.name, item.id);
       } else if (item.type === 'premium') {
         const newUnlocked = [...unlockedPremium, item.id];
-        localStorage.setItem(
-          UNLOCKED_PREMIUM_KEY,
-          JSON.stringify(newUnlocked)
-        );
+        localStorage.setItem(UNLOCKED_PREMIUM_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { unlockedPremiumCards: newUnlocked });
         setUnlockedPremium(newUnlocked);
         showPremiumAcquisitionModal(item.id);
       } else {
         const newUnlocked = [...unlockedSkins, item.id];
-        localStorage.setItem(
-          UNLOCKED_SKINS_KEY,
-          JSON.stringify(newUnlocked)
-        );
+        localStorage.setItem(UNLOCKED_SKINS_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { unlockedSkins: newUnlocked });
         setUnlockedSkins(newUnlocked);
         showSkinAcquisitionModal(item.name, item.id);
