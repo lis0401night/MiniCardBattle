@@ -249,14 +249,18 @@ async function executeGroupDestruction(targets) {
   }
   await sleep(400); // 破壊または無効演出待ち
 
+  const destroyedSides = [];
   for (let t of targets) {
     if (canCardBeDestroyed(GameState, t.card, t.side)) {
       const eB =
         t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
       if (!(await discardCard(t.side, t.card, t.lane, true))) eB[t.lane] = null;
-      // 破壊された陣営の生存カードに対する「報復」スキルの誘発
-      triggerRetaliateSkill(t.side);
+      destroyedSides.push(t.side);
     }
+  }
+  // 破壊された陣営の生存カードに対する「報復」スキルの誘発（全カード除去後に実施）
+  for (const side of destroyedSides) {
+    triggerRetaliateSkill(side);
   }
   renderBoard();
   await sleep(500);
@@ -3059,13 +3063,14 @@ export async function resolveActiveSkillEffect(
               selectedCard,
               masterData
             );
+            // ルール：支配は「配置(Place)」扱いのため、合体後の召喚時スキルは発動させない
+            unionCard.skillTriggered = true;
             board[targetLane] = unionCard;
 
             playSound(SOUNDS.sePlace);
             playCardVoice(unionCard, 'play');
             renderBoard();
 
-            await resolveOnPlaySkill(o, targetLane, unionCard);
             await cleanupDestroyedCards(c);
 
             await sleep(100);

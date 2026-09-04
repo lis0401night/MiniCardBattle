@@ -40,6 +40,7 @@ import {
   appendVersionQuery,
   DEFAULT_PLAYER_ICON,
   DEFAULT_PLAYER_NAME,
+  OWNED_PLAYMATS_KEY,
   PROFILE_NAME_KEY,
 } from '../utils/constants/config.js';
 
@@ -2437,11 +2438,15 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               </div>
 
               {(() => {
+                const storedOwned = safeParseArray(OWNED_PLAYMATS_KEY);
                 const currentOwned =
-                  safeParseArray('mini_card_battle_owned_playmats') ||
-                  GameState.ownedPlaymats ||
-                  ownedPlaymats ||
-                  [];
+                  storedOwned.length > 0
+                    ? storedOwned
+                    : GameState.ownedPlaymats?.length > 0
+                      ? GameState.ownedPlaymats
+                      : Array.isArray(ownedPlaymats) && ownedPlaymats.length > 0
+                        ? ownedPlaymats
+                        : [];
                 const filtered = PLAYMAT_MASTER?.filter((p) =>
                   currentOwned.includes(p.id)
                 );

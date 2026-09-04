@@ -28,6 +28,11 @@ import {
   LAST_HEARTBEAT_KEY,
   PROFILE_ICON_KEY,
   EXCHANGE_LINEUPS_BY_MODE,
+  INVENTORY_KEY,
+  UNLOCKED_SKINS_KEY,
+  OWNED_PLAYMATS_KEY,
+  UNLOCKED_ICONS_KEY,
+  UNLOCKED_PREMIUM_KEY,
 } from './constants/config.js';
 
 /** API通信のデフォルトタイムアウト時間 (ms) */
@@ -231,26 +236,36 @@ export function hasUnsyncedHighDifficultyClear(local, server) {
 export function calculateSpentPoints(lineup, ownership = null) {
   if (!Array.isArray(lineup) || lineup.length === 0) return 0;
 
-  const inventory =
+  // 所持情報は未初期化・パース失敗・null/undefinedのいずれでも安全な空値へ正規化する
+  const toObject = (value) =>
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const toArray = (value) => (Array.isArray(value) ? value : []);
+
+  const inventory = toObject(
     ownership?.inventory ??
-    GameState.playerInventory ??
-    safeParseObject('mini_card_battle_inventory');
-  const unlockedSkins =
+      GameState.playerInventory ??
+      safeParseObject(INVENTORY_KEY)
+  );
+  const unlockedSkins = toArray(
     ownership?.unlockedSkins ??
-    GameState.unlockedSkins ??
-    safeParseArray('mini_card_battle_unlocked_skins');
-  const unlockedPlaymats =
+      GameState.unlockedSkins ??
+      safeParseArray(UNLOCKED_SKINS_KEY)
+  );
+  const unlockedPlaymats = toArray(
     ownership?.unlockedPlaymats ??
-    GameState.ownedPlaymats ??
-    safeParseArray('mini_card_battle_owned_playmats');
-  const unlockedIcons =
+      GameState.ownedPlaymats ??
+      safeParseArray(OWNED_PLAYMATS_KEY)
+  );
+  const unlockedIcons = toArray(
     ownership?.unlockedIcons ??
-    GameState.unlockedIcons ??
-    safeParseArray('mini_card_battle_unlocked_icons');
-  const unlockedPremium =
+      GameState.unlockedIcons ??
+      safeParseArray(UNLOCKED_ICONS_KEY)
+  );
+  const unlockedPremium = toArray(
     ownership?.unlockedPremiumCards ??
-    GameState.unlockedPremiumCards ??
-    safeParseArray('mini_card_battle_unlocked_premium');
+      GameState.unlockedPremiumCards ??
+      safeParseArray(UNLOCKED_PREMIUM_KEY)
+  );
 
   let spent = 0;
   for (const item of lineup) {
@@ -765,7 +780,7 @@ export async function sendHeartbeat() {
     // 所持カード（インベントリ）をLocalStorage/GameStateから取得
     let inventory = {};
     try {
-      const invSaved = localStorage.getItem('mini_card_battle_inventory');
+      const invSaved = localStorage.getItem(INVENTORY_KEY);
       if (invSaved) {
         inventory = JSON.parse(invSaved);
       } else if (GameState.playerInventory) {
@@ -778,9 +793,7 @@ export async function sendHeartbeat() {
     // 解放済みプレミアムカードをLocalStorage/GameStateから取得
     let unlockedPremiumCards = [];
     try {
-      const premSaved = localStorage.getItem(
-        'mini_card_battle_unlocked_premium'
-      );
+      const premSaved = localStorage.getItem(UNLOCKED_PREMIUM_KEY);
       if (premSaved) {
         unlockedPremiumCards = JSON.parse(premSaved);
       } else if (GameState.unlockedPremiumCards) {

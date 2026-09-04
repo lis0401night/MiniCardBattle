@@ -62,6 +62,9 @@ export default function CardPreviewContent({
     ? card.skills.map((sk) => ({ ...sk }))
     : [];
 
+  const { choices: cardChoices, choices2: cardChoices2 } =
+    resolveCardChoices(card);
+
   let lookupId = card.baseId || card.id;
   let isPremiumActive = false;
   let isPremiumUnlocked = false;
@@ -422,9 +425,6 @@ export default function CardPreviewContent({
                       typeof s.desc === 'function'
                         ? s.desc(sk.value, sk)
                         : s.desc;
-
-                    const { choices: cardChoices, choices2: cardChoices2 } =
-                      resolveCardChoices(card);
 
                     if (
                       (sk.id === 'choice' || sk.id === 'force') &&

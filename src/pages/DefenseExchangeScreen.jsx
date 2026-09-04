@@ -8,6 +8,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
+  MAX_CARD_COPIES,
 } from '../utils/constants/config.js';
 import {
   getCardImgUrl,
@@ -138,7 +139,7 @@ export default function DefenseExchangeScreen() {
                     }
                   } else if (itemInfo.type === 'card') {
                     ownedCount = inventory[itemInfo.id] || 0;
-                    if (ownedCount >= 4) {
+                    if (ownedCount >= MAX_CARD_COPIES) {
                       canExchange = false;
                       isMaxed = true;
                     }
@@ -250,7 +251,7 @@ export default function DefenseExchangeScreen() {
                               border: '1px solid #facc15',
                             }}
                           >
-                            {ownedCount}/4
+                            {ownedCount}/{MAX_CARD_COPIES}
                           </div>
                         )}
 

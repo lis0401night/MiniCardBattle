@@ -26,6 +26,7 @@ import {
   getOrCreateUUID,
   playSound,
   resolvePlayerName,
+  safeParseArray,
   shuffleArray,
   switchScreen,
   VALID_PREMIUM_CARDS,
@@ -654,11 +655,11 @@ export function loadDeck() {
     try {
       const key = `mini_card_battle_fortune_claimed_levels_${charId}`;
       const legacyKey = 'mini_card_battle_fortune_claimed_levels';
-      const claimedRaw =
-        localStorage.getItem(key) ||
-        (charId === 'automata' ? localStorage.getItem(legacyKey) : '[]');
-      const claimed = claimedRaw ? JSON.parse(claimedRaw) : [];
-      if (Array.isArray(claimed) && claimed.includes(4)) {
+      let claimed = safeParseArray(key);
+      if (claimed.length === 0 && charId === 'automata') {
+        claimed = safeParseArray(legacyKey);
+      }
+      if (claimed.includes(4)) {
         if (!parsedPlaymats.includes(charId)) {
           parsedPlaymats.push(charId);
           playmatsRecovered = true;

@@ -851,6 +851,10 @@ export function applyActiveSkillLogic(
         }
 
         const existingCard = b[targetLane];
+        // 合体（union）スキルは一度だけ解決して再利用する
+        const unionSkill = Array.isArray(stolenCard.skills)
+          ? stolenCard.skills.find((s) => s.id === 'union')
+          : null;
 
         // 1. 起動（startup）判定
         if (existingCard && hasSkill(existingCard, 'startup')) {
@@ -868,15 +872,11 @@ export function applyActiveSkillLogic(
           );
         } else if (
           existingCard &&
-          stolenCard.skills &&
-          stolenCard.skills.some((s) => s.id === 'union') &&
-          (existingCard.baseId ===
-            stolenCard.skills.find((s) => s.id === 'union').targetId ||
-            existingCard.id ===
-              stolenCard.skills.find((s) => s.id === 'union').targetId)
+          unionSkill &&
+          (existingCard.baseId === unionSkill.targetId ||
+            existingCard.id === unionSkill.targetId)
         ) {
           // 2. 合体（union）判定
-          const unionSkill = stolenCard.skills.find((s) => s.id === 'union');
           const mergedCard = CARD_MASTER.find(
             (mc) => mc.id === unionSkill.summonId
           );

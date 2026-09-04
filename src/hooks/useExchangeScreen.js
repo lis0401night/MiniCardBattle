@@ -36,6 +36,11 @@ import {
   HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   MAX_CARD_COPIES,
   EXCHANGE_LINEUPS_BY_MODE,
+  INVENTORY_KEY,
+  UNLOCKED_SKINS_KEY,
+  OWNED_PLAYMATS_KEY,
+  UNLOCKED_ICONS_KEY,
+  UNLOCKED_PREMIUM_KEY,
 } from '../utils/constants/config.js';
 
 const KEY_MAPPING = {
@@ -113,34 +118,37 @@ export function useExchangeScreen({
   });
 
   const [unlockedSkins, setUnlockedSkins] = useState(() =>
-    safeParseArray('mini_card_battle_unlocked_skins')
+    safeParseArray(UNLOCKED_SKINS_KEY)
   );
   const [unlockedPlaymats, setUnlockedPlaymats] = useState(() =>
-    safeParseArray('mini_card_battle_owned_playmats')
+    safeParseArray(OWNED_PLAYMATS_KEY)
   );
   const [unlockedIcons, setUnlockedIcons] = useState(() =>
-    safeParseArray('mini_card_battle_unlocked_icons')
+    safeParseArray(UNLOCKED_ICONS_KEY)
   );
   const [unlockedPremium, setUnlockedPremium] = useState(() =>
-    safeParseArray('mini_card_battle_unlocked_premium')
+    safeParseArray(UNLOCKED_PREMIUM_KEY)
   );
   const [inventory, setInventory] = useState(
     () =>
       GameState.playerInventory ||
-      safeParseObject('mini_card_battle_inventory') ||
+      safeParseObject(INVENTORY_KEY) ||
       {}
   );
   const [pointsUpdated, setPointsUpdated] = useState(false);
   const isExchangingRef = useRef(false);
 
-  const ownershipRef = useRef(null);
-  ownershipRef.current = {
-    inventory: GameState.playerInventory || inventory,
-    unlockedSkins,
-    unlockedPlaymats,
-    unlockedIcons,
-    unlockedPremiumCards: unlockedPremium,
-  };
+  // 所持情報はレンダリングごとの派生値として算出する（レンダリング中の ref 変更を避ける）
+  const ownership = useMemo(
+    () => ({
+      inventory: GameState.playerInventory || inventory,
+      unlockedSkins,
+      unlockedPlaymats,
+      unlockedIcons,
+      unlockedPremiumCards: unlockedPremium,
+    }),
+    [inventory, unlockedSkins, unlockedPlaymats, unlockedIcons, unlockedPremium]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +181,7 @@ export function useExchangeScreen({
               mergedCurrent,
               mergedTotal,
               resolvedLineup,
-              ownershipRef.current
+              ownership
             );
 
             if (cancelled) return;
@@ -201,7 +209,7 @@ export function useExchangeScreen({
               currentPts,
               totalPts,
               resolvedLineup,
-              ownershipRef.current
+              ownership
             );
             if (cancelled) return;
             if (recon.reconciled) {
@@ -232,6 +240,7 @@ export function useExchangeScreen({
     responsePointsField,
     responseTotalPointsField,
     resolvedLineup,
+    ownership,
   ]);
 
   /**
@@ -303,16 +312,13 @@ export function useExchangeScreen({
         const newInventory = { ...inventory, [item.id]: currentCount + 1 };
         setInventory(newInventory);
         Object.assign(GameState, { playerInventory: newInventory });
-        localStorage.setItem(
-          'mini_card_battle_inventory',
-          JSON.stringify(newInventory)
-        );
+        localStorage.setItem(INVENTORY_KEY, JSON.stringify(newInventory));
         if (typeof saveDeck === 'function') saveDeck();
         showCardAcquisitionModal(item.id);
       } else if (item.type === 'playmat') {
         const newUnlocked = [...unlockedPlaymats, item.id];
         localStorage.setItem(
-          'mini_card_battle_owned_playmats',
+          OWNED_PLAYMATS_KEY,
           JSON.stringify(newUnlocked)
         );
         Object.assign(GameState, { ownedPlaymats: newUnlocked });
@@ -322,7 +328,7 @@ export function useExchangeScreen({
       } else if (item.type === 'icon') {
         const newUnlocked = [...unlockedIcons, item.id];
         localStorage.setItem(
-          'mini_card_battle_unlocked_icons',
+          UNLOCKED_ICONS_KEY,
           JSON.stringify(newUnlocked)
         );
         Object.assign(GameState, { unlockedIcons: newUnlocked });
@@ -331,7 +337,7 @@ export function useExchangeScreen({
       } else if (item.type === 'premium') {
         const newUnlocked = [...unlockedPremium, item.id];
         localStorage.setItem(
-          'mini_card_battle_unlocked_premium',
+          UNLOCKED_PREMIUM_KEY,
           JSON.stringify(newUnlocked)
         );
         Object.assign(GameState, { unlockedPremiumCards: newUnlocked });
@@ -340,7 +346,7 @@ export function useExchangeScreen({
       } else {
         const newUnlocked = [...unlockedSkins, item.id];
         localStorage.setItem(
-          'mini_card_battle_unlocked_skins',
+          UNLOCKED_SKINS_KEY,
           JSON.stringify(newUnlocked)
         );
         Object.assign(GameState, { unlockedSkins: newUnlocked });

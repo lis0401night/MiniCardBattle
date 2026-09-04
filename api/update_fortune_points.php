@@ -99,28 +99,27 @@ if ($playerData) {
     }
     $playerData['fortune_cleared'] = json_encode($mergedCleared);
 
+    // 旧データ移行: fortune_max_total_cost はアンジェ追加前のマキナ単独時代の総合スコアであるため、
+    // automata個別フィールドが未設定の旧データに限り、この値をマキナ実績の下限として扱う
+    $legacyTotalCost = isset($playerData['fortune_max_total_cost']) ? intval($playerData['fortune_max_total_cost']) : 0;
+    $legacyAutomataFloor = isset($playerData['fortune_max_total_cost_automata']) ? 0 : $legacyTotalCost;
+
     // マキナ用合計目標値の更新（進行データ消失を防ぐため、常に既存記録との最大値を保持）
-    if (isset($data['fortune_max_total_cost_automata'])) {
-        $existingMaxCostAutomata = isset($playerData['fortune_max_total_cost_automata']) ? intval($playerData['fortune_max_total_cost_automata']) : 0;
-        $playerData['fortune_max_total_cost_automata'] = max($existingMaxCostAutomata, $fortune_max_total_cost_automata);
-    } else if (!isset($playerData['fortune_max_total_cost_automata']) && isset($playerData['fortune_max_total_cost'])) {
-        // 旧データ移行: fortune_max_total_cost はアンジェ追加前のマキナ単独時代の総合スコアであるため、
-        // automata個別フィールドが未設定の旧データのみ、この値をマキナの実績として引き継ぐ
-        $playerData['fortune_max_total_cost_automata'] = intval($playerData['fortune_max_total_cost']);
-    }
+    $existingMaxCostAutomata = isset($playerData['fortune_max_total_cost_automata'])
+        ? intval($playerData['fortune_max_total_cost_automata'])
+        : $legacyAutomataFloor;
+    $playerData['fortune_max_total_cost_automata'] = max($existingMaxCostAutomata, $fortune_max_total_cost_automata);
 
     // アンジェ用合計目標値の更新（常に既存記録との最大値を保持）
     // ※ アンジェは第2弾ボスとして新設されたため、旧 fortune_max_total_cost（マキナの記録）からの
     //    移行フォールバックは意図的に行わない（誤ってマキナのスコアがアンジェに付与されるのを防ぐため）
-    if (isset($data['fortune_max_total_cost_valkyria'])) {
-        $existingMaxCostValkyria = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
-        $playerData['fortune_max_total_cost_valkyria'] = max($existingMaxCostValkyria, $fortune_max_total_cost_valkyria);
-    }
+    $existingMaxCostValkyria = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
+    $playerData['fortune_max_total_cost_valkyria'] = max($existingMaxCostValkyria, $fortune_max_total_cost_valkyria);
 
-    // 総合合計目標値（マキナとアンジェの最大値または送信された最大値）
+    // 総合合計目標値（既存記録・送信値・キャラクター別記録のうち最大値を保持）
     $autoCost = isset($playerData['fortune_max_total_cost_automata']) ? intval($playerData['fortune_max_total_cost_automata']) : 0;
     $valkCost = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
-    $playerData['fortune_max_total_cost'] = max($fortune_max_total_cost, $autoCost, $valkCost);
+    $playerData['fortune_max_total_cost'] = max($legacyTotalCost, $fortune_max_total_cost, $autoCost, $valkCost);
 
 
     $playerData['timestamp'] = time();

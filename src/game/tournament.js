@@ -3,6 +3,8 @@ import { setupDialogueScreen } from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/config.js';
+import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import {
   TOURNAMENT_INTRO_DIALOGUE,
   getTournamentPostMatchDialogue,
@@ -10,8 +12,6 @@ import {
   getTournamentVenueDialogue,
   getTournamentWinDialogue,
 } from '../utils/constants/eventTournamentDialogues.js';
-import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
-import { TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/config.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -66,6 +66,8 @@ export function initTournamentMode() {
 
   const realChars = selectedCharIds.map((charId) => {
     const patterns = TOURNAMENT_DECKS[charId];
+    // deckPatternIndex は TOURNAMENT_DECKS[charId] の0始まりの配列位置を示す。
+    // 候補がないキャラクターは 0 を保存する。
     const deckPatternIndex =
       patterns && patterns.length > 0
         ? Math.floor(Math.random() * patterns.length)

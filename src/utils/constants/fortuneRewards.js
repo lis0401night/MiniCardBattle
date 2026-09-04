@@ -17,6 +17,33 @@ export const FORTUNE_GRADE_THRESHOLDS = [
 export const FORTUNE_HANDICAP_POINT_MULTIPLIER = 3;
 
 /**
+ * 特級目標IDからコストを解決する共通ヘルパー関数
+ * （マスター定義 HANDICAP_MASTER を優先し、未登録時はフォールバック定義または CHAR_FORTUNE_HANDICAPS より解決）
+ *
+ * @param {string} id - 特級目標ID
+ * @param {Object|null} [fallbackDef=null] - CHAR_FORTUNE_HANDICAPS 側の個別定義オブジェクト
+ * @returns {number} 解決された特級目標のコスト（見つからない場合は 0）
+ */
+export function resolveHandicapCost(id, fallbackDef = null) {
+  const master = (id && HANDICAP_MASTER && HANDICAP_MASTER[id]) || fallbackDef;
+  if (master && typeof master.cost === 'number') {
+    return master.cost;
+  }
+  // IDのみ渡されて HANDICAP_MASTER に未登録、かつ fallbackDef が無い場合のフォールバック探索
+  if (id && CHAR_FORTUNE_HANDICAPS) {
+    for (const charList of Object.values(CHAR_FORTUNE_HANDICAPS)) {
+      if (Array.isArray(charList)) {
+        const found = charList.find((h) => h && h.id === id);
+        if (found && typeof found.cost === 'number') {
+          return found.cost;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+/**
  * 達成済み特級目標マップから累計獲得ポイントを計算する
  * @param {Object|null} clearedMap - { [handicapId]: boolean }
  * @returns {number} 獲得ポイント
@@ -26,7 +53,7 @@ export function calculateHandicapPointsFromMap(clearedMap) {
   let earned = 0;
   for (const [id, cleared] of Object.entries(clearedMap)) {
     if (cleared) {
-      const cost = HANDICAP_MASTER[id]?.cost || 0;
+      const cost = resolveHandicapCost(id);
       earned += cost * FORTUNE_HANDICAP_POINT_MULTIPLIER;
     }
   }
@@ -54,7 +81,8 @@ export function getGradeLevel(totalCost) {
  * @param {Object} handicaps - 今回ONにした特級目標 { [handicapId]: true/false }
  * @param {Object} clearedHandicaps - これまでに達成済みの特級目標 { [handicapId]: true }
  * @param {number} clearedMaxGradeLevel - これまでの最大達成レベル（-1で未達成）
- * @returns {{ totalEarned: number, newClearedHandicaps: Object, newMaxGradeLevel: number, breakdown: Array }}
+ * @param {number} [clearedMaxTotalCost=0] - これまでの最大合計コスト
+ * @returns {{ totalEarned: number, newClearedHandicaps: Object, newMaxGradeLevel: number, newMaxTotalCost: number, currentTotalCost: number, breakdown: Array }}
  */
 export function calculateFortuneRewards(
   charId,
@@ -75,7 +103,7 @@ export function calculateFortuneRewards(
 
     // 初回達成：コストの3倍のポイントを付与 (獲得ポイント = コスト * 倍率)
     const master = HANDICAP_MASTER[h.id] || h;
-    const cost = master.cost || 0;
+    const cost = resolveHandicapCost(h.id, h);
     const earned = cost * FORTUNE_HANDICAP_POINT_MULTIPLIER;
     totalEarned += earned;
     newClearedHandicaps[h.id] = true;
@@ -90,8 +118,7 @@ export function calculateFortuneRewards(
   let totalCost = 0;
   handicapList.forEach((h) => {
     if (handicaps[h.id]) {
-      const master = HANDICAP_MASTER[h.id] || h;
-      totalCost += master.cost || 0;
+      totalCost += resolveHandicapCost(h.id, h);
     }
   });
 

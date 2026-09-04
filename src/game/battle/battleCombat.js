@@ -471,13 +471,17 @@ export async function cleanupDestroyedCards(excludeCard = null) {
     await sleep(400);
 
     // 実際の除去処理
+    const retaliateOwners = [];
     for (const item of destroyedItems) {
       if (item.board[item.index] !== item.card) continue;
       item.board[item.index] = null;
       await discardCard(item.owner, item.card, item.index);
+      retaliateOwners.push(item.owner);
+    }
 
-      // 報復（retaliate）スキルの誘発
-      triggerRetaliateSkill(item.owner);
+    // 報復（retaliate）スキルの誘発（盤面上の除去完了後に破壊された各カードの陣営ごとに実施）
+    for (const owner of retaliateOwners) {
+      triggerRetaliateSkill(owner);
     }
 
     playSound(SOUNDS.seDestroy);

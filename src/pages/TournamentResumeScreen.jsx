@@ -86,6 +86,8 @@ export default function TournamentResumeScreen() {
     };
   }, [saveData]);
   const currentRound = tState?.round || 1;
+  // 保存済みトーナメントでは、playerLost は敗退、round が4超過は決勝勝利後を示す。
+  // この判定は結果表示と操作可能なボタンを統一する。
   const isPlayerLost = Boolean(tState?.playerLost);
   const isChampion = !isPlayerLost && currentRound > 4;
   const isFinished = isPlayerLost || currentRound > 4;
