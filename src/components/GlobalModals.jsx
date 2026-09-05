@@ -2438,6 +2438,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               </div>
 
               {(() => {
+                // 所持情報は永続化済みデータ（LocalStorage）を最優先とする。
+                // 未保存時のみ実行中の GameState、最後にモジュール初期所持データ（ownedPlaymats）へフォールバックする。
                 const storedOwned = safeParseArray(OWNED_PLAYMATS_KEY);
                 const currentOwned =
                   storedOwned.length > 0

@@ -840,22 +840,6 @@ export function unmergeCardSkills(targetCard, equipSkills) {
       ? JSON.parse(JSON.stringify(masterCard.choices2))
       : undefined;
   }
-
-  // 旧仕様互換プロパティ（targetCard.skill）の同期
-  if (targetCard.skill && targetCard.skill !== 'none') {
-    const stillHasSkill = targetCard.skills.some(
-      (s) => s.id === targetCard.skill
-    );
-    if (!stillHasSkill) {
-      // マスターデータに定義されている固有スキルを優先して復元し、存在しない場合は残存スキルへフォールバック
-      const fallback =
-        targetCard.skills.find((s) =>
-          masterSkills.some((ms) => ms.id === s.id)
-        ) || targetCard.skills[0];
-      targetCard.skill = fallback?.id || 'none';
-      targetCard.skillValue = fallback?.value || 0;
-    }
-  }
 }
 
 /**
@@ -871,10 +855,6 @@ export function consumeArmSelf(host, equipped) {
   // 上のカードが「装備(equip)」を持っておらず、下のカードが「武装(arm_self)」を持っていた場合のみ消費判定
   if (!hasSkill(equipped, 'equip') && hasSkill(host, 'arm_self')) {
     const equippedHasArmSelf = hasSkill(equipped, 'arm_self');
-    if (host.skill === 'arm_self' && !equippedHasArmSelf) {
-      host.skill = 'none';
-      host.skillValue = 0;
-    }
     if (Array.isArray(host.skills)) {
       // 下のカードが元々持っていた武装(1回分)を消費
       host.skills = host.skills.filter((s) => s.id !== 'arm_self');

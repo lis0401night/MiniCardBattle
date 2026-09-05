@@ -18,13 +18,11 @@ import {
 import { ACTIVE_SKILLS, PASSIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  consumeArmSelf,
   createDamagePopup,
   getCardImgUrl,
   getSeededRandom,
   getSkillValue,
   hasSkill,
-  mergeCardSkills,
   playSound,
   shuffleArray,
   sleep,
@@ -1154,39 +1152,13 @@ export async function resolveActiveSkillEffect(
           !hasSkill(existingCard, 'reflect') &&
           !hasSkill(newToken, 'reflect')
         ) {
-          existingCard.power =
-            (existingCard.power || 0) + (newToken.power || 0);
-          existingCard.basePower =
-            (existingCard.basePower || 0) + (newToken.power || 0);
-          existingCard.currentPower =
-            (existingCard.currentPower || 0) + (newToken.power || 0);
-
-          const equipSkills = [];
-          if (
-            newToken.skill &&
-            newToken.skill !== 'none' &&
-            newToken.skill !== 'equip'
-          )
-            equipSkills.push({
-              id: newToken.skill,
-              value: newToken.skillValue,
-            });
-          if (newToken.skills)
-            newToken.skills.forEach((s) => {
-              if (s.id !== 'equip') equipSkills.push(s);
-            });
-          mergeCardSkills(existingCard, equipSkills);
-
-          existingCard.equippedCards = existingCard.equippedCards || [];
-          existingCard.equippedCards.push(newToken);
-
-          // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-          consumeArmSelf(existingCard, newToken);
+          // 装備（既存カードの上へ）: applyEquipment に処理を集約
+          applyEquipment(existingCard, newToken);
           events.push({
             type: 'power_change',
             side: o,
             lane: targetLane,
-            amount: newToken.power,
+            amount: newToken.appliedEquipPower ?? newToken.power,
             source: 'equip',
           });
         } else {
@@ -1716,19 +1688,9 @@ export async function resolveActiveSkillEffect(
               0;
             totalPowerLoss += powerLoss;
 
-            const equipSkills = [];
-            if (
-              eqCard.skill &&
-              eqCard.skill !== 'none' &&
-              eqCard.skill !== 'equip'
-            ) {
-              equipSkills.push({ id: eqCard.skill, value: eqCard.skillValue });
-            }
-            if (eqCard.skills) {
-              eqCard.skills.forEach((s) => {
-                if (s.id !== 'equip') equipSkills.push(s);
-              });
-            }
+            const equipSkills = (eqCard.skills || []).filter(
+              (s) => s.id !== 'equip'
+            );
             unmergeCardSkills(targetCard, equipSkills);
             await discardCard(t.side, eqCard, undefined, false);
           }

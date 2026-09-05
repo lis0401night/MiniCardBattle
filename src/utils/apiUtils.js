@@ -227,79 +227,108 @@ export function hasUnsyncedHighDifficultyClear(local, server) {
 }
 
 /**
+ * 現在の LocalStorage および GameState から最新の所持情報（インベントリ、スキン、プレイマット、アイコン、プレミアムカード）を取得・統合します。
+ *
+ * @returns {{
+ *   inventory: Record<string, number>,
+ *   unlockedSkins: Array<string>,
+ *   unlockedPlaymats: Array<string>,
+ *   unlockedIcons: Array<string>,
+ *   unlockedPremiumCards: Array<string>
+ * }} 最新の所持情報オブジェクト
+ */
+export function getLatestOwnership() {
+  const inventory = {
+    ...(safeParseObject(INVENTORY_KEY) || {}),
+    ...(GameState.playerInventory &&
+    typeof GameState.playerInventory === 'object'
+      ? GameState.playerInventory
+      : {}),
+  };
+
+  const unlockedSkins = [
+    ...new Set([
+      ...safeParseArray(UNLOCKED_SKINS_KEY),
+      ...(Array.isArray(GameState.unlockedSkins)
+        ? GameState.unlockedSkins
+        : []),
+    ]),
+  ];
+
+  const unlockedPlaymats = [
+    ...new Set([
+      ...safeParseArray(OWNED_PLAYMATS_KEY),
+      ...(Array.isArray(GameState.ownedPlaymats)
+        ? GameState.ownedPlaymats
+        : []),
+    ]),
+  ];
+
+  const unlockedIcons = [
+    ...new Set([
+      ...safeParseArray(UNLOCKED_ICONS_KEY),
+      ...(Array.isArray(GameState.unlockedIcons)
+        ? GameState.unlockedIcons
+        : []),
+    ]),
+  ];
+
+  const unlockedPremiumCards = [
+    ...new Set([
+      ...safeParseArray(UNLOCKED_PREMIUM_KEY),
+      ...(Array.isArray(GameState.unlockedPremiumCards)
+        ? GameState.unlockedPremiumCards
+        : []),
+    ]),
+  ];
+
+  return {
+    inventory,
+    unlockedSkins,
+    unlockedPlaymats,
+    unlockedIcons,
+    unlockedPremiumCards,
+  };
+}
+
+/**
  * 交換所ラインナップとプレイヤーの所持情報から、消費された累計ポイントを算出します。
  *
  * @param {Array<Object>} lineup - 交換所アイテム定義配列
- * @param {Object|null} [ownership=null] - 所持状況オブジェクト（指定がない場合はLocalStorage/GameStateから取得）
+ * @param {Object|null} [ownership=null] - 所持状況オブジェクト（指定がない場合はgetLatestOwnershipから取得）
  * @returns {number} 消費された累計ポイント
  */
 export function calculateSpentPoints(lineup, ownership = null) {
   if (!Array.isArray(lineup) || lineup.length === 0) return 0;
 
-  // 所持情報は未初期化・パース失敗・null/undefinedのいずれでも安全な空値へ正規化する
-  const toObject = (value) =>
-    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  const toArray = (value) => (Array.isArray(value) ? value : []);
+  const toObject = (value, fallbackValue) =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? value
+      : fallbackValue || {};
+  const toArray = (value, fallbackValue) =>
+    Array.isArray(value) ? value : fallbackValue || [];
 
-  const rawGameStateInv = GameState.playerInventory;
-  const hasGameStateInv =
-    rawGameStateInv &&
-    typeof rawGameStateInv === 'object' &&
-    Object.keys(rawGameStateInv).length > 0;
+  const fallback = ownership ? null : getLatestOwnership();
+
   const inventory = toObject(
-    (ownership?.inventory && Object.keys(ownership.inventory).length > 0
-      ? ownership.inventory
-      : null) ??
-      (hasGameStateInv ? rawGameStateInv : safeParseObject(INVENTORY_KEY))
+    ownership?.inventory,
+    fallback?.inventory ?? getLatestOwnership().inventory
   );
-
-  const rawGameStateSkins = GameState.unlockedSkins;
-  const hasGameStateSkins =
-    Array.isArray(rawGameStateSkins) && rawGameStateSkins.length > 0;
   const unlockedSkins = toArray(
-    (ownership?.unlockedSkins && ownership.unlockedSkins.length > 0
-      ? ownership.unlockedSkins
-      : null) ??
-      (hasGameStateSkins
-        ? rawGameStateSkins
-        : safeParseArray(UNLOCKED_SKINS_KEY))
+    ownership?.unlockedSkins,
+    fallback?.unlockedSkins ?? getLatestOwnership().unlockedSkins
   );
-
-  const rawGameStatePlaymats = GameState.ownedPlaymats;
-  const hasGameStatePlaymats =
-    Array.isArray(rawGameStatePlaymats) && rawGameStatePlaymats.length > 0;
   const unlockedPlaymats = toArray(
-    (ownership?.unlockedPlaymats && ownership.unlockedPlaymats.length > 0
-      ? ownership.unlockedPlaymats
-      : null) ??
-      (hasGameStatePlaymats
-        ? rawGameStatePlaymats
-        : safeParseArray(OWNED_PLAYMATS_KEY))
+    ownership?.unlockedPlaymats,
+    fallback?.unlockedPlaymats ?? getLatestOwnership().unlockedPlaymats
   );
-
-  const rawGameStateIcons = GameState.unlockedIcons;
-  const hasGameStateIcons =
-    Array.isArray(rawGameStateIcons) && rawGameStateIcons.length > 0;
   const unlockedIcons = toArray(
-    (ownership?.unlockedIcons && ownership.unlockedIcons.length > 0
-      ? ownership.unlockedIcons
-      : null) ??
-      (hasGameStateIcons
-        ? rawGameStateIcons
-        : safeParseArray(UNLOCKED_ICONS_KEY))
+    ownership?.unlockedIcons,
+    fallback?.unlockedIcons ?? getLatestOwnership().unlockedIcons
   );
-
-  const rawGameStatePremium = GameState.unlockedPremiumCards;
-  const hasGameStatePremium =
-    Array.isArray(rawGameStatePremium) && rawGameStatePremium.length > 0;
   const unlockedPremium = toArray(
-    (ownership?.unlockedPremiumCards &&
-    ownership.unlockedPremiumCards.length > 0
-      ? ownership.unlockedPremiumCards
-      : null) ??
-      (hasGameStatePremium
-        ? rawGameStatePremium
-        : safeParseArray(UNLOCKED_PREMIUM_KEY))
+    ownership?.unlockedPremiumCards ?? ownership?.unlockedPremium,
+    fallback?.unlockedPremiumCards ?? getLatestOwnership().unlockedPremiumCards
   );
 
   let spent = 0;

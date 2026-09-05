@@ -17,13 +17,12 @@ import {
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
-  consumeArmSelf,
+  applyEquipment,
   createDamagePopup,
   getCardImgUrl,
   getDialogue,
   getSeededRandom,
   hasSkill,
-  mergeCardSkills,
   playSound,
   resolveStartupFade,
   sleep,
@@ -301,20 +300,8 @@ export async function executeLeaderSkillAction(
         (hasSkill(tokenCard, 'equip') || hasSkill(b[l], 'arm_self'))
       ) {
         const targetCard = b[l];
-        targetCard.basePower =
-          (targetCard.basePower || 0) + (tokenCard.power || 0);
-        targetCard.currentPower =
-          (targetCard.currentPower || 0) + (tokenCard.power || 0);
-        if (!targetCard.skills) {
-          targetCard.skills = [];
-        }
-        const equipSkills = [];
-        if (tokenCard.skills) {
-          tokenCard.skills.forEach((s) => {
-            if (s.id !== 'equip') equipSkills.push(s);
-          });
-        }
-        mergeCardSkills(targetCard, equipSkills);
+        // 装備（既存カードの上へ）: applyEquipment に処理を集約
+        const { equipSkills } = applyEquipment(targetCard, tokenCard);
 
         events.push({ type: 'leader_skill', skill: action, side: owner });
         events.push({
@@ -346,16 +333,6 @@ export async function executeLeaderSkillAction(
             );
           }
         }
-
-        // リーダースキルで生成した装備カードを対象にアタッチ
-        const eqToken = JSON.parse(JSON.stringify(tokenCard));
-        eqToken.uid = `eq_dng_${Math.floor(getSeededRandom() * 1000000000)}`;
-        eqToken.owner = owner;
-        targetCard.equippedCards = targetCard.equippedCards || [];
-        targetCard.equippedCards.push(eqToken);
-
-        // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        consumeArmSelf(targetCard, tokenCard);
 
         if (tokenCard) playCardVoice(tokenCard, 'play');
       } else if (b[l] && hasSkill(b[l], 'startup')) {
@@ -699,39 +676,14 @@ export async function executeLeaderSkillAction(
         });
       } else if (isEquip) {
         const targetCard = board[targetLane];
-        targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
-        targetCard.basePower =
-          (targetCard.basePower || 0) + (selectedCard.power || 0);
-        // 【CodeRabbit指摘反映】即時参照される currentPower も同期して更新する
-        targetCard.currentPower =
-          (targetCard.currentPower || 0) + (selectedCard.power || 0);
-        const equipSkills = [];
-        if (
-          selectedCard.skill &&
-          selectedCard.skill !== 'none' &&
-          selectedCard.skill !== 'equip'
-        ) {
-          equipSkills.push({
-            id: selectedCard.skill,
-            value: selectedCard.skillValue,
-          });
-        }
-        if (selectedCard.skills)
-          selectedCard.skills.forEach((s) => {
-            if (s.id !== 'equip') equipSkills.push(s);
-          });
-        mergeCardSkills(targetCard, equipSkills);
-        targetCard.equippedCards = targetCard.equippedCards || [];
-        targetCard.equippedCards.push(selectedCard);
-
-        // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        consumeArmSelf(targetCard, selectedCard);
+        // 装備（既存カードの上へ）: applyEquipment に処理を集約
+        applyEquipment(targetCard, selectedCard);
         if (owner === 'blue') renderBoard();
         events.push({
           type: 'power_change',
           side: owner,
           lane: targetLane,
-          amount: selectedCard.power,
+          amount: selectedCard.appliedEquipPower ?? selectedCard.power,
           source: 'equip',
           card: JSON.parse(JSON.stringify(selectedCard)),
         });
@@ -922,45 +874,16 @@ export async function executeLeaderSkillAction(
           source: 'union',
         });
       } else if (isEquip) {
-        // 装備（既存カードの上へ）
+        // 装備（既存カードの上へ）: applyEquipment に処理を集約
         const targetCard = board[targetLane];
-        targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
-        targetCard.basePower =
-          (targetCard.basePower || 0) + (selectedCard.power || 0);
-        // 【CodeRabbit指摘反映】即時参照される currentPower も同期して更新する
-        targetCard.currentPower =
-          (targetCard.currentPower || 0) + (selectedCard.power || 0);
-
-        const equipSkills = [];
-        if (
-          selectedCard.skill &&
-          selectedCard.skill !== 'none' &&
-          selectedCard.skill !== 'equip'
-        ) {
-          equipSkills.push({
-            id: selectedCard.skill,
-            value: selectedCard.skillValue,
-          });
-        }
-        if (selectedCard.skills) {
-          selectedCard.skills.forEach((s) => {
-            if (s.id !== 'equip') equipSkills.push(s);
-          });
-        }
-        mergeCardSkills(targetCard, equipSkills);
-
-        targetCard.equippedCards = targetCard.equippedCards || [];
-        targetCard.equippedCards.push(selectedCard);
-
-        // 武装（arm_self）の消費処理：重ねるカードが equip を持っておらず、土台が arm_self を持っている場合
-        consumeArmSelf(targetCard, selectedCard);
+        applyEquipment(targetCard, selectedCard);
 
         if (owner === 'blue') renderBoard(); // 反映を確実にする
         events.push({
           type: 'power_change',
           side: owner,
           lane: targetLane,
-          amount: selectedCard.power,
+          amount: selectedCard.appliedEquipPower ?? selectedCard.power,
           source: 'equip',
           card: JSON.parse(JSON.stringify(selectedCard)),
         });
@@ -1346,36 +1269,15 @@ export async function executeLeaderSkillAction(
           !hasSkill(selectedCard, 'reflect')
         ) {
           const targetCard = board[targetLane];
-          targetCard.power =
-            (targetCard.power || 0) + (selectedCard.power || 0);
-          targetCard.basePower =
-            (targetCard.basePower || 0) + (selectedCard.power || 0);
-          // 【CodeRabbit指摘反映】即時参照される currentPower も同期して更新する
-          targetCard.currentPower =
-            (targetCard.currentPower || 0) + (selectedCard.power || 0);
-
-          if (!targetCard.skills) {
-            targetCard.skills = [];
-          }
-          const equipSkills = [];
-          if (selectedCard.skills) {
-            selectedCard.skills.forEach((s) => {
-              if (s.id !== 'equip') equipSkills.push(s);
-            });
-          }
-          mergeCardSkills(targetCard, equipSkills);
-          targetCard.equippedCards = targetCard.equippedCards || [];
-          targetCard.equippedCards.push(selectedCard);
-
-          // 武装（arm_self）の消費処理
-          consumeArmSelf(targetCard, selectedCard);
+          // 装備（既存カードの上へ）: applyEquipment に処理を集約
+          applyEquipment(targetCard, selectedCard);
 
           renderBoard();
           events.push({
             type: 'power_change',
             side: owner,
             lane: targetLane,
-            amount: selectedCard.power,
+            amount: selectedCard.appliedEquipPower ?? selectedCard.power,
             source: 'equip',
             card: JSON.parse(JSON.stringify(selectedCard)),
             stealFromLane: selectedOppLane, // 奪い元のレーンを指定

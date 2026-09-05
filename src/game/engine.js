@@ -5,11 +5,10 @@ import {
   FATE_ESTIMATED_DAMAGE,
 } from '../utils/constants/skills.js';
 import {
-  consumeArmSelf,
+  applyEquipment,
   getSeededRandom,
   getSkillValue,
   hasSkill,
-  mergeCardSkills,
   resolveStartupFade,
   unmergeCardSkills,
 } from '../utils/gameUtils.js';
@@ -537,24 +536,7 @@ export function processPlacementOrEquip(
     }
     resolveStartupFade(owner, existingCard, lane, newCard, events);
   } else if (isEquip && existingCard && !targetBlocksEquip) {
-    existingCard.power = (existingCard.power || 0) + (newCard.power || 0);
-    existingCard.basePower =
-      (existingCard.basePower || 0) + (newCard.power || 0);
-    existingCard.currentPower =
-      (existingCard.currentPower || 0) + (newCard.power || 0);
-
-    let equipSkills = [];
-    if (newCard.skills)
-      newCard.skills.forEach((s) => {
-        if (s.id !== 'equip') equipSkills.push(s);
-      });
-    mergeCardSkills(existingCard, equipSkills);
-
-    existingCard.equippedCards = existingCard.equippedCards || [];
-    existingCard.equippedCards.push(newCard);
-
-    // 武装（arm_self）の消費処理
-    consumeArmSelf(existingCard, newCard);
+    applyEquipment(existingCard, newCard);
 
     events.push({
       type: 'power_change',
@@ -946,29 +928,7 @@ export function applyActiveSkillLogic(
         ) {
           // 3. 装備判定
           const targetCard = existingCard;
-          const equipPower = stolenCard.currentPower ?? stolenCard.power ?? 0;
-          stolenCard.appliedEquipPower = equipPower;
-
-          targetCard.power = (targetCard.power || 0) + equipPower;
-          targetCard.basePower = (targetCard.basePower || 0) + equipPower;
-          targetCard.currentPower = (targetCard.currentPower || 0) + equipPower;
-
-          if (!targetCard.skills) {
-            targetCard.skills = [];
-          }
-          const equipSkills = [];
-          if (stolenCard.skills) {
-            stolenCard.skills.forEach((s) => {
-              if (s.id !== 'equip') equipSkills.push(s);
-            });
-          }
-          mergeCardSkills(targetCard, equipSkills);
-
-          targetCard.equippedCards = targetCard.equippedCards || [];
-          targetCard.equippedCards.push(stolenCard);
-
-          // 武装（arm_self）の消費処理
-          consumeArmSelf(targetCard, stolenCard);
+          applyEquipment(targetCard, stolenCard);
 
           events.push({
             type: 'summon_card',
@@ -1949,32 +1909,14 @@ export function applyActiveSkillLogic(
             hasSkill(simResCard, 'possession') ||
             hasSkill(simResCard, 'reflect');
           if (isEquip && existingCard && !targetBlocksEquip) {
-            // 装備（既存カードの上へ）
-            existingCard.power =
-              (existingCard.power || 0) + (simResCard.power || 0);
-            existingCard.basePower =
-              (existingCard.basePower || 0) + (simResCard.power || 0);
-            existingCard.currentPower =
-              (existingCard.currentPower || 0) + (simResCard.power || 0);
+            // 装備（既存カードの上へ）: applyEquipment に処理を集約
+            applyEquipment(existingCard, simResCard);
 
-            const equipSkills = [];
-            if (Array.isArray(simResCard.skills)) {
-              simResCard.skills.forEach((s) => {
-                if (s.id !== 'equip') equipSkills.push(s);
-              });
-            }
-            mergeCardSkills(existingCard, equipSkills);
-
-            existingCard.equippedCards = existingCard.equippedCards || [];
-            existingCard.equippedCards.push(simResCard);
-
-            // 武装（arm_self）の消費処理
-            consumeArmSelf(existingCard, simResCard);
             events.push({
               type: 'power_change',
               side: owner,
               lane: targetLaneRes,
-              amount: simResCard.power,
+              amount: simResCard.appliedEquipPower ?? simResCard.power,
               source: 'equip',
               card: simResCard,
             });
@@ -2552,22 +2494,8 @@ function tryEquipToken(state, board, lane, newToken, owner, events) {
       !hasSkill(boardCard, 'reflect') &&
       !hasSkill(newToken, 'reflect')
     ) {
-      boardCard.power = (boardCard.power || 0) + (newToken.currentPower || 0);
-      boardCard.basePower =
-        (boardCard.basePower || 0) + (newToken.currentPower || 0);
-      boardCard.currentPower =
-        (boardCard.currentPower || 0) + (newToken.currentPower || 0);
-      boardCard.equippedCards = boardCard.equippedCards || [];
-      boardCard.equippedCards.push(newToken);
-
-      // 武装（arm_self）の消費処理
-      consumeArmSelf(boardCard, newToken);
-      let addedSkills = [];
-      if (newToken.skills)
-        newToken.skills.forEach((s) => {
-          if (s.id !== 'equip') addedSkills.push({ id: s.id, value: s.value });
-        });
-      mergeCardSkills(boardCard, addedSkills);
+      // 装備（既存カードの上へ）: applyEquipment に処理を集約
+      const { equipSkills } = applyEquipment(boardCard, newToken);
       events.push({
         type: 'equip_card',
         side: owner,
@@ -2576,7 +2504,7 @@ function tryEquipToken(state, board, lane, newToken, owner, events) {
       });
 
       // 装備カードが持っていたアクティブスキルを即時発動させるシミュレート
-      addedSkills.forEach((sk) => {
+      equipSkills.forEach((sk) => {
         if (ACTIVE_SKILLS.includes(sk.id)) {
           applyActiveSkillLogic(
             state,
@@ -2858,27 +2786,8 @@ export function applyLeaderSkillLogic(
         !hasSkill(selectedCard, 'reflect')
       ) {
         const targetCard = board[targetLane];
-        targetCard.power = (targetCard.power || 0) + (selectedCard.power || 0);
-        targetCard.basePower =
-          (targetCard.basePower || 0) + (selectedCard.power || 0);
-        targetCard.currentPower =
-          (targetCard.currentPower || 0) + (selectedCard.power || 0);
-
-        if (!targetCard.skills) {
-          targetCard.skills = [];
-        }
-        const equipSkills = [];
-        if (selectedCard.skills) {
-          selectedCard.skills.forEach((s) => {
-            if (s.id !== 'equip') equipSkills.push(s);
-          });
-        }
-        mergeCardSkills(targetCard, equipSkills);
-        targetCard.equippedCards = targetCard.equippedCards || [];
-        targetCard.equippedCards.push(selectedCard);
-
-        // 武装（arm_self）の消費処理
-        consumeArmSelf(targetCard, selectedCard);
+        // 装備（既存カードの上へ）: applyEquipment に処理を集約
+        applyEquipment(targetCard, selectedCard);
 
         events.push({
           type: 'summon_card',
@@ -3620,33 +3529,14 @@ export function applyLeaderSkillLogic(
           !hasSkill(existingCard, 'reflect') &&
           !hasSkill(selectedCard, 'reflect')
         ) {
-          // 装備（既存カードの上へ）
-          existingCard.power =
-            (existingCard.power || 0) + (selectedCard.power || 0);
-          existingCard.basePower =
-            (existingCard.basePower || 0) + (selectedCard.power || 0);
-          existingCard.currentPower =
-            (existingCard.currentPower || 0) + (selectedCard.power || 0);
-
-          const equipSkills = [];
-          if (selectedCard.skills) {
-            selectedCard.skills.forEach((s) => {
-              if (s.id !== 'equip') equipSkills.push(s);
-            });
-          }
-          mergeCardSkills(existingCard, equipSkills);
-
-          existingCard.equippedCards = existingCard.equippedCards || [];
-          existingCard.equippedCards.push(selectedCard);
-
-          // 武装（arm_self）の消費処理
-          consumeArmSelf(existingCard, selectedCard);
+          // 装備（既存カードの上へ）: applyEquipment に処理を集約
+          applyEquipment(existingCard, selectedCard);
 
           events.push({
             type: 'power_change',
             side: owner,
             lane: l,
-            amount: selectedCard.power,
+            amount: selectedCard.appliedEquipPower ?? selectedCard.power,
             source: 'equip',
             card: selectedCard,
           });
@@ -4130,27 +4020,8 @@ export function applyLeaderSkillLogic(
                   });
                 } else if (isEquip && existingCard && !targetBlocksEquip) {
                   const targetCard = board[resLane];
-                  targetCard.power =
-                    (targetCard.power || 0) + (simResCard.power || 0);
-                  targetCard.basePower =
-                    (targetCard.basePower || 0) + (simResCard.power || 0);
-                  targetCard.currentPower =
-                    (targetCard.currentPower || 0) + (simResCard.power || 0);
-
-                  if (!targetCard.skills) targetCard.skills = [];
-                  const equipSkills = [];
-                  if (simResCard.skills) {
-                    simResCard.skills.forEach((sk) => {
-                      if (sk.id !== 'equip') equipSkills.push(sk);
-                    });
-                  }
-                  mergeCardSkills(targetCard, equipSkills);
-
-                  targetCard.equippedCards = targetCard.equippedCards || [];
-                  targetCard.equippedCards.push(simResCard);
-
-                  // 武装（arm_self）の消費処理
-                  consumeArmSelf(targetCard, simResCard);
+                  // 装備（既存カードの上へ）: applyEquipment に処理を集約
+                  applyEquipment(targetCard, simResCard);
 
                   events.push({
                     type: 'summon_card',

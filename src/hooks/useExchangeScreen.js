@@ -14,13 +14,13 @@ import {
   fetchPlayerDecks,
   reconcilePointsWithPurchases,
   calculateFortuneTotalPointsFromCleared,
+  getLatestOwnership,
 } from '../utils/apiUtils.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import {
   getOrCreateUUID,
   playSound,
   safeParseArray,
-  safeParseObject,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -65,64 +65,6 @@ const KEY_MAPPING = {
     total: HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   },
 };
-
-/**
- * 現在の LocalStorage および GameState から最新の所持情報（インベントリ、スキン、プレイマット、アイコン、プレミアムカード）を取得・統合します。
- * @returns {{ inventory: Object, unlockedSkins: Array<string>, unlockedPlaymats: Array<string>, unlockedIcons: Array<string>, unlockedPremiumCards: Array<string> }} 最新の所持情報オブジェクト
- */
-function getLatestOwnership() {
-  const inventory = {
-    ...(safeParseObject(INVENTORY_KEY) || {}),
-    ...(GameState.playerInventory &&
-    typeof GameState.playerInventory === 'object'
-      ? GameState.playerInventory
-      : {}),
-  };
-
-  const unlockedSkins = [
-    ...new Set([
-      ...safeParseArray(UNLOCKED_SKINS_KEY),
-      ...(Array.isArray(GameState.unlockedSkins)
-        ? GameState.unlockedSkins
-        : []),
-    ]),
-  ];
-
-  const unlockedPlaymats = [
-    ...new Set([
-      ...safeParseArray(OWNED_PLAYMATS_KEY),
-      ...(Array.isArray(GameState.ownedPlaymats)
-        ? GameState.ownedPlaymats
-        : []),
-    ]),
-  ];
-
-  const unlockedIcons = [
-    ...new Set([
-      ...safeParseArray(UNLOCKED_ICONS_KEY),
-      ...(Array.isArray(GameState.unlockedIcons)
-        ? GameState.unlockedIcons
-        : []),
-    ]),
-  ];
-
-  const unlockedPremiumCards = [
-    ...new Set([
-      ...safeParseArray(UNLOCKED_PREMIUM_KEY),
-      ...(Array.isArray(GameState.unlockedPremiumCards)
-        ? GameState.unlockedPremiumCards
-        : []),
-    ]),
-  ];
-
-  return {
-    inventory,
-    unlockedSkins,
-    unlockedPlaymats,
-    unlockedIcons,
-    unlockedPremiumCards,
-  };
-}
 
 /**
  * 交換所画面共通のカスタムフック。
@@ -355,13 +297,7 @@ export function useExchangeScreen({
       setPoints((prev) => ({ ...prev, current: newPts }));
 
       if (item.type === 'card') {
-        const latestInventory = {
-          ...(safeParseObject(INVENTORY_KEY) || {}),
-          ...(GameState.playerInventory &&
-          typeof GameState.playerInventory === 'object'
-            ? GameState.playerInventory
-            : {}),
-        };
+        const latestInventory = getLatestOwnership().inventory;
         const currentCount = latestInventory[item.id] || 0;
         const newInventory = {
           ...latestInventory,
