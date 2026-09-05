@@ -8,7 +8,7 @@ import {
   hasSkill,
   setCurrentRNG,
 } from '../utils/gameUtils.js';
-import { applyEquipment } from './battle/index.js';
+import { applyEquipment, canEquipCard } from './battle/index.js';
 import {
   applyActiveSkillLogic,
   applyLeaderSkillLogic,
@@ -663,15 +663,7 @@ export function processActionSequence(
               if (!newToken.isToken) {
                 targetDiscard.push(newToken);
               }
-            } else if (
-              existingCard &&
-              (hasSkill(newToken, 'equip') ||
-                hasSkill(existingCard, 'arm_self')) &&
-              !hasSkill(existingCard, 'possession') &&
-              !hasSkill(newToken, 'possession') &&
-              !hasSkill(existingCard, 'reflect') &&
-              !hasSkill(newToken, 'reflect')
-            ) {
+            } else if (existingCard && canEquipCard(newToken, existingCard)) {
               // 【装備(equip) / 武装(arm_self)】トークンの装備合体をシミュレート（実行時と同一ロジックを適用）
               applyEquipment(existingCard, newToken);
             } else if (existingCard) {
@@ -779,11 +771,7 @@ export function processActionSequence(
               });
             }
 
-            if (
-              board[myL] &&
-              (hasSkill(selectedCard, 'equip') ||
-                hasSkill(board[myL], 'arm_self'))
-            ) {
+            if (board[myL] && canEquipCard(selectedCard, board[myL])) {
               // 装備パワー・スキル統合・武装消費を実行時と同一ロジックで適用する
               applyEquipment(board[myL], selectedCard);
             } else {
@@ -905,11 +893,7 @@ export function processActionSequence(
         );
         simState.enemyDiscard.push(playedCard);
         actionQueue.length = 0; // 起動消滅したため、このカードによる後続の連鎖アクションをすべてキャンセル
-      } else if (
-        (hasSkill(playedCard, 'equip') ||
-          (existingCard && hasSkill(existingCard, 'arm_self'))) &&
-        existingCard
-      ) {
+      } else if (existingCard && canEquipCard(playedCard, existingCard)) {
         skillWasHandledByEquip = true;
         const targetCard = existingCard;
         const { equipSkills } = applyEquipment(targetCard, playedCard);
@@ -4739,11 +4723,7 @@ export function simulateMove(
             (s) => s.id !== 'startup' && s.id !== 'defender'
           );
           simState.enemyDiscard.push(playedCard);
-        } else if (
-          (hasSkill(playedCard, 'equip') ||
-            (existingCard && hasSkill(existingCard, 'arm_self'))) &&
-          existingCard
-        ) {
+        } else if (existingCard && canEquipCard(playedCard, existingCard)) {
           const targetCard = existingCard;
           const { equipSkills } = applyEquipment(targetCard, playedCard);
           equipSkills.forEach((sk) => {

@@ -18,6 +18,17 @@ import {
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
+/**
+ * トーナメントの決勝ラウンド数（全4回戦）
+ */
+const TOURNAMENT_FINAL_ROUND = 4;
+
+/**
+ * キャラクターのレアリティに応じたボーダー・テキスト色を取得する
+ *
+ * @param {number} rarity - レアリティ数値（1: Bronze, 2: Silver, 3: Gold, 4: Legend）
+ * @returns {string} カラーコード（HEX文字列）
+ */
 const getRarityColor = (rarity) => {
   switch (rarity) {
     case 1:
@@ -33,6 +44,19 @@ const getRarityColor = (rarity) => {
   }
 };
 
+/**
+ * トーナメントの勝利数に応じた獲得大会ポイント一覧（0勝: 0pt, 1勝: 1pt, 2勝: 3pt, 3勝: 6pt, 4勝(全勝): 10pt）
+ */
+const TOURNAMENT_WIN_POINTS_MAP = [0, 1, 3, 6, 10];
+
+/**
+ * トーナメント中断データの再開・結果確認画面コンポーネント
+ *
+ * 保存されたトーナメント進行状況（ラウンド数、勝敗、使用リーダー等）を表示し、
+ * バトル再開・リタイア（ポイント獲得）・デッキ確認の各操作を提供する。
+ *
+ * @returns {JSX.Element} トーナメント再開画面要素
+ */
 export default function TournamentResumeScreen() {
   const saveData = useMemo(() => {
     const json = localStorage.getItem('mini_card_battle_tournament_save');
@@ -86,25 +110,35 @@ export default function TournamentResumeScreen() {
     };
   }, [saveData]);
   const currentRound = tState?.round || 1;
-  // 保存済みトーナメントでは、playerLost は敗退、round が4超過は決勝勝利後を示す。
+  // 保存済みトーナメントでは、playerLost は敗退、round が TOURNAMENT_FINAL_ROUND 超過は決勝勝利後を示す。
   // この判定は結果表示と操作可能なボタンを統一する。
   const isPlayerLost = Boolean(tState?.playerLost);
-  const isChampion = !isPlayerLost && currentRound > 4;
-  const isFinished = isPlayerLost || currentRound > 4;
+  const isChampion = !isPlayerLost && currentRound > TOURNAMENT_FINAL_ROUND;
+  const isFinished = isPlayerLost || currentRound > TOURNAMENT_FINAL_ROUND;
 
+  /**
+   * トーナメント進行データを復元し、対戦またはブラケット画面へ遷移する
+   * @returns {void}
+   */
   const handleResume = () => {
     playSound(SOUNDS.seClick);
     loadTournamentProgress();
   };
 
+  /**
+   * トーナメントをリタイアし、勝利数に応じた大会ポイントを精算して初期化する
+   * @returns {void}
+   */
   const handleRestart = () => {
     showConfirmModal(
       '中断データを消去して、最初からやり直します。よろしいですか？\n（勝利数に応じた大会ポイントは獲得できます）',
       () => {
         playSound(SOUNDS.seClick);
-        let winCount = Math.max(0, currentRound - 1);
-        const pointsMap = [0, 1, 3, 6, 10];
-        let points = pointsMap[Math.min(winCount, pointsMap.length - 1)] || 0;
+        const winCount = Math.max(0, currentRound - 1);
+        const points =
+          TOURNAMENT_WIN_POINTS_MAP[
+            Math.min(winCount, TOURNAMENT_WIN_POINTS_MAP.length - 1)
+          ] || 0;
         clearTournamentSave();
 
         if (points > 0) {
@@ -140,6 +174,10 @@ export default function TournamentResumeScreen() {
     );
   };
 
+  /**
+   * トーナメントで使用中のプレイヤーデッキ確認モーダルを表示する
+   * @returns {void}
+   */
   const handleCheckDeck = () => {
     playSound(SOUNDS.seClick);
     if (saveData && saveData.playerConfig) {
@@ -242,7 +280,7 @@ export default function TournamentResumeScreen() {
             {isChampion
               ? '👑 優勝！（報酬受取可能）'
               : isPlayerLost
-                ? `第 ${Math.min(currentRound, 4)} 回戦（敗退）`
+                ? `第 ${Math.min(currentRound, TOURNAMENT_FINAL_ROUND)} 回戦（敗退）`
                 : `第 ${currentRound} 回戦`}
           </span>
         </div>

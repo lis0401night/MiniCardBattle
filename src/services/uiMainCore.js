@@ -60,7 +60,8 @@ import {
   showProfileModal,
 } from './uiModals.js';
 
-const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
+const DEBUG_CLICK_THRESHOLD =
+  typeof import.meta !== 'undefined' && import.meta.env?.DEV ? 10 : Infinity;
 
 /**
  * Mini Card Battle - UI Core (uiMainCore.js)

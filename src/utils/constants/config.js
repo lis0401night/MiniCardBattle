@@ -138,8 +138,23 @@ export const SKIN_EXCHANGE_COST = 20; // キャラクタースキン一律
 export const PLAYMAT_EXCHANGE_COST = 10; // プレイマット一律
 export const ICON_EXCHANGE_COST = 5; // アバターアイコン一律
 
+/**
+ * 交換所ラインナップ配列およびその各要素オブジェクトを不変（Deep Freeze）にする共通ヘルパー関数
+ *
+ * @param {Array<Object>} lineup - 交換所アイテム配列
+ * @returns {ReadonlyArray<Readonly<Object>>} 深く凍結された交換所アイテム配列
+ */
+export function freezeLineup(lineup) {
+  if (!Array.isArray(lineup)) return lineup;
+  return Object.freeze(
+    lineup.map((item) =>
+      item && typeof item === 'object' ? Object.freeze({ ...item }) : item
+    )
+  );
+}
+
 // 防衛戦 交換所ラインナップ
-export const EXCHANGE_LINEUP = [
+export const DEFENSE_EXCHANGE_LINEUP = freezeLineup([
   { id: 'cyberdragon', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'cyborgninja', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'dragon', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
@@ -194,7 +209,12 @@ export const EXCHANGE_LINEUP = [
   { id: 'mjolnir', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'badwolf', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'redhood', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
-];
+]);
+
+/**
+ * 既存コードとの後方互換用エイリアス
+ */
+export const EXCHANGE_LINEUP = DEFENSE_EXCHANGE_LINEUP;
 
 // ---------------------------------------------------------------------------
 // 交換所ラインナップ生成ヘルパー
@@ -247,7 +267,7 @@ function generateSkinExchangeItems(skinType, costs) {
 }
 
 // 試練の宮殿 交換所ラインナップ（水着スキン + カード）
-export const CHALLENGE_EXCHANGE_LINEUP = [
+export const CHALLENGE_EXCHANGE_LINEUP = freezeLineup([
   ...generateSkinExchangeItems('summer', {
     skin: SKIN_EXCHANGE_COST,
     playmat: PLAYMAT_EXCHANGE_COST,
@@ -255,10 +275,10 @@ export const CHALLENGE_EXCHANGE_LINEUP = [
   }),
   { id: 'queen', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'snowwhite', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
-];
+]);
 
 // トーナメント 交換所ラインナップ（学園スキン + カード）
-export const TOURNAMENT_EXCHANGE_LINEUP = [
+export const TOURNAMENT_EXCHANGE_LINEUP = freezeLineup([
   ...generateSkinExchangeItems('school', {
     skin: SKIN_EXCHANGE_COST,
     playmat: PLAYMAT_EXCHANGE_COST,
@@ -266,7 +286,7 @@ export const TOURNAMENT_EXCHANGE_LINEUP = [
   }),
   { id: 'threebears', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'goldilocks', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
-];
+]);
 
 /**
  * アセットURLにバージョンクエリパラメータを付与してキャッシュを強制破棄します。
@@ -356,7 +376,7 @@ export function getScreenBackgroundStyle(imagePath) {
 export const DEFAULT_DUNGEON_AI_LEVEL = 3;
 
 // 運命の邂逅 交換所ラインナップ
-export const FORTUNE_EXCHANGE_LINEUP = [
+export const FORTUNE_EXCHANGE_LINEUP = freezeLineup([
   // マキナのカード
   { id: 'agent', type: 'card', cost: 5 },
   { id: 'motorcycle', type: 'card', cost: 5 },
@@ -371,7 +391,7 @@ export const FORTUNE_EXCHANGE_LINEUP = [
   { id: 'berserkir', type: 'card', cost: 3 },
   { id: 'fenrir', type: 'card', cost: 1 },
   { id: 'dwarf', type: 'card', cost: 1 },
-];
+]);
 
 /**
  * 高難易度イベント交換所の装飾品（プレイマット・アイコン）対象カードID一覧
@@ -427,23 +447,23 @@ function generateHighDifficultyCosmeticExchangeItems() {
 /**
  * 高難易度イベント 交換所ラインナップ
  * 各カードに対応した限定プレイマット（10点）、限定アイコン（5点）および限定カード（5点）
- * @type {Array<{id: string, type: 'playmat'|'icon'|'card'|'skin', name?: string, cost: number}>}
+ * @type {ReadonlyArray<Readonly<{id: string, type: 'playmat'|'icon'|'card'|'skin', name?: string, cost: number}>>}
  */
-export const HIGH_DIFFICULTY_EXCHANGE_LINEUP = [
+export const HIGH_DIFFICULTY_EXCHANGE_LINEUP = freezeLineup([
   ...generateHighDifficultyCosmeticExchangeItems(),
   // カード
   { id: 'gaston', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'rosenberg', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
-];
+]);
 
 /**
  * モードキー別の交換所ラインナップ一覧マップ
- * @type {Record<string, Array<Object>>}
+ * @type {Record<string, ReadonlyArray<Readonly<Object>>>}
  */
 export const EXCHANGE_LINEUPS_BY_MODE = Object.freeze({
   fortune: FORTUNE_EXCHANGE_LINEUP,
   challenge: CHALLENGE_EXCHANGE_LINEUP,
   tournament: TOURNAMENT_EXCHANGE_LINEUP,
   high_difficulty: HIGH_DIFFICULTY_EXCHANGE_LINEUP,
-  defense: EXCHANGE_LINEUP,
+  defense: DEFENSE_EXCHANGE_LINEUP,
 });

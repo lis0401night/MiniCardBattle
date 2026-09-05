@@ -4,7 +4,6 @@ import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { useExchangeScreen } from '../hooks/useExchangeScreen.js';
 import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
 import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
@@ -19,13 +18,13 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function ChallengeExchangeScreen() {
   const {
     points: challengePoints,
-    setPoints: setChallengePoints,
     unlockedSkins,
     unlockedPlaymats,
     unlockedIcons,
     inventory,
     lineup,
     handleExchange,
+    grantDebugPoints,
   } = useExchangeScreen({
     pointsKey: 'challenge',
     pointsLocalKey: CHALLENGE_POINTS_KEY,
@@ -40,24 +39,7 @@ export default function ChallengeExchangeScreen() {
         'デバッグモードを起動して試練ポイントを100Pt獲得しますか？',
         () => {
           playSound(SOUNDS?.seSkill);
-          const currentPts =
-            parseInt(localStorage.getItem(CHALLENGE_POINTS_KEY), 10) || 0;
-          const totalPts =
-            parseInt(localStorage.getItem(CHALLENGE_TOTAL_POINTS_KEY), 10) || 0;
-          const newPts = currentPts + 100;
-          const newTotalPts = totalPts + 100;
-
-          localStorage.setItem(CHALLENGE_POINTS_KEY, newPts);
-          localStorage.setItem(CHALLENGE_TOTAL_POINTS_KEY, newTotalPts);
-          setChallengePoints({ current: newPts, total: newTotalPts });
-
-          // 共通APIユーティリティを介してサーバーと同期
-          savePointsToServer(
-            'update_challenge_points.php',
-            newPts,
-            newTotalPts
-          );
-
+          grantDebugPoints(100);
           if (showAlertModal) {
             showAlertModal('【デバッグ】試練ポイントを100Pt獲得しました！');
           }

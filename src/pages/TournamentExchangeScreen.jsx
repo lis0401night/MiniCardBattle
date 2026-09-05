@@ -4,7 +4,6 @@ import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { useExchangeScreen } from '../hooks/useExchangeScreen.js';
 import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
 import {
   TOURNAMENT_POINTS_KEY,
   TOURNAMENT_TOTAL_POINTS_KEY,
@@ -21,13 +20,13 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function TournamentExchangeScreen({ switchScreen }) {
   const {
     points: tournamentPoints,
-    setPoints: setTournamentPoints,
     unlockedSkins,
     unlockedPlaymats,
     unlockedIcons,
     inventory,
     lineup,
     handleExchange,
+    grantDebugPoints,
   } = useExchangeScreen({
     pointsKey: 'tournament',
     pointsLocalKey: TOURNAMENT_POINTS_KEY,
@@ -49,25 +48,7 @@ export default function TournamentExchangeScreen({ switchScreen }) {
         'デバッグモードを起動して大会ポイントを100Pt獲得しますか？',
         () => {
           playSound(SOUNDS?.seSkill);
-          const currentPts =
-            parseInt(localStorage.getItem(TOURNAMENT_POINTS_KEY), 10) || 0;
-          const totalPts =
-            parseInt(localStorage.getItem(TOURNAMENT_TOTAL_POINTS_KEY), 10) ||
-            0;
-          const newPts = currentPts + 100;
-          const newTotalPts = totalPts + 100;
-
-          localStorage.setItem(TOURNAMENT_POINTS_KEY, newPts);
-          localStorage.setItem(TOURNAMENT_TOTAL_POINTS_KEY, newTotalPts);
-          setTournamentPoints({ current: newPts, total: newTotalPts });
-
-          // 共通API同期ユーティリティを介してサーバーと同期
-          savePointsToServer(
-            'update_tournament_points.php',
-            newPts,
-            newTotalPts
-          );
-
+          grantDebugPoints(100);
           if (showAlertModal) {
             showAlertModal('【デバッグ】大会ポイントを100Pt獲得しました！');
           }

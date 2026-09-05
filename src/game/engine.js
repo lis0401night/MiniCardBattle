@@ -416,38 +416,36 @@ export function damageCard(
  */
 
 /**
- * 盤面のカードを静かに除外し、必要に応じてリセットして墓地へ送る
- * （上書き配置などのため、破壊演出の発動や死亡時効果を起こさない）
+ * 指定されたカード（およびその装備品・合体素材などの付属カード）を初期化して適切な墓地へ送る
+ * （上書き配置、消滅、起動スキルによる破棄などで死亡時効果や破壊演出を起こさずに墓地へ送る共通処理）
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {Object} cardToSend - 墓地へ送る対象のカードオブジェクト
+ * @param {string} fallBackOwner - 元の持ち主が不明な場合のデフォルトの所有者（'blue' | 'red'）
+ * @returns {void}
  */
-export function quietDiscardFromBoard(state, owner, lane) {
-  const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
-  const targetCard = b[lane];
+export function quietDiscardCard(state, cardToSend, fallBackOwner) {
+  if (!cardToSend) return;
 
-  if (!targetCard) return;
-
-  // Helper to send a card to grave
-  const sendToGrave = (cardToSend, fallBackOwner) => {
-    if (cardToSend.isToken) return;
+  // 単体カードを初期化して墓地に送る内部ヘルパー
+  const sendSingleToGrave = (c, defaultOwner) => {
+    if (c.isToken) return;
     let restoredCard;
-    // 【傀儡】傀儡スキルで奪ったカードは元の持ち主の墓地へ返す
-    const cOwner =
-      cardToSend.puppetOriginalOwner || cardToSend.owner || fallBackOwner;
+    // 【傀儡】傀儡スキル等で奪ったカードは元の持ち主の墓地へ返す
+    const cOwner = c.puppetOriginalOwner || c.owner || defaultOwner;
     const cDiscardPile =
       cOwner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-    const masterData = CARD_MASTER.find(
-      (m) => m.id === (cardToSend.baseId || cardToSend.id)
-    );
+    const masterData = CARD_MASTER.find((m) => m.id === (c.baseId || c.id));
     if (masterData) {
       restoredCard = JSON.parse(JSON.stringify(masterData));
-      restoredCard.uid = cardToSend.uid;
+      restoredCard.uid = c.uid;
       restoredCard.owner = cOwner;
-      restoredCard.baseId = cardToSend.baseId || cardToSend.id;
-      if (cardToSend.isPremium !== undefined)
-        restoredCard.isPremium = cardToSend.isPremium;
+      restoredCard.baseId = c.baseId || c.id;
+      if (c.isPremium !== undefined) restoredCard.isPremium = c.isPremium;
       restoredCard.basePower = restoredCard.power;
       restoredCard.currentPower = restoredCard.power;
     } else {
-      restoredCard = { ...cardToSend };
+      restoredCard = { ...c };
       if ('basePower' in restoredCard)
         restoredCard.power = restoredCard.basePower;
       restoredCard.currentPower = restoredCard.power;
@@ -460,22 +458,53 @@ export function quietDiscardFromBoard(state, owner, lane) {
     cDiscardPile.push(restoredCard);
   };
 
-  if (targetCard.equippedCards && targetCard.equippedCards.length > 0) {
-    targetCard.equippedCards.forEach((eq) => sendToGrave(eq, owner));
-  }
-  if (targetCard.unionMaterials && targetCard.unionMaterials.length > 0) {
-    targetCard.unionMaterials.forEach((mat) => {
-      if (mat.equippedCards && mat.equippedCards.length > 0) {
-        mat.equippedCards.forEach((nestedEq) => sendToGrave(nestedEq, owner));
-      }
-      sendToGrave(mat, owner);
-    });
-  }
-  if (targetCard.originalRevertTarget) {
-    sendToGrave(targetCard.originalRevertTarget, owner);
+  // 1. 装備カードの返却
+  if (cardToSend.equippedCards && cardToSend.equippedCards.length > 0) {
+    cardToSend.equippedCards.forEach((eq) =>
+      sendSingleToGrave(eq, fallBackOwner)
+    );
+    cardToSend.equippedCards = [];
   }
 
-  sendToGrave(targetCard, owner);
+  // 2. 合体素材カード（および合体素材が持っていた装備品）の返却
+  if (cardToSend.unionMaterials && cardToSend.unionMaterials.length > 0) {
+    cardToSend.unionMaterials.forEach((mat) => {
+      if (mat.equippedCards && mat.equippedCards.length > 0) {
+        mat.equippedCards.forEach((nestedEq) =>
+          sendSingleToGrave(nestedEq, fallBackOwner)
+        );
+        mat.equippedCards = [];
+      }
+      sendSingleToGrave(mat, fallBackOwner);
+    });
+    cardToSend.unionMaterials = [];
+  }
+
+  // 3. 変身元カード（originalRevertTarget）の返却
+  if (cardToSend.originalRevertTarget) {
+    sendSingleToGrave(cardToSend.originalRevertTarget, fallBackOwner);
+  }
+
+  // 4. 本体カードの返却
+  sendSingleToGrave(cardToSend, fallBackOwner);
+}
+
+/**
+ * 盤面のカードを静かに除外し、必要に応じてリセットして墓地へ送る
+ * （上書き配置などのため、破壊演出の発動や死亡時効果を起こさない）
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {string} owner - 対象レーンの所有者（'blue' | 'red'）
+ * @param {number} lane - レーンインデックス（0〜4）
+ * @returns {void}
+ */
+export function quietDiscardFromBoard(state, owner, lane) {
+  const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+  const targetCard = b[lane];
+
+  if (!targetCard) return;
+
+  quietDiscardCard(state, targetCard, owner);
 
   b[lane] = null;
 }
@@ -863,13 +892,9 @@ export function applyActiveSkillLogic(
 
         // 1. 起動（startup）判定
         if (existingCard && hasSkill(existingCard, 'startup')) {
-          // 支配で奪ったカードは元の持ち主の墓地へ返す
+          // 支配で奪ったカード（および装備品・合体素材など）は初期化して元の持ち主の墓地へ返す
           const stolenOwner = stolenCard.puppetOriginalOwner || oppOwner;
-          const discardPile =
-            stolenOwner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-          if (!stolenCard.isToken) {
-            discardPile.push(stolenCard);
-          }
+          quietDiscardCard(state, stolenCard, stolenOwner);
           resolveStartupFade(
             owner,
             existingCard,

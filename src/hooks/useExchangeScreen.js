@@ -67,6 +67,64 @@ const KEY_MAPPING = {
 };
 
 /**
+ * 現在の LocalStorage および GameState から最新の所持情報（インベントリ、スキン、プレイマット、アイコン、プレミアムカード）を取得・統合します。
+ * @returns {{ inventory: Object, unlockedSkins: Array<string>, unlockedPlaymats: Array<string>, unlockedIcons: Array<string>, unlockedPremiumCards: Array<string> }} 最新の所持情報オブジェクト
+ */
+function getLatestOwnership() {
+  const inventory = {
+    ...(safeParseObject(INVENTORY_KEY) || {}),
+    ...(GameState.playerInventory &&
+    typeof GameState.playerInventory === 'object'
+      ? GameState.playerInventory
+      : {}),
+  };
+
+  const unlockedSkins = [
+    ...new Set([
+      ...safeParseArray(UNLOCKED_SKINS_KEY),
+      ...(Array.isArray(GameState.unlockedSkins)
+        ? GameState.unlockedSkins
+        : []),
+    ]),
+  ];
+
+  const unlockedPlaymats = [
+    ...new Set([
+      ...safeParseArray(OWNED_PLAYMATS_KEY),
+      ...(Array.isArray(GameState.ownedPlaymats)
+        ? GameState.ownedPlaymats
+        : []),
+    ]),
+  ];
+
+  const unlockedIcons = [
+    ...new Set([
+      ...safeParseArray(UNLOCKED_ICONS_KEY),
+      ...(Array.isArray(GameState.unlockedIcons)
+        ? GameState.unlockedIcons
+        : []),
+    ]),
+  ];
+
+  const unlockedPremiumCards = [
+    ...new Set([
+      ...safeParseArray(UNLOCKED_PREMIUM_KEY),
+      ...(Array.isArray(GameState.unlockedPremiumCards)
+        ? GameState.unlockedPremiumCards
+        : []),
+    ]),
+  ];
+
+  return {
+    inventory,
+    unlockedSkins,
+    unlockedPlaymats,
+    unlockedIcons,
+    unlockedPremiumCards,
+  };
+}
+
+/**
  * 交換所画面共通のカスタムフック。
  * ポイントの読み込み、自己修復、サーバー同期、安全なアイテム交換トランザクションを提供します。
  *
@@ -109,7 +167,8 @@ export function useExchangeScreen({
     const initialRecon = reconcilePointsWithPurchases(
       rawCur,
       rawTot,
-      resolvedLineup
+      resolvedLineup,
+      getLatestOwnership()
     );
     return {
       current: initialRecon.current,
@@ -129,44 +188,13 @@ export function useExchangeScreen({
   const [unlockedPremium, setUnlockedPremium] = useState(() =>
     safeParseArray(UNLOCKED_PREMIUM_KEY)
   );
-  const [inventory, setInventory] = useState(() => {
-    const rawGameInv = GameState.playerInventory;
-    if (
-      rawGameInv &&
-      typeof rawGameInv === 'object' &&
-      Object.keys(rawGameInv).length > 0
-    ) {
-      return rawGameInv;
-    }
-    return safeParseObject(INVENTORY_KEY) || {};
-  });
+
+  const [inventory, setInventory] = useState(
+    () => getLatestOwnership().inventory
+  );
+
   const [pointsUpdated, setPointsUpdated] = useState(false);
   const isExchangingRef = useRef(false);
-
-  // 所持情報はレンダリングごとの派生値として算出する（レンダリング中の ref 変更を避ける）
-  const ownership = useMemo(() => {
-    const rawGameInv = GameState.playerInventory;
-    const effectiveInv =
-      rawGameInv &&
-      typeof rawGameInv === 'object' &&
-      Object.keys(rawGameInv).length > 0
-        ? rawGameInv
-        : inventory;
-
-    return {
-      inventory: effectiveInv,
-      unlockedSkins,
-      unlockedPlaymats,
-      unlockedIcons,
-      unlockedPremiumCards: unlockedPremium,
-    };
-  }, [
-    inventory,
-    unlockedSkins,
-    unlockedPlaymats,
-    unlockedIcons,
-    unlockedPremium,
-  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,6 +211,8 @@ export function useExchangeScreen({
       try {
         const result = await fetchPlayerDecks();
         if (cancelled) return;
+        const latestOwnership = getLatestOwnership();
+
         if (result.success && getOrCreateUUID) {
           const myUuid = getOrCreateUUID();
           const myData = result.players?.find((p) => p.uuid === myUuid);
@@ -199,7 +229,7 @@ export function useExchangeScreen({
               mergedCurrent,
               mergedTotal,
               resolvedLineup,
-              ownership
+              latestOwnership
             );
 
             if (cancelled) return;
@@ -227,7 +257,7 @@ export function useExchangeScreen({
               currentPts,
               totalPts,
               resolvedLineup,
-              ownership
+              latestOwnership
             );
             if (cancelled) return;
             if (recon.reconciled) {
@@ -258,7 +288,6 @@ export function useExchangeScreen({
     responsePointsField,
     responseTotalPointsField,
     resolvedLineup,
-    ownership,
   ]);
 
   /**
@@ -326,34 +355,76 @@ export function useExchangeScreen({
       setPoints((prev) => ({ ...prev, current: newPts }));
 
       if (item.type === 'card') {
-        const currentCount = inventory[item.id] || 0;
-        const newInventory = { ...inventory, [item.id]: currentCount + 1 };
-        setInventory(newInventory);
+        const latestInventory = {
+          ...(safeParseObject(INVENTORY_KEY) || {}),
+          ...(GameState.playerInventory &&
+          typeof GameState.playerInventory === 'object'
+            ? GameState.playerInventory
+            : {}),
+        };
+        const currentCount = latestInventory[item.id] || 0;
+        const newInventory = {
+          ...latestInventory,
+          [item.id]: currentCount + 1,
+        };
         Object.assign(GameState, { playerInventory: newInventory });
         localStorage.setItem(INVENTORY_KEY, JSON.stringify(newInventory));
+        setInventory(newInventory);
         if (typeof saveDeck === 'function') saveDeck();
         showCardAcquisitionModal(item.id);
       } else if (item.type === 'playmat') {
-        const newUnlocked = [...unlockedPlaymats, item.id];
+        const newUnlocked = [
+          ...new Set([
+            ...safeParseArray(OWNED_PLAYMATS_KEY),
+            ...(Array.isArray(GameState.ownedPlaymats)
+              ? GameState.ownedPlaymats
+              : []),
+            item.id,
+          ]),
+        ];
         localStorage.setItem(OWNED_PLAYMATS_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { ownedPlaymats: newUnlocked });
         setOwnedPlaymats(newUnlocked);
         setUnlockedPlaymats(newUnlocked);
         showPlaymatAcquisitionModal(item.name, item.id);
       } else if (item.type === 'icon') {
-        const newUnlocked = [...unlockedIcons, item.id];
+        const newUnlocked = [
+          ...new Set([
+            ...safeParseArray(UNLOCKED_ICONS_KEY),
+            ...(Array.isArray(GameState.unlockedIcons)
+              ? GameState.unlockedIcons
+              : []),
+            item.id,
+          ]),
+        ];
         localStorage.setItem(UNLOCKED_ICONS_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { unlockedIcons: newUnlocked });
         setUnlockedIcons(newUnlocked);
         showIconAcquisitionModal(item.name, item.id);
       } else if (item.type === 'premium') {
-        const newUnlocked = [...unlockedPremium, item.id];
+        const newUnlocked = [
+          ...new Set([
+            ...safeParseArray(UNLOCKED_PREMIUM_KEY),
+            ...(Array.isArray(GameState.unlockedPremiumCards)
+              ? GameState.unlockedPremiumCards
+              : []),
+            item.id,
+          ]),
+        ];
         localStorage.setItem(UNLOCKED_PREMIUM_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { unlockedPremiumCards: newUnlocked });
         setUnlockedPremium(newUnlocked);
         showPremiumAcquisitionModal(item.id);
       } else {
-        const newUnlocked = [...unlockedSkins, item.id];
+        const newUnlocked = [
+          ...new Set([
+            ...safeParseArray(UNLOCKED_SKINS_KEY),
+            ...(Array.isArray(GameState.unlockedSkins)
+              ? GameState.unlockedSkins
+              : []),
+            item.id,
+          ]),
+        ];
         localStorage.setItem(UNLOCKED_SKINS_KEY, JSON.stringify(newUnlocked));
         Object.assign(GameState, { unlockedSkins: newUnlocked });
         setUnlockedSkins(newUnlocked);
@@ -371,6 +442,33 @@ export function useExchangeScreen({
     }
   };
 
+  /**
+   * デバッグ用のポイント付与関数。
+   * 指定されたポイントを加算し、LocalStorageとサーバーへの保存、および整合性修復と再同期契機（pointsUpdated）を発火します。
+   *
+   * @param {number} [amount=100] - 付与するポイント量
+   * @returns {void}
+   */
+  const grantDebugPoints = (amount = 100) => {
+    const rawCur =
+      parseInt(localStorage.getItem(pointsLocalKey), 10) || points.current || 0;
+    const rawTot =
+      parseInt(localStorage.getItem(pointsTotalLocalKey), 10) ||
+      points.total ||
+      0;
+    const nextCurrent = rawCur + amount;
+    const nextTotal = rawTot + amount;
+
+    localStorage.setItem(pointsLocalKey, String(nextCurrent));
+    localStorage.setItem(pointsTotalLocalKey, String(nextTotal));
+    setPoints({ current: nextCurrent, total: nextTotal });
+
+    if (apiEndpoint) {
+      savePointsToServer(apiEndpoint, nextCurrent, nextTotal);
+    }
+    setPointsUpdated((prev) => !prev);
+  };
+
   return {
     points,
     setPoints,
@@ -381,6 +479,7 @@ export function useExchangeScreen({
     inventory,
     lineup: resolvedLineup,
     handleExchange,
+    grantDebugPoints,
     pointsUpdated,
     setPointsUpdated,
   };

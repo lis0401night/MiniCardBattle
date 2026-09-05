@@ -3,7 +3,6 @@ import { useEasterEgg } from '../hooks/useEasterEgg.js';
 import { useExchangeScreen } from '../hooks/useExchangeScreen.js';
 import { useGridVirtualizer } from '../hooks/useGridVirtualizer.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
-import { savePointsToServer } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   DEFENSE_POINTS_KEY,
@@ -20,11 +19,11 @@ import { SOUNDS } from '../utils/sounds.js';
 export default function DefenseExchangeScreen() {
   const {
     points,
-    setPoints,
     inventory,
     unlockedPremium = [],
     lineup,
     handleExchange,
+    grantDebugPoints,
   } = useExchangeScreen({
     pointsKey: 'defense',
     pointsLocalKey: DEFENSE_POINTS_KEY,
@@ -39,19 +38,7 @@ export default function DefenseExchangeScreen() {
         'デバッグモードを起動して防衛ポイントを100Pt獲得しますか？',
         () => {
           playSound?.(SOUNDS?.seSkill);
-          let cPts =
-            parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0;
-          let tPts =
-            parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0;
-          cPts += 100;
-          tPts += 100;
-          localStorage.setItem(DEFENSE_POINTS_KEY, String(cPts));
-          localStorage.setItem(DEFENSE_TOTAL_POINTS_KEY, String(tPts));
-          setPoints({ current: cPts, total: tPts });
-
-          // 共通API同期ユーティリティを介してサーバーと同期
-          savePointsToServer('update_points.php', cPts, tPts);
-
+          grantDebugPoints(100);
           if (showAlertModal) {
             showAlertModal('【デバッグ】防衛ポイントを100Pt獲得しました！');
           }

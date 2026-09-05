@@ -69,9 +69,15 @@ import { scanMissionEvents } from './missionLogic.js';
 import { hideMessage, showMessage } from './tutorialEngine.js';
 
 /**
- * 既存カードの「起動(startup)」スキルによる配置消滅処理を実行する共通ヘルパー
+ * 既存カードの「起動(startup)」スキルによる配置消滅処理を実行する共通ヘルパー。
+ * 消滅するカード本体および保持している付属物（装備カード・合体素材等）を安全に墓地へ返却・初期化します。
+ * @param {string} owner - 起動カードの所有者 ('blue' | 'red')
+ * @param {object} existingCard - 盤面の起動カード
+ * @param {number} targetLane - 対象レーン
+ * @param {object} cardToDiscard - 起動によって消滅（墓地送り）となるカード
+ * @param {string} [discardOwner=owner] - 消滅カードの返却先所有者
  */
-export function handleStartupDispelled(
+export async function handleStartupDispelled(
   owner,
   existingCard,
   targetLane,
@@ -86,14 +92,9 @@ export function handleStartupDispelled(
   );
   existingCard.stunTurns = 0;
 
-  // 2. 消滅したカードを墓地に送る（トークンでなければ）
-  // discardOwnerはカードの元の持ち主（傀儡など相手墓地から取得した場合に使用）
-  if (cardToDiscard && !cardToDiscard.isToken) {
-    const discardPile =
-      discardOwner === 'blue'
-        ? GameState.playerDiscard
-        : GameState.enemyDiscard;
-    discardPile.push(cardToDiscard);
+  // 2. 消滅したカードを安全に墓地に送る（付属物の墓地返却・ステータス初期化を含む）
+  if (cardToDiscard) {
+    await discardCard(discardOwner, cardToDiscard, undefined, false);
   }
 
   // 3. 起動消滅のVFX/SE再生
@@ -1144,7 +1145,7 @@ export async function resolveActiveSkillEffect(
         };
         const existingCard = board[targetLane];
         if (existingCard && hasSkill(existingCard, 'startup')) {
-          handleStartupDispelled(o, existingCard, targetLane, newToken);
+          await handleStartupDispelled(o, existingCard, targetLane, newToken);
         } else if (
           existingCard &&
           (hasSkill(newToken, 'equip') || hasSkill(existingCard, 'arm_self')) &&
@@ -1351,7 +1352,7 @@ export async function resolveActiveSkillEffect(
       };
       const existingCard = board[targetLane];
       if (existingCard && hasSkill(existingCard, 'startup')) {
-        handleStartupDispelled(o, existingCard, targetLane, newToken);
+        await handleStartupDispelled(o, existingCard, targetLane, newToken);
       } else if (existingCard && canEquipCard(newToken, existingCard)) {
         applyEquipment(existingCard, newToken);
         events.push({
@@ -2188,7 +2189,12 @@ export async function resolveActiveSkillEffect(
             o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
           const existingCard = board[targetLane];
           if (existingCard && hasSkill(existingCard, 'startup')) {
-            handleStartupDispelled(o, existingCard, targetLane, selectedCard);
+            await handleStartupDispelled(
+              o,
+              existingCard,
+              targetLane,
+              selectedCard
+            );
           } else if (canEquipCard(selectedCard, board[targetLane])) {
             const targetCard = board[targetLane];
             // ルール：復活は「配置(Place)」扱いのため、applyEquipment の戻り値 equipSkills は
@@ -2374,7 +2380,7 @@ export async function resolveActiveSkillEffect(
           const existingCard = board[targetLane];
 
           if (existingCard && hasSkill(existingCard, 'startup')) {
-            handleStartupDispelled(
+            await handleStartupDispelled(
               o,
               existingCard,
               targetLane,
@@ -2817,7 +2823,7 @@ export async function resolveActiveSkillEffect(
 
           const existingCard = board[targetLane];
           if (existingCard && hasSkill(existingCard, 'startup')) {
-            handleStartupDispelled(o, existingCard, targetLane, topCard);
+            await handleStartupDispelled(o, existingCard, targetLane, topCard);
           } else if (canEquipCard(topCard, board[targetLane])) {
             const targetCard = board[targetLane];
             const { equipSkills } = applyEquipment(targetCard, topCard);
@@ -3021,7 +3027,7 @@ export async function resolveActiveSkillEffect(
 
         // 1. 起動（startup）の判定 (合体や装備に優先して処理される)
         if (existingCard && hasSkill(existingCard, 'startup')) {
-          handleStartupDispelled(
+          await handleStartupDispelled(
             o,
             existingCard,
             targetLane,

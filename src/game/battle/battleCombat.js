@@ -28,6 +28,7 @@ import {
   playSummonAnimation,
 } from '../../services/uiBattle.js';
 import {
+  applyEquipment,
   getSkillValue,
   getSeededRandom,
   playSound,
@@ -35,8 +36,6 @@ import {
   sleep,
   hasSkill,
   shuffleArray,
-  mergeCardSkills,
-  consumeArmSelf,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playCardVoice } from '../../utils/constants/voices.js';
@@ -84,64 +83,7 @@ export function createUnionCard(owner, existingCard, consumedCard, masterData) {
   return unionCard;
 }
 
-/**
- * 装備カードのパラメータおよびスキル（選択肢含む）を対象カードへ統合・加算適用する共通ヘルパー関数。
- * DRY原則を遵守し、手札からのプレイ (playCard) および移動選択 (resolveMoveDestination) の両方から共通利用する。
- * @param {object} target - 装備される対象カード
- * @param {object} equipment - 装備するカード
- * @param {Set} [movedIds] - 移動済みカードID集合（移動による装備時のみ使用）
- */
-export function applyEquipment(target, equipment, movedIds) {
-  const equipPower = equipment.currentPower ?? equipment.power ?? 0;
-  const currentPower = target.currentPower ?? target.power ?? 0;
-
-  target.power = (target.power || 0) + equipPower;
-  target.basePower = (target.basePower || 0) + equipPower;
-  target.currentPower = currentPower + equipPower;
-
-  // 装備前の土台カードが元々「移動」スキルを持っていたかを記録
-  const targetHadMove = hasSkill(target, 'move');
-
-  // スキルの統合
-  const equipSkills = (equipment.skills || []).filter(
-    (skill) => skill.id !== 'equip'
-  );
-  if (equipSkills.length > 0) {
-    mergeCardSkills(target, equipSkills);
-  }
-
-  // choice / force スキルがある場合は、装備元の選択肢（重複含む全選択肢）を引き継ぐ
-  if (equipment.choices && equipment.choices.length > 0) {
-    target.choices = target.choices || [];
-    equipment.choices.forEach((pc) => {
-      target.choices.push({ ...pc });
-    });
-  }
-  if (equipment.choices2 && equipment.choices2.length > 0) {
-    target.choices2 = target.choices2 || [];
-    equipment.choices2.forEach((pc) => {
-      target.choices2.push({ ...pc });
-    });
-  }
-
-  // 装備時に実際に加算したパワー値を記録（解除時に同値を正確に減算するため）
-  equipment.appliedEquipPower = equipPower;
-
-  target.equippedCards = target.equippedCards || [];
-  target.equippedCards.push(equipment);
-  consumeArmSelf(target, equipment);
-
-  if (movedIds) {
-    // 移動した装備カード自身のIDを移動済みに追加
-    movedIds.add(equipment.uid || equipment.id);
-    // 土台カードが元々移動スキルを持っていなかった場合は、装備によって新たに得た移動での即時2重移動を防ぐため移動済みに追加
-    if (!targetHadMove) {
-      movedIds.add(target.uid || target.id);
-    }
-  }
-
-  return { equipSkills };
-}
+export { applyEquipment };
 
 /**
  * カードをマスターデータから初期状態に復元し、傀儡の返却先所有者を確定する。

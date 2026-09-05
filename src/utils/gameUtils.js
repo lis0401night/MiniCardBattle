@@ -831,6 +831,16 @@ export function unmergeCardSkills(targetCard, equipSkills) {
     }
   }
 
+  // 装備適用時に引き継いだ選択肢（choices / choices2）を元のマスターデータ定義へ復元する
+  if (masterCard) {
+    targetCard.choices = masterCard.choices
+      ? JSON.parse(JSON.stringify(masterCard.choices))
+      : undefined;
+    targetCard.choices2 = masterCard.choices2
+      ? JSON.parse(JSON.stringify(masterCard.choices2))
+      : undefined;
+  }
+
   // 旧仕様互換プロパティ（targetCard.skill）の同期
   if (targetCard.skill && targetCard.skill !== 'none') {
     const stillHasSkill = targetCard.skills.some(
@@ -1185,32 +1195,82 @@ export async function clearCachesAndServiceWorkers() {
 }
 
 /**
- * 対象カードに装備カードをアタッチ・マージし、パワーとスキルを同期・消費する。
- * 重複アタッチ防止チェックを含みます。
- * @param {Object} targetCard - 装備される側のカード
- * @param {Object} equipCard - 装備する（アタッチされる）側のカード
+ * 装備カードの合体処理（パワー加算・スキル統合・選択肢引継ぎ・武装消費・重複防止）を実行します。
+ * @param {object} target - 装備される対象カード
+ * @param {object} equipment - 装備するカード
+ * @param {Set} [movedIds] - 移動済みカードID集合（移動による装備時のみ使用）
+ * @returns {{ equipSkills: Array<object> }} 統合された装備スキルの配列
  */
-export function applyEquipMerge(targetCard, equipCard) {
-  if (!targetCard || !equipCard) return;
+export function applyEquipment(target, equipment, movedIds) {
+  if (!target || !equipment) return { equipSkills: [] };
 
-  targetCard.equippedCards = targetCard.equippedCards || [];
-  if (targetCard.equippedCards.some((ec) => ec.uid === equipCard.uid)) {
-    return; // 既に装備済みの場合は重複加算を防ぐ
+  target.equippedCards = target.equippedCards || [];
+  if (
+    target.equippedCards.some(
+      (ec) => ec.uid && equipment.uid && ec.uid === equipment.uid
+    )
+  ) {
+    return { equipSkills: [] };
   }
 
-  const equipPower = equipCard.currentPower ?? equipCard.power ?? 0;
-  equipCard.appliedEquipPower = equipPower;
+  const equipPower = equipment.currentPower ?? equipment.power ?? 0;
+  const currentPower = target.currentPower ?? target.power ?? 0;
 
-  const equipSkills = (equipCard.skills || []).filter((s) => s.id !== 'equip');
-  mergeCardSkills(targetCard, equipSkills);
+  target.power = (target.power || 0) + equipPower;
+  target.basePower = (target.basePower || 0) + equipPower;
+  target.currentPower = currentPower + equipPower;
 
-  targetCard.power = (targetCard.power || 0) + equipPower;
-  targetCard.basePower = (targetCard.basePower || 0) + equipPower;
-  targetCard.currentPower = (targetCard.currentPower || 0) + equipPower;
+  // 装備前の土台カードが元々「移動」スキルを持っていたかを記録
+  const targetHadMove = hasSkill(target, 'move');
 
-  targetCard.equippedCards.push(equipCard);
+  // スキルの統合
+  const equipSkills = (equipment.skills || []).filter(
+    (skill) => skill.id !== 'equip'
+  );
+  if (equipSkills.length > 0) {
+    mergeCardSkills(target, equipSkills);
+  }
 
-  consumeArmSelf(targetCard, equipCard);
+  // choice / force スキルがある場合は、装備元の選択肢（重複含む全選択肢）を引き継ぐ
+  if (equipment.choices && equipment.choices.length > 0) {
+    target.choices = target.choices || [];
+    equipment.choices.forEach((pc) => {
+      target.choices.push({ ...pc });
+    });
+  }
+  if (equipment.choices2 && equipment.choices2.length > 0) {
+    target.choices2 = target.choices2 || [];
+    equipment.choices2.forEach((pc) => {
+      target.choices2.push({ ...pc });
+    });
+  }
+
+  // 装備時に実際に加算したパワー値を記録（解除時に同値を正確に減算するため）
+  equipment.appliedEquipPower = equipPower;
+
+  target.equippedCards.push(equipment);
+  consumeArmSelf(target, equipment);
+
+  if (movedIds) {
+    // 移動した装備カード自身のIDを移動済みに追加
+    movedIds.add(equipment.uid || equipment.id);
+    // 土台カードが元々移動スキルを持っていなかった場合は、装備によって新たに得た移動での即時2重移動を防ぐため移動済みに追加
+    if (!targetHadMove) {
+      movedIds.add(target.uid || target.id);
+    }
+  }
+
+  return { equipSkills };
+}
+
+/**
+ * applyEquipment の後方互換用エイリアス。
+ * @param {object} targetCard - 装備される側のカード
+ * @param {object} equipCard - 装備する側のカード
+ * @returns {{ equipSkills: Array<object> }}
+ */
+export function applyEquipMerge(targetCard, equipCard) {
+  return applyEquipment(targetCard, equipCard);
 }
 
 /**
