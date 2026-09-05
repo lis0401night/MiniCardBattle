@@ -84,8 +84,14 @@ if ($playerData) {
         }
     }
 
-    if ($defense_wins > 0) {
-        $playerData['defense_wins'] = ($playerData['defense_wins'] ?? 0) + $defense_wins;
+    if (isset($data['defense_wins'])) {
+        if ($increment) {
+            // バトル敗北による相手プレイヤーへの防衛勝利数加算（increment: true）
+            $playerData['defense_wins'] = ($playerData['defense_wins'] ?? 0) + $defense_wins;
+        } else {
+            // 通常のクライアント同期時は上書き
+            $playerData['defense_wins'] = $defense_wins;
+        }
     }
     $playerData['timestamp'] = time();
 
