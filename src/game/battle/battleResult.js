@@ -663,6 +663,7 @@ export function resolveHighDifficultyRewards() {
 
 /**
  * バトル勝利時のカードドロップ抽選および報酬画面への遷移を実行する。
+ * ※ カードドロップが行われないモード（オンライン、練習戦、トーナメント、防衛戦、ダンジョン、チュートリアル、運命の邂逅）は確実に除外する。
  * @returns {boolean} 報酬画面を表示した場合は true
  */
 function resolveCardDrop() {
@@ -670,7 +671,11 @@ function resolveCardDrop() {
     GameState.lastBattleResult === 'win' &&
     GameState.gameMode !== 'online' &&
     GameState.gameMode !== 'practice' &&
-    GameState.gameMode !== 'tournament'
+    GameState.gameMode !== 'tournament' &&
+    GameState.gameMode !== 'defense_attack' &&
+    GameState.gameMode !== 'battle_dungeon' &&
+    GameState.gameMode !== 'tutorial' &&
+    !GameState.gameMode?.endsWith('_fortune')
   )) {
     return false;
   }
@@ -680,9 +685,6 @@ function resolveCardDrop() {
     if (GameState.gameMode?.endsWith('_high')) {
       const charId = extractEventCharacterId(GameState.gameMode, '_high');
       if (recipeId === charId) recipeId = `${charId}_high`;
-    } else if (GameState.gameMode?.endsWith('_fortune')) {
-      const charId = extractEventCharacterId(GameState.gameMode, '_fortune');
-      if (recipeId === charId) recipeId = `${charId}_fortune`;
     }
   }
 
@@ -848,16 +850,16 @@ export function endBattle() {
         }
       }
 
+      // resolveFortuneRewards: 運命の邂逅イベント（カードドロップなし、特級目標ポイント付与・モーダルへ直行）
+      if (resolveFortuneRewards()) {
+        return;
+      }
       // resolveCardDrop: 先にカードドロップ抽選・演出を実行（RewardOverlay閉じ時に高難易度ポイントまたは会話へ遷移）
       if (resolveCardDrop()) {
         return;
       }
       // resolveHighDifficultyRewards: カードドロップがない場合（全所持済み等）の高難易度ポイント付与・モーダル
       if (resolveHighDifficultyRewards()) {
-        return;
-      }
-      // resolveFortuneRewards: 内部のコールバックまたは同期パスでcleanupBattleState実行
-      if (resolveFortuneRewards()) {
         return;
       }
     }
