@@ -157,13 +157,13 @@ const CARD_PLAYMATS = HIGH_DIFFICULTY_COSMETIC_CARD_IDS.map((cardId) => {
 
 /**
  * 全プレイマットのマスタ配列
- * 基本プレイマット + カード関連プレイマット + スキンマスタから自動生成されたスキン系プレイマット
+ * 基本プレイマット（BASE_PLAYMATS） + スキン連動プレイマット（generateSkinPlaymats） + 高難易度カードプレイマット（CARD_PLAYMATS）の順
  * @type {Array<Object>}
  */
 export const PLAYMAT_MASTER = [
   ...BASE_PLAYMATS,
-  ...CARD_PLAYMATS,
   ...generateSkinPlaymats(SKIN_MASTER),
+  ...CARD_PLAYMATS,
 ];
 
 /**

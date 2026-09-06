@@ -102,13 +102,13 @@ const CARD_ICONS = HIGH_DIFFICULTY_COSMETIC_CARD_IDS.map((cardId) => {
 
 /**
  * 解放報酬等で追加されるアイコン一覧
- * スキンマスタ（skins.js）から自動生成 + 個別追加分 + カードアイコン分
+ * 個別追加分（STANDALONE_EXTRA_ICONS） + スキン連動分（generateSkinIcons） + 高難易度カード分（CARD_ICONS）の順
  * @type {Array<{id: string, name: string, path: string}>}
  */
 export const EXTRA_ICONS = [
   ...STANDALONE_EXTRA_ICONS,
-  ...CARD_ICONS,
   ...generateSkinIcons(SKIN_MASTER),
+  ...CARD_ICONS,
 ];
 
 /**

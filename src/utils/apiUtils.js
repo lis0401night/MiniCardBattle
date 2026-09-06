@@ -874,6 +874,60 @@ export async function sendHeartbeat() {
       unlockedPremiumCards = GameState.unlockedPremiumCards || [];
     }
 
+    // 解放済みアイコンをLocalStorage/GameStateから取得
+    let unlockedIcons = [];
+    try {
+      const iconsSaved = localStorage.getItem(UNLOCKED_ICONS_KEY);
+      if (iconsSaved) {
+        unlockedIcons = JSON.parse(iconsSaved);
+      } else if (
+        Array.isArray(GameState.unlockedIcons) &&
+        GameState.unlockedIcons.length > 0
+      ) {
+        unlockedIcons = GameState.unlockedIcons;
+      }
+    } catch {
+      unlockedIcons = Array.isArray(GameState.unlockedIcons)
+        ? GameState.unlockedIcons
+        : [];
+    }
+
+    // 所持プレイマットをLocalStorage/GameStateから取得
+    let ownedPlaymats = [];
+    try {
+      const playmatsSaved = localStorage.getItem(OWNED_PLAYMATS_KEY);
+      if (playmatsSaved) {
+        ownedPlaymats = JSON.parse(playmatsSaved);
+      } else if (
+        Array.isArray(GameState.ownedPlaymats) &&
+        GameState.ownedPlaymats.length > 0
+      ) {
+        ownedPlaymats = GameState.ownedPlaymats;
+      }
+    } catch {
+      ownedPlaymats = Array.isArray(GameState.ownedPlaymats)
+        ? GameState.ownedPlaymats
+        : [];
+    }
+
+    // 解放済みスキンをLocalStorage/GameStateから取得
+    let unlockedSkins = [];
+    try {
+      const skinsSaved = localStorage.getItem(UNLOCKED_SKINS_KEY);
+      if (skinsSaved) {
+        unlockedSkins = JSON.parse(skinsSaved);
+      } else if (
+        Array.isArray(GameState.unlockedSkins) &&
+        GameState.unlockedSkins.length > 0
+      ) {
+        unlockedSkins = GameState.unlockedSkins;
+      }
+    } catch {
+      unlockedSkins = Array.isArray(GameState.unlockedSkins)
+        ? GameState.unlockedSkins
+        : [];
+    }
+
     // 全登録デッキ一覧をLocalStorage/GameStateから取得
     let registeredDecks = [];
     try {
@@ -898,6 +952,9 @@ export async function sendHeartbeat() {
           icon,
           inventory,
           unlocked_premium_cards: unlockedPremiumCards,
+          unlocked_icons: unlockedIcons,
+          unlocked_skins: unlockedSkins,
+          owned_playmats: ownedPlaymats,
           registered_decks: registeredDecks,
         }),
         keepalive: true,

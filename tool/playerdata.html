@@ -191,6 +191,27 @@
               全カード一覧
             </button>
             <button
+              id="tab-skins"
+              class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              onclick="window.switchTab('skins')"
+            >
+              スキン一覧
+            </button>
+            <button
+              id="tab-icons"
+              class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              onclick="window.switchTab('icons')"
+            >
+              アイコン一覧
+            </button>
+            <button
+              id="tab-playmats"
+              class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              onclick="window.switchTab('playmats')"
+            >
+              プレイマット一覧
+            </button>
+            <button
               id="tab-battles"
               class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
               onclick="window.switchTab('battles')"
@@ -552,6 +573,156 @@
         </div>
       </div>
 
+      <!-- スキン一覧ビュー -->
+      <div
+        id="view-skins"
+        class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-2"
+        >
+          <div>
+            <h2
+              class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1"
+            >
+              データベース
+            </h2>
+            <div class="flex items-center gap-3">
+              <div class="text-xl font-black text-slate-800 tracking-tight">
+                スキン一覧
+                <span
+                  id="skins-count"
+                  class="text-sm font-bold text-slate-500 ml-2"
+                ></span>
+              </div>
+              <div
+                id="skins-filter-status"
+                class="text-[10px] font-bold text-pink-700 bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-200"
+              >
+                集計対象プレイヤー: --/--人
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">並び替え:</span>
+              <select
+                id="skin-sort-select"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.sortSkinList(this.value)"
+              >
+                <option value="unlocked" selected>👥 解放プレイヤー数順</option>
+                <option value="active">👗 使用プレイヤー数順</option>
+                <option value="name">👗 スキン名順</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="panel-scroll scroll-custom p-4 md:p-6" id="skins-grid">
+          <!-- JS Injection -->
+        </div>
+      </div>
+
+      <!-- アイコン一覧ビュー -->
+      <div
+        id="view-icons"
+        class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-2"
+        >
+          <div>
+            <h2
+              class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1"
+            >
+              データベース
+            </h2>
+            <div class="flex items-center gap-3">
+              <div class="text-xl font-black text-slate-800 tracking-tight">
+                アイコン一覧
+                <span
+                  id="icons-count"
+                  class="text-sm font-bold text-slate-500 ml-2"
+                ></span>
+              </div>
+              <div
+                id="icons-filter-status"
+                class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200"
+              >
+                集計対象プレイヤー: --/--人
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">並び替え:</span>
+              <select
+                id="icon-sort-select"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.sortIconList(this.value)"
+              >
+                <option value="unlocked" selected>👥 解放プレイヤー数順</option>
+                <option value="active">👤 設定プレイヤー数順</option>
+                <option value="name">🖼️ アイコン名順</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="panel-scroll scroll-custom p-4 md:p-6" id="icons-grid">
+          <!-- JS Injection -->
+        </div>
+      </div>
+
+      <!-- プレイマット一覧ビュー -->
+      <div
+        id="view-playmats"
+        class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-2"
+        >
+          <div>
+            <h2
+              class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1"
+            >
+              データベース
+            </h2>
+            <div class="flex items-center gap-3">
+              <div class="text-xl font-black text-slate-800 tracking-tight">
+                プレイマット一覧
+                <span
+                  id="playmats-count"
+                  class="text-sm font-bold text-slate-500 ml-2"
+                ></span>
+              </div>
+              <div
+                id="playmats-filter-status"
+                class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200"
+              >
+                集計対象プレイヤー: --/--人
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">並び替え:</span>
+              <select
+                id="playmat-sort-select"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.sortPlaymatList(this.value)"
+              >
+                <option value="owned" selected>👥 所持プレイヤー数順</option>
+                <option value="active">🎨 使用プレイヤー数順</option>
+                <option value="name">🎨 プレイマット名順</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="panel-scroll scroll-custom p-4 md:p-6" id="playmats-grid">
+          <!-- JS Injection -->
+        </div>
+      </div>
+
       <!-- 防衛戦結果一覧ビュー -->
       <div
         id="view-battles"
@@ -697,6 +868,12 @@
             <div id="section-profile"></div>
             <!-- ポイントセクション -->
             <div id="section-points"></div>
+            <!-- 解放済みアイコンセクション -->
+            <div id="section-unlocked-icons"></div>
+            <!-- 解放済みスキンセクション -->
+            <div id="section-unlocked-skins"></div>
+            <!-- 所持プレイマットセクション -->
+            <div id="section-owned-playmats"></div>
             <!-- 所持プレミアムセクション -->
             <div id="section-premium"></div>
             <!-- 所持カード・収集率セクション -->
@@ -873,6 +1050,8 @@
       let CARD_MASTER = [];
       let PREMIUM_CARD_IDS = [];
       let CHARACTERS = {};
+      let SKIN_MASTER = {};
+      let findSkinEntry = () => null;
       let PLAYMAT_MASTER = [];
       let ALL_ICONS = [];
       let SKILLS = {};
@@ -935,6 +1114,49 @@
         fixAssetPath(
           `assets/cards/card_${encodeURIComponent(String(id))}${isPremium ? '_premium' : ''}_thumb.webp`
         );
+
+      /**
+       * プレイマットサムネイルのパスを生成する
+       * @param {string|Object} pmOrId - プレイマットIDまたはオブジェクト
+       * @returns {string} サムネイル画像パス
+       */
+      const getPlaymatThumbPath = (pmOrId) => {
+        if (!pmOrId) return '';
+        let path = '';
+        if (typeof pmOrId === 'object' && pmOrId.image) {
+          path = pmOrId.image;
+        } else {
+          const pm = PLAYMAT_MASTER.find((p) => p.id === pmOrId);
+          path = pm
+            ? pm.image
+            : `assets/boards/board_${String(pmOrId).replace('pm_', '')}.webp`;
+        }
+        if (!path) return '';
+        if (path.includes('assets/boards/') && !path.includes('_thumb.webp')) {
+          path = path.replace('.webp', '_thumb.webp');
+        }
+        return fixAssetPath(path);
+      };
+
+      /**
+       * スキンサムネイル（アイコン）のパスを生成する
+       * @param {string} skinId - スキンID（例: 'android_summer'）
+       * @returns {string} 画像パス
+       */
+      const getSkinThumbPath = (skinId) => {
+        if (!skinId) return '';
+        const entryObj =
+          typeof findSkinEntry === 'function' ? findSkinEntry(skinId) : null;
+        if (entryObj?.entry?.icon) {
+          return fixAssetPath(entryObj.entry.icon);
+        }
+        if (entryObj?.entry?.image) {
+          return fixAssetPath(entryObj.entry.image);
+        }
+        return fixAssetPath(
+          `assets/icons/icon_${encodeURIComponent(String(skinId))}.webp`
+        );
+      };
 
       /**
        * 画像URL一覧を並行数を制限しながらバックグラウンドでゆっくり順次事前キャッシュする
@@ -1027,6 +1249,22 @@
           return `高難易度 (${getCharName(baseChar)})`;
         }
         return skinId;
+      }
+
+      /**
+       * スキンIDから表示名を取得する
+       * @param {string} skinId - スキンID
+       * @returns {string} スキン表示名
+       */
+      function getSkinDisplayName(skinId) {
+        if (!skinId) return 'なし';
+        const entryObj =
+          typeof findSkinEntry === 'function' ? findSkinEntry(skinId) : null;
+        if (entryObj?.entry?.name) {
+          const charName = getCharName(entryObj.charId);
+          return `${charName}（${entryObj.entry.name}）`;
+        }
+        return getSkinName(skinId);
       }
 
       /**
@@ -1183,6 +1421,9 @@
       let currentSort = { key: 'defense', dir: 'desc' };
       let currentCardSort = 'registered';
       let currentLeaderSort = 'registered';
+      let currentSkinSort = 'unlocked';
+      let currentIconSort = 'unlocked';
+      let currentPlaymatSort = 'owned';
       let currentBattleLimit = 100;
       let currentTab = 'players';
       let excludedPlayerIds = new Set(); // 集計から除外するプレイヤーのUUID集合
@@ -1249,6 +1490,9 @@
         renderPlayerList();
         renderLeaderList();
         renderCardList();
+        renderSkinList();
+        renderIconList();
+        renderPlaymatList();
       }
 
       /**
@@ -1264,6 +1508,9 @@
         renderPlayerList();
         renderLeaderList();
         renderCardList();
+        renderSkinList();
+        renderIconList();
+        renderPlaymatList();
       }
 
       // グローバル公開
@@ -1288,6 +1535,18 @@
       window.sortLeaderList = function (sortKey) {
         currentLeaderSort = sortKey;
         renderLeaderList();
+      };
+      window.sortSkinList = function (sortKey) {
+        currentSkinSort = sortKey;
+        renderSkinList();
+      };
+      window.sortIconList = function (sortKey) {
+        currentIconSort = sortKey;
+        renderIconList();
+      };
+      window.sortPlaymatList = function (sortKey) {
+        currentPlaymatSort = sortKey;
+        renderPlaymatList();
       };
       window.changeBattleLimit = function (val) {
         currentBattleLimit = val === 'all' ? Infinity : parseInt(val, 10);
@@ -1322,6 +1581,18 @@
           } catch (e) {
             console.warn(
               'characters.js の読み込みに失敗。キャラクター名は生IDで表示されます。',
+              e
+            );
+          }
+          try {
+            const skinsModule = await import('../src/utils/constants/skins.js');
+            SKIN_MASTER = skinsModule.SKIN_MASTER || {};
+            if (typeof skinsModule.findSkinEntry === 'function') {
+              findSkinEntry = skinsModule.findSkinEntry;
+            }
+          } catch (e) {
+            console.warn(
+              'skins.js の読み込みに失敗。スキン情報はフォールバック表示されます。',
               e
             );
           }
@@ -1639,18 +1910,24 @@
       // タブ切り替え
       // =============================
       /**
-       * プレイヤー一覧、リーダー一覧、全カード一覧のタブ表示を切り替える
-       * @param {string} tab - 'players' | 'leaders' | 'cards'
+       * プレイヤー一覧、リーダー一覧、全カード一覧、スキン一覧、アイコン一覧、プレイマット一覧、防衛戦結果のタブ表示を切り替える
+       * @param {string} tab - 'players' | 'leaders' | 'cards' | 'skins' | 'icons' | 'playmats' | 'battles'
        */
       function switchTab(tab) {
         currentTab = tab;
         const viewMain = document.getElementById('view-main');
         const viewLeaders = document.getElementById('view-leaders');
         const viewCards = document.getElementById('view-cards');
+        const viewSkins = document.getElementById('view-skins');
+        const viewIcons = document.getElementById('view-icons');
+        const viewPlaymats = document.getElementById('view-playmats');
         const viewBattles = document.getElementById('view-battles');
         const tabPlayers = document.getElementById('tab-players');
         const tabLeaders = document.getElementById('tab-leaders');
         const tabCards = document.getElementById('tab-cards');
+        const tabSkins = document.getElementById('tab-skins');
+        const tabIcons = document.getElementById('tab-icons');
+        const tabPlaymats = document.getElementById('tab-playmats');
         const tabBattles = document.getElementById('tab-battles');
 
         const activeClass =
@@ -1661,11 +1938,17 @@
         viewMain.classList.add('hidden');
         if (viewLeaders) viewLeaders.classList.add('hidden');
         if (viewCards) viewCards.classList.add('hidden');
+        if (viewSkins) viewSkins.classList.add('hidden');
+        if (viewIcons) viewIcons.classList.add('hidden');
+        if (viewPlaymats) viewPlaymats.classList.add('hidden');
         if (viewBattles) viewBattles.classList.add('hidden');
 
         if (tabPlayers) tabPlayers.className = inactiveClass;
         if (tabLeaders) tabLeaders.className = inactiveClass;
         if (tabCards) tabCards.className = inactiveClass;
+        if (tabSkins) tabSkins.className = inactiveClass;
+        if (tabIcons) tabIcons.className = inactiveClass;
+        if (tabPlaymats) tabPlaymats.className = inactiveClass;
         if (tabBattles) tabBattles.className = inactiveClass;
 
         if (tab === 'players') {
@@ -1682,6 +1965,24 @@
           if (tabCards) tabCards.className = activeClass;
           if (document.getElementById('cards-grid')?.children.length === 0) {
             renderCardList();
+          }
+        } else if (tab === 'skins') {
+          if (viewSkins) viewSkins.classList.remove('hidden');
+          if (tabSkins) tabSkins.className = activeClass;
+          if (document.getElementById('skins-grid')?.children.length === 0) {
+            renderSkinList();
+          }
+        } else if (tab === 'icons') {
+          if (viewIcons) viewIcons.classList.remove('hidden');
+          if (tabIcons) tabIcons.className = activeClass;
+          if (document.getElementById('icons-grid')?.children.length === 0) {
+            renderIconList();
+          }
+        } else if (tab === 'playmats') {
+          if (viewPlaymats) viewPlaymats.classList.remove('hidden');
+          if (tabPlaymats) tabPlaymats.className = activeClass;
+          if (document.getElementById('playmats-grid')?.children.length === 0) {
+            renderPlaymatList();
           }
         } else if (tab === 'battles') {
           if (viewBattles) viewBattles.classList.remove('hidden');
@@ -1998,6 +2299,9 @@
 
         renderProfile(player);
         renderPoints(player);
+        renderUnlockedIcons(player);
+        renderUnlockedSkins(player);
+        renderOwnedPlaymats(player);
         renderPremiumCards(player);
         renderInventory(player);
         renderDeck(player);
@@ -2180,6 +2484,276 @@
       }
 
       // =============================
+      // 解放済みアイコンセクション
+      // =============================
+      /**
+       * プレイヤーの解放済みアイコン一覧を描画する
+       * @param {Object} p - プレイヤーデータ
+       */
+      function renderUnlockedIcons(p) {
+        const sectionEl = document.getElementById('section-unlocked-icons');
+        if (!sectionEl) return;
+
+        const rawIcons = p.unlocked_icons ?? p.unlockedIcons;
+        const hasSyncData = rawIcons !== undefined && rawIcons !== null;
+        const unlockedList = Array.from(
+          new Set(
+            (Array.isArray(rawIcons) ? rawIcons : [])
+              .map((id) => (id ? String(id).trim() : ''))
+              .filter(Boolean)
+          )
+        );
+
+        // ALL_ICONS の定義順（インデックス順）でソート
+        const iconOrderMap = new Map(
+          (ALL_ICONS || []).map((icon, idx) => [icon.id, idx])
+        );
+        unlockedList.sort((a, b) => {
+          const idxA = iconOrderMap.has(a) ? iconOrderMap.get(a) : Infinity;
+          const idxB = iconOrderMap.has(b) ? iconOrderMap.get(b) : Infinity;
+          if (idxA !== idxB) return idxA - idxB;
+          return a.localeCompare(b, 'ja');
+        });
+
+        const totalAvailable = ALL_ICONS.length || 0;
+        const count = unlockedList.length;
+
+        if (!hasSyncData) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">🖼️ 解放済みアイコン</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                アイコンデータ未同期（次回ログイン時に反映されます）
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        if (count === 0) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">🖼️ 解放済みアイコン (0種)</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                解放済みアイコンなし
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        sectionEl.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">🖼️ 解放済みアイコン (${count}${totalAvailable > 0 ? ` / ${totalAvailable}` : ''}種)</span>
+            </div>
+            <div class="bg-slate-800/50 rounded-xl p-3 border border-indigo-500/20">
+              <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 xl:grid-cols-6 gap-2">
+                ${unlockedList
+                  .map((iconId) => {
+                    const iconName = getIconName(iconId);
+                    const iconSrc = getIconPath(iconId);
+                    return `
+                  <div class="bg-slate-900/80 rounded-lg p-2 border border-indigo-500/30 flex flex-col items-center text-center shadow-sm relative group overflow-hidden">
+                    <img src="${iconSrc}" loading="lazy" class="w-10 h-10 object-cover rounded-full border border-indigo-400/50 mb-1.5 shrink-0" alt="${escapeHtml(iconName)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                    <div class="text-[10px] font-black text-slate-200 truncate w-full" title="${escapeHtml(iconName)}">${escapeHtml(iconName)}</div>
+                    <div class="text-[8px] font-mono text-slate-500 truncate w-full" title="${escapeHtml(iconId)}">${escapeHtml(iconId)}</div>
+                  </div>
+                  `;
+                  })
+                  .join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // =============================
+      // 解放済みスキンセクション
+      // =============================
+      /**
+       * プレイヤーの解放済みスキン一覧を描画する
+       * @param {Object} p - プレイヤーデータ
+       */
+      function renderUnlockedSkins(p) {
+        const sectionEl = document.getElementById('section-unlocked-skins');
+        if (!sectionEl) return;
+
+        const rawSkins = p.unlocked_skins ?? p.unlockedSkins;
+        const hasSyncData = rawSkins !== undefined && rawSkins !== null;
+        const unlockedList = Array.from(
+          new Set(
+            (Array.isArray(rawSkins) ? rawSkins : [])
+              .map((id) => (id ? String(id).trim() : ''))
+              .filter(Boolean)
+          )
+        );
+
+        // SKIN_MASTER の定義順（インデックス順）でソート
+        const skinOrderList = [];
+        for (const [skinType, charMap] of Object.entries(SKIN_MASTER || {})) {
+          for (const charId of Object.keys(charMap || {})) {
+            skinOrderList.push(`${charId}_${skinType}`);
+          }
+        }
+        const skinOrderMap = new Map(skinOrderList.map((id, idx) => [id, idx]));
+        unlockedList.sort((a, b) => {
+          const idxA = skinOrderMap.has(a) ? skinOrderMap.get(a) : Infinity;
+          const idxB = skinOrderMap.has(b) ? skinOrderMap.get(b) : Infinity;
+          if (idxA !== idxB) return idxA - idxB;
+          return a.localeCompare(b, 'ja');
+        });
+
+        const count = unlockedList.length;
+
+        if (!hasSyncData) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">👗 解放済みスキン</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                スキンデータ未同期（次回ログイン時に反映されます）
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        if (count === 0) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">👗 解放済みスキン (0種)</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                解放済みスキンなし
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        sectionEl.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-black text-pink-400 uppercase tracking-widest">👗 解放済みスキン (${count}種)</span>
+            </div>
+            <div class="bg-slate-800/50 rounded-xl p-3 border border-pink-500/20">
+              <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 xl:grid-cols-6 gap-2">
+                ${unlockedList
+                  .map((skinId) => {
+                    const skinName = getSkinDisplayName(skinId);
+                    const thumbSrc = getSkinThumbPath(skinId);
+                    return `
+                  <div class="bg-slate-900/80 rounded-lg p-2 border border-pink-500/30 flex flex-col items-center text-center shadow-sm relative group overflow-hidden">
+                    <img src="${thumbSrc}" loading="lazy" class="w-10 h-10 object-cover rounded-full border border-pink-400/50 mb-1.5 shrink-0 bg-slate-950" alt="${escapeHtml(skinName)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                    <div class="text-[10px] font-black text-slate-200 truncate w-full" title="${escapeHtml(skinName)}">${escapeHtml(skinName)}</div>
+                    <div class="text-[8px] font-mono text-slate-500 truncate w-full" title="${escapeHtml(skinId)}">${escapeHtml(skinId)}</div>
+                  </div>
+                  `;
+                  })
+                  .join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // =============================
+      // 所持プレイマットセクション
+      // =============================
+      /**
+       * プレイヤーの所持プレイマット一覧を描画する
+       * @param {Object} p - プレイヤーデータ
+       */
+      function renderOwnedPlaymats(p) {
+        const sectionEl = document.getElementById('section-owned-playmats');
+        if (!sectionEl) return;
+
+        const rawPlaymats = p.owned_playmats ?? p.ownedPlaymats;
+        const hasSyncData = rawPlaymats !== undefined && rawPlaymats !== null;
+        const ownedList = Array.from(
+          new Set(
+            (Array.isArray(rawPlaymats) ? rawPlaymats : [])
+              .map((id) => (id ? String(id).trim() : ''))
+              .filter(Boolean)
+          )
+        );
+
+        // PLAYMAT_MASTER の定義順（インデックス順）でソート
+        const pmOrderMap = new Map(
+          (PLAYMAT_MASTER || []).map((pm, idx) => [pm.id, idx])
+        );
+        ownedList.sort((a, b) => {
+          const idxA = pmOrderMap.has(a) ? pmOrderMap.get(a) : Infinity;
+          const idxB = pmOrderMap.has(b) ? pmOrderMap.get(b) : Infinity;
+          if (idxA !== idxB) return idxA - idxB;
+          return a.localeCompare(b, 'ja');
+        });
+
+        const totalAvailable = PLAYMAT_MASTER.length || 0;
+        const count = ownedList.length;
+
+        if (!hasSyncData) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">🎨 所持プレイマット</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                プレイマットデータ未同期（次回ログイン時に反映されます）
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        if (count === 0) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">🎨 所持プレイマット (0種)</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                所持プレイマットなし
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        sectionEl.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">🎨 所持プレイマット (${count}${totalAvailable > 0 ? ` / ${totalAvailable}` : ''}種)</span>
+            </div>
+            <div class="bg-slate-800/50 rounded-xl p-3 border border-emerald-500/20">
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                ${ownedList
+                  .map((pmId) => {
+                    const pmName = getPlaymatName(pmId);
+                    const thumbSrc = getPlaymatThumbPath(pmId);
+                    return `
+                  <div class="bg-slate-900/80 rounded-lg p-2 border border-emerald-500/30 flex flex-col items-center text-center shadow-sm relative group overflow-hidden">
+                    <img src="${thumbSrc}" loading="lazy" class="w-full h-14 object-cover rounded-md border border-emerald-400/30 mb-1.5 shrink-0 bg-slate-950" alt="${escapeHtml(pmName)}" onerror="this.onerror=null; this.src='${fixAssetPath('assets/boards/board_lanedefenders_thumb.webp')}'" />
+                    <div class="text-[10px] font-black text-slate-200 truncate w-full" title="${escapeHtml(pmName)}">${escapeHtml(pmName)}</div>
+                    <div class="text-[8px] font-mono text-slate-500 truncate w-full" title="${escapeHtml(pmId)}">${escapeHtml(pmId)}</div>
+                  </div>
+                  `;
+                  })
+                  .join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // =============================
       // 所持プレミアムセクション
       // =============================
       /**
@@ -2198,6 +2772,16 @@
               .filter(Boolean)
           )
         );
+
+        // CARD_MASTER の定義順（インデックス順）でソート
+        unlockedCards.sort((a, b) => {
+          const idxA = CARD_MASTER.findIndex((c) => c.id === a);
+          const idxB = CARD_MASTER.findIndex((c) => c.id === b);
+          const validA = idxA >= 0 ? idxA : Infinity;
+          const validB = idxB >= 0 ? idxB : Infinity;
+          if (validA !== validB) return validA - validB;
+          return a.localeCompare(b, 'ja');
+        });
         const totalPremiumTargets = PREMIUM_CARD_IDS.length || 0;
         const unlockedCount = unlockedCards.length;
 
@@ -3057,6 +3641,476 @@
 
         document.getElementById('cards-grid').innerHTML =
           `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">${gridHtml}</div>`;
+      }
+
+      // =============================
+      // 全スキン一覧セクション
+      // =============================
+      /**
+       * 全スキン一覧と各プレイヤーの解放状況を描画する
+       */
+      function renderSkinList() {
+        const totalCount = allPlayers.length;
+        const includedPlayers = allPlayers.filter(
+          (p) => !excludedPlayerIds.has(p.uuid)
+        );
+        const includedCount = includedPlayers.length;
+
+        const statusEl = document.getElementById('skins-filter-status');
+        if (statusEl) {
+          statusEl.innerHTML = `集計対象プレイヤー: <span class="font-black text-pink-700">${includedCount}</span>/${totalCount}人${
+            excludedPlayerIds.size > 0
+              ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
+              : ''
+          }`;
+        }
+
+        // スキンマスタから全スキンリストを展開
+        const skinList = [];
+        const seenSkinIds = new Set();
+
+        for (const [skinType, charMap] of Object.entries(SKIN_MASTER || {})) {
+          for (const [charId, entry] of Object.entries(charMap || {})) {
+            const skinId = `${charId}_${skinType}`;
+            if (seenSkinIds.has(skinId)) continue;
+            seenSkinIds.add(skinId);
+
+            const charData = CHARACTERS[charId] || {};
+            const charName = charData.name || getCharName(charId);
+            const skinName = entry.name || skinId;
+
+            skinList.push({
+              id: skinId,
+              skinType,
+              charId,
+              charName,
+              name: skinName,
+              condition: entry.condition || '',
+              desc: entry.desc || '',
+              unlockedCount: 0,
+              activeCount: 0,
+              unlockedPlayers: [],
+              activePlayers: [],
+            });
+          }
+        }
+
+        // プレイヤーの解放・登録デッキ使用状況を集計
+        includedPlayers.forEach((p) => {
+          const rawSkins = p.unlocked_skins ?? p.unlockedSkins;
+          const pSkins = new Set(
+            (Array.isArray(rawSkins) ? rawSkins : []).map(String)
+          );
+
+          // 登録デッキ群（registered_decks）および防衛デッキで使用されているスキンIDを収集（1プレイヤー内で重複排除）
+          const playerActiveSkinIds = new Set();
+
+          // 1. 登録デッキ一覧（registered_decks）を走査
+          if (Array.isArray(p.registered_decks)) {
+            p.registered_decks.forEach((d) => {
+              if (!d) return;
+              const leaderId = d.leaderId;
+              const leaderSkin = d.skin;
+              if (leaderId && leaderSkin && leaderSkin !== 'default') {
+                const fullSkinId = leaderSkin.includes('_')
+                  ? leaderSkin
+                  : `${leaderId}_${leaderSkin}`;
+                playerActiveSkinIds.add(fullSkinId);
+              }
+              if (d.playerSkins && typeof d.playerSkins === 'object') {
+                Object.entries(d.playerSkins).forEach(([cId, sType]) => {
+                  if (sType && sType !== 'default') {
+                    const fullSkinId = sType.includes('_')
+                      ? sType
+                      : `${cId}_${sType}`;
+                    playerActiveSkinIds.add(fullSkinId);
+                  }
+                });
+              }
+            });
+          }
+
+          // 2. 防衛デッキのスキン設定
+          if (p.has_defense_deck) {
+            const defChar = p.character;
+            const defSkin = p.skin;
+            if (defChar && defSkin && defSkin !== 'default') {
+              const fullSkinId = defSkin.includes('_')
+                ? defSkin
+                : `${defChar}_${defSkin}`;
+              playerActiveSkinIds.add(fullSkinId);
+            }
+            if (p.skins && typeof p.skins === 'object') {
+              Object.entries(p.skins).forEach(([cId, sType]) => {
+                if (sType && sType !== 'default') {
+                  const fullSkinId = sType.includes('_')
+                    ? sType
+                    : `${cId}_${sType}`;
+                  playerActiveSkinIds.add(fullSkinId);
+                }
+              });
+            }
+          }
+
+          skinList.forEach((s) => {
+            if (pSkins.has(s.id)) {
+              s.unlockedCount++;
+              s.unlockedPlayers.push(p.name || '名無し');
+            }
+
+            if (playerActiveSkinIds.has(s.id)) {
+              s.activeCount++;
+              s.activePlayers.push(p.name || '名無し');
+            }
+          });
+        });
+
+        // ソート処理
+        skinList.sort((a, b) => {
+          if (currentSkinSort === 'unlocked') {
+            if (a.unlockedCount !== b.unlockedCount)
+              return b.unlockedCount - a.unlockedCount;
+            if (a.activeCount !== b.activeCount)
+              return b.activeCount - a.activeCount;
+          } else if (currentSkinSort === 'active') {
+            if (a.activeCount !== b.activeCount)
+              return b.activeCount - a.activeCount;
+            if (a.unlockedCount !== b.unlockedCount)
+              return b.unlockedCount - a.unlockedCount;
+          }
+          return a.name.localeCompare(b.name, 'ja');
+        });
+
+        const countEl = document.getElementById('skins-count');
+        if (countEl) {
+          countEl.innerText = `(${skinList.length}種)`;
+        }
+
+        const gridHtml = skinList
+          .map((s) => {
+            const rate =
+              includedCount > 0
+                ? ((s.unlockedCount / includedCount) * 100).toFixed(1)
+                : '0.0';
+            const isZero = s.unlockedCount === 0 && s.activeCount === 0;
+            const thumbSrc = getSkinThumbPath(s.id);
+            const playerListTooltip =
+              s.unlockedPlayers.slice(0, 5).map(escapeHtml).join(', ') +
+              (s.unlockedPlayers.length > 5
+                ? ` 他${s.unlockedPlayers.length - 5}名`
+                : '');
+            const activeTooltip =
+              s.activePlayers.slice(0, 5).map(escapeHtml).join(', ') +
+              (s.activePlayers.length > 5
+                ? ` 他${s.activePlayers.length - 5}名`
+                : '');
+
+            return `
+            <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-pink-200 shadow-sm'} rounded-2xl p-4 flex flex-col hover:shadow-md transition-all">
+              <div class="flex gap-3 mb-3 items-center">
+                <img src="${thumbSrc}" loading="lazy" class="w-14 h-14 object-cover rounded-2xl border-2 border-pink-400 bg-slate-900 shrink-0 shadow-sm" alt="${escapeHtml(s.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                <div class="flex flex-col flex-1 min-w-0">
+                  <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 truncate">
+                      🎮 ${escapeHtml(s.charName)}
+                    </span>
+                  </div>
+                  <div class="text-[8px] font-mono text-slate-400 truncate mt-1">${escapeHtml(s.id)}</div>
+                </div>
+              </div>
+
+              <div class="bg-pink-50/50 rounded-xl p-2.5 border border-pink-100 text-xs font-bold space-y-1 mb-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] text-pink-700">解放プレイヤー:</span>
+                  <span class="font-black text-pink-900">${s.unlockedCount} / ${includedCount}人 <span class="text-[10px] text-pink-600 font-normal">(${rate}%)</span></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] text-indigo-700">使用中プレイヤー:</span>
+                  <span class="font-black text-indigo-900">${s.activeCount}人</span>
+                </div>
+                ${
+                  s.unlockedCount > 0
+                    ? `<div class="text-[9px] text-slate-500 truncate" title="${playerListTooltip}">所持者: ${playerListTooltip}</div>`
+                    : ''
+                }
+                ${
+                  s.activeCount > 0
+                    ? `<div class="text-[9px] text-indigo-500 truncate" title="${activeTooltip}">使用者: ${activeTooltip}</div>`
+                    : ''
+                }
+              </div>
+
+              ${
+                s.condition || s.desc
+                  ? `<div class="mt-auto bg-slate-50 rounded-xl p-2 text-[9px] text-slate-500 line-clamp-2 border border-slate-100">
+                      ${s.condition ? `<div class="font-bold text-slate-600">入手: ${escapeHtml(s.condition)}</div>` : ''}
+                      ${s.desc ? `<div>${escapeHtml(s.desc)}</div>` : ''}
+                    </div>`
+                  : ''
+              }
+            </div>
+            `;
+          })
+          .join('');
+
+        const gridEl = document.getElementById('skins-grid');
+        if (gridEl) {
+          gridEl.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">${gridHtml}</div>`;
+        }
+      }
+
+      // =============================
+      // 全アイコン一覧セクション
+      // =============================
+      /**
+       * 全アイコン一覧と各プレイヤーの解放・設定状況を描画する
+       */
+      function renderIconList() {
+        const totalCount = allPlayers.length;
+        const includedPlayers = allPlayers.filter(
+          (p) => !excludedPlayerIds.has(p.uuid)
+        );
+        const includedCount = includedPlayers.length;
+
+        const statusEl = document.getElementById('icons-filter-status');
+        if (statusEl) {
+          statusEl.innerHTML = `集計対象プレイヤー: <span class="font-black text-indigo-700">${includedCount}</span>/${totalCount}人${
+            excludedPlayerIds.size > 0
+              ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
+              : ''
+          }`;
+        }
+
+        const iconList = (ALL_ICONS || []).map((icon) => {
+          const id = icon.id;
+          const name = icon.name || getIconName(id);
+          return {
+            id,
+            name,
+            unlockedCount: 0,
+            activeCount: 0,
+            unlockedPlayers: [],
+            activePlayers: [],
+          };
+        });
+
+        // 集計
+        includedPlayers.forEach((p) => {
+          const rawIcons = p.unlocked_icons ?? p.unlockedIcons;
+          const pIcons = new Set(
+            (Array.isArray(rawIcons) ? rawIcons : []).map(String)
+          );
+          const activeIcon = String(p.icon || 'player');
+
+          iconList.forEach((i) => {
+            if (pIcons.has(i.id)) {
+              i.unlockedCount++;
+              i.unlockedPlayers.push(p.name || '名無し');
+            }
+            if (activeIcon === i.id) {
+              i.activeCount++;
+              i.activePlayers.push(p.name || '名無し');
+            }
+          });
+        });
+
+        // ソート処理
+        iconList.sort((a, b) => {
+          if (currentIconSort === 'unlocked') {
+            if (a.unlockedCount !== b.unlockedCount)
+              return b.unlockedCount - a.unlockedCount;
+            if (a.activeCount !== b.activeCount)
+              return b.activeCount - a.activeCount;
+          } else if (currentIconSort === 'active') {
+            if (a.activeCount !== b.activeCount)
+              return b.activeCount - a.activeCount;
+            if (a.unlockedCount !== b.unlockedCount)
+              return b.unlockedCount - a.unlockedCount;
+          }
+          return a.name.localeCompare(b.name, 'ja');
+        });
+
+        const countEl = document.getElementById('icons-count');
+        if (countEl) {
+          countEl.innerText = `(${iconList.length}種)`;
+        }
+
+        const gridHtml = iconList
+          .map((i) => {
+            const rate =
+              includedCount > 0
+                ? ((i.unlockedCount / includedCount) * 100).toFixed(1)
+                : '0.0';
+            const isZero = i.unlockedCount === 0 && i.activeCount === 0;
+            const iconSrc = getIconPath(i.id);
+            const activeTooltip =
+              i.activePlayers.slice(0, 5).map(escapeHtml).join(', ') +
+              (i.activePlayers.length > 5
+                ? ` 他${i.activePlayers.length - 5}名`
+                : '');
+
+            return `
+            <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-indigo-200 shadow-sm'} rounded-2xl p-4 flex flex-col hover:shadow-md transition-all">
+              <div class="flex gap-3 mb-3 items-center">
+                <img src="${iconSrc}" loading="lazy" class="w-14 h-14 object-cover rounded-full border-2 border-indigo-400 bg-slate-900 shrink-0 shadow-sm" alt="${escapeHtml(i.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                <div class="flex flex-col flex-1 min-w-0">
+                  <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(i.name)}">${escapeHtml(i.name)}</div>
+                  <div class="text-[9px] font-mono text-slate-400 truncate mt-0.5">${escapeHtml(i.id)}</div>
+                  <div class="mt-2 text-[10px] font-bold space-y-0.5">
+                    <div class="text-indigo-600">🖼️ 解放: <span class="font-black">${i.unlockedCount}</span> 人 <span class="text-[9px] text-slate-400 font-normal">(${rate}%)</span></div>
+                    <div class="text-emerald-600" title="${activeTooltip}">👤 設定中: <span class="font-black">${i.activeCount}</span> 人</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            `;
+          })
+          .join('');
+
+        const gridEl = document.getElementById('icons-grid');
+        if (gridEl) {
+          gridEl.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">${gridHtml}</div>`;
+        }
+      }
+
+      // =============================
+      // 全プレイマット一覧セクション
+      // =============================
+      /**
+       * 全プレイマット一覧と各プレイヤーの所持・使用状況を描画する
+       */
+      function renderPlaymatList() {
+        const totalCount = allPlayers.length;
+        const includedPlayers = allPlayers.filter(
+          (p) => !excludedPlayerIds.has(p.uuid)
+        );
+        const includedCount = includedPlayers.length;
+
+        const statusEl = document.getElementById('playmats-filter-status');
+        if (statusEl) {
+          statusEl.innerHTML = `集計対象プレイヤー: <span class="font-black text-emerald-700">${includedCount}</span>/${totalCount}人${
+            excludedPlayerIds.size > 0
+              ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
+              : ''
+          }`;
+        }
+
+        const pmList = (PLAYMAT_MASTER || []).map((pm) => {
+          const id = pm.id;
+          const name = pm.name || getPlaymatName(id);
+          return {
+            id,
+            name,
+            image: pm.image || '',
+            description: pm.description || '',
+            ownedCount: 0,
+            activeCount: 0,
+            ownedPlayers: [],
+            activePlayers: [],
+          };
+        });
+
+        // 集計
+        includedPlayers.forEach((p) => {
+          const rawPlaymats = p.owned_playmats ?? p.ownedPlaymats;
+          const pPlaymats = new Set(
+            (Array.isArray(rawPlaymats) ? rawPlaymats : []).map(String)
+          );
+          const activePm = String(p.playmat || '');
+          const deckPms = new Set();
+          if (Array.isArray(p.registered_decks)) {
+            p.registered_decks.forEach((d) => {
+              const pmId = d?.playmatId || d?.playmat;
+              if (pmId) deckPms.add(String(pmId));
+            });
+          }
+
+          pmList.forEach((pm) => {
+            if (pPlaymats.has(pm.id)) {
+              pm.ownedCount++;
+              pm.ownedPlayers.push(p.name || '名無し');
+            }
+            if (activePm === pm.id || deckPms.has(pm.id)) {
+              pm.activeCount++;
+              pm.activePlayers.push(p.name || '名無し');
+            }
+          });
+        });
+
+        // ソート処理
+        pmList.sort((a, b) => {
+          if (currentPlaymatSort === 'owned') {
+            if (a.ownedCount !== b.ownedCount)
+              return b.ownedCount - a.ownedCount;
+            if (a.activeCount !== b.activeCount)
+              return b.activeCount - a.activeCount;
+          } else if (currentPlaymatSort === 'active') {
+            if (a.activeCount !== b.activeCount)
+              return b.activeCount - a.activeCount;
+            if (a.ownedCount !== b.ownedCount)
+              return b.ownedCount - a.ownedCount;
+          }
+          return a.name.localeCompare(b.name, 'ja');
+        });
+
+        const countEl = document.getElementById('playmats-count');
+        if (countEl) {
+          countEl.innerText = `(${pmList.length}種)`;
+        }
+
+        const gridHtml = pmList
+          .map((pm) => {
+            const rate =
+              includedCount > 0
+                ? ((pm.ownedCount / includedCount) * 100).toFixed(1)
+                : '0.0';
+            const isZero = pm.ownedCount === 0 && pm.activeCount === 0;
+            const thumbSrc = getPlaymatThumbPath(pm);
+            const ownedTooltip =
+              pm.ownedPlayers.slice(0, 5).map(escapeHtml).join(', ') +
+              (pm.ownedPlayers.length > 5
+                ? ` 他${pm.ownedPlayers.length - 5}名`
+                : '');
+
+            return `
+            <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-emerald-200 shadow-sm'} rounded-2xl p-4 flex flex-col hover:shadow-md transition-all">
+              <div class="mb-3">
+                <img src="${thumbSrc}" loading="lazy" class="w-full h-24 object-cover rounded-xl border border-emerald-300 bg-slate-950 shadow-sm" alt="${escapeHtml(pm.name)}" onerror="this.onerror=null; this.src='${fixAssetPath('assets/boards/board_lanedefenders_thumb.webp')}'" />
+              </div>
+              <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(pm.name)}">${escapeHtml(pm.name)}</div>
+              <div class="text-[9px] font-mono text-slate-400 truncate mt-0.5">${escapeHtml(pm.id)}</div>
+
+              <div class="bg-emerald-50/50 rounded-xl p-2.5 border border-emerald-100 text-xs font-bold space-y-1 mt-2 mb-2">
+                <div class="flex justify-between items-center text-[10px]">
+                  <span class="text-emerald-700">🎨 所持人数:</span>
+                  <span class="font-black text-emerald-900">${pm.ownedCount} / ${includedCount}人 <span class="text-[9px] text-emerald-600 font-normal">(${rate}%)</span></span>
+                </div>
+                <div class="flex justify-between items-center text-[10px]">
+                  <span class="text-slate-600">🛡️ デッキ使用:</span>
+                  <span class="font-black text-slate-800">${pm.activeCount} 人</span>
+                </div>
+                ${
+                  pm.ownedCount > 0
+                    ? `<div class="text-[9px] text-slate-500 truncate" title="${ownedTooltip}">所持者: ${ownedTooltip}</div>`
+                    : ''
+                }
+              </div>
+
+              ${
+                pm.description
+                  ? `<div class="mt-auto bg-slate-50 rounded-xl p-2 text-[9px] text-slate-500 line-clamp-2 border border-slate-100">${escapeHtml(pm.description)}</div>`
+                  : ''
+              }
+            </div>
+            `;
+          })
+          .join('');
+
+        const gridEl = document.getElementById('playmats-grid');
+        if (gridEl) {
+          gridEl.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">${gridHtml}</div>`;
+        }
       }
 
       // =============================

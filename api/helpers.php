@@ -49,6 +49,9 @@ function createDefaultPlayerData($uuid, $name = 'プレイヤー', $points = 0, 
         'fortune_cleared' => '{}',
         'inventory' => [],
         'unlocked_premium_cards' => [],
+        'unlocked_icons' => [],
+        'unlocked_skins' => [],
+        'owned_playmats' => [],
         'registered_decks' => [],
         'lastAccessAt' => time()
     ];
@@ -134,7 +137,16 @@ function sanitizeUnlockedPremiumCards($unlockedPremium): array {
             $sanitized[] = $safeCardId;
         }
     }
-    return array_values(array_unique($sanitized));
+    $unique = array_values(array_unique($sanitized));
+    usort($unique, function($a, $b) use ($cardOrderMap) {
+        $idxA = $cardOrderMap[$a] ?? PHP_INT_MAX;
+        $idxB = $cardOrderMap[$b] ?? PHP_INT_MAX;
+        if ($idxA !== $idxB) {
+            return $idxA <=> $idxB;
+        }
+        return strcmp($a, $b);
+    });
+    return $unique;
 }
 
 /** デッキ配列の最大保存枚数 */
@@ -253,7 +265,76 @@ function sanitizeRegisteredDecks($decks): array {
 }
 
 /**
- * プレイヤーデータに対して、リクエストから渡されたインベントリ、プレミアム解放カード、登録デッキの更新を適用します。
+ * 解放済みアイコンID配列をサニタイズします。
+ * 安全な文字（[a-zA-Z0-9_]）のみを抽出し、重複を排除します。
+ * 
+ * @param mixed $unlockedIcons 入力アイコンID配列
+ * @return array サニタイズ済みアイコンID配列
+ */
+function sanitizeUnlockedIcons($unlockedIcons): array {
+    if (!is_array($unlockedIcons)) {
+        return [];
+    }
+    $sanitized = [];
+    foreach ($unlockedIcons as $iconId) {
+        $safeIconId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $iconId);
+        if ($safeIconId !== '') {
+            $sanitized[] = $safeIconId;
+        }
+    }
+    $unique = array_values(array_unique($sanitized));
+    sort($unique, SORT_STRING);
+    return $unique;
+}
+
+/**
+ * 解放済みスキンID配列をサニタイズします。
+ * 安全な文字（[a-zA-Z0-9_]）のみを抽出し、重複を排除してソートします。
+ * 
+ * @param mixed $unlockedSkins 入力スキンID配列
+ * @return array サニタイズ済みスキンID配列
+ */
+function sanitizeUnlockedSkins($unlockedSkins): array {
+    if (!is_array($unlockedSkins)) {
+        return [];
+    }
+    $sanitized = [];
+    foreach ($unlockedSkins as $skinId) {
+        $safeSkinId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $skinId);
+        if ($safeSkinId !== '') {
+            $sanitized[] = $safeSkinId;
+        }
+    }
+    $unique = array_values(array_unique($sanitized));
+    sort($unique, SORT_STRING);
+    return $unique;
+}
+
+/**
+ * 所持プレイマットID配列をサニタイズします。
+ * 安全な文字（[a-zA-Z0-9_]）のみを抽出し、重複を排除してソートします。
+ * 
+ * @param mixed $ownedPlaymats 入力プレイマットID配列
+ * @return array サニタイズ済みプレイマットID配列
+ */
+function sanitizeOwnedPlaymats($ownedPlaymats): array {
+    if (!is_array($ownedPlaymats)) {
+        return [];
+    }
+    $sanitized = [];
+    foreach ($ownedPlaymats as $pmId) {
+        $safePmId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $pmId);
+        if ($safePmId !== '') {
+            $sanitized[] = $safePmId;
+        }
+    }
+    $unique = array_values(array_unique($sanitized));
+    sort($unique, SORT_STRING);
+    return $unique;
+}
+
+/**
+ * プレイヤーデータに対して、リクエストから渡されたインベントリ、プレミアム解放カード、解放済みアイコン、解放済みスキン、所持プレイマット、登録デッキの更新を適用します。
  * キャメルケース・スネークケースの別名キー解決を一元化します。
  * 
  * @param array &$player_data 更新対象のプレイヤーデータ配列（参照渡し）
@@ -266,6 +347,18 @@ function applyPlayerCollectionUpdates(array &$player_data, array $data): void {
     $rawUnlockedPremium = $data['unlocked_premium_cards'] ?? $data['unlockedPremiumCards'] ?? null;
     if ($rawUnlockedPremium !== null) {
         $player_data['unlocked_premium_cards'] = sanitizeUnlockedPremiumCards($rawUnlockedPremium);
+    }
+    $rawUnlockedIcons = $data['unlocked_icons'] ?? $data['unlockedIcons'] ?? null;
+    if ($rawUnlockedIcons !== null) {
+        $player_data['unlocked_icons'] = sanitizeUnlockedIcons($rawUnlockedIcons);
+    }
+    $rawUnlockedSkins = $data['unlocked_skins'] ?? $data['unlockedSkins'] ?? null;
+    if ($rawUnlockedSkins !== null) {
+        $player_data['unlocked_skins'] = sanitizeUnlockedSkins($rawUnlockedSkins);
+    }
+    $rawOwnedPlaymats = $data['owned_playmats'] ?? $data['ownedPlaymats'] ?? null;
+    if ($rawOwnedPlaymats !== null) {
+        $player_data['owned_playmats'] = sanitizeOwnedPlaymats($rawOwnedPlaymats);
     }
     $rawDecks = $data['registered_decks'] ?? $data['decks'] ?? null;
     if ($rawDecks !== null) {
