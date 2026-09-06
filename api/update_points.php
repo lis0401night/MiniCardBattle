@@ -10,7 +10,7 @@
  * @param int $points 現在の所持防衛ポイント
  * @param int $total_points 累計防衛ポイント (オプション)
  * @param bool $increment trueなら加算、falseなら上書き (オプション)
- * @param int $defense_wins 加算する防衛勝利数 (オプション)
+ * @param int $defense_wins 防衛勝利数。increment=trueなら加算し、falseなら指定値で上書き (オプション)
  * @return json 処理結果および更新後のポイント情報
  */
 
@@ -42,7 +42,7 @@ if (strlen($uuid) < 10) {
 }
 
 // 防衛勝利数は累計回数（非負整数）のため、負数や不正な形式の入力を拒否
-if (isset($data['defense_wins']) &&
+if (array_key_exists('defense_wins', $data) &&
     filter_var(
         $data['defense_wins'],
         FILTER_VALIDATE_INT,
@@ -96,7 +96,7 @@ if ($playerData) {
         }
     }
 
-    if (isset($data['defense_wins'])) {
+    if (array_key_exists('defense_wins', $data)) {
         if ($increment) {
             // バトル敗北による相手プレイヤーへの防衛勝利数加算（increment: true）
             $playerData['defense_wins'] = ($playerData['defense_wins'] ?? 0) + $defense_wins;

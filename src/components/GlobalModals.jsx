@@ -69,7 +69,7 @@ import {
   getOrCreateUUID,
   playSound,
   resolvePlayerName,
-  safeParseArray,
+  safeParseArrayOrNull,
   stopAllBGM,
   togglePremiumCard,
 } from '../utils/gameUtils.js';
@@ -2439,16 +2439,15 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
               {(() => {
                 // 所持情報は永続化済みデータ（LocalStorage）を最優先とする。
-                // 未保存時のみ実行中の GameState、最後にモジュール初期所持データ（ownedPlaymats）へフォールバックする。
-                const storedOwned = safeParseArray(OWNED_PLAYMATS_KEY);
-                const currentOwned =
-                  storedOwned.length > 0
-                    ? storedOwned
-                    : GameState.ownedPlaymats?.length > 0
-                      ? GameState.ownedPlaymats
-                      : Array.isArray(ownedPlaymats) && ownedPlaymats.length > 0
-                        ? ownedPlaymats
-                        : [];
+                // 未保存時（null）のみ実行中の GameState、最後にモジュール初期所持データ（ownedPlaymats）へフォールバックする。
+                const storedOwned = safeParseArrayOrNull(OWNED_PLAYMATS_KEY);
+                const currentOwned = Array.isArray(storedOwned)
+                  ? storedOwned
+                  : Array.isArray(GameState.ownedPlaymats)
+                    ? GameState.ownedPlaymats
+                    : Array.isArray(ownedPlaymats)
+                      ? ownedPlaymats
+                      : [];
                 const filtered = PLAYMAT_MASTER?.filter((p) =>
                   currentOwned.includes(p.id)
                 );

@@ -1656,6 +1656,32 @@ export function safeParseArray(key) {
 }
 
 /**
+ * LocalStorageから安全にJSON配列をパースして読み込む共通ヘルパー
+ * 未保存時（キーが存在しない、またはnull）やパース失敗・非配列時は null を返します。
+ * 空配列 [] と未保存状態（null）を明確に区別したい場合に使用します。
+ *
+ * @param {string} key LocalStorageのキー
+ * @returns {Array|null} パースされた配列、または未保存・パース失敗時は null
+ */
+export function safeParseArrayOrNull(key) {
+  try {
+    let raw = localStorage.getItem(key);
+    if (raw === null || raw === undefined) return null;
+    if (typeof raw === 'string') {
+      raw = raw.replace(/[\u200B-\u200D]/g, '');
+    }
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (e) {
+    console.error(
+      `Failed to parse array or null for localStorage key "${key}":`,
+      e
+    );
+    return null;
+  }
+}
+
+/**
  * LocalStorageから安全にJSONオブジェクトをパースして読み込む共通ヘルパー
  * @param {string} key LocalStorageのキー
  * @returns {Object} パースされたオブジェクト（失敗時や非オブジェクト時は空オブジェクト）

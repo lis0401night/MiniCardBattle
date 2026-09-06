@@ -10,7 +10,7 @@
  * @param int $points 現在の所持防衛ポイント
  * @param int $total_points 累計防衛ポイント (オプション)
  * @param bool $increment trueなら加算、falseなら上書き (オプション)
- * @param int $defense_wins 加算する防衛勝利数 (オプション)
+ * @param int $defense_wins 防衛勝利数。increment=trueなら加算し、falseなら指定値で上書き (オプション)
  * @return json 処理結果および更新後のポイント情報
  */
 

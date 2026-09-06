@@ -1331,7 +1331,7 @@ export async function resolveActiveSkillEffect(
           type: 'power_change',
           side: o,
           lane: targetLane,
-          amount: newToken.currentPower ?? newToken.power ?? 0,
+          amount: newToken.appliedEquipPower ?? newToken.power ?? 0,
           source: 'equip',
         });
       } else {

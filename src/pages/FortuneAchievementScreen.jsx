@@ -7,7 +7,10 @@ import {
   loadFortuneClearedData,
   FORTUNE_GRADE_THRESHOLDS,
 } from '../utils/constants/fortuneRewards.js';
-import { getScreenBackgroundStyle } from '../utils/constants/config.js';
+import {
+  getScreenBackgroundStyle,
+  OWNED_PLAYMATS_KEY,
+} from '../utils/constants/config.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import {
   showCharacterAcquisitionModal,
@@ -42,13 +45,13 @@ const unlockAndShowAcquisition = (
         if (!GameState.unlockedStages) GameState.unlockedStages = [];
         if (!GameState.unlockedStages.includes(targetId))
           GameState.unlockedStages.push(targetId);
-      } else if (storageKey === 'mini_card_battle_owned_playmats') {
+      } else if (storageKey === OWNED_PLAYMATS_KEY) {
         if (!GameState.ownedPlaymats) GameState.ownedPlaymats = [];
         if (!GameState.ownedPlaymats.includes(targetId))
           GameState.ownedPlaymats.push(targetId);
         setOwnedPlaymats(current);
       }
-    } else if (storageKey === 'mini_card_battle_owned_playmats') {
+    } else if (storageKey === OWNED_PLAYMATS_KEY) {
       // 既にLocalStorageに入っている場合でもsetOwnedPlaymatsとGameStateに確実に反映
       if (!GameState.ownedPlaymats) GameState.ownedPlaymats = [];
       if (!GameState.ownedPlaymats.includes(targetId))
@@ -124,7 +127,7 @@ export default function FortuneAchievementScreen() {
   useEffect(() => {
     if (claimedLevels.includes(4)) {
       try {
-        const key = 'mini_card_battle_owned_playmats';
+        const key = OWNED_PLAYMATS_KEY;
         const current = safeParseArray(key);
         if (!current.includes(enemyCharId)) {
           current.push(enemyCharId);
@@ -171,7 +174,7 @@ export default function FortuneAchievementScreen() {
       );
     } else if (level === 4) {
       unlockAndShowAcquisition(
-        'mini_card_battle_owned_playmats',
+        OWNED_PLAYMATS_KEY,
         enemyCharId,
         showPlaymatAcquisitionModal,
         rewards.shortName

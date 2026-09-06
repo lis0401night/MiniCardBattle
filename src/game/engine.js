@@ -3937,7 +3937,18 @@ export function applyLeaderSkillLogic(
       if (action === 'satan_avatar')
         newToken.imgUrl = 'assets/cards/card_token_satan.webp';
 
-      if (!tryEquipToken(state, board, l, newToken, owner, events)) {
+      const isSummonLeaderAction = action === 'dungeon_summon_leader';
+      if (
+        !tryEquipToken(
+          state,
+          board,
+          l,
+          newToken,
+          owner,
+          events,
+          isSummonLeaderAction
+        )
+      ) {
         if (board[l] !== null && hasSkill(board[l], 'startup')) {
           resolveStartupFade(
             owner,
@@ -5146,22 +5157,32 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           events,
           aLane
         );
-        // 反撃の戦闘ダメージが憑依により肩代わりされた場合、反撃側が簒奪・吸収を持っていれば発動
-        if (originalTarget && hasSkill(originalTarget, 'extort')) {
-          applyExtort(originalTarget, attackerSide, defSide, l, events, state);
-        }
-        if (originalTarget && hasSkill(originalTarget, 'absorb')) {
-          const healAmt = Math.floor(dmgToAtk / 2);
-          defHP = healDefenderLeaderHP(
-            state,
-            defHP,
-            defSide,
-            attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP,
-            healAmt,
-            'absorb',
-            events,
-            dLane
-          );
+        // 加護でダメージが無効化された場合、簒奪・吸収は発動しない（最優先ルール）
+        if (!isValkyriaGuardActive(state, attackerSide)) {
+          // 反撃の戦闘ダメージが憑依により肩代わりされたため、反撃側の簒奪・吸収を発動
+          if (originalTarget && hasSkill(originalTarget, 'extort')) {
+            applyExtort(
+              originalTarget,
+              attackerSide,
+              defSide,
+              l,
+              events,
+              state
+            );
+          }
+          if (originalTarget && hasSkill(originalTarget, 'absorb')) {
+            const healAmt = Math.floor(dmgToAtk / 2);
+            defHP = healDefenderLeaderHP(
+              state,
+              defHP,
+              defSide,
+              attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP,
+              healAmt,
+              'absorb',
+              events,
+              dLane
+            );
+          }
         }
         dmgToAtk = 0;
       }

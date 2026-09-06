@@ -936,6 +936,44 @@
           `assets/cards/card_${encodeURIComponent(String(id))}${isPremium ? '_premium' : ''}_thumb.webp`
         );
 
+      /**
+       * 画像URL一覧を並行数を制限しながらバックグラウンドでゆっくり順次事前キャッシュする
+       * （サーバーの同時接続数制限 mod_access_limit を超過させないスロットリング制御）
+       * @param {string[]} urls - 読み込む画像URLの配列
+       * @param {number} [maxConcurrency=4] - 同時接続数上限（安全値）
+       * @param {number} [delayMs=40] - 画像ごとの待機インターバル (ms)
+       * @returns {Promise<void>}
+       */
+      async function preloadImagesSlowly(
+        urls,
+        maxConcurrency = 4,
+        delayMs = 40
+      ) {
+        if (!Array.isArray(urls) || urls.length === 0) return;
+        const uniqueUrls = Array.from(new Set(urls.filter(Boolean)));
+        const queue = [...uniqueUrls];
+
+        async function worker() {
+          while (queue.length > 0) {
+            const url = queue.shift();
+            if (!url) continue;
+            await new Promise((resolve) => {
+              const img = new Image();
+              img.onload = img.onerror = () => {
+                setTimeout(resolve, delayMs);
+              };
+              img.src = url;
+            });
+          }
+        }
+
+        const workers = Array.from(
+          { length: Math.min(maxConcurrency, uniqueUrls.length) },
+          () => worker()
+        );
+        await Promise.all(workers);
+      }
+
       // =============================
       // 日本語名変換ヘルパー
       // =============================
@@ -1400,6 +1438,28 @@
           renderPlayerList();
           setupSearch();
           setupEventDelegation();
+
+          // バックグラウンドで全カード・アイコン画像をゆっくり順次事前キャッシュ（同時接続数を安全に制御）
+          setTimeout(() => {
+            const urlsToPreload = [];
+            (CARD_MASTER || []).forEach((c) => {
+              if (c && c.id) {
+                urlsToPreload.push(getCardThumbPath(c.id, false));
+              }
+            });
+            (PREMIUM_CARD_IDS || []).forEach((id) => {
+              if (id) {
+                urlsToPreload.push(getCardThumbPath(id, true));
+              }
+            });
+            Object.keys(CHARACTERS || {}).forEach((charaId) => {
+              urlsToPreload.push(getIconPath(charaId));
+            });
+            (ALL_ICONS || []).forEach((iconId) => {
+              urlsToPreload.push(getIconPath(iconId));
+            });
+            preloadImagesSlowly(urlsToPreload, 4, 40);
+          }, 600);
         } catch (err) {
           console.error('初期化失敗:', err);
           document.getElementById('loading-overlay').innerHTML =
@@ -1836,7 +1896,7 @@
               </td>
               <td class="p-2 md:p-3">
                 <div class="flex items-center gap-2">
-                  <img src="${iconSrc}" alt="icon" class="w-7 h-7 rounded-full border-2 border-indigo-200 object-cover shrink-0"
+                  <img src="${iconSrc}" loading="lazy" alt="icon" class="w-7 h-7 rounded-full border-2 border-indigo-200 object-cover shrink-0"
                        onerror="this.src='${getIconPath('player')}'"/>
                   <div class="min-w-0">
                     <div class="font-black text-slate-800 text-xs truncate tracking-tight">${escapeHtml(p.name || '名無し')}</div>
@@ -2001,7 +2061,7 @@
 
         document.getElementById('section-profile').innerHTML = `
           <div class="flex flex-col items-center text-center mb-4">
-            <img src="${iconSrc}" alt="icon" class="player-icon-large mb-3"
+            <img src="${iconSrc}" loading="lazy" alt="icon" class="player-icon-large mb-3"
                  onerror="this.src='${getIconPath('player')}'"/>
             <div class="text-2xl font-black text-white tracking-tight mb-1">${escapeHtml(p.name || '名無し')}</div>
             <div class="text-[10px] font-mono text-slate-500 mb-3">${p.uuid || '不明'}</div>
@@ -2177,7 +2237,7 @@
                     return `
                   <div class="bg-slate-900/80 rounded-lg p-2 border border-fuchsia-500/30 flex flex-col items-center text-center shadow-sm relative group overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-tr from-fuchsia-500/10 to-amber-500/10 pointer-events-none"></div>
-                    <img src="${escapeHtml(getCardThumbPath(c.id, true))}" class="w-12 h-12 object-cover rounded-md border border-fuchsia-400/50 mb-1.5 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                    <img src="${escapeHtml(getCardThumbPath(c.id, true))}" loading="lazy" class="w-12 h-12 object-cover rounded-md border border-fuchsia-400/50 mb-1.5 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                     <div class="text-[10px] font-black text-slate-200 truncate w-full" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
                     <div class="flex items-center gap-1 mt-1">
                       <span class="text-[8px] font-black text-${rarityColor}-400 bg-${rarityColor}-950/60 px-1 rounded border border-${rarityColor}-800/50">${rarityLabel}</span>
@@ -2292,7 +2352,7 @@
                         ? 'border-slate-700'
                         : 'border-slate-800/40 opacity-40'
                     } flex items-center gap-2">
-                      <img src="${escapeHtml(getCardThumbPath(c.id))}" class="w-9 h-9 object-cover rounded border border-slate-700 shrink-0 ${
+                      <img src="${escapeHtml(getCardThumbPath(c.id))}" loading="lazy" class="w-9 h-9 object-cover rounded border border-slate-700 shrink-0 ${
                         isOwned ? '' : 'grayscale'
                       }" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                       <div class="flex-1 min-w-0">
@@ -2386,7 +2446,7 @@
                     <details class="bg-slate-800/40 rounded-xl border border-white/5 overflow-hidden group">
                       <summary class="p-2.5 text-xs font-bold text-slate-300 hover:text-white cursor-pointer select-none flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/60 transition-colors">
                         <div class="flex items-center gap-2">
-                          <img src="${lIcon}" class="w-6 h-6 rounded-md object-cover border border-emerald-500/50" alt="${escapeHtml(lName)}" onerror="this.src='${getIconPath('player')}'"/>
+                          <img src="${lIcon}" loading="lazy" class="w-6 h-6 rounded-md object-cover border border-emerald-500/50" alt="${escapeHtml(lName)}" onerror="this.src='${getIconPath('player')}'"/>
                           <span class="font-black text-white text-[11px]">${escapeHtml(d.name || `デッキ${dIdx + 1}`)}</span>
                           <span class="text-[9px] text-slate-400">(${escapeHtml(lName)})</span>
                         </div>
@@ -2448,7 +2508,7 @@
               <details class="bg-slate-800/40 rounded-xl border border-amber-500/20 overflow-hidden group">
                 <summary class="p-2.5 text-xs font-bold text-slate-300 hover:text-white cursor-pointer select-none flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/60 transition-colors">
                   <div class="flex items-center gap-2">
-                    <img src="${charIcon}" class="w-6 h-6 rounded-md object-cover border border-amber-500/50" alt="${escapeHtml(charName)}" onerror="this.src='${getIconPath('player')}'"/>
+                    <img src="${charIcon}" loading="lazy" class="w-6 h-6 rounded-md object-cover border border-amber-500/50" alt="${escapeHtml(charName)}" onerror="this.src='${getIconPath('player')}'"/>
                     <span class="font-black text-white text-[11px]">防衛デッキ</span>
                     <span class="text-[9px] text-amber-300">(${escapeHtml(charName)})</span>
                   </div>
@@ -2645,7 +2705,7 @@
             return `
             <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-2xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all">
               <div class="flex gap-4 mb-3 items-center">
-                <img src="${escapeHtml(c.icon)}" class="w-16 h-16 object-cover rounded-2xl border-2 border-indigo-500 bg-slate-900 shrink-0 shadow-sm" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                <img src="${escapeHtml(c.icon)}" loading="lazy" class="w-16 h-16 object-cover rounded-2xl border-2 border-indigo-500 bg-slate-900 shrink-0 shadow-sm" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                 <div class="flex flex-col flex-1 min-w-0">
                   <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
                   <div class="text-[10px] font-bold text-slate-400 truncate mt-0.5">${escapeHtml(c.id)}</div>
@@ -2936,7 +2996,7 @@
               title="クリックして「${escapeHtml(c.name)}」の採用デッキ・対戦履歴を確認"
             >
               <div class="flex gap-3 mb-2">
-                <img src="${escapeHtml(getCardThumbPath(c.id))}" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0 group-hover:scale-105 transition-transform" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                <img src="${escapeHtml(getCardThumbPath(c.id))}" loading="lazy" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0 group-hover:scale-105 transition-transform" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                 <div class="flex flex-col flex-1 min-w-0">
                   <div class="flex justify-between items-start gap-1">
                     <div class="font-black text-slate-800 text-sm truncate group-hover:text-indigo-600 transition-colors" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
@@ -3119,7 +3179,7 @@
               <td class="p-3 text-xs font-semibold text-slate-600">${escapeHtml(formattedDate)}</td>
               <td class="p-3">
                 <div class="flex items-center gap-2.5">
-                  <img src="${escapeHtml(atkIconPath)}" class="w-8 h-8 rounded-full object-cover border border-indigo-200 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                  <img src="${escapeHtml(atkIconPath)}" loading="lazy" class="w-8 h-8 rounded-full object-cover border border-indigo-200 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                   <div class="flex flex-col min-w-0">
                     <div class="font-bold text-slate-800 text-sm truncate">${escapeHtml(rec.attackerName || '不明')}</div>
                     <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(atkCharObj.name || atkCharId)}</div>
@@ -3128,7 +3188,7 @@
               </td>
               <td class="p-3">
                 <div class="flex items-center gap-2.5">
-                  <img src="${escapeHtml(defIconPath)}" class="w-8 h-8 rounded-full object-cover border border-amber-200 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                  <img src="${escapeHtml(defIconPath)}" loading="lazy" class="w-8 h-8 rounded-full object-cover border border-amber-200 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                   <div class="flex flex-col min-w-0">
                     <div class="font-bold text-slate-800 text-sm truncate">${escapeHtml(rec.targetName || '不明')}</div>
                     <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(defCharObj.name || defCharId)}</div>
@@ -3206,7 +3266,7 @@
             <div class="relative bg-slate-800 border ${isPremium ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-700'} rounded-2xl p-2.5 flex flex-col shadow-md hover:border-indigo-400 transition-all overflow-hidden group">
               ${isPremium ? '<div class="absolute top-0 right-0 bg-gradient-to-l from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-bl-lg shadow-sm z-10">★ プレミアム</div>' : ''}
               <div class="relative mb-2 overflow-hidden rounded-xl bg-slate-900 border border-slate-700/50 aspect-square">
-                <img src="${escapeHtml(thumbUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${escapeHtml(cardName)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                <img src="${escapeHtml(thumbUrl)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${escapeHtml(cardName)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
               </div>
               <div class="flex flex-col flex-1 min-w-0">
                 <div class="font-black text-white text-xs truncate" title="${escapeHtml(cardName)}">${escapeHtml(cardName)}</div>
@@ -3518,7 +3578,7 @@
                   return `
                   <div class="bg-slate-800/80 border border-slate-700/70 hover:border-indigo-500/70 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all">
                     <div class="flex items-center gap-3 min-w-0">
-                      <img src="${getIconPath(pIconId)}" class="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" alt="${escapeHtml(player.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                      <img src="${getIconPath(pIconId)}" loading="lazy" class="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" alt="${escapeHtml(player.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                       <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                           <button
@@ -3571,7 +3631,7 @@
                   return `
                   <div class="bg-slate-800/80 border border-slate-700/70 hover:border-amber-500/70 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all">
                     <div class="flex items-center gap-3 min-w-0">
-                      <img src="${getIconPath(pIconId)}" class="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" alt="${escapeHtml(player.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                      <img src="${getIconPath(pIconId)}" loading="lazy" class="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" alt="${escapeHtml(player.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                       <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                           <button

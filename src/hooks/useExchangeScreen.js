@@ -76,6 +76,9 @@ const KEY_MAPPING = {
  * @param {string} [options.pointsTotalLocalKey] - LocalStorage上の累計ポイントキー
  * @param {string} options.apiEndpoint - サーバー同期先APIファイル名（例: 'update_fortune_points.php'）
  * @param {Array<Object>} [options.lineup] - 交換所アイテム配列（省略時は EXCHANGE_LINEUPS_BY_MODE より解決）
+ *   注意: この値は参照が安定している必要があります。ポイント同期 useEffect の依存に含まれるため、
+ *   インライン配列リテラルを渡すとサーバー同期が毎レンダーで再実行されます。
+ *   動的に生成する場合は、呼び出し側で useMemo などにより参照を固定してください。
  * @returns {Object} 交換所ステートおよびハンドラ関数群
  */
 export function useExchangeScreen({

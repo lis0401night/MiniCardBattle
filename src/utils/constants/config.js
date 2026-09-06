@@ -139,10 +139,13 @@ export const PLAYMAT_EXCHANGE_COST = 10; // プレイマット一律
 export const ICON_EXCHANGE_COST = 5; // アバターアイコン一律
 
 /**
- * 交換所ラインナップ配列およびその各要素オブジェクトを不変（Deep Freeze）にする共通ヘルパー関数
+ * 交換所ラインナップ配列およびその各要素オブジェクトを不変にする共通ヘルパー関数
+ *
+ * 注意: 凍結は配列と各要素の第1階層のみです（浅い凍結）。
+ * 要素内にネストしたオブジェクトや配列を追加する場合は、別途凍結処理が必要です。
  *
  * @param {Array<Object>} lineup - 交換所アイテム配列
- * @returns {ReadonlyArray<Readonly<Object>>} 深く凍結された交換所アイテム配列
+ * @returns {ReadonlyArray<Readonly<Object>>} 凍結された交換所アイテム配列
  */
 export function freezeLineup(lineup) {
   if (!Array.isArray(lineup)) return lineup;
