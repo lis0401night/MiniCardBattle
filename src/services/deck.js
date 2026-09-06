@@ -805,6 +805,9 @@ export function loadDeck() {
             return template ? { ...template } : null;
           })
           .filter(Boolean);
+        if (Array.isArray(snapDeck.premiumCards)) {
+          GameState.premiumCards = [...snapDeck.premiumCards];
+        }
       } catch {
         // スナップショット読み込みエラー時は通常デッキのselectionを使用
       }
@@ -925,10 +928,18 @@ export function loadDeck() {
     // プレイヤースキンの適用
     applySkinToPlayerConfig();
 
-    if (activeDeck.premiumCards) {
-      GameState.premiumCards = [...activeDeck.premiumCards];
-    } else {
-      activeDeck.premiumCards = [...GameState.premiumCards];
+    // トーナメント進行中かつスナップショットが存在する場合は通常デッキのpremiumCardsで上書きしない
+    const isTournamentSnapshotLoaded =
+      GameState.gameMode === 'tournament' &&
+      GameState.tournament &&
+      localStorage.getItem('mini_card_battle_tournament_deck_obj');
+
+    if (!isTournamentSnapshotLoaded) {
+      if (activeDeck.premiumCards) {
+        GameState.premiumCards = [...activeDeck.premiumCards];
+      } else {
+        activeDeck.premiumCards = [...GameState.premiumCards];
+      }
     }
 
     // トーナメント進行中またはダンジョンモード進行中（ダンジョンスナップショットロード済み）の場合は上書きしない
@@ -1032,6 +1043,11 @@ export function saveCurrentEditDeck() {
     if (GameState.gameMode === 'tournament') {
       const snapshotDeck = {
         ...activeDeck,
+        premiumCards: Array.isArray(GameState.premiumCards)
+          ? [...GameState.premiumCards]
+          : activeDeck.premiumCards
+            ? [...activeDeck.premiumCards]
+            : [],
         cards: GameState.playerDeckSelection.map((c) =>
           typeof c === 'string' ? c : c.baseId || c.id
         ),

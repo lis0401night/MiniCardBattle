@@ -201,6 +201,7 @@ export default function TournamentResumeScreen() {
       if (deck && deck.cards) {
         window.showEnemyDeckModal(deck.cards, 'デッキ確認', pConf.leaderSkill, {
           isPlayerDeck: true,
+          premiumCards: deck.premiumCards || [],
         });
       } else {
         showAlertModal('デッキ情報のプレビューは再開後に可能です。');

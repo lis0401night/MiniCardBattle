@@ -84,6 +84,7 @@ export {
   executeSkillFromConfirm,
   endBattle,
   returnToTitle,
+  resolveHighDifficultyRewards,
 } from './battleResult.js';
 
 // ==========================================

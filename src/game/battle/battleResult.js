@@ -591,9 +591,10 @@ function resolveFortuneRewards() {
  * 高難易度イベント（超級）の報酬およびポイント計算・更新処理を実行する。
  * 初回クリア時は HIGH_DIFFICULTY_REWARD_POINTS.FIRST_CLEAR、
  * 2回目以降は HIGH_DIFFICULTY_REWARD_POINTS.REPEAT_CLEAR を付与する。
- * @returns {boolean} 処理を完結し、後続のドロップ抽選等をスキップする場合は true
+ * カード獲得演出（RewardOverlay）の終了後、またはドロップ対象カードがない場合に呼び出される。
+ * @returns {boolean} 高難易度イベントのポイント付与・モーダル表示を実行した場合は true
  */
-function resolveHighDifficultyRewards() {
+export function resolveHighDifficultyRewards() {
   if (!(
     GameState.lastBattleResult === 'win' &&
     GameState.gameMode?.startsWith('event_') &&
@@ -847,16 +848,16 @@ export function endBattle() {
         }
       }
 
-      // resolveHighDifficultyRewards: 高難易度イベントのポイント付与・モーダル
+      // resolveCardDrop: 先にカードドロップ抽選・演出を実行（RewardOverlay閉じ時に高難易度ポイントまたは会話へ遷移）
+      if (resolveCardDrop()) {
+        return;
+      }
+      // resolveHighDifficultyRewards: カードドロップがない場合（全所持済み等）の高難易度ポイント付与・モーダル
       if (resolveHighDifficultyRewards()) {
         return;
       }
       // resolveFortuneRewards: 内部のコールバックまたは同期パスでcleanupBattleState実行
       if (resolveFortuneRewards()) {
-        return;
-      }
-      // resolveCardDrop: RewardOverlay閉じ時にcleanupBattleState実行
-      if (resolveCardDrop()) {
         return;
       }
     }

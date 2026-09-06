@@ -4557,15 +4557,44 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             defSide
           );
           if (!blockType) {
-            targetCard.currentPower -= effectiveDmg;
-            events.push({
-              type: 'damage_card',
-              side: defSide,
-              lane: targetLane,
-              amount: effectiveDmg,
-              source: 'cleave',
-            });
-            totalActualDmgToDef += effectiveDmg;
+            if (hasSkill(targetCard, 'possession')) {
+              events.push({
+                type: 'skill_popup',
+                side: defSide,
+                lane: targetLane,
+                skillName: '憑依',
+              });
+              if (isValkyriaGuardActive(state, defSide)) {
+                events.push({
+                  type: 'valkyria_guard_block',
+                  side: defSide,
+                  amount: effectiveDmg,
+                  source: 'possession',
+                });
+              } else {
+                defHP -= effectiveDmg;
+                events.push({
+                  type: 'damage_player',
+                  side: defSide,
+                  amount: effectiveDmg,
+                  source: 'possession',
+                  lane: targetLane,
+                });
+                // 憑依により相手リーダーに戦闘ダメージが肩代わりされたため、簒奪（extort）を発動
+                applyExtort(aC, defSide, attackerSide, aLane, events, state);
+                totalActualDmgToDef += effectiveDmg;
+              }
+            } else {
+              targetCard.currentPower -= effectiveDmg;
+              events.push({
+                type: 'damage_card',
+                side: defSide,
+                lane: targetLane,
+                amount: effectiveDmg,
+                source: 'cleave',
+              });
+              totalActualDmgToDef += effectiveDmg;
+            }
           } else if (blockType === 'valkyria_guard') {
             events.push({
               type: 'valkyria_guard_block',
@@ -5075,14 +5104,29 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           lane: dLane,
           skillName: '憑依',
         });
-        defHP -= dmgToDef;
-        events.push({
-          type: 'damage_player',
-          side: defSide,
-          amount: dmgToDef,
-          source: 'possession',
-          lane: dLane,
-        });
+        if (isValkyriaGuardActive(state, defSide)) {
+          events.push({
+            type: 'valkyria_guard_block',
+            side: defSide,
+            amount: dmgToDef,
+            source: 'possession',
+          });
+        } else {
+          defHP -= dmgToDef;
+          events.push({
+            type: 'damage_player',
+            side: defSide,
+            amount: dmgToDef,
+            source: 'possession',
+            lane: dLane,
+          });
+          // 憑依により相手リーダーに戦闘ダメージが肩代わりされたため、簒奪（extort）を発動
+          applyExtort(aC, defSide, attackerSide, aLane, events, state);
+          if (hasSkill(aC, 'absorb')) {
+            const healAmt = Math.floor(dmgToDef / 2);
+            healLeader(state, attackerSide, healAmt, 'absorb', events, aLane);
+          }
+        }
         dmgToDef = 0;
       }
     }
@@ -5102,6 +5146,23 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           events,
           aLane
         );
+        // 反撃の戦闘ダメージが憑依により肩代わりされた場合、反撃側が簒奪・吸収を持っていれば発動
+        if (originalTarget && hasSkill(originalTarget, 'extort')) {
+          applyExtort(originalTarget, attackerSide, defSide, l, events, state);
+        }
+        if (originalTarget && hasSkill(originalTarget, 'absorb')) {
+          const healAmt = Math.floor(dmgToAtk / 2);
+          defHP = healDefenderLeaderHP(
+            state,
+            defHP,
+            defSide,
+            attackerSide === 'blue' ? state.enemyMaxHP : state.playerMaxHP,
+            healAmt,
+            'absorb',
+            events,
+            dLane
+          );
+        }
         dmgToAtk = 0;
       }
     }

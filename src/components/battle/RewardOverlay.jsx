@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { saveDeck } from '../../services/deck.js';
 import { setupDialogueScreen } from '../../services/uiDialogue.js';
-import { cleanupBattleState } from '../../game/battle/battleResult.js';
+import {
+  cleanupBattleState,
+  resolveHighDifficultyRewards,
+} from '../../game/battle/index.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
@@ -126,9 +129,18 @@ export default function RewardOverlay() {
       return;
     }
 
-    // 報酬確認が終わったらダイアログ（会話）シーンへ移行する
+    // 報酬確認が終わったら
     clearAllTimers();
     setIsVisible(false);
+
+    // 高難易度イベント（超級）の場合、カード獲得確認後にポイント獲得モーダルへ遷移
+    if (checkIsHighDiffMode(GameState.gameMode)) {
+      if (typeof resolveHighDifficultyRewards === 'function') {
+        resolveHighDifficultyRewards();
+        return;
+      }
+    }
+
     cleanupBattleState();
     setupDialogueScreen();
   };
