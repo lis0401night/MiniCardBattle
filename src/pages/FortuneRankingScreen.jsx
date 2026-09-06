@@ -21,7 +21,6 @@ export default function FortuneRankingScreen() {
         {
           label: '合計目標値（マキナ）',
           pointField: 'fortune_total_cost_automata',
-          fallbackPointField: 'fortune_total_cost',
           unit: '',
         },
         {

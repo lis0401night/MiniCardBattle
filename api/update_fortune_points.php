@@ -99,27 +99,20 @@ if ($playerData) {
     }
     $playerData['fortune_cleared'] = json_encode($mergedCleared);
 
-    // 旧データ移行: fortune_max_total_cost はアンジェ追加前のマキナ単独時代の総合スコアであるため、
-    // automata個別フィールドが未設定の旧データに限り、この値をマキナ実績の下限として扱う
-    $legacyTotalCost = isset($playerData['fortune_max_total_cost']) ? intval($playerData['fortune_max_total_cost']) : 0;
-    $legacyAutomataFloor = isset($playerData['fortune_max_total_cost_automata']) ? 0 : $legacyTotalCost;
-
-    // マキナ用合計目標値の更新（進行データ消失を防ぐため、常に既存記録との最大値を保持）
+    // マキナ用合計目標値の更新（常に既存記録との最大値を保持）
     $existingMaxCostAutomata = isset($playerData['fortune_max_total_cost_automata'])
         ? intval($playerData['fortune_max_total_cost_automata'])
-        : $legacyAutomataFloor;
+        : 0;
     $playerData['fortune_max_total_cost_automata'] = max($existingMaxCostAutomata, $fortune_max_total_cost_automata);
 
     // アンジェ用合計目標値の更新（常に既存記録との最大値を保持）
-    // ※ アンジェは第2弾ボスとして新設されたため、旧 fortune_max_total_cost（マキナの記録）からの
-    //    移行フォールバックは意図的に行わない（誤ってマキナのスコアがアンジェに付与されるのを防ぐため）
     $existingMaxCostValkyria = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
     $playerData['fortune_max_total_cost_valkyria'] = max($existingMaxCostValkyria, $fortune_max_total_cost_valkyria);
 
-    // 総合合計目標値（既存記録・送信値・キャラクター別記録のうち最大値を保持）
-    $autoCost = isset($playerData['fortune_max_total_cost_automata']) ? intval($playerData['fortune_max_total_cost_automata']) : 0;
-    $valkCost = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
-    $playerData['fortune_max_total_cost'] = max($legacyTotalCost, $fortune_max_total_cost, $autoCost, $valkCost);
+    // 総合合計目標値（キャラクター別記録のうち最大値を保持）
+    $autoCost = intval($playerData['fortune_max_total_cost_automata']);
+    $valkCost = intval($playerData['fortune_max_total_cost_valkyria']);
+    $playerData['fortune_max_total_cost'] = max($fortune_max_total_cost, $autoCost, $valkCost);
 
 
     $playerData['timestamp'] = time();

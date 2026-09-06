@@ -169,18 +169,13 @@ export async function fetchPlayerDecks() {
 }
 
 /**
- * サーバー応答からAutomata版の運命の邂逅・最大累計コストを解決する
- * 新フィールドが無い旧データの場合は旧フィールドへフォールバックする
+ * サーバー応答からマキナ（Automata）版の運命の邂逅・最大累計コストを解決する
  * @param {Object} serverPlayerData - サーバーのプレイヤーデータ
  * @returns {number} 最大累計コスト
  */
 export function resolveFortuneMaxCostAutomata(serverPlayerData) {
   if (!serverPlayerData) return 0;
-  return (
-    serverPlayerData.fortune_max_total_cost_automata ??
-    serverPlayerData.fortune_max_total_cost ??
-    0
-  );
+  return serverPlayerData.fortune_max_total_cost_automata ?? 0;
 }
 
 /**

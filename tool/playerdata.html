@@ -1778,7 +1778,7 @@
           high_difficulty: 'high_difficulty_total_points',
           fortune: 'fortune_total_points',
           defense_wins: 'defense_wins',
-          grade: 'fortune_max_total_cost',
+          grade: 'fortune_max_total_cost_automata',
           grade_valkyria: 'fortune_max_total_cost_valkyria',
           lastAccess: 'lastAccessAt',
         };
@@ -1868,7 +1868,7 @@
                 <div class="text-[11px] font-black text-sky-600">${formatNumber(p.fortune_total_points || 0)}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
-                <div class="text-[11px] font-black text-sky-500">${p.fortune_max_total_cost >= 0 ? p.fortune_max_total_cost : '-'}</div>
+                <div class="text-[11px] font-black text-sky-500">${p.fortune_max_total_cost_automata !== undefined && p.fortune_max_total_cost_automata >= 0 ? p.fortune_max_total_cost_automata : '-'}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-rose-500">${p.fortune_max_total_cost_valkyria !== undefined && p.fortune_max_total_cost_valkyria >= 0 ? p.fortune_max_total_cost_valkyria : '-'}</div>
@@ -2080,8 +2080,9 @@
             total: p.fortune_total_points || 0,
             extra:
               [
-                p.fortune_max_total_cost >= 0
-                  ? `等級（マキナ）: ${p.fortune_max_total_cost}`
+                p.fortune_max_total_cost_automata !== undefined &&
+                p.fortune_max_total_cost_automata >= 0
+                  ? `等級（マキナ）: ${p.fortune_max_total_cost_automata}`
                   : null,
                 p.fortune_max_total_cost_valkyria !== undefined &&
                 p.fortune_max_total_cost_valkyria >= 0
