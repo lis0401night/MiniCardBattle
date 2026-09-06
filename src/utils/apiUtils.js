@@ -233,13 +233,24 @@ export function hasUnsyncedHighDifficultyClear(local, server) {
  * }} 最新の所持情報オブジェクト
  */
 export function getLatestOwnership() {
-  const inventory = {
-    ...(safeParseObject(INVENTORY_KEY) || {}),
-    ...(GameState.playerInventory &&
-    typeof GameState.playerInventory === 'object'
+  const storedInventory = safeParseObject(INVENTORY_KEY) || {};
+  const stateInventory =
+    GameState.playerInventory && typeof GameState.playerInventory === 'object'
       ? GameState.playerInventory
-      : {}),
-  };
+      : {};
+
+  // LocalStorageとGameStateの両方のカードキーを網羅し、各カードの最大所持枚数を安全にマージ（古いGameStateによる上書き・データ消失を完全に防止）
+  const allCardIds = new Set([
+    ...Object.keys(storedInventory),
+    ...Object.keys(stateInventory),
+  ]);
+  const inventory = {};
+  for (const cardId of allCardIds) {
+    inventory[cardId] = Math.max(
+      storedInventory[cardId] || 0,
+      stateInventory[cardId] || 0
+    );
+  }
 
   const unlockedSkins = [
     ...new Set([

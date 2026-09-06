@@ -14,7 +14,6 @@ import {
   AI_THINKING_DURATION,
   VALKYRIA_GUARD_POPUP_COLOR,
 } from '../utils/constants/config.js';
-import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
   applyEquipment,
@@ -30,6 +29,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
+  canEquipCard,
   checkWinCondition,
   cleanupDestroyedCards,
   confirmOverwrittenLane,
@@ -50,7 +50,6 @@ import {
   processDestructionTriggers,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
-import { resolveActiveSkillEffect } from './skillLogic.js';
 
 // ==========================================
 // リーダースキルの実行ロジック
@@ -295,13 +294,10 @@ export async function executeLeaderSkillAction(
         getCardImgUrl({ ...tokenCard, owner }) ||
         `assets/cards/card_${tokenCard.id}.webp`;
 
-      if (
-        b[l] &&
-        (hasSkill(tokenCard, 'equip') || hasSkill(b[l], 'arm_self'))
-      ) {
+      if (canEquipCard(tokenCard, b[l])) {
         const targetCard = b[l];
         // 装備（既存カードの上へ）: applyEquipment に処理を集約
-        const { equipSkills } = applyEquipment(targetCard, tokenCard);
+        applyEquipment(targetCard, tokenCard);
 
         events.push({ type: 'leader_skill', skill: action, side: owner });
         events.push({
@@ -311,28 +307,8 @@ export async function executeLeaderSkillAction(
           card: targetCard,
           source: 'equip',
         });
-        // 召喚扱いではないためアクティブスキルは発動させない
+        // 召喚扱い（配置）ではないためアクティブスキルは発動させない
         targetCard.skillTriggered = true;
-
-        // 装備カードが持っていたアクティブスキルを即時発動させる
-        for (const sk of equipSkills) {
-          if (ACTIVE_SKILLS.includes(sk.id)) {
-            await sleep(50);
-            const enhancedSk = {
-              ...sk,
-              _sourceChoices: tokenCard.choices,
-              _sourceChoices2: tokenCard.choices2,
-            };
-            await resolveActiveSkillEffect(
-              owner,
-              l,
-              targetCard,
-              sk.id,
-              sk.value,
-              enhancedSk
-            );
-          }
-        }
 
         if (tokenCard) playCardVoice(tokenCard, 'play');
       } else if (b[l] && hasSkill(b[l], 'startup')) {
@@ -626,9 +602,7 @@ export async function executeLeaderSkillAction(
 
       tokenLanes = tLanes; // VFX用
       const existingCard = board[targetLane];
-      const isEquip =
-        existingCard &&
-        (hasSkill(selectedCard, 'equip') || hasSkill(existingCard, 'arm_self'));
+      const isEquip = canEquipCard(selectedCard, existingCard);
       const unionSkill =
         selectedCard.skills &&
         selectedCard.skills.find((s) => s.id === 'union');
@@ -832,9 +806,7 @@ export async function executeLeaderSkillAction(
         (existingCard.baseId === unionSkill.targetId ||
           existingCard.id === unionSkill.targetId);
 
-      const isEquip =
-        existingCard &&
-        (hasSkill(selectedCard, 'equip') || hasSkill(existingCard, 'arm_self'));
+      const isEquip = canEquipCard(selectedCard, existingCard);
 
       // VFX（カードが出現する前に演出を再生する）
       if (window.triggerVfx && tLanes.length > 0) {
@@ -1259,15 +1231,7 @@ export async function executeLeaderSkillAction(
 
         events.push({ type: 'leader_skill', skill: action, side: owner });
 
-        if (
-          board[targetLane] &&
-          (hasSkill(selectedCard, 'equip') ||
-            hasSkill(board[targetLane], 'arm_self')) &&
-          !hasSkill(board[targetLane], 'possession') &&
-          !hasSkill(selectedCard, 'possession') &&
-          !hasSkill(board[targetLane], 'reflect') &&
-          !hasSkill(selectedCard, 'reflect')
-        ) {
+        if (canEquipCard(selectedCard, board[targetLane])) {
           const targetCard = board[targetLane];
           // 装備（既存カードの上へ）: applyEquipment に処理を集約
           applyEquipment(targetCard, selectedCard);

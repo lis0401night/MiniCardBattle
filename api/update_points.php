@@ -41,6 +41,18 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
+// 防衛勝利数は累計回数（非負整数）のため、負数や不正な形式の入力を拒否
+if (isset($data['defense_wins']) &&
+    filter_var(
+        $data['defense_wins'],
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 0]]
+    ) === false) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid defense_wins format']);
+    exit;
+}
+
 $dir = __DIR__ . '/decks/players';
 $filename = "{$dir}/{$uuid}.js";
 

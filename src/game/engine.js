@@ -542,7 +542,7 @@ export function processPlacementOrEquip(
       type: 'power_change',
       side: owner,
       lane: lane,
-      amount: newCard.power,
+      amount: newCard.appliedEquipPower ?? newCard.power,
       source: 'equip',
       card: newCard,
     });
@@ -2479,9 +2479,28 @@ export function applyActiveSkillLogic(
  * @returns {Array} events
  */
 /**
- * 盤面への装備（武装）を試み、成功した場合はtrueを返すヘルパー
+ * 盤面への装備（武装）を試み、成功した場合はtrueを返すヘルパー。
+ * 「配置（Place）」経路でのトークン装備では原則として召喚時スキルを発動させないため、
+ * triggerEquipSkills はデフォルトで false となっています。
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {Array<Object|null>} board - 対象プレイヤーの盤面配列
+ * @param {number} lane - 配置・装備先のレーン番号 (0-2)
+ * @param {Object} newToken - 装備するトークンまたはカードオブジェクト
+ * @param {string} owner - 所有者 ('blue'|'red')
+ * @param {Array<Object>} events - 演出イベント配列
+ * @param {boolean} [triggerEquipSkills=false] - 装備カード由来のアクティブスキルを発動するかどうか（配置では false）
+ * @returns {boolean} 装備（武装）が成功した場合は true、不可能な場合は false
  */
-function tryEquipToken(state, board, lane, newToken, owner, events) {
+function tryEquipToken(
+  state,
+  board,
+  lane,
+  newToken,
+  owner,
+  events,
+  triggerEquipSkills = false
+) {
   let boardCard = board[lane];
   if (
     (hasSkill(newToken, 'equip') ||
@@ -2503,20 +2522,23 @@ function tryEquipToken(state, board, lane, newToken, owner, events) {
         card: JSON.parse(JSON.stringify(newToken)),
       });
 
-      // 装備カードが持っていたアクティブスキルを即時発動させるシミュレート
-      equipSkills.forEach((sk) => {
-        if (ACTIVE_SKILLS.includes(sk.id)) {
-          applyActiveSkillLogic(
-            state,
-            owner,
-            lane,
-            sk.id,
-            sk.value,
-            events,
-            newToken.cardTokenLanes || null
-          );
-        }
-      });
+      // 召喚経路（triggerEquipSkills = true）の場合のみ、装備カードのアクティブスキルを実行
+      // 「配置（Place）」経路ではゲームルールに基づき召喚時アクティブスキルは発動しない
+      if (triggerEquipSkills && equipSkills) {
+        equipSkills.forEach((sk) => {
+          if (ACTIVE_SKILLS.includes(sk.id)) {
+            applyActiveSkillLogic(
+              state,
+              owner,
+              lane,
+              sk.id,
+              sk.value,
+              events,
+              newToken.cardTokenLanes || null
+            );
+          }
+        });
+      }
 
       return true;
     }
