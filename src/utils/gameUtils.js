@@ -1488,6 +1488,24 @@ export function checkIsFreeMode(
 }
 
 /**
+ * 指定されたゲームモードがバトル勝利時にカードドロップ抽選の対象であるかどうかを判定します（ホワイトリスト方式）。
+ * 対象モード: ストーリーモード、フリー対戦、高難易度イベント（超級）
+ * ※ 運命の邂逅、トーナメント、防衛戦、試練の宮殿、オンライン、練習戦、チュートリアル等の他モードはすべて自動的に除外（false）されます。
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} カードドロップ対象モードであるか
+ */
+export function checkIsCardDropEligible(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  if (!gameMode) return false;
+  return (
+    checkIsStoryMode(gameMode) ||
+    checkIsFreeMode(gameMode) ||
+    checkIsHighDiffMode(gameMode)
+  );
+}
+
+/**
  * 指定されたゲームモードがバトルボーナス（ミッション）機能の対象であるかどうかを判定します。
  * ストーリーモード、フリー対戦、および高難易度イベントモードが対象となります。
  * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）

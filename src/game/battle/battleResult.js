@@ -14,6 +14,7 @@ import {
 } from './battleQueue.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import {
+  checkIsCardDropEligible,
   checkIsMissionEligible,
   getDialogue,
   getOrCreateUUID,
@@ -663,20 +664,15 @@ export function resolveHighDifficultyRewards() {
 
 /**
  * バトル勝利時のカードドロップ抽選および報酬画面への遷移を実行する。
- * ※ カードドロップが行われないモード（オンライン、練習戦、トーナメント、防衛戦、ダンジョン、チュートリアル、運命の邂逅）は確実に除外する。
+ * ※ ホワイトリスト方式（checkIsCardDropEligible）により、許可されたモード（ストーリー、フリー対戦、高難易度イベント）のみ抽選を行う。
+ *   他モード（運命の邂逅、トーナメント、防衛戦、ダンジョン等）は自動的に除外される。
  * @returns {boolean} 報酬画面を表示した場合は true
  */
 function resolveCardDrop() {
-  if (!(
-    GameState.lastBattleResult === 'win' &&
-    GameState.gameMode !== 'online' &&
-    GameState.gameMode !== 'practice' &&
-    GameState.gameMode !== 'tournament' &&
-    GameState.gameMode !== 'defense_attack' &&
-    GameState.gameMode !== 'battle_dungeon' &&
-    GameState.gameMode !== 'tutorial' &&
-    !GameState.gameMode?.endsWith('_fortune')
-  )) {
+  if (
+    GameState.lastBattleResult !== 'win' ||
+    !checkIsCardDropEligible(GameState.gameMode)
+  ) {
     return false;
   }
 
