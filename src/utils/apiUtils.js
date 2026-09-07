@@ -368,7 +368,7 @@ export function calculateSpentPoints(lineup, ownership = null) {
 
 /**
  * 運命の邂逅（Fortuneモード）の特級目標クリアデータから累計獲得ポイントの理論値を算出します。
- * @param {Object|null} [clearedAutomata=null] - マキナのクリアデータ
+ * @param {Object|string|null} [clearedAutomata=null] - マキナのクリアデータ、または { automata: {...}, valkyria: {...} } を含む全体オブジェクト/JSON文字列
  * @param {Object|null} [clearedValkyria=null] - アンジェのクリアデータ
  * @returns {number} 特級目標達成による累計獲得ポイント
  */
@@ -376,6 +376,41 @@ export function calculateFortuneTotalPointsFromCleared(
   clearedAutomata = null,
   clearedValkyria = null
 ) {
+  // 第1引数に { automata: {...}, valkyria: {...} } または JSON文字列が渡された場合
+  if (
+    clearedAutomata &&
+    (typeof clearedAutomata === 'string' ||
+      (typeof clearedAutomata === 'object' &&
+        (clearedAutomata.automata ||
+          clearedAutomata.valkyria ||
+          clearedAutomata.fortune_cleared)))
+  ) {
+    let raw = clearedAutomata;
+    if (typeof raw === 'object' && raw.fortune_cleared) {
+      raw = raw.fortune_cleared;
+    }
+    let parsed = raw;
+    if (typeof raw === 'string') {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = {};
+      }
+    }
+    if (parsed && typeof parsed === 'object') {
+      if (parsed.automata || parsed.valkyria) {
+        let total = 0;
+        total += calculateHandicapPointsFromMap(
+          parsed.automata?.clearedHandicaps || parsed.automata
+        );
+        total += calculateHandicapPointsFromMap(
+          parsed.valkyria?.clearedHandicaps || parsed.valkyria
+        );
+        return total;
+      }
+    }
+  }
+
   const autoData = clearedAutomata || loadFortuneClearedData('automata');
   const valkData = clearedValkyria || loadFortuneClearedData('valkyria');
 
@@ -387,7 +422,7 @@ export function calculateFortuneTotalPointsFromCleared(
 }
 
 /**
- * 累計ポイントと交換済みアイテム消費ポイントから、所持ポイントの期待値（失われたポイントの復元）を検証・修復します。
+ * 累計ポイントと交換済みアイテム消費ポイントから、所持ポイントの期待値（失われたポイントの復元・補填）を検証・修復します。
  *
  * @param {number} currentPoints - 現在の所持ポイント
  * @param {number} totalPoints - 累計獲得ポイント
@@ -406,31 +441,21 @@ export function reconcilePointsWithPurchases(
   const spent = calculateSpentPoints(lineup, ownership);
 
   let finalCurrent = cPts;
-  let finalTotal = tPts;
   let reconciled = false;
 
-  // 1. 所持ポイントが期待値より少ない場合（ポイント消失状態）
-  // ※防御策: spent が 0 の場合、所持データが未ロード/未検出である可能性があり、
-  // cPts < tPts であることのみを理由に全額返還（finalCurrent = tPts）するとポイント増殖バグを招くため、
-  // spent > 0（実際にアイテム所持・消費が確認できた場合）にのみ期待値修復を実行する。
+  // 交換所アイテムの所持情報が存在する場合（spent > 0）、
+  // 総ポイントから消費ポイントを差し引いた正確な残高を算出して所持ポイントを補填・補正する
   if (spent > 0) {
     const expectedCurrent = Math.max(0, tPts - spent);
-    if (cPts < expectedCurrent) {
+    if (cPts !== expectedCurrent) {
       finalCurrent = expectedCurrent;
       reconciled = true;
     }
   }
 
-  // 2. 所持ポイント＋消費ポイントが累計ポイントを超えている場合（累計ポイント記録漏れ等）
-  // 累計ポイントを上方修正する
-  if (finalCurrent + spent > finalTotal) {
-    finalTotal = finalCurrent + spent;
-    reconciled = true;
-  }
-
   return {
     current: finalCurrent,
-    total: finalTotal,
+    total: tPts,
     spent,
     reconciled,
   };
@@ -512,12 +537,12 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       const clearedAutomata = loadFortuneClearedData('automata');
       const clearedValkyria = loadFortuneClearedData('valkyria');
 
-      // クリア済み特級目標から理論上の最低累計ポイントを算出し、ローカルの累計ポイントの下限を保証
+      // クリア済み特級目標から理論上の累計ポイントを算出し、正規の総ポイントとして確定
       const minFortuneTotal = calculateFortuneTotalPointsFromCleared(
         clearedAutomata,
         clearedValkyria
       );
-      localTotal = Math.max(localTotal, minFortuneTotal);
+      localTotal = minFortuneTotal;
 
       const maxGrade = Math.max(
         clearedAutomata.maxGradeLevel || 0,
@@ -530,6 +555,10 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         fortune_max_grade: maxGrade,
         fortune_max_total_cost_automata: clearedAutomata.maxTotalCost || 0,
         fortune_max_total_cost_valkyria: clearedValkyria.maxTotalCost || 0,
+        fortune_cleared: JSON.stringify({
+          automata: clearedAutomata.clearedHandicaps || {},
+          valkyria: clearedValkyria.clearedHandicaps || {},
+        }),
       };
 
       if (serverPlayerData) {
@@ -610,7 +639,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         hasUnsyncedHighDifficultyClear(localCleared, serverCleared);
 
       // ローカルとサーバーの値をマージした上で、交換済みアイテムと総ポイントの整合性修復を実行
-      const mergedTotal = Math.max(localTotal, sTotal);
+      const mergedTotal =
+        mode === 'fortune' ? localTotal : Math.max(localTotal, sTotal);
       const mergedCurrent = Math.max(localPts, sPts);
       const recon = reconcilePointsWithPurchases(
         mergedCurrent,

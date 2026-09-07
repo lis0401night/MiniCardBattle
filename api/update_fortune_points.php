@@ -89,15 +89,45 @@ if ($playerData) {
         $playerData['fortune_max_grade'] = $fortune_max_grade;
     }
 
-    // 達成済み情報はマージする（一度達成した目標は消えないように論理和でマージ）
+    // 達成済み情報のマージ（キャラクター別構造: {"automata": {...}, "valkyria": {...}} を完全サポート）
     $existingCleared = isset($playerData['fortune_cleared']) ? json_decode($playerData['fortune_cleared'], true) : [];
     if (!is_array($existingCleared)) $existingCleared = [];
-    $newCleared = is_array($clearedDecoded) ? $clearedDecoded : [];
-    $mergedCleared = $existingCleared;
-    foreach ($newCleared as $key => $val) {
-        $mergedCleared[$key] = ($mergedCleared[$key] ?? false) || (bool)$val;
+
+    // 既存データからマキナ・アンジェの各データを抽出（フラット旧形式の場合はそれぞれの初期値として扱う）
+    $mergedAutomata = [];
+    $mergedValkyria = [];
+    if (isset($existingCleared['automata']) || isset($existingCleared['valkyria'])) {
+        $mergedAutomata = is_array($existingCleared['automata'] ?? null) ? $existingCleared['automata'] : [];
+        $mergedValkyria = is_array($existingCleared['valkyria'] ?? null) ? $existingCleared['valkyria'] : [];
+    } else {
+        // 旧形式（フラット）の場合、マキナ達成上限があるならマキナに、アンジェ達成上限があるならアンジェに割り振る
+        $mergedAutomata = $existingCleared;
+        $mergedValkyria = $existingCleared;
     }
-    $playerData['fortune_cleared'] = json_encode($mergedCleared);
+
+    $newCleared = is_array($clearedDecoded) ? $clearedDecoded : [];
+    if (isset($newCleared['automata']) || isset($newCleared['valkyria'])) {
+        if (isset($newCleared['automata']) && is_array($newCleared['automata'])) {
+            foreach ($newCleared['automata'] as $k => $v) {
+                $mergedAutomata[$k] = ($mergedAutomata[$k] ?? false) || (bool)$v;
+            }
+        }
+        if (isset($newCleared['valkyria']) && is_array($newCleared['valkyria'])) {
+            foreach ($newCleared['valkyria'] as $k => $v) {
+                $mergedValkyria[$k] = ($mergedValkyria[$k] ?? false) || (bool)$v;
+            }
+        }
+    } else {
+        foreach ($newCleared as $key => $val) {
+            $mergedAutomata[$key] = ($mergedAutomata[$key] ?? false) || (bool)$val;
+            $mergedValkyria[$key] = ($mergedValkyria[$key] ?? false) || (bool)$val;
+        }
+    }
+
+    $playerData['fortune_cleared'] = json_encode([
+        'automata' => $mergedAutomata,
+        'valkyria' => $mergedValkyria,
+    ]);
 
     // マキナ用合計目標値の更新（常に既存記録との最大値を保持）
     $existingMaxCostAutomata = isset($playerData['fortune_max_total_cost_automata'])

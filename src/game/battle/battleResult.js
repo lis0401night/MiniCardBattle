@@ -15,8 +15,10 @@ import {
 import { battleEvents } from './events/battleEventEmitter.js';
 import {
   checkIsCardDropEligible,
+  checkIsFortuneMode,
   checkIsMissionEligible,
   getDialogue,
+  getFortuneHandicapsStorageKey,
   getOrCreateUUID,
   getSeededRandom,
   loadHighDifficultyClearedData,
@@ -51,6 +53,8 @@ import { saveTournamentProgress } from '../tournament.js';
 import { getDungeonCharacterDialogue } from '../../utils/constants/battleDungeonCharacter.js';
 import { setupDialogueScreen } from '../../services/uiDialogue.js';
 import {
+  calculateFortuneTotalPointsFromCleared,
+  reconcilePointsWithPurchases,
   recordDefenseBattleToServer,
   savePointsToServer,
 } from '../../utils/apiUtils.js';
@@ -64,6 +68,7 @@ import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
   DEFENSE_TARGETS_KEY,
+  EXCHANGE_LINEUPS_BY_MODE,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
   HIGH_DIFFICULTY_POINTS_KEY,
@@ -481,40 +486,42 @@ function resolveDefenseResult() {
 
 /**
  * 運命の邂逅（Fortune）イベントの報酬およびポイント計算・更新処理を実行する。
+ * クリア済み特級目標から正規総ポイントを算出し、所持ポイントの整合性修復およびサーバー同期を確実に実行する。
  * @returns {boolean} 処理を完結し、後続のドロップ抽選等をスキップする場合は true
  */
 function resolveFortuneRewards() {
   if (!(
     GameState.lastBattleResult === 'win' &&
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune') &&
-    GameState.fortuneHandicaps
+    checkIsFortuneMode(GameState.gameMode)
   )) {
     return false;
   }
 
   const fortuneCharId = extractEventCharacterId(GameState.gameMode, '_fortune');
+  if (!fortuneCharId) return false;
+
+  // GameState.fortuneHandicaps が未定義または空の場合は、対戦相手のLocalStorageから安全にフォールバック取得
+  let currentHandicaps = GameState.fortuneHandicaps;
+  if (!currentHandicaps || typeof currentHandicaps !== 'object') {
+    try {
+      const storageKey = getFortuneHandicapsStorageKey(fortuneCharId);
+      const saved = localStorage.getItem(storageKey);
+      currentHandicaps = saved ? JSON.parse(saved) : {};
+    } catch {
+      currentHandicaps = {};
+    }
+  }
 
   const { clearedHandicaps, maxGradeLevel, maxTotalCost } =
     loadFortuneClearedData(fortuneCharId);
 
   const result = calculateFortuneRewards(
     fortuneCharId,
-    GameState.fortuneHandicaps,
+    currentHandicaps,
     clearedHandicaps,
     maxGradeLevel,
     maxTotalCost
   );
-
-  let currentPts = parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
-  let totalPts =
-    parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
-  if (result.totalEarned > 0) {
-    currentPts += result.totalEarned;
-    totalPts += result.totalEarned;
-    localStorage.setItem(FORTUNE_POINTS_KEY, String(currentPts));
-    localStorage.setItem(FORTUNE_TOTAL_POINTS_KEY, String(totalPts));
-  }
 
   saveFortuneClearedData(
     fortuneCharId,
@@ -527,6 +534,30 @@ function resolveFortuneRewards() {
   const currentClearedAuto = loadFortuneClearedData('automata');
   const currentClearedValk = loadFortuneClearedData('valkyria');
 
+  // クリア済み実績から理論上の正規総ポイントを再計算（最大144Pt）
+  const finalTotalPts = calculateFortuneTotalPointsFromCleared(
+    currentClearedAuto,
+    currentClearedValk
+  );
+
+  let rawCurrentPts =
+    parseInt(localStorage.getItem(FORTUNE_POINTS_KEY), 10) || 0;
+  if (result.totalEarned > 0) {
+    rawCurrentPts += result.totalEarned;
+  }
+
+  // 交換済みアイテムと総ポイントの整合性修復を実行
+  const recon = reconcilePointsWithPurchases(
+    rawCurrentPts,
+    finalTotalPts,
+    EXCHANGE_LINEUPS_BY_MODE.fortune
+  );
+  const finalCurrentPts = recon.current;
+
+  // ローカルストレージに正規化後の値を保存
+  localStorage.setItem(FORTUNE_POINTS_KEY, String(finalCurrentPts));
+  localStorage.setItem(FORTUNE_TOTAL_POINTS_KEY, String(finalTotalPts));
+
   const overallMaxGrade = Math.max(
     currentClearedAuto.maxGradeLevel || 0,
     currentClearedValk.maxGradeLevel || 0,
@@ -535,7 +566,10 @@ function resolveFortuneRewards() {
 
   const fortuneSyncExtra = {
     fortune_max_grade: overallMaxGrade,
-    fortune_cleared: JSON.stringify(result.newClearedHandicaps),
+    fortune_cleared: JSON.stringify({
+      automata: currentClearedAuto.clearedHandicaps || {},
+      valkyria: currentClearedValk.clearedHandicaps || {},
+    }),
     fortune_max_total_cost: Math.max(
       currentClearedAuto.maxTotalCost || 0,
       currentClearedValk.maxTotalCost || 0
@@ -546,8 +580,8 @@ function resolveFortuneRewards() {
 
   savePointsToServer(
     'update_fortune_points.php',
-    currentPts,
-    totalPts,
+    finalCurrentPts,
+    finalTotalPts,
     fortuneSyncExtra
   ).catch((err) =>
     console.error('運命の邂逅ポイントの同期送信に失敗しました:', err)
@@ -570,7 +604,7 @@ function resolveFortuneRewards() {
       title: '特級目標達成',
       message: `特級目標ポイントを ${result.totalEarned} Pt 獲得しました！${breakdownText}`,
       points: result.totalEarned,
-      totalPoints: totalPts,
+      totalPoints: finalTotalPts,
       color: '#f97316',
       darkColor: '#ea580c',
       onClose: () => {
@@ -671,6 +705,7 @@ export function resolveHighDifficultyRewards() {
 function resolveCardDrop() {
   if (
     GameState.lastBattleResult !== 'win' ||
+    checkIsFortuneMode(GameState.gameMode) ||
     !checkIsCardDropEligible(GameState.gameMode)
   ) {
     return false;

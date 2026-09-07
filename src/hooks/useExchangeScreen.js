@@ -108,7 +108,11 @@ export function useExchangeScreen({
 
   const [points, setPoints] = useState(() => {
     const rawCur = parseInt(localStorage.getItem(pointsLocalKey), 10) || 0;
-    const rawTot = parseInt(localStorage.getItem(pointsTotalLocalKey), 10) || 0;
+    let rawTot = parseInt(localStorage.getItem(pointsTotalLocalKey), 10) || 0;
+    // 運命の邂逅（Fortune）の場合、クリア済み特級目標から算出した理論値を真値として確定
+    if (pointsKey === 'fortune') {
+      rawTot = calculateFortuneTotalPointsFromCleared();
+    }
     const initialRecon = reconcilePointsWithPurchases(
       rawCur,
       rawTot,
@@ -146,10 +150,9 @@ export function useExchangeScreen({
     let currentPts = parseInt(localStorage.getItem(pointsLocalKey), 10) || 0;
     let totalPts = parseInt(localStorage.getItem(pointsTotalLocalKey), 10) || 0;
 
-    // 運命の邂逅（Fortune）の場合、クリア済み特級目標から理論上の最低累計ポイントを下限保証
+    // 運命の邂逅（Fortune）の場合、クリア済み特級目標から理論値を確定
     if (pointsKey === 'fortune') {
-      const minFortuneTotal = calculateFortuneTotalPointsFromCleared();
-      totalPts = Math.max(totalPts, minFortuneTotal);
+      totalPts = calculateFortuneTotalPointsFromCleared();
     }
 
     const fetchPoints = async () => {
@@ -166,7 +169,10 @@ export function useExchangeScreen({
             const serverTotalPts =
               myData[responseTotalPointsField] || serverPts || 0;
 
-            const mergedTotal = Math.max(totalPts, serverTotalPts);
+            const mergedTotal =
+              pointsKey === 'fortune'
+                ? calculateFortuneTotalPointsFromCleared()
+                : Math.max(totalPts, serverTotalPts);
             const mergedCurrent = Math.max(currentPts, serverPts);
 
             // 交換済みアイテムと総ポイントによる整合性修復を実行
