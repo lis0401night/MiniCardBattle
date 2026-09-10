@@ -1007,6 +1007,170 @@ export function getOrCreateUUID() {
 
 /**
  * カードのスキルバッジHTMLを生成するユーティリティ関数
+/**
+ * 召喚(summon)、号令(call)、探索(explore)等のターゲット指定に応じた表示ラベル（カッコ内の文字列）を取得する。
+ *
+ * 【共通ルール仕様】
+ * - 複数のtargetがある場合（targetIdsが2個以上、またはtargetIdsとtargetKeywordの両方が存在する場合）:
+ *   「特殊」（例: 「召喚(特殊)」「号令(特殊)」「探索(特殊)」）
+ * - 1つのtargetがある場合:
+ *   キーワード名またはカード名（例: 「召喚(傭兵)」「号令(傭兵)」「探索(傭兵)」「召喚(騎士)」）
+ * - target指定がない場合（通常版）:
+ *   null（通常のスキル名と数値を表示）
+ *
+ * @param {Object|string} sk - スキルオブジェクト（{ id, targetIds, targetId, targetKeyword, ... }）またはスキルID文字列
+ * @returns {string|null} カッコ内に表示する対象ラベル文字列（'特殊' または対象の名前）。ターゲット指定がない場合は null
+ */
+export function getSkillTargetLabel(sk) {
+  if (!sk || typeof sk !== 'object') return null;
+
+  // 0. self プロパティ（自分自身を対象とする指定）
+  if (sk.self || sk.targetSelf) {
+    if (sk.excludeBoard) {
+      return '唯一/自身';
+    }
+    return '自身';
+  }
+
+  // 1. targetIds（配列）または targetId（単一ID）を配列に正規化
+  const rawIds = Array.isArray(sk.targetIds)
+    ? sk.targetIds.filter(Boolean)
+    : sk.targetId
+      ? [sk.targetId]
+      : [];
+  // 重複を除去
+  const targetIds = [...new Set(rawIds)];
+
+  // 2. targetKeyword（キーワード文字列）を取得
+  const targetKeyword =
+    typeof sk.targetKeyword === 'string' && sk.targetKeyword.trim() !== ''
+      ? sk.targetKeyword.trim()
+      : null;
+
+  // 3. targetSkills（スキルID配列または文字列）または targetSkill（単一スキルID）を取得
+  const rawSkillIds = Array.isArray(sk.targetSkills)
+    ? sk.targetSkills.filter(Boolean)
+    : typeof sk.targetSkills === 'string' && sk.targetSkills.trim() !== ''
+      ? [sk.targetSkills.trim()]
+      : sk.targetSkill
+        ? [sk.targetSkill]
+        : [];
+  const targetSkills = [...new Set(rawSkillIds)];
+
+  // 4. ターゲットの合計数をカウント
+  const totalTargets =
+    targetIds.length + (targetKeyword ? 1 : 0) + targetSkills.length;
+
+  let baseLabel = null;
+  // 複数のtargetがある場合は「特殊」を返す
+  if (totalTargets > 1) {
+    baseLabel = '特殊';
+  } else if (targetKeyword) {
+    // 1つのtargetとしてキーワードがある場合はそのキーワードを返す
+    baseLabel = targetKeyword;
+  } else if (targetIds.length === 1) {
+    // 1つのtargetとしてカードIDがある場合はカード名（見つからなければID）を返す
+    const cardId = targetIds[0];
+    const card = CARD_MASTER?.find((c) => c.id === cardId);
+    baseLabel = card ? card.name : cardId;
+  } else if (targetSkills.length === 1) {
+    // 1つのtargetとしてスキルIDがある場合はスキル名（見つからなければID）を返す
+    const sId = targetSkills[0];
+    const skDef = SKILLS?.[sId];
+    baseLabel = skDef ? skDef.name : sId;
+  }
+
+  // 4. excludeBoard（自陣盤面存在カード除外）プロパティがある場合
+  if (sk.excludeBoard) {
+    if (baseLabel) {
+      return `唯一/${baseLabel}`;
+    }
+    return '唯一';
+  }
+
+  return baseLabel;
+}
+
+/**
+ * スキルオブジェクトから表示用の名前、値、アイコン、結合名を解決する共通ヘルパー関数
+ * @param {object|string} sk - スキル定義オブジェクトまたはスキルID文字列
+ * @returns {{ id: string, name: string, value: string|number, icon: string, fullName: string, targetId: string|null, targetIds: Array|null, targetKeyword: string|null }}
+ */
+export function getSkillBadgeInfo(sk) {
+  if (!sk) {
+    return {
+      id: '',
+      name: '',
+      value: '',
+      icon: '',
+      fullName: '',
+      targetId: null,
+      targetIds: null,
+      targetKeyword: null,
+      self: false,
+    };
+  }
+  const id = typeof sk === 'string' ? sk : sk.id;
+  const val = typeof sk === 'string' ? '' : (sk.value ?? '');
+  const targetId = typeof sk === 'object' ? sk.targetId : null;
+  const targetIds = typeof sk === 'object' ? sk.targetIds : null;
+  const targetKeyword = typeof sk === 'object' ? sk.targetKeyword : null;
+  const isSelf =
+    typeof sk === 'object' ? Boolean(sk.self || sk.targetSelf) : false;
+  const s = SKILLS[id];
+  if (!s) {
+    const fallbackName = String(id || '');
+    return {
+      id,
+      name: fallbackName,
+      value: val,
+      icon: '❓',
+      fullName: `${fallbackName}${val !== '' && val !== undefined ? val : ''}`,
+      targetId,
+      targetIds,
+      targetKeyword,
+      self: isSelf,
+    };
+  }
+
+  let displayName = s.name;
+  let displayVal = val;
+
+  // 召喚(summon)、号令(call)、探索(explore)、復活(resurrect)、召集(assemble)のターゲット別共通表示処理
+  const TARGET_RULE_SKILLS = [
+    'summon',
+    'call',
+    'explore',
+    'resurrect',
+    'assemble',
+  ];
+  if (TARGET_RULE_SKILLS.includes(id)) {
+    const targetLabel = getSkillTargetLabel(sk);
+    if (targetLabel) {
+      displayName = `${s.name}(${targetLabel})`;
+      displayVal = '';
+    } else {
+      displayName = s.name;
+      displayVal = val;
+    }
+  }
+
+  const fullName = `${displayName}${displayVal !== '' && displayVal !== undefined ? displayVal : ''}`;
+  return {
+    id,
+    name: displayName,
+    value: displayVal,
+    icon: s.icon,
+    fullName,
+    targetId,
+    targetIds,
+    targetKeyword,
+    self: isSelf,
+  };
+}
+
+/**
+ * カードに付与されているスキルのバッジHTML文字列を生成する。
  * @param {Object} card - 対象のカードオブジェクト
  * @param {boolean} [isBoard=false] - 盤面配置中かどうか
  * @param {boolean|null} [valkyriaGuardActive=null] - 戦乙女の加護が有効かどうか（nullの場合はGameStateからフォールバック取得）
@@ -1021,33 +1185,50 @@ export function renderSkillTag(
   let skillCandidates = [];
 
   // 1. 表示対象のスキルを全てリストアップ
-  const addCandidate = (id, val) => {
+  const addCandidate = (sk) => {
+    if (!sk) return;
+    const id = typeof sk === 'string' ? sk : sk.id;
     const s = SKILLS[id];
     if (s && id !== 'none' && s.name !== '通常') {
       const showBadge =
         !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(id);
       if (showBadge) {
+        const info = getSkillBadgeInfo(sk);
         skillCandidates.push({
-          id,
-          name: s.name,
-          icon: s.icon,
-          value: val ?? '',
+          id: info.id,
+          name: info.name,
+          icon: info.icon,
+          value: info.value,
+          targetId: info.targetId,
+          targetIds: info.targetIds,
+          targetKeyword: info.targetKeyword,
         });
       }
     }
   };
 
   if (Array.isArray(card.skills)) {
-    card.skills.forEach((sk) => addCandidate(sk.id, sk.value));
+    card.skills.forEach((sk) => addCandidate(sk));
   }
 
-  // 2. IDと値が一致するものを集計（「選択」と「命令」はマージせず個別に表示）
+  // 2. IDと値が一致するものを集計（「選択」「命令」「覇道」およびターゲット指定のある特殊スキルはマージせず個別に表示）
   let grouped = [];
   skillCandidates.forEach((c) => {
-    const isExcludedFromMerge = c.id === 'choice' || c.id === 'force';
+    const isExcludedFromMerge =
+      c.id === 'choice' ||
+      c.id === 'force' ||
+      c.id === 'supremacy' ||
+      (['summon', 'call', 'explore', 'resurrect', 'assemble'].includes(c.id) &&
+        Boolean(getSkillTargetLabel(c)));
     const existing = isExcludedFromMerge
       ? null
-      : grouped.find((g) => g.id === c.id && g.value === c.value);
+      : grouped.find(
+          (g) =>
+            g.id === c.id &&
+            g.value === c.value &&
+            g.targetId === c.targetId &&
+            g.targetKeyword === c.targetKeyword
+        );
     if (existing) {
       existing.count++;
     } else {
@@ -1100,6 +1281,8 @@ export function renderSkillTag(
   return `<div class="card-skill-container">${badges.join('')}</div>`;
 }
 window.renderSkillTag = renderSkillTag;
+window.getSkillBadgeInfo = getSkillBadgeInfo;
+window.getSkillTargetLabel = getSkillTargetLabel;
 window.stripEphemeralSkills = stripEphemeralSkills;
 
 /**
@@ -1857,4 +2040,203 @@ export function resolveCardChoices(card) {
   const choices = card.choices || master?.choices;
   const choices2 = card.choices2 || master?.choices2;
   return { choices, choices2 };
+}
+
+/**
+ * カードオブジェクトから覇道スキル配列（supremacySkills）を解決・取得する共通ユーティリティ関数。
+ * カードインスタンス上に supremacySkills が直接保持されていない場合、
+ * 正規化ID（baseId || id）をもとに CARD_MASTER から検索してフォールバック解決を行う。
+ *
+ * @param {object|null|undefined} card - 対象のカードオブジェクト
+ * @returns {Array|undefined} 解決された supremacySkills 配列
+ */
+export function resolveCardSupremacySkills(card) {
+  if (!card || typeof card !== 'object') {
+    return undefined;
+  }
+  const lookupId = card.baseId || card.id;
+  const master = lookupId
+    ? CARD_MASTER.find((m) => m.id === lookupId)
+    : undefined;
+  return card.supremacySkills || master?.supremacySkills;
+}
+
+/**
+ * カードが特定のスキルを保持しているかを判定する。
+ * 通常の skills 配列に加えて、「選択」「命令」の choices / choices2 や、
+ * 「覇道」の supremacySkills に内包されるスキルも再帰的・網羅的に精査する。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @param {string} skillId - 検索対象のスキルID
+ * @returns {boolean} 指定スキルを直接または選択肢/覇道内に保持している場合は true
+ */
+export function hasSkillDeep(card, skillId) {
+  if (!card || typeof card !== 'object') return false;
+
+  // 1. 通常のスキル判定（hasSkill: skills配列や拘束状態チェック）
+  if (hasSkill(card, skillId)) return true;
+
+  // 2. 「選択」「命令」などの選択肢候補（choices / choices2）を精査
+  const { choices, choices2 } = resolveCardChoices(card);
+  if (Array.isArray(choices) && choices.some((s) => s && s.id === skillId)) {
+    return true;
+  }
+  if (Array.isArray(choices2) && choices2.some((s) => s && s.id === skillId)) {
+    return true;
+  }
+
+  // 3. 「覇道」の候補（supremacySkills）を精査
+  const supremacySkills = resolveCardSupremacySkills(card);
+  if (
+    Array.isArray(supremacySkills) &&
+    supremacySkills.some((s) => s && s.id === skillId)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * カードが指定のカードIDに一致するか判定する。
+ * 「万相（all_forms）」スキルを持つカードは、すべてのカード名およびカードIDと同じとして扱われるため、
+ * targetIdが指定されている場合は常に一致（true）とみなされる。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @param {string} targetId - 対象のカードID
+ * @returns {boolean} 一致する場合は true
+ */
+export function matchesCardId(card, targetId) {
+  if (!card || !targetId) return false;
+  // 万相（all_forms）スキル所持カードはあらゆるカードIDと同じとして扱う
+  if (hasSkill(card, 'all_forms')) return true;
+  return (
+    card.id === targetId || (Boolean(card.baseId) && card.baseId === targetId)
+  );
+}
+
+/**
+ * カードが指定のカードID配列のいずれかに一致するか判定する。
+ * 「万相（all_forms）」スキルを持つカードは、targetIdsが指定されている場合、常に一致（true）とみなされる。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @param {Array<string>} targetIds - 対象カードIDの配列
+ * @returns {boolean} いずれかに一致する場合は true
+ */
+export function matchesCardIds(card, targetIds) {
+  if (!card || !Array.isArray(targetIds) || targetIds.length === 0)
+    return false;
+  // 万相（all_forms）スキル所持カードは指定ID配列に対して常に一致として扱う
+  if (hasSkill(card, 'all_forms')) return true;
+  return (
+    targetIds.includes(card.id) ||
+    (Boolean(card.baseId) && targetIds.includes(card.baseId))
+  );
+}
+
+/**
+ * カードが指定のキーワード（カード名部分一致）に一致するか判定する。
+ * 「万相（all_forms）」スキルを持つカードは、targetKeywordが指定されている場合、常に一致（true）とみなされる。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @param {string} targetKeyword - 対象キーワード
+ * @returns {boolean} キーワードに一致する場合は true
+ */
+export function matchesCardKeyword(card, targetKeyword) {
+  if (!card || typeof targetKeyword !== 'string' || !targetKeyword.trim()) {
+    return false;
+  }
+  // 万相（all_forms）スキル所持カードは指定キーワードに対して常に一致として扱う
+  if (hasSkill(card, 'all_forms')) return true;
+  return (
+    typeof card.name === 'string' && card.name.includes(targetKeyword.trim())
+  );
+}
+
+/**
+ * カードが指定の対象条件（targetId, targetIds, targetKeyword, targetSkill, targetSkills）に合致するか判定する。
+ * 「万相（all_forms）」スキルを持つカードは、カードIDおよびキーワード条件について常に合致（true）とみなされる。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @param {object} [criteria={}] - 照合条件
+ * @param {string} [criteria.targetId] - 単一の対象カードID
+ * @param {Array<string>} [criteria.targetIds] - 対象カードID配列
+ * @param {string} [criteria.targetKeyword] - 対象キーワード
+ * @param {string} [criteria.targetSkill] - 単一の対象スキルID
+ * @param {string|Array<string>} [criteria.targetSkills] - 対象スキルIDまたは配列
+ * @returns {boolean} 条件に合致する場合は true
+ */
+export function matchesCardTarget(
+  card,
+  { targetId, targetIds, targetKeyword, targetSkill, targetSkills } = {}
+) {
+  if (!card) return false;
+  if (targetId && matchesCardId(card, targetId)) return true;
+  if (
+    Array.isArray(targetIds) &&
+    targetIds.length > 0 &&
+    matchesCardIds(card, targetIds)
+  ) {
+    return true;
+  }
+  if (
+    typeof targetKeyword === 'string' &&
+    targetKeyword.trim() !== '' &&
+    matchesCardKeyword(card, targetKeyword)
+  ) {
+    return true;
+  }
+
+  // targetSkills（スキルID配列または文字列）または targetSkill（単一スキルID）の判定
+  const rawSkillIds = Array.isArray(targetSkills)
+    ? targetSkills.filter(Boolean)
+    : typeof targetSkills === 'string' && targetSkills.trim() !== ''
+      ? [targetSkills.trim()]
+      : targetSkill
+        ? [targetSkill]
+        : [];
+  if (rawSkillIds.length > 0) {
+    const masterCard = CARD_MASTER?.find((m) => m.id === card.id);
+    if (
+      rawSkillIds.some(
+        (sId) =>
+          hasSkillDeep(card, sId) ||
+          (masterCard && hasSkillDeep(masterCard, sId))
+      )
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * カードが合体スキル（union）の合体素材条件を満たしているか判定する。
+ * targetId（カードID単体）、targetIds（カードID配列）、または targetKeyword（カード名キーワード部分一致）
+ * のいずれかの条件に合致する場合に true を返す。
+ * 「万相（all_forms）」スキルを持つカードは、いずれかの素材指定が存在する場合に常に合致（true）とみなされる。
+ *
+ * @param {object|null|undefined} card - 盤面に存在する合体対象（素材）カード
+ * @param {object|null|undefined} unionSkill - 合体スキル定義オブジェクト（{ id: 'union', targetId, targetIds, targetKeyword, summonId, ... }）
+ * @returns {boolean} 合体素材として有効な場合 true、それ以外は false
+ */
+export function matchesUnionMaterial(card, unionSkill) {
+  if (!card || !unionSkill) return false;
+  return matchesCardTarget(card, unionSkill);
+}
+
+/**
+ * 移動またはプレイしようとしているカードが、盤面に既に存在するカードと合体可能かを判定する。
+ * 移動元カードが合体スキル（union）を持ち、かつ盤面の既存カードがその合体素材条件を満たしている場合に true を返す。
+ *
+ * @param {object|null|undefined} movingCard - プレイまたは移動しようとしているカード
+ * @param {object|null|undefined} existingCard - 盤面に既に存在するカード
+ * @returns {boolean} 合体可能な場合 true、それ以外は false
+ */
+export function canUnionWithCard(movingCard, existingCard) {
+  if (!movingCard || !existingCard) return false;
+  const unionSkill = movingCard.skills?.find((s) => s.id === 'union');
+  if (!unionSkill) return false;
+  return matchesUnionMaterial(existingCard, unionSkill);
 }

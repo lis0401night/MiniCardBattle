@@ -24,6 +24,7 @@ import {
   hasSkill,
   playSound,
   sleep,
+  matchesUnionMaterial,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { clearValkyriaGuard } from '../engine.js';
@@ -34,6 +35,7 @@ import { checkWinCondition } from './battleResult.js';
 import {
   executeCombatPhase,
   discardCard,
+  discardCardsFromHand,
   cleanupDestroyedCards,
   drawCard,
   createUnionCard,
@@ -92,11 +94,7 @@ async function resolveMoveDestination(
   // 2. 合体 (union) スキルの判定
   if (existingCard && hasSkill(movingCard, 'union')) {
     const unionSkill = movingCard.skills.find((s) => s.id === 'union');
-    if (
-      unionSkill &&
-      (existingCard.id === unionSkill.targetId ||
-        existingCard.baseId === unionSkill.targetId)
-    ) {
+    if (unionSkill && matchesUnionMaterial(existingCard, unionSkill)) {
       const mergedCard = CARD_MASTER.find(
         (mc) => mc.id === unionSkill.summonId
       );
@@ -591,32 +589,31 @@ export async function endTurnLogic(o) {
           '手札が上限を超えています。捨てるカードを選択してください。'
         );
         const sortedIndices = [...indices].sort((a, b) => b - a);
+        const droppedCards = [];
         for (const idx of sortedIndices) {
           const dropped = GameState.playerHand.splice(idx, 1)[0];
-          await discardCard('blue', dropped, undefined, false);
+          if (dropped) droppedCards.push(dropped);
         }
+        await discardCardsFromHand('blue', droppedCards);
       } else {
+        let indices;
         if (GameState.gameMode === 'online') {
-          const indices = await waitPlayerHandSelection(
-            discardCount,
-            'red',
-            true
-          );
-          const sortedIndices = [...indices].sort((a, b) => b - a);
-          for (const idx of sortedIndices) {
-            const dropped = GameState.enemyHand.splice(idx, 1)[0];
-            await discardCard('red', dropped, undefined, false);
-          }
+          indices = await waitPlayerHandSelection(discardCount, 'red', true);
         } else {
           // AIの破棄選択は共通ロジックへ統一する（手札オーバー破棄はピッタリ枚数が必要なため true）
-          const sortedIndices = [
-            ...getAIDiscardIndices(GameState.enemyHand, discardCount, true),
-          ].sort((a, b) => b - a);
-          for (const idx of sortedIndices) {
-            const dropped = GameState.enemyHand.splice(idx, 1)[0];
-            await discardCard('red', dropped, undefined, false);
-          }
+          indices = getAIDiscardIndices(
+            GameState.enemyHand,
+            discardCount,
+            true
+          );
         }
+        const sortedIndices = [...indices].sort((a, b) => b - a);
+        const droppedCards = [];
+        for (const idx of sortedIndices) {
+          const dropped = GameState.enemyHand.splice(idx, 1)[0];
+          if (dropped) droppedCards.push(dropped);
+        }
+        await discardCardsFromHand('red', droppedCards);
       }
 
       GameState.placementMessage = null;

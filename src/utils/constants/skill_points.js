@@ -143,9 +143,17 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 0,
   },
-  summon: {
+  servant: {
     base: 0,
     multiplier: 1,
+  },
+  summon: {
+    base: 2,
+    multiplier: 1,
+  },
+  assemble: {
+    base: 3,
+    multiplier: 0,
   },
   immune: {
     base: 1,
@@ -175,6 +183,14 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: -1,
   },
+  madness: {
+    base: 2,
+    multiplier: 0,
+  },
+  reanimate: {
+    base: 2,
+    multiplier: 0,
+  },
   invade: {
     base: 5,
     multiplier: 0,
@@ -193,6 +209,14 @@ export const SKILL_POINTS = {
   },
   oblivion: {
     base: 0,
+    multiplier: 0,
+  },
+  silence: {
+    base: 1,
+    multiplier: 0,
+  },
+  trigger: {
+    base: 4,
     multiplier: 0,
   },
   call: {
@@ -400,6 +424,26 @@ export const SKILL_POINTS = {
     multiplier: 0,
   },
   grant_sturdy: {
+    base: 1,
+    multiplier: 0,
+  },
+  buff: {
+    base: 0,
+    multiplier: 1,
+  },
+  inspire: {
+    base: 0,
+    multiplier: 1,
+  },
+  supremacy: {
+    base: 0,
+    multiplier: 1,
+  },
+  unleash: {
+    base: 0,
+    multiplier: 0,
+  },
+  all_forms: {
     base: 1,
     multiplier: 0,
   },

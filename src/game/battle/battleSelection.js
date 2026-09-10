@@ -20,6 +20,7 @@ import {
   shuffleArray,
   sleep,
   playSound,
+  matchesUnionMaterial,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import {
@@ -189,7 +190,7 @@ export async function waitPlayerLaneSelection(
         // なければ後続のアクションキューから取得
         const aiAction = consumeAIAction([
           'devilhunter_resurrect',
-          'summon',
+          'servant',
           'call',
           'leader_skill',
           'clone',
@@ -547,11 +548,7 @@ export async function confirmOverwrittenLane(owner, tokenCard, laneIndex) {
   if (tokenCard) {
     const unionSkill =
       tokenCard.skills && tokenCard.skills.find((s) => s.id === 'union');
-    if (
-      unionSkill &&
-      (existingCard.baseId === unionSkill.targetId ||
-        existingCard.id === unionSkill.targetId)
-    ) {
+    if (unionSkill && matchesUnionMaterial(existingCard, unionSkill)) {
       canUnion = true;
     }
   }
@@ -783,25 +780,27 @@ export async function waitPlayerEnemyLaneSelection(
 
 /**
  * 自分のボード上のカードやレーンを選択させる処理（非同期ユーティリティ）
- * 主に「分身」「転向」「鍛造」「跳躍」などの、自分のカードまたはレーンを選択して発動するアクティブスキルの解決時に呼び出される。
+ * 主に「分身」「転向」「鍛造」「跳躍」「処刑」「強化」などの、自分のカードまたはレーンを選択して発動するアクティブスキルの解決時に呼び出される。
  *
  * @param {number} count - 選択させるカードやレーンの目標数
  * @param {string} owner - 誰が選択を行うか ('blue': プレイヤー, 'red': 敵/AI)
  * @param {boolean} [canCancel=false] - 選択キャンセルが許容されるか
+ * @param {number[]} [excludedLanes=[]] - 選択候補から除外する自陣レーンインデックスの配列（例: 自身が配置されているレーン）
  * @returns {Promise<number[]>} 選択された自陣のレーンインデックス（0〜2）の配列を返す Promise
  */
 export async function waitPlayerAlliedLaneSelection(
   count,
   owner,
-  canCancel = false
+  canCancel = false,
+  excludedLanes = []
 ) {
   const isBlue = owner === 'blue';
   // 選択を行う側の盤面（自陣ボード）を取得する
   const targetBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
-  // すでにカードが配置されているレーン（ターゲット候補となるインデックス）を取得
+  // すでにカードが配置されており、かつ除外対象外のレーン（ターゲット候補となるインデックス）を取得
   const occupiedLanes = targetBoard
-    .map((c, i) => (c !== null ? i : -1))
+    .map((c, i) => (c !== null && !excludedLanes.includes(i) ? i : -1))
     .filter((i) => i !== -1);
 
   // 味方の盤面に1枚もカードがなければ、選択の余地がないため即座に空配列を返す
@@ -1195,8 +1194,12 @@ export async function waitPlayerDiscardSelection(
       const shuffled = shuffleArray([...validCards]);
       return shuffled.slice(0, maxChoices);
     } else {
-      // 探索（explore）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
-      if (skillId === 'explore' || (title && title.includes('探索'))) {
+      // 探索（explore）や召集（assemble）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
+      if (
+        skillId === 'explore' ||
+        skillId === 'assemble' ||
+        (title && (title.includes('探索') || title.includes('召集')))
+      ) {
         const maxP = Math.max(...validCards.map((c) => c.power || 0));
         const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
         return bestCards[Math.floor(getSeededRandom() * bestCards.length)];

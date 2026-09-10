@@ -6,7 +6,12 @@ import {
   getCurrentRNG,
   getSkillValue,
   hasSkill,
+  hasSkillDeep,
   setCurrentRNG,
+  matchesCardId,
+  matchesCardIds,
+  matchesCardKeyword,
+  matchesUnionMaterial,
 } from '../utils/gameUtils.js';
 import { applyEquipment, canEquipCard } from './battle/index.js';
 import {
@@ -404,6 +409,7 @@ export function processActionSequence(
               if (
                 [
                   'resurrect',
+                  'servant',
                   'summon',
                   'ambush',
                   'invite',
@@ -419,9 +425,15 @@ export function processActionSequence(
                 ].includes(sk.id)
               )
                 return;
-              // 号令: デッキトップからカードを出す動的スキルのため、パワーボーナスで近似
-              if (sk.id === 'call') {
-                const callBonus = sk.value || 3;
+              // 号令・召集: デッキからカードを出す動的スキルのため、パワーボーナスで近似
+              if (sk.id === 'call' || sk.id === 'assemble') {
+                let callBonus = sk.value || 4;
+                if (sk.targetId) {
+                  const targetCard = CARD_MASTER.find(
+                    (c) => c.id === sk.targetId
+                  );
+                  callBonus = targetCard?.power || 6;
+                }
                 boardCard.currentPower =
                   (boardCard.currentPower || 0) + callBonus;
                 boardCard.basePower = (boardCard.basePower || 0) + callBonus;
@@ -608,7 +620,7 @@ export function processActionSequence(
         const sourceCard = targetBoard[sourceL];
         // パワー0カードが破壊済みの場合、applyActiveSkillLogic は c=null で即リターンするため
         // summonId が分かっているなら直接トークンを生成する
-        if (['summon', 'clone', 'split', 'ambush'].includes(action.skillId)) {
+        if (['servant', 'clone', 'split', 'ambush'].includes(action.skillId)) {
           let tokenPower = action.skillValue || 1;
           if (action.skillId === 'clone' && sourceCard) {
             tokenPower =
@@ -621,7 +633,7 @@ export function processActionSequence(
             if (action.skillId === 'clone') {
               tokenId = 'token_clone';
             } else {
-              // summon / split のフォールバック（summonIdが未指定の場合）
+              // servant / split のフォールバック（summonIdが未指定の場合）
               tokenId = tokenPower >= 5 ? 'token_golem' : 'token_drone';
             }
           }
@@ -924,6 +936,7 @@ export function processActionSequence(
             if (
               [
                 'clone',
+                'servant',
                 'summon',
                 'ambush',
                 'puppet',
@@ -958,8 +971,7 @@ export function processActionSequence(
         if (
           unionSkill &&
           simState.enemyBoard[lIdx] &&
-          (simState.enemyBoard[lIdx].baseId === unionSkill.targetId ||
-            simState.enemyBoard[lIdx].id === unionSkill.targetId)
+          matchesUnionMaterial(simState.enemyBoard[lIdx], unionSkill)
         ) {
           const masterData =
             CARD_MASTER.find((c) => c.id === unionSkill.summonId) ||
@@ -1064,8 +1076,14 @@ export function processActionSequence(
                   (AI_SKILL_UTILITY[sk.id] || 0);
               }
             }
-            if (sk.id === 'call') {
-              const callBonus = sk.value || 3;
+            if (sk.id === 'call' || sk.id === 'assemble') {
+              let callBonus = sk.value || 4;
+              if (sk.targetId) {
+                const targetCard = CARD_MASTER.find(
+                  (c) => c.id === sk.targetId
+                );
+                callBonus = targetCard?.power || 6;
+              }
               const boardCard = simState.enemyBoard[lIdx];
               if (boardCard) {
                 boardCard.currentPower =
@@ -1090,6 +1108,7 @@ export function processActionSequence(
                 'salvage',
                 'reinforce',
                 'puppet',
+                'servant',
                 'summon',
                 'ambush',
                 'resurrect',
@@ -1471,6 +1490,7 @@ export function getBestSimulatedMove() {
                       'draw',
                       'reinforce',
                       'clone',
+                      'servant',
                       'summon',
                       'ambush',
                       'puppet',
@@ -1516,7 +1536,7 @@ export function getBestSimulatedMove() {
               // 【共通】配置系スキル以外は常に「このスキルをキャンセル/スキップする」選択肢を考慮する
               const isPlacementSkill = [
                 'clone',
-                'summon',
+                'servant',
                 'ambush',
                 'puppet',
                 'resurrect',
@@ -1604,6 +1624,108 @@ export function getBestSimulatedMove() {
                     }
                   }
                 }
+              } else if (sk.id === 'summon') {
+                const isSelf = Boolean(sk.self || sk.targetSelf);
+                const selfId = card ? card.baseId || card.id : null;
+                const targetIds =
+                  sk.targetIds || (sk.targetId ? [sk.targetId] : null);
+                const targetKeyword = sk.targetKeyword;
+                const rawSkillIds = Array.isArray(sk.targetSkills)
+                  ? sk.targetSkills.filter(Boolean)
+                  : typeof sk.targetSkills === 'string' &&
+                      sk.targetSkills.trim() !== ''
+                    ? [sk.targetSkills.trim()]
+                    : sk.targetSkill
+                      ? [sk.targetSkill]
+                      : [];
+                const targetSkills = [...new Set(rawSkillIds)];
+                const reqP = sk.value;
+                const isExcludeBoard = Boolean(sk.excludeBoard);
+                const presentBoardIds = isExcludeBoard
+                  ? activeEnemyBoard
+                      .filter(Boolean)
+                      .flatMap((c) => [c.id, c.baseId])
+                      .filter(Boolean)
+                  : [];
+
+                for (let i = 0; i < originalHand.length; i++) {
+                  if (currentUsedHand.includes(i)) continue;
+                  let childCard = originalHand[i];
+
+                  if (isExcludeBoard) {
+                    if (
+                      presentBoardIds.includes(childCard.id) ||
+                      (childCard.baseId &&
+                        presentBoardIds.includes(childCard.baseId))
+                    ) {
+                      continue;
+                    }
+                  }
+
+                  let matches = true;
+                  if (isSelf && selfId) {
+                    matches = matchesCardId(childCard, selfId);
+                  } else if (Array.isArray(targetIds) && targetIds.length > 0) {
+                    matches = matchesCardIds(childCard, targetIds);
+                  } else if (
+                    typeof targetKeyword === 'string' &&
+                    targetKeyword
+                  ) {
+                    matches = matchesCardKeyword(childCard, targetKeyword);
+                  } else if (
+                    Array.isArray(targetSkills) &&
+                    targetSkills.length > 0
+                  ) {
+                    const masterCard = CARD_MASTER?.find(
+                      (m) => m.id === childCard.id
+                    );
+                    matches = targetSkills.some(
+                      (sId) =>
+                        hasSkillDeep(childCard, sId) ||
+                        (masterCard && hasSkillDeep(masterCard, sId))
+                    );
+                  } else if (reqP !== undefined && reqP !== null) {
+                    matches = (childCard.power || 0) <= reqP;
+                  }
+
+                  if (!matches) continue;
+
+                  let children = buildCardPlayTree(
+                    childCard,
+                    i,
+                    'summon',
+                    originalHand,
+                    originalDiscard,
+                    [...currentUsedHand, i],
+                    currentUsedDiscard,
+                    currentDepth + 1,
+                    undefined,
+                    leaderSkillContext
+                  );
+                  for (let cNode of children) {
+                    const summonLane = cNode[0]?.laneIdx;
+                    const nextEnemyBoard = [...activeEnemyBoard];
+                    if (
+                      summonLane !== undefined &&
+                      summonLane >= 0 &&
+                      summonLane < 3
+                    ) {
+                      nextEnemyBoard[summonLane] = childCard;
+                    }
+                    let nextBranches = buildSkillBranch(
+                      remainingSkills,
+                      [...currentUsedHand, i],
+                      currentUsedDiscard,
+                      currentDepth,
+                      currentDiscarded,
+                      nextEnemyBoard,
+                      activePlayerBoard
+                    );
+                    for (let nb of nextBranches) {
+                      results.push([...cNode, ...nb]);
+                    }
+                  }
+                }
               } else if (sk.id === 'forge') {
                 for (let i = 0; i < originalHand.length; i++) {
                   if (currentUsedHand.includes(i)) continue;
@@ -1684,18 +1806,43 @@ export function getBestSimulatedMove() {
                   results.push([{ type: 'leap' }, ...nb]);
                 }
               } else if (sk.id === 'resurrect') {
+                const targetIds =
+                  sk.targetIds || (sk.targetId ? [sk.targetId] : null);
                 const maxP = sk.value || 1;
                 const candidates = [...originalDiscard, ...currentDiscarded];
+                const isExcludeBoard = Boolean(sk.excludeBoard);
+                const presentBoardIds = isExcludeBoard
+                  ? activeEnemyBoard
+                      .filter(Boolean)
+                      .flatMap((c) => [c.id, c.baseId])
+                      .filter(Boolean)
+                  : [];
 
                 for (let i = 0; i < candidates.length; i++) {
                   if (currentUsedDiscard.includes(i)) continue;
                   let resCard = candidates[i];
 
-                  const master = CARD_MASTER.find(
-                    (m) => m.id === resCard.id || m.id === resCard.baseId
-                  );
-                  const baseP = master ? master.power : resCard.power || 0;
-                  if (baseP > maxP || resCard.isToken) continue;
+                  if (resCard.isToken) continue;
+
+                  if (isExcludeBoard) {
+                    if (
+                      presentBoardIds.includes(resCard.id) ||
+                      (resCard.baseId &&
+                        presentBoardIds.includes(resCard.baseId))
+                    ) {
+                      continue;
+                    }
+                  }
+
+                  if (Array.isArray(targetIds) && targetIds.length > 0) {
+                    if (!matchesCardIds(resCard, targetIds)) continue;
+                  } else {
+                    const master = CARD_MASTER.find(
+                      (m) => m.id === resCard.id || m.id === resCard.baseId
+                    );
+                    const baseP = master ? master.power : resCard.power || 0;
+                    if (baseP > maxP) continue;
+                  }
 
                   for (let j = 0; j < 3; j++) {
                     if (mySealedLanes[j] > 0) continue;
@@ -1873,7 +2020,7 @@ export function getBestSimulatedMove() {
                 }
                 // ※ awake（覚醒）はパッシブスキル（所有者のターン開始時に発動）のため、
                 //   召喚時のtoken_placementとしては扱わない。シミュレーション上は元のパワーのまま評価される。
-              } else if (['clone', 'summon', 'ambush'].includes(sk.id)) {
+              } else if (['clone', 'servant', 'ambush'].includes(sk.id)) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
                 // レーン選択の全組み合わせを生成するヘルパー
                 // 同一レーンへの複数配置は武装カードへの装備等で有効な戦略のため、
@@ -2412,6 +2559,7 @@ export function getBestSimulatedMove() {
               'draw',
               'reinforce',
               'clone',
+              'servant',
               'summon',
               'ambush',
               'puppet',
@@ -3358,7 +3506,7 @@ export function evaluateAdhocTokenLanes(
 
     const isPlacementSkill = [
       'clone',
-      'summon',
+      'servant',
       'ambush',
       'puppet',
       'resurrect',
@@ -3452,6 +3600,95 @@ export function evaluateAdhocTokenLanes(
           }
         }
       }
+    } else if (sk.id === 'summon') {
+      const isSelf = Boolean(sk.self || sk.targetSelf);
+      const selfId = tokenCard ? tokenCard.baseId || tokenCard.id : null;
+      const originalHand = GameState.enemyHand || [];
+      const originalDiscard = GameState.enemyDiscard || [];
+      const targetIds = sk.targetIds || (sk.targetId ? [sk.targetId] : null);
+      const targetKeyword = sk.targetKeyword;
+      const rawSkillIds = Array.isArray(sk.targetSkills)
+        ? sk.targetSkills.filter(Boolean)
+        : typeof sk.targetSkills === 'string' && sk.targetSkills.trim() !== ''
+          ? [sk.targetSkills.trim()]
+          : sk.targetSkill
+            ? [sk.targetSkill]
+            : [];
+      const targetSkills = [...new Set(rawSkillIds)];
+      const reqP = sk.value;
+      const isExcludeBoard = Boolean(sk.excludeBoard);
+      const presentBoardIds = isExcludeBoard
+        ? activeEnemyBoard
+            .filter(Boolean)
+            .flatMap((c) => [c.id, c.baseId])
+            .filter(Boolean)
+        : [];
+
+      for (let i = 0; i < originalHand.length; i++) {
+        if (currentUsedHand.includes(i)) continue;
+        let childCard = originalHand[i];
+
+        if (isExcludeBoard) {
+          if (
+            presentBoardIds.includes(childCard.id) ||
+            (childCard.baseId && presentBoardIds.includes(childCard.baseId))
+          ) {
+            continue;
+          }
+        }
+
+        let matches = true;
+        if (isSelf && selfId) {
+          matches = matchesCardId(childCard, selfId);
+        } else if (Array.isArray(targetIds) && targetIds.length > 0) {
+          matches = matchesCardIds(childCard, targetIds);
+        } else if (typeof targetKeyword === 'string' && targetKeyword) {
+          matches = matchesCardKeyword(childCard, targetKeyword);
+        } else if (Array.isArray(targetSkills) && targetSkills.length > 0) {
+          const masterCard = CARD_MASTER?.find((m) => m.id === childCard.id);
+          matches = targetSkills.some(
+            (sId) =>
+              hasSkillDeep(childCard, sId) ||
+              (masterCard && hasSkillDeep(masterCard, sId))
+          );
+        } else if (reqP !== undefined && reqP !== null) {
+          matches = (childCard.power || 0) <= reqP;
+        }
+
+        if (!matches) continue;
+
+        let children = buildCardPlayTreeAdhoc(
+          childCard,
+          i,
+          'summon',
+          originalHand,
+          originalDiscard,
+          [...currentUsedHand, i],
+          currentUsedDiscard,
+          currentDepth + 1
+        );
+        for (let cNode of children) {
+          const summonLane = cNode[0]?.laneIdx;
+          const nextEnemyBoard = [...activeEnemyBoard];
+          if (summonLane !== undefined && summonLane >= 0 && summonLane < 3) {
+            nextEnemyBoard[summonLane] = childCard;
+          }
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            [...currentUsedHand, i],
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscard,
+            laneIdx,
+            nextEnemyBoard,
+            activePlayerBoard,
+            leaderSkillContext
+          );
+          for (let nb of nextBranches) {
+            results.push([...cNode, ...nb]);
+          }
+        }
+      }
     } else if (sk.id === 'forge') {
       const originalHand = GameState.enemyHand || [];
       const originalDiscard = GameState.enemyDiscard || [];
@@ -3532,18 +3769,45 @@ export function evaluateAdhocTokenLanes(
       }
     } else if (sk.id === 'resurrect') {
       const originalDiscard = GameState.enemyDiscard || [];
+      const targetIds = sk.targetIds || (sk.targetId ? [sk.targetId] : null);
       const maxP = sk.value || 1;
       const candidates = [...originalDiscard, ...currentDiscard];
+      const isExcludeBoard = Boolean(sk.excludeBoard);
+      const presentBoardIds = isExcludeBoard
+        ? activeEnemyBoard
+            .filter(Boolean)
+            .flatMap((c) => [c.id, c.baseId])
+            .filter(Boolean)
+        : [];
 
       for (let i = 0; i < candidates.length; i++) {
         if (currentUsedDiscard.includes(i)) continue;
         let resCard = candidates[i];
 
-        const master = CARD_MASTER.find(
-          (m) => m.id === resCard.id || m.id === resCard.baseId
-        );
-        const baseP = master ? master.power : resCard.power || 0;
-        if (baseP > maxP || resCard.isToken) continue;
+        if (resCard.isToken) continue;
+
+        if (isExcludeBoard) {
+          if (
+            presentBoardIds.includes(resCard.id) ||
+            (resCard.baseId && presentBoardIds.includes(resCard.baseId))
+          ) {
+            continue;
+          }
+        }
+
+        if (Array.isArray(targetIds) && targetIds.length > 0) {
+          if (
+            !targetIds.includes(resCard.id) &&
+            !targetIds.includes(resCard.baseId)
+          )
+            continue;
+        } else {
+          const master = CARD_MASTER.find(
+            (m) => m.id === resCard.id || m.id === resCard.baseId
+          );
+          const baseP = master ? master.power : resCard.power || 0;
+          if (baseP > maxP) continue;
+        }
 
         for (let j = 0; j < 3; j++) {
           if (sealedLanes[j] > 0) continue;
@@ -3808,7 +4072,7 @@ export function evaluateAdhocTokenLanes(
           }
         }
       }
-    } else if (['clone', 'summon', 'ambush'].includes(sk.id)) {
+    } else if (['clone', 'servant', 'ambush'].includes(sk.id)) {
       const count = sk.id === 'clone' ? sk.value || 1 : 1;
       const generateLaneCombos = (remainingCount) => {
         if (remainingCount <= 0) return [[]];
@@ -4135,6 +4399,7 @@ export function evaluateAdhocTokenLanes(
                     'draw',
                     'reinforce',
                     'clone',
+                    'servant',
                     'summon',
                     'ambush',
                     'puppet',
@@ -4707,9 +4972,10 @@ export function simulateMove(
             playedCard.skills.find((s) => s.id === 'union');
           if (!(
             unionSkillForCheck &&
-            (simState.enemyBoard[laneIdx].baseId ===
-              unionSkillForCheck.targetId ||
-              simState.enemyBoard[laneIdx].id === unionSkillForCheck.targetId)
+            matchesUnionMaterial(
+              simState.enemyBoard[laneIdx],
+              unionSkillForCheck
+            )
           )) {
             return null;
           }
@@ -4731,6 +4997,7 @@ export function simulateMove(
             if (
               [
                 'clone',
+                'servant',
                 'summon',
                 'ambush',
                 'puppet',
@@ -4758,8 +5025,7 @@ export function simulateMove(
           if (
             unionSkill &&
             simState.enemyBoard[laneIdx] &&
-            (simState.enemyBoard[laneIdx].baseId === unionSkill.targetId ||
-              simState.enemyBoard[laneIdx].id === unionSkill.targetId)
+            matchesUnionMaterial(simState.enemyBoard[laneIdx], unionSkill)
           ) {
             const masterData =
               CARD_MASTER.find((c) => c.id === unionSkill.summonId) ||
@@ -4811,10 +5077,16 @@ export function simulateMove(
 
           if (!activeCard.skillTriggered) {
             skills.forEach((sk) => {
-              if (sk.id === 'call') {
-                // 【号令の仮評価（simulateMove版）】
-                // processActionSequence と同じロジック: callの値分のパワーを仮加算
-                const callBonus = sk.value || 3;
+              if (sk.id === 'call' || sk.id === 'assemble') {
+                // 【号令・召集の仮評価（simulateMove版）】
+                // processActionSequence と同じロジック: call/assembleの値分のパワーを仮加算
+                let callBonus = sk.value || 4;
+                if (sk.targetId) {
+                  const targetCard = CARD_MASTER.find(
+                    (c) => c.id === sk.targetId
+                  );
+                  callBonus = targetCard?.power || 6;
+                }
                 const boardCard = simState.enemyBoard[laneIdx];
                 if (boardCard) {
                   boardCard.currentPower =
@@ -4832,6 +5104,7 @@ export function simulateMove(
               } else if (
                 ![
                   'clone',
+                  'servant',
                   'summon',
                   'ambush',
                   'puppet',

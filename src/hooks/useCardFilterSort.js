@@ -207,6 +207,8 @@ export function useCardFilterSort({
         c.choices.forEach((ch) => cardSkills.push(ch.id));
       if (Array.isArray(c.choices2))
         c.choices2.forEach((ch) => cardSkills.push(ch.id));
+      if (Array.isArray(c.supremacySkills))
+        c.supremacySkills.forEach((sk) => cardSkills.push(sk.id));
 
       if (filters.skills && filters.skills.length > 0) {
         if (!filters.skills.some((sk) => cardSkills.includes(sk))) return false;

@@ -36,6 +36,9 @@ const SUMMON_SOURCE_POPUP_LABELS = {
   split: '分裂',
   awake: '覚醒',
   awake_legendary: '覚醒(伝説)',
+  madness: '狂気',
+  trigger: '誘発',
+  reanimate: '反魂',
 };
 
 async function triggerSnipeVfx(source, side, lane) {
@@ -59,6 +62,24 @@ let discardCardRef = null;
  */
 export function registerDiscardCard(fn) {
   discardCardRef = fn;
+}
+
+let triggerMadnessSkillRef = null;
+/**
+ * 循環参照を回避しつつ、battleCombat.jsのtriggerMadnessSkill関数を登録するための依存性注入用関数
+ * @param {Function} fn - triggerMadnessSkill関数
+ */
+export function registerTriggerMadnessSkill(fn) {
+  triggerMadnessSkillRef = fn;
+}
+
+let discardCardsFromDeckRef = null;
+/**
+ * 循環参照を回避しつつ、battleCombat.jsのdiscardCardsFromDeck関数を登録するための依存性注入用関数
+ * @param {Function} fn - discardCardsFromDeck関数
+ */
+export function registerDiscardCardsFromDeck(fn) {
+  discardCardsFromDeckRef = fn;
 }
 
 /**
@@ -601,6 +622,24 @@ export async function playEvents(events) {
           }
           if (idx !== -1) {
             const discardedCard = hand.splice(idx, 1)[0];
+
+            // 手札から捨てられた時かつ「狂気」を持つ場合、召喚を試行
+            if (
+              !discardedCard.isToken &&
+              hasSkill(discardedCard, 'madness') &&
+              triggerMadnessSkillRef
+            ) {
+              const summoned = await triggerMadnessSkillRef(
+                ev.side,
+                discardedCard
+              );
+              if (summoned) {
+                updateDeckDisplay(ev.side);
+                renderHand();
+                break;
+              }
+            }
+
             const discardArr =
               ev.side === 'blue'
                 ? GameState.playerDiscard
@@ -658,6 +697,35 @@ export async function playEvents(events) {
           ev.source !== 'targeted_destruction' &&
           ev.source !== 'elf_polarbear_combo'
         ) {
+          const cEl = document.querySelector(
+            `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+          );
+          if (cEl) {
+            createDamagePopup(cEl, '忘却', '#cbd5e1');
+          }
+          playSound(SOUNDS.seSkill);
+          await sleep(200);
+        }
+        break;
+      }
+      case 'silence_clear': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const targetCard = board[ev.lane];
+        if (targetCard) {
+          targetCard.skills = [];
+          targetCard.choices = [];
+          targetCard.choices2 = null;
+          if ('summonId' in targetCard) delete targetCard.summonId;
+          targetCard.stunTurns = 0;
+          targetCard.stunAppliedThisTurn = false;
+        }
+
+        if (window.updateCardVisualsReact) {
+          window.updateCardVisualsReact(ev.lane, sidePrefix);
+        }
+
+        if (!ev.silent) {
           const cEl = document.querySelector(
             `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
           );
@@ -759,11 +827,17 @@ export async function playEvents(events) {
       case 'deck_mill': {
         const targetDeck =
           ev.side === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
-        const targetDiscard =
-          ev.side === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
         if (targetDeck && targetDeck.length > 0) {
           const milledCards = targetDeck.splice(0, ev.count);
-          targetDiscard.push(...milledCards);
+          if (discardCardsFromDeckRef) {
+            await discardCardsFromDeckRef(ev.side, milledCards);
+          } else {
+            const targetDiscard =
+              ev.side === 'blue'
+                ? GameState.playerDiscard
+                : GameState.enemyDiscard;
+            targetDiscard.push(...milledCards);
+          }
         }
         updateDeckDisplay(ev.side);
         playSound(SOUNDS.seDraw);

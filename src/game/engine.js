@@ -9,8 +9,12 @@ import {
   getSeededRandom,
   getSkillValue,
   hasSkill,
+  resolveCardSupremacySkills,
   resolveStartupFade,
   unmergeCardSkills,
+  matchesCardId,
+  matchesCardKeyword,
+  matchesUnionMaterial,
 } from '../utils/gameUtils.js';
 
 /** 戦乙女の加護の持続カウンター（発動後、次の自分のターン開始時スキル解決完了までを1とする） */
@@ -751,6 +755,10 @@ export function applyActiveSkillLogic(
     'stealth',
     'invincible',
     'sublimation',
+    'buff',
+    'inspire',
+    'supremacy',
+    'unleash',
   ];
   if (!c && requiresCard.includes(sid)) return events;
 
@@ -783,6 +791,26 @@ export function applyActiveSkillLogic(
           }
         }
       });
+      break;
+    }
+    case 'silence': {
+      const oppBoard = owner === 'blue' ? state.enemyBoard : state.playerBoard;
+      const targetCard = oppBoard[l];
+      if (targetCard) {
+        targetCard.skills = [];
+        targetCard.choices = [];
+        targetCard.choices2 = null;
+        if ('summonId' in targetCard) delete targetCard.summonId;
+        targetCard.stunTurns = 0;
+        targetCard.stunAppliedThisTurn = false;
+
+        events.push({
+          type: 'silence_clear',
+          side: owner === 'blue' ? 'red' : 'blue',
+          lane: l,
+          card: JSON.parse(JSON.stringify(targetCard)),
+        });
+      }
       break;
     }
     case 'hack': {
@@ -887,8 +915,7 @@ export function applyActiveSkillLogic(
         } else if (
           existingCard &&
           unionSkill &&
-          (existingCard.baseId === unionSkill.targetId ||
-            existingCard.id === unionSkill.targetId)
+          matchesUnionMaterial(existingCard, unionSkill)
         ) {
           // 2. 合体（union）判定
           const mergedCard = CARD_MASTER.find(
@@ -1169,6 +1196,96 @@ export function applyActiveSkillLogic(
       }
       break;
     }
+    case 'buff': {
+      // 【「強化」スキル処理】
+      // 召喚時、自身のパワーを+valする
+      const bVal = val || 1;
+      if (bVal !== 0) {
+        c.currentPower += bVal;
+        events.push({
+          type: 'power_change',
+          side: owner,
+          lane: l,
+          amount: bVal,
+          source: 'buff',
+        });
+      }
+      break;
+    }
+    case 'inspire': {
+      // 【「鼓舞」スキル処理】
+      // 召喚時、自分の場の自身以外のカード1体を選択してパワーを+valする
+      const bVal = val || 1;
+      if (bVal !== 0) {
+        const otherOccupiedLanes = b
+          .map((targetCard, laneIdx) =>
+            targetCard !== null && laneIdx !== l ? laneIdx : -1
+          )
+          .filter((idx) => idx !== -1);
+
+        if (otherOccupiedLanes.length > 0) {
+          // パワーが最も高いカードを優先（同値なら左レーン優先）
+          otherOccupiedLanes.sort((laneA, laneB) => {
+            const diff =
+              (b[laneB].currentPower || 0) - (b[laneA].currentPower || 0);
+            if (diff !== 0) return diff;
+            return laneA - laneB;
+          });
+          const targetLane = otherOccupiedLanes[0];
+          b[targetLane].currentPower += bVal;
+          events.push({
+            type: 'power_change',
+            side: owner,
+            lane: targetLane,
+            amount: bVal,
+            source: 'inspire',
+          });
+        }
+      }
+      break;
+    }
+    case 'supremacy': {
+      // 召喚時、自分の場に自身以外の元々のパワー（基本パワー）が6以上のカードが存在する場合にサブスキルを発動
+      const hasOriginal6Plus = b.some((tc, laneIdx) => {
+        if (!tc || laneIdx === l) return false;
+        const master = CARD_MASTER.find((m) => m.id === (tc.baseId || tc.id));
+        const origPower = master?.power ?? tc.power ?? 0;
+        return origPower >= 6;
+      });
+
+      if (hasOriginal6Plus) {
+        const supSkills = resolveCardSupremacySkills(c);
+        if (Array.isArray(supSkills) && supSkills.length > 0) {
+          for (const subSk of supSkills) {
+            applyActiveSkillLogic(
+              state,
+              owner,
+              l,
+              subSk.id,
+              subSk.value,
+              events,
+              simulatedTokenLanes,
+              simulatedLane
+            );
+          }
+        }
+      }
+      break;
+    }
+    case 'unleash': {
+      // 召喚時、自身の防御（待機・拘束状態によるスタンターンおよび防御スキル）をなくす
+      c.stunTurns = 0;
+      if (Array.isArray(c.skills)) {
+        c.skills = c.skills.filter((s) => s.id !== 'defender');
+      }
+      events.push({
+        type: 'unleash',
+        side: owner,
+        lane: l,
+        source: 'unleash',
+      });
+      break;
+    }
     case 'double_power': {
       const dpVal = c.currentPower || 0;
       if (dpVal > 0) {
@@ -1188,7 +1305,22 @@ export function applyActiveSkillLogic(
       const myHandSim = owner === 'blue' ? state.playerHand : state.enemyHand;
       if (myDeckSim && myDeckSim.length > 0) {
         // シミュレーション：デッキから最も強いカードを引き、手札の最も弱いカードと入れ替える
-        const validCards = myDeckSim.filter((card) => card !== undefined);
+        let validCards = myDeckSim.filter((card) => card !== undefined);
+
+        const exploreSkill = c?.skills?.find((s) => s.id === 'explore');
+        const targetKeyword = exploreSkill?.targetKeyword;
+        const targetId = exploreSkill?.targetId;
+
+        if (typeof targetKeyword === 'string' && targetKeyword) {
+          validCards = validCards.filter((card) =>
+            matchesCardKeyword(card, targetKeyword)
+          );
+        } else if (targetId) {
+          validCards = validCards.filter((card) =>
+            matchesCardId(card, targetId)
+          );
+        }
+
         if (validCards.length > 0) {
           const mP = Math.max(...validCards.map((c) => c.power || 0));
           const bestCards = validCards.filter((c) => (c.power || 0) === mP);
@@ -1686,8 +1818,8 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'summon': {
-      // 【重要仕様】「召喚 X」において X (val) はトークンのパワーを指す。
+    case 'servant': {
+      // 【重要仕様】「使役 X」において X (val) はトークンのパワーを指す。
       // 個数は常に 1体 であるため、ループは 1回 固定。
       const summonTargetPower = val || 1;
       let tIdEngine = null;
@@ -1696,7 +1828,7 @@ export function applyActiveSkillLogic(
       // カード本体またはスキルから召喚IDを取得
       const skillForSummonId = c.skills?.find(
         (s) =>
-          (s.id === 'summon' ||
+          (s.id === 'servant' ||
             s.id === 'awake' ||
             s.id === 'awake_legendary' ||
             s.id === 'split') &&
@@ -1772,7 +1904,7 @@ export function applyActiveSkillLogic(
             owner,
             targetLane,
             newToken,
-            'summon',
+            'servant',
             events
           );
         }
@@ -1874,8 +2006,7 @@ export function applyActiveSkillLogic(
         const isUnion =
           unionSkill &&
           existingCard &&
-          (existingCard.baseId === unionSkill.targetId ||
-            existingCard.id === unionSkill.targetId);
+          matchesUnionMaterial(existingCard, unionSkill);
 
         if (isUnion) {
           const masterData =
@@ -2066,8 +2197,7 @@ export function applyActiveSkillLogic(
           const isUnion =
             inheritedUnionSkill &&
             existingCard &&
-            (existingCard.baseId === inheritedUnionSkill.targetId ||
-              existingCard.id === inheritedUnionSkill.targetId);
+            matchesUnionMaterial(existingCard, inheritedUnionSkill);
 
           if (isUnion) {
             const masterData =
@@ -3518,8 +3648,7 @@ export function applyLeaderSkillLogic(
         const isUnion =
           unionSkill &&
           existingCard &&
-          (existingCard.baseId === unionSkill.targetId ||
-            existingCard.id === unionSkill.targetId);
+          matchesUnionMaterial(existingCard, unionSkill);
         const isEquip =
           hasSkill(selectedCard, 'equip') ||
           (existingCard && hasSkill(existingCard, 'arm_self'));
@@ -4015,8 +4144,7 @@ export function applyLeaderSkillLogic(
                 const isUnion =
                   unionSkill &&
                   existingCard &&
-                  (existingCard.baseId === unionSkill.targetId ||
-                    existingCard.id === unionSkill.targetId);
+                  matchesUnionMaterial(existingCard, unionSkill);
                 const isEquip =
                   hasSkill(simResCard, 'equip') ||
                   (existingCard && hasSkill(existingCard, 'arm_self'));

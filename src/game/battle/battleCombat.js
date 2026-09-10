@@ -36,6 +36,7 @@ import {
   sleep,
   hasSkill,
   shuffleArray,
+  matchesUnionMaterial,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playCardVoice } from '../../utils/constants/voices.js';
@@ -46,10 +47,18 @@ import {
   calculateCombatPhase,
 } from '../engine.js';
 import { playEvents } from '../eventRenderer.js';
-import { resolveActiveSkillEffect } from '../skillLogic.js';
+import {
+  resolveActiveSkillEffect,
+  handleStartupDispelled,
+} from '../skillLogic.js';
 import { trackMissionSacrifice, trackMissionPower } from '../missionLogic.js';
 import { checkWinCondition } from './battleResult.js';
-import { canEquipCard } from './battleSelection.js';
+import {
+  canEquipCard,
+  confirmOverwrittenLane,
+  waitPlayerHandSelection,
+  waitPlayerLaneSelection,
+} from './battleSelection.js';
 import {
   CHAR_FORTUNE_HANDICAPS,
   HANDICAP_TYPES,
@@ -146,14 +155,801 @@ function createCombatSnapshot() {
 }
 
 /**
+ * 対象のカードが指定オーナーの盤面に召喚可能なレーンインデックスの配列を算出する。
+ * 封印レーン、1ターン目先攻制約、伝説・生贄・頂点・挑戦の制約ルールを適用する。
+ *
+ * @param {string} owner - 所有者 ('blue' | 'red')
+ * @param {object} card - 召喚対象のカードオブジェクト
+ * @returns {number[]} 召喚可能なレーンインデックスの配列 (0〜2)
+ */
+export function getValidSummonLanes(owner, card) {
+  if (!card) return [];
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const oppBoard =
+    owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+  const sealedLanes =
+    owner === 'blue'
+      ? GameState.playerSealedLanes || [0, 0, 0]
+      : GameState.enemySealedLanes || [0, 0, 0];
+
+  return [0, 1, 2].filter((l) => {
+    // 封印レーンは絶対召喚不可
+    if (sealedLanes[l] > 0) return false;
+
+    // 1ターン目先攻制約（中央レーンのみ）
+    if (
+      GameState.turnCount === 1 &&
+      GameState.firstPlayer === owner &&
+      l !== 1
+    ) {
+      return false;
+    }
+
+    // 伝説（中央レーンのみ）
+    if (hasSkill(card, 'legendary') && l !== 1) {
+      return false;
+    }
+
+    // 生贄（既に味方カードがあるレーンのみ）
+    if (hasSkill(card, 'takeover') && board[l] === null) {
+      return false;
+    }
+
+    // 頂点（自分の場の伝説カードの上のみ）
+    if (
+      hasSkill(card, 'apex') &&
+      (!board[l] || !hasSkill(board[l], 'legendary'))
+    ) {
+      return false;
+    }
+
+    // 挑戦（正面に敵がいるレーンのみ）
+    if (hasSkill(card, 'challenge') && oppBoard[l] === null) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * 狂気スキルによるカード召喚を実行する。
+ * 召喚演出、装備/上書き墓地送り、盤面配置、オンプレイスキル発動、クリーンアップを一括処理する。
+ *
+ * @param {string} owner - 所有者 ('blue' | 'red')
+ * @param {object} card - 召喚するカードオブジェクト
+ * @param {number} targetLane - 召喚先レーンインデックス
+ * @returns {Promise<void>}
+ */
+export async function executeMadnessSummon(owner, card, targetLane) {
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+  // 演出：召喚アニメーション
+  await playSummonAnimation(card, owner);
+
+  const existingCard = board[targetLane];
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    await handleStartupDispelled(owner, existingCard, targetLane, card);
+  } else if (canEquipCard(card, board[targetLane])) {
+    const targetCard = board[targetLane];
+    const { equipSkills } = applyEquipment(targetCard, card);
+
+    let events = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: targetCard,
+        source: 'madness',
+      },
+    ];
+    await playEvents(events);
+
+    // 装備されたカードのアクティブスキル即時発動
+    for (const sk of equipSkills) {
+      if (ACTIVE_SKILLS.includes(sk.id)) {
+        await sleep(50);
+        const enhancedSk = {
+          ...sk,
+          _sourceChoices: card.choices,
+          _sourceChoices2: card.choices2,
+        };
+        await resolveActiveSkillEffect(
+          owner,
+          targetLane,
+          targetCard,
+          sk.id,
+          sk.value,
+          enhancedSk
+        );
+      }
+    }
+    await cleanupDestroyedCards();
+  } else {
+    card.uid =
+      card.uid ||
+      `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
+    card.owner = owner;
+
+    // 配置直前に既存カードを安全に墓地へ送る（上書き）
+    if (board[targetLane]) {
+      if (!(await discardCard(owner, board[targetLane], targetLane, false))) {
+        board[targetLane] = null;
+      }
+    }
+    board[targetLane] = card;
+
+    if (hasActiveSkill(card)) {
+      card.isSkillResolving = true;
+    }
+
+    let events = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: card,
+        source: 'madness',
+      },
+    ];
+    await playEvents(events);
+
+    // 相手の誘発スキルチェック
+    await checkAndTriggerCounter(owner, card, targetLane);
+
+    if (hasActiveSkill(card)) {
+      await resolveOnPlaySkill(owner, targetLane, card);
+    } else {
+      card.isSkillResolving = false;
+    }
+    await cleanupDestroyedCards();
+  }
+}
+
+/**
+ * 手札から捨てられたカードに対して「狂気（madness）」スキルを発動させる。
+ * 召喚可能なレーンが存在する場合、プレイヤーまたはAIにレーンを選択させ、
+ * 制約チェックを満たすレーンへ「召喚」する。
+ * キャンセルされた場合や召喚可能レーンがない場合は墓地へ送るため false を返す。
+ *
+ * @param {string} owner - 所有者 ('blue' | 'red')
+ * @param {object} card - 破棄対象のカードオブジェクト
+ * @returns {Promise<boolean>} 召喚に成功した場合は true、キャンセルまたは召喚不可の場合は false
+ */
+export async function triggerMadnessSkill(owner, card) {
+  if (!card || !hasSkill(card, 'madness')) {
+    return false;
+  }
+
+  // 召喚可能なレーンがあるかチェック
+  const validLanes = getValidSummonLanes(owner, card);
+  if (validLanes.length === 0) {
+    return false;
+  }
+
+  let successCall = false;
+  let targetLane = -1;
+
+  while (!successCall) {
+    GameState.placementMessage = `狂気: 「${card.name}」を召喚するレーンを選んでください`;
+    const selectedLanes = await waitPlayerLaneSelection(
+      1,
+      owner,
+      card,
+      false, // isLeaderSkill
+      validLanes, // tokenLanes (制約を満たすレーンに限定)
+      true, // checkConstraints (召喚ルール制約チェック有効)
+      true, // canCancel (キャンセル可能)
+      '召喚完了', // buttonText
+      true // _skipImmediateDiscard
+    );
+    GameState.placementMessage = null;
+
+    if (GameState.gameMode !== 'online' && owner !== 'blue') {
+      await sleep(600);
+    }
+
+    if (!selectedLanes || selectedLanes.length === 0) {
+      // キャンセル時は召喚せず、通常の墓地送りへ進む
+      return false;
+    }
+
+    targetLane = selectedLanes[0];
+
+    // 上書き確認
+    const proceed = await confirmOverwrittenLane(owner, card, targetLane);
+    if (!proceed) {
+      await sleep(200);
+      continue;
+    }
+    successCall = true;
+  }
+
+  if (targetLane === -1) {
+    return false;
+  }
+
+  // 召喚を実行
+  await executeMadnessSummon(owner, card, targetLane);
+  return true;
+}
+
+/**
+ * 反魂スキルによるカード召喚を実行する。
+ * 召喚演出、装備/上書き墓地送り、盤面配置、オンプレイスキル発動、クリーンアップを一括処理する。
+ *
+ * @param {string} owner - 所有者 ('blue' | 'red')
+ * @param {object} card - 召喚するカードオブジェクト
+ * @param {number} targetLane - 召喚先レーンインデックス
+ * @returns {Promise<void>}
+ */
+export async function executeReanimateSummon(owner, card, targetLane) {
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+  // 演出：召喚アニメーション
+  await playSummonAnimation(card, owner);
+
+  const existingCard = board[targetLane];
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    await handleStartupDispelled(owner, existingCard, targetLane, card);
+  } else if (canEquipCard(card, board[targetLane])) {
+    const targetCard = board[targetLane];
+    const { equipSkills } = applyEquipment(targetCard, card);
+
+    let events = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: targetCard,
+        source: 'reanimate',
+      },
+    ];
+    await playEvents(events);
+
+    // 装備されたカードのアクティブスキル即時発動
+    for (const sk of equipSkills) {
+      if (ACTIVE_SKILLS.includes(sk.id)) {
+        await sleep(50);
+        const enhancedSk = {
+          ...sk,
+          _sourceChoices: card.choices,
+          _sourceChoices2: card.choices2,
+        };
+        await resolveActiveSkillEffect(
+          owner,
+          targetLane,
+          targetCard,
+          sk.id,
+          sk.value,
+          enhancedSk
+        );
+      }
+    }
+    await cleanupDestroyedCards();
+  } else {
+    card.uid =
+      card.uid ||
+      `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
+    card.owner = owner;
+
+    // 配置直前に既存カードを安全に墓地へ送る（上書き）
+    if (board[targetLane]) {
+      if (!(await discardCard(owner, board[targetLane], targetLane, false))) {
+        board[targetLane] = null;
+      }
+    }
+    board[targetLane] = card;
+
+    if (hasActiveSkill(card)) {
+      card.isSkillResolving = true;
+    }
+
+    let events = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: card,
+        source: 'reanimate',
+      },
+    ];
+    await playEvents(events);
+
+    // 相手の誘発スキルチェック
+    await checkAndTriggerCounter(owner, card, targetLane);
+
+    if (hasActiveSkill(card)) {
+      await resolveOnPlaySkill(owner, targetLane, card);
+    } else {
+      card.isSkillResolving = false;
+    }
+    await cleanupDestroyedCards();
+  }
+}
+
+/**
+ * デッキから墓地に送られたカードに対して「反魂（reanimate）」スキルを発動させる。
+ * 召喚可能なレーンが存在する場合、プレイヤーまたはAIにレーンを選択させ、
+ * 制約チェックを満たすレーンへ「召喚」する。
+ * キャンセルされた場合や召喚可能レーンがない場合は墓地へ送るため false を返す。
+ *
+ * @param {string} owner - 所有者 ('blue' | 'red')
+ * @param {object} card - 破棄対象のカードオブジェクト
+ * @returns {Promise<boolean>} 召喚に成功した場合は true、キャンセルまたは召喚不可の場合は false
+ */
+export async function triggerReanimateSkill(owner, card) {
+  if (!card || !hasSkill(card, 'reanimate')) {
+    return false;
+  }
+
+  // 召喚可能なレーンがあるかチェック
+  const validLanes = getValidSummonLanes(owner, card);
+  if (validLanes.length === 0) {
+    return false;
+  }
+
+  let successCall = false;
+  let targetLane = -1;
+
+  while (!successCall) {
+    GameState.placementMessage = `反魂: 「${card.name}」を召喚するレーンを選んでください`;
+    const selectedLanes = await waitPlayerLaneSelection(
+      1,
+      owner,
+      card,
+      false, // isLeaderSkill
+      validLanes, // tokenLanes (制約を満たすレーンに限定)
+      true, // checkConstraints (召喚ルール制約チェック有効)
+      true, // canCancel (キャンセル可能)
+      '召喚完了', // buttonText
+      true // _skipImmediateDiscard
+    );
+    GameState.placementMessage = null;
+
+    if (GameState.gameMode !== 'online' && owner !== 'blue') {
+      await sleep(600);
+    }
+
+    if (!selectedLanes || selectedLanes.length === 0) {
+      // キャンセル時は召喚せず、通常の墓地送りへ進む
+      return false;
+    }
+
+    targetLane = selectedLanes[0];
+
+    // 上書き確認
+    const proceed = await confirmOverwrittenLane(owner, card, targetLane);
+    if (!proceed) {
+      await sleep(200);
+      continue;
+    }
+    successCall = true;
+  }
+
+  if (targetLane === -1) {
+    return false;
+  }
+
+  // 召喚を実行
+  await executeReanimateSummon(owner, card, targetLane);
+  return true;
+}
+
+/**
+ * 誘発（trigger）スキルによるカード召喚を実行する。
+ * 召喚演出、装備/上書き墓地送り、盤面配置、オンプレイスキル発動、クリーンアップを一括処理する。
+ *
+ * @param {string} owner - 所有者 ('blue' | 'red')
+ * @param {object} card - 召喚するカードオブジェクト
+ * @param {number} targetLane - 配置先レーン (0〜2)
+ * @returns {Promise<void>}
+ */
+export async function executeTriggerSummon(owner, card, targetLane) {
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+  // 演出：召喚アニメーション
+  await playSummonAnimation(card, owner);
+
+  const existingCard = board[targetLane];
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    await handleStartupDispelled(owner, existingCard, targetLane, card);
+  } else if (canEquipCard(card, board[targetLane])) {
+    const targetCard = board[targetLane];
+    const { equipSkills } = applyEquipment(targetCard, card);
+
+    let events = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: targetCard,
+        source: 'trigger',
+      },
+    ];
+    await playEvents(events);
+
+    // 装備されたカードのアクティブスキル即時発動
+    for (const sk of equipSkills) {
+      if (ACTIVE_SKILLS.includes(sk.id)) {
+        await sleep(50);
+        const enhancedSk = {
+          ...sk,
+          _sourceChoices: card.choices,
+          _sourceChoices2: card.choices2,
+        };
+        await resolveActiveSkillEffect(
+          owner,
+          targetLane,
+          targetCard,
+          sk.id,
+          sk.value,
+          enhancedSk
+        );
+      }
+    }
+    await cleanupDestroyedCards();
+  } else {
+    card.uid =
+      card.uid ||
+      `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
+    card.owner = owner;
+
+    // 配置直前に既存カードを安全に墓地へ送る（上書き）
+    if (board[targetLane]) {
+      if (!(await discardCard(owner, board[targetLane], targetLane, false))) {
+        board[targetLane] = null;
+      }
+    }
+    board[targetLane] = card;
+
+    if (hasActiveSkill(card)) {
+      card.isSkillResolving = true;
+    }
+
+    let events = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: card,
+        source: 'trigger',
+      },
+    ];
+    await playEvents(events);
+
+    if (hasActiveSkill(card)) {
+      await resolveOnPlaySkill(owner, targetLane, card);
+    } else {
+      card.isSkillResolving = false;
+    }
+    await cleanupDestroyedCards();
+  }
+}
+
+let isTriggeringCounter = false;
+
+/**
+ * 相手がカードを召喚したとき、手札の「誘発（trigger）」スキルを持つカードを検知して召喚する。
+ * 発動条件（パワーや特定スキル）は撤廃され、相手の召喚時に無条件で誘発可能。
+ * 複数の誘発カードを所持している場合でも同時に召喚できるのは1枚のみであり、
+ * プレイヤーまたはAIが出すカードを1枚選択する（キャンセル可能）。
+ * 召喚に成功した場合、手札に「虚空（パワー0）」トークンを1枚追加する。
+ *
+ * @param {string} summonOwner - カードを召喚したプレイヤー ('blue' | 'red')
+ * @param {object} summonedCard - 召喚されたカードオブジェクト
+ * @param {number} summonedLane - 召喚されたレーン番号
+ * @returns {Promise<boolean>} 誘発による召喚が実行された場合は true
+ */
+export async function checkAndTriggerCounter(
+  summonOwner,
+  summonedCard,
+  summonedLane
+) {
+  if (!summonedCard || isTriggeringCounter) return false;
+
+  const triggerOwner = summonOwner === 'blue' ? 'red' : 'blue';
+  const triggerHand =
+    triggerOwner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+  if (!triggerHand || triggerHand.length === 0) return false;
+
+  // 手札に「誘発」スキルを持つカードが1枚もなければ何もしない
+  const hasTrigger = triggerHand.some((c) => c && hasSkill(c, 'trigger'));
+  if (!hasTrigger) return false;
+
+  // かつ、召喚可能レーンが1つでもある誘発カードが少なくとも1枚存在するかチェック
+  const validTriggerCards = triggerHand.filter(
+    (c) =>
+      c &&
+      hasSkill(c, 'trigger') &&
+      getValidSummonLanes(triggerOwner, c).length > 0
+  );
+  if (validTriggerCards.length === 0) return false;
+
+  let selectedIdx = -1;
+  let chosenLane = -1;
+
+  isTriggeringCounter = true;
+  try {
+    if (
+      triggerOwner === 'red' &&
+      GameState.gameMode !== 'online' &&
+      GameState.gameMode !== 'pvp'
+    ) {
+      // 【敵AIの場合】
+      // 候補カードの中から、正面レーン（summonedLane）に出せるカードを最優先
+      let chosenIdx = -1;
+
+      // 1. 正面レーンに出せるカードを探す
+      for (let i = 0; i < triggerHand.length; i++) {
+        const c = triggerHand[i];
+        if (c && hasSkill(c, 'trigger')) {
+          const lanes = getValidSummonLanes(triggerOwner, c);
+          if (lanes.includes(summonedLane)) {
+            chosenIdx = i;
+            chosenLane = summonedLane;
+            break;
+          }
+        }
+      }
+
+      // 2. 正面レーンに出せるカードがなければ、召喚可能レーンがある最初のカード
+      if (chosenIdx === -1) {
+        for (let i = 0; i < triggerHand.length; i++) {
+          const c = triggerHand[i];
+          if (c && hasSkill(c, 'trigger')) {
+            const lanes = getValidSummonLanes(triggerOwner, c);
+            if (lanes.length > 0) {
+              chosenIdx = i;
+              const board = GameState.enemyBoard;
+              const emptyLane = lanes.find((l) => board[l] === null);
+              chosenLane = emptyLane !== undefined ? emptyLane : lanes[0];
+              break;
+            }
+          }
+        }
+      }
+
+      if (chosenIdx === -1 || chosenLane === -1) {
+        return false;
+      }
+      selectedIdx = chosenIdx;
+      await sleep(300);
+    } else {
+      // 【プレイヤーの場合（オンライン/PVPのターンプレイヤー含む）】
+      while (true) {
+        const promptMsg =
+          '誘発: 召喚するカードを1枚選んでください（未選択完了でスキップ）';
+        const arr = await waitPlayerHandSelection(
+          1,
+          triggerOwner,
+          false,
+          promptMsg
+        );
+        if (!arr || arr.length === 0) {
+          // キャンセル（誘発しない）
+          return false;
+        }
+
+        const sIdx = arr[0];
+        const pickedCard = triggerHand[sIdx];
+
+        if (!pickedCard || !hasSkill(pickedCard, 'trigger')) {
+          if (typeof window.showAlertModal === 'function') {
+            window.showAlertModal(
+              '「誘発」スキルを持つカードのみ召喚できます。'
+            );
+          }
+          await sleep(500);
+          continue;
+        }
+
+        const validLanes = getValidSummonLanes(triggerOwner, pickedCard);
+        if (validLanes.length === 0) {
+          if (typeof window.showAlertModal === 'function') {
+            window.showAlertModal('このカードを召喚できるレーンがありません。');
+          }
+          await sleep(500);
+          continue;
+        }
+
+        GameState.placementMessage = `誘発: 「${pickedCard.name}」を召喚するレーンを選んでください`;
+        const selectedLanes = await waitPlayerLaneSelection(
+          1,
+          triggerOwner,
+          pickedCard,
+          false, // isLeaderSkill
+          validLanes, // tokenLanes
+          true, // checkConstraints
+          true, // canCancel
+          'キャンセル', // buttonText
+          true // _skipImmediateDiscard
+        );
+        GameState.placementMessage = null;
+
+        if (!selectedLanes || selectedLanes.length === 0) {
+          // レーン選択キャンセル時は手札選択に戻る
+          await sleep(200);
+          continue;
+        }
+
+        const candidateLane = selectedLanes[0];
+        // 上書き確認
+        const proceed = await confirmOverwrittenLane(
+          triggerOwner,
+          pickedCard,
+          candidateLane
+        );
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+
+        selectedIdx = sIdx;
+        chosenLane = candidateLane;
+        break;
+      }
+    }
+
+    if (selectedIdx === -1 || chosenLane === -1) return false;
+
+    // 召喚確定：手札からカードを消費（1枚のみ）
+    const consumedCard = triggerHand.splice(selectedIdx, 1)[0];
+
+    // 手札に「虚空（パワー0）」トークンを追加
+    const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+      name: '虚空',
+      power: 0,
+    };
+    const voidToken = {
+      ...voidTpl,
+      id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_trigger`,
+      uid: `${triggerOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void_trigger`,
+      baseId: 'token_void',
+      filter: voidTpl.filter,
+      power: voidTpl.power,
+      currentPower: voidTpl.power,
+      basePower: voidTpl.power,
+      voiceCategory: voidTpl.voiceCategory || 'stone',
+      isToken: true,
+      isMorphToken: true,
+    };
+    triggerHand.push(voidToken);
+    renderHand();
+    await sleep(200);
+
+    // 召喚を実行
+    await executeTriggerSummon(triggerOwner, consumedCard, chosenLane);
+    return true;
+  } finally {
+    isTriggeringCounter = false;
+  }
+}
+
+/**
+ * 手札から取り除かれたカード群を一括で墓地へ送り、
+ * 狂気（madness）スキルを持つカードを安全に順次解決・召喚する共通関数。
+ *
+ * 1. 狂気を持たないカード、およびトークンを即座に墓地送り（または消滅）処理する。
+ * 2. 狂気を持つカードは一旦保持し、手札・デッキの描画更新が行われた後、
+ *    1枚ずつ狂気の召喚処理（triggerMadnessSkill）を実行する。
+ * 3. 召喚がキャンセルされた、または盤面に空きがない狂気カードは通常通り墓地へ送る。
+ *
+ * @param {string} owner - カード所有者 ('blue' | 'red')
+ * @param {object[]} cards - 手札から取り除かれた破棄対象カードの配列
+ * @returns {Promise<object[]>} 実際に召喚された狂気カードの配列
+ */
+export async function discardCardsFromHand(owner, cards) {
+  if (!Array.isArray(cards) || cards.length === 0) return [];
+
+  const madnessCards = [];
+  const normalCards = [];
+
+  for (const card of cards) {
+    if (!card) continue;
+    if (hasSkill(card, 'madness') && !card.isToken) {
+      madnessCards.push(card);
+    } else {
+      normalCards.push(card);
+    }
+  }
+
+  // 1. 通常カードを墓地へ送る（fromHand = false で呼ぶため狂気誤爆なし）
+  for (const card of normalCards) {
+    await discardCard(owner, card, undefined, false, false);
+  }
+
+  updateDeckDisplay(owner);
+  if (owner === 'blue') renderHand();
+
+  // 2. 狂気カードの召喚を1枚ずつ解決する
+  const summonedCards = [];
+  for (const madnessCard of madnessCards) {
+    const isSummoned = await triggerMadnessSkill(owner, madnessCard);
+    if (isSummoned) {
+      summonedCards.push(madnessCard);
+    } else {
+      // キャンセルまたは召喚不可の場合は墓地へ送る
+      await discardCard(owner, madnessCard, undefined, false, false);
+    }
+  }
+
+  updateDeckDisplay(owner);
+  if (owner === 'blue') renderHand();
+
+  return summonedCards;
+}
+
+/**
+ * デッキから取り除かれたカード群を一括で墓地へ送り、
+ * 反魂（reanimate）スキルを持つカードを安全に順次解決・召喚する共通関数。
+ *
+ * 1. 反魂を持たないカード、およびトークンを即座に墓地送り（または消滅）処理する。
+ * 2. 反魂を持つカードは一旦保持し、デッキ・墓地の描画更新が行われた後、
+ *    1枚ずつ反魂の召喚処理（triggerReanimateSkill）を実行する。
+ * 3. 召喚がキャンセルされた、または盤面に空きがない反魂カードは通常通り墓地へ送る。
+ *
+ * @param {string} owner - カード所有者 ('blue' | 'red')
+ * @param {object[]} cards - デッキから取り除かれた破棄対象カードの配列
+ * @returns {Promise<object[]>} 実際に召喚された反魂カードの配列
+ */
+export async function discardCardsFromDeck(owner, cards) {
+  if (!Array.isArray(cards) || cards.length === 0) return [];
+
+  const reanimateCards = [];
+  const normalCards = [];
+
+  for (const card of cards) {
+    if (!card) continue;
+    if (hasSkill(card, 'reanimate') && !card.isToken) {
+      reanimateCards.push(card);
+    } else {
+      normalCards.push(card);
+    }
+  }
+
+  // 1. 通常カードを墓地へ送る
+  for (const card of normalCards) {
+    await discardCard(owner, card, undefined, false, false);
+  }
+
+  updateDeckDisplay(owner);
+
+  // 2. 反魂カードの召喚を1枚ずつ解決する
+  const summonedCards = [];
+  for (const reanimateCard of reanimateCards) {
+    const isSummoned = await triggerReanimateSkill(owner, reanimateCard);
+    if (isSummoned) {
+      summonedCards.push(reanimateCard);
+    } else {
+      // キャンセルまたは召喚不可の場合は墓地へ送る
+      await discardCard(owner, reanimateCard, undefined, false, false);
+    }
+  }
+
+  updateDeckDisplay(owner);
+
+  return summonedCards;
+}
+
+/**
  * カードを墓地に送り、破棄アニメーション・音声・変身解除・ミッション進捗（生贄カウント）等を処理する。
+ * 手札からの破棄時かつ「狂気」スキルを所持している場合は、レーンへの召喚処理を実行する。
+ *
  * @param {string} owner - カード所有者 ('blue' | 'red')
  * @param {object} card - 破棄対象のカードオブジェクト
  * @param {number} [lane] - 破棄が行われたレーンインデックス
  * @param {boolean} [isDestroyed=true] - 破壊による破棄かどうかのフラグ
- * @returns {Promise<boolean>} 分裂等により盤面が既に置換済みの場合は true
+ * @param {boolean} [fromHand=false] - 手札からの破棄かどうかのフラグ
+ * @returns {Promise<boolean>} 分裂等により盤面が既に置換済み、または狂気により召喚された場合は true
  */
-export async function discardCard(owner, card, lane, isDestroyed = true) {
+export async function discardCard(
+  owner,
+  card,
+  lane,
+  isDestroyed = true,
+  fromHand = false
+) {
   // 防御: card が undefined/null の場合はエラーにならないようガード
   if (!card) {
     console.warn(
@@ -161,6 +957,15 @@ export async function discardCard(owner, card, lane, isDestroyed = true) {
       { owner, lane }
     );
     return false;
+  }
+
+  // 手札から捨てられた時かつ「狂気」スキルを持つ場合、召喚を試行
+  if (fromHand && hasSkill(card, 'madness')) {
+    const isSummoned = await triggerMadnessSkill(owner, card);
+    if (isSummoned) {
+      // 狂気により召喚されたため、墓地追加は行わず正常終了
+      return true;
+    }
   }
   // 付属物（装備・合体素材・変身元）の墓地返却処理（restoreCardForDiscard で共通化）
   if (card.equippedCards && card.equippedCards.length > 0) {
@@ -746,10 +1551,7 @@ export async function playCard(o, hI, l) {
     // 合体（Union）の判定
     const unionSkill =
       playingCard.skills && playingCard.skills.find((s) => s.id === 'union');
-    if (
-      unionSkill &&
-      (b[l].baseId === unionSkill.targetId || b[l].id === unionSkill.targetId)
-    ) {
+    if (unionSkill && matchesUnionMaterial(b[l], unionSkill)) {
       const targetCard = b[l];
       const combineId = unionSkill.summonId;
       const masterData = CARD_MASTER.find((c) => c.id === combineId);
@@ -870,10 +1672,15 @@ export async function playCard(o, hI, l) {
 
   trackMissionPower(GameState);
 
-  // 出現時スキルの発動（単一または複数）
+  // 相手の手札の「誘発（trigger）」スキルチェック
+  await checkAndTriggerCounter(o, c, l);
+
+  // 出現時スキルの発動（単一または複数。沈黙等でスキルが消去された場合は発動しない）
   if (hasActiveSkill(c)) {
     await sleep(50); // React DOMコミット待機
     await resolveOnPlaySkill(o, l, c);
+  } else {
+    c.isSkillResolving = false;
   }
 
   // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認する。

@@ -7,9 +7,18 @@
 // ==========================================
 
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import { registerDiscardCard } from '../eventRenderer.js';
+import {
+  registerDiscardCard,
+  registerTriggerMadnessSkill,
+  registerDiscardCardsFromDeck,
+} from '../eventRenderer.js';
 import { registerQueueDependencies } from './battleQueue.js';
-import { playCard, discardCard } from './battleCombat.js';
+import {
+  playCard,
+  discardCard,
+  triggerMadnessSkill,
+  discardCardsFromDeck,
+} from './battleCombat.js';
 import { endTurnLogic } from './battleTurn.js';
 import { checkWinCondition } from './battleResult.js';
 import { executeTutorialEnemyTurn } from './battleInit.js';
@@ -66,6 +75,15 @@ export {
   createUnionCard,
   applyEquipment,
   triggerRetaliateSkill,
+  triggerMadnessSkill,
+  executeMadnessSummon,
+  triggerReanimateSkill,
+  executeReanimateSummon,
+  checkAndTriggerCounter,
+  executeTriggerSummon,
+  getValidSummonLanes,
+  discardCardsFromHand,
+  discardCardsFromDeck,
 } from './battleCombat.js';
 
 // --- battleTurn.js: ターン進行制御 ---
@@ -116,6 +134,8 @@ export function initBattleModule() {
     executeTutorialEnemyTurn,
   });
   registerDiscardCard(discardCard);
+  registerTriggerMadnessSkill(triggerMadnessSkill);
+  registerDiscardCardsFromDeck(discardCardsFromDeck);
 }
 
 // モジュール読み込み時にも安全に初期化を実行する

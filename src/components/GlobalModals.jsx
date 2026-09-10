@@ -67,6 +67,8 @@ import { SKILLS } from '../utils/constants/skills.js';
 import {
   getCardImgUrl,
   getOrCreateUUID,
+  getSkillBadgeInfo,
+  hasSkillDeep,
   playSound,
   resolvePlayerName,
   safeParseArrayOrNull,
@@ -786,6 +788,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [favCardModalOpen, setFavCardModalOpen] = useState(false);
   const [favCardPremiumMap, setFavCardPremiumMap] = useState({});
   const [viewProfileData, setViewProfileData] = useState(null);
+  const [cardListModalData, setCardListModalData] = useState(null);
 
   const ownedMasterCards = useMemo(() => {
     const inventory = GameState.playerInventory || {};
@@ -1239,13 +1242,47 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           playSound?.(SOUNDS?.seClick);
           setCardPreviewData({ card: eqCard, parentCard: card });
         }}
-        onLinkClick={(targetId) => {
+        onLinkClick={(targetId, seg) => {
           playSound?.(SOUNDS?.seClick);
+          if (seg && (seg.targetKeyword || seg.keyword)) {
+            const keyword = seg.targetKeyword || seg.keyword;
+            const matchedCards = (CARD_MASTER || []).filter(
+              (c) =>
+                !c.isToken &&
+                typeof c.name === 'string' &&
+                c.name.includes(keyword)
+            );
+            setCardListModalData({
+              title: `「${keyword}」カード一覧`,
+              keyword,
+              cards: matchedCards,
+              parentCard: card,
+            });
+            return;
+          }
+          if (seg && (seg.targetSkillId || seg.skillId)) {
+            const sId = seg.targetSkillId || seg.skillId;
+            const skDef = SKILLS?.[sId];
+            const skName = skDef ? skDef.name : sId;
+            const matchedCards = (CARD_MASTER || []).filter(
+              (c) => !c.isToken && hasSkillDeep(c, sId)
+            );
+            setCardListModalData({
+              title: `「${skName}」カード一覧`,
+              cards: matchedCards,
+              parentCard: card,
+            });
+            return;
+          }
           const tObj = CARD_MASTER.find((c) => c.id === targetId);
           if (tObj) setCardPreviewData({ card: tObj, parentCard: card });
         }}
         onParentBack={() => {
-          setCardPreviewData({ card: cardPreviewData.parentCard });
+          if (cardPreviewData?.parentCard?.isListParent) {
+            setCardPreviewData(null);
+          } else {
+            setCardPreviewData({ card: cardPreviewData.parentCard });
+          }
           playSound?.(SOUNDS?.seClick);
         }}
         onTogglePremium={(cardId) => {
@@ -1581,6 +1618,91 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               className="btn"
               style={{ marginTop: '10px', width: '100%' }}
               onClick={closeEnemyDeckModal}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Keyword Card List Modal (対応カード一覧モーダル) */}
+      {cardListModalData && (
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 4100, display: 'flex' }}
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            setCardListModalData(null);
+          }}
+        >
+          <div
+            className="skill-modal-box modal-pop-animation"
+            style={{ width: '95%', maxWidth: '440px', padding: '20px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              style={{
+                color: '#facc15',
+                fontSize: '1.1rem',
+                marginBottom: '12px',
+                textAlign: 'center',
+                wordBreak: 'break-word',
+              }}
+            >
+              {cardListModalData.title}
+            </h2>
+            <div className="card-list-container">
+              <div className="card-list-grid-3col" style={{ padding: '10px' }}>
+                {cardListModalData.cards.map((c) => {
+                  const displayCard = { ...c, owner: 'blue' };
+                  const imgUrl = getCardImgUrl
+                    ? getCardImgUrl(displayCard, true)
+                    : '';
+                  const rarityClass = displayCard.rarity
+                    ? ` rarity-${displayCard.rarity}`
+                    : '';
+
+                  return (
+                    <div
+                      key={displayCard.id}
+                      className="deck-card-item gallery-card-wrapper"
+                      onClick={() => {
+                        playSound?.(SOUNDS?.seClick);
+                        setCardPreviewData({
+                          card: displayCard,
+                          parentCard: { isListParent: true },
+                        });
+                      }}
+                    >
+                      <div className={`card blue${rarityClass}`}>
+                        <div
+                          className="card-bg"
+                          style={{ backgroundImage: `url('${imgUrl}')` }}
+                        ></div>
+                        <div
+                          className="card-power"
+                          style={{
+                            fontSize: '1.4rem',
+                            bottom: 0,
+                            right: '4px',
+                          }}
+                        >
+                          {displayCard.power}
+                        </div>
+                        {renderSkillTagReact(displayCard)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <button
+              className="btn"
+              style={{ marginTop: '10px', width: '100%' }}
+              onClick={() => {
+                playSound?.(SOUNDS?.seClick);
+                setCardListModalData(null);
+              }}
             >
               閉じる
             </button>
@@ -3187,7 +3309,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   icon: '❓',
                   desc: () => '',
                 };
-                const val = sk.value || '';
+                const badgeInfo = getSkillBadgeInfo(sk);
                 const isSelected =
                   skillChoiceData.selectedIndices.includes(idx);
 
@@ -3250,7 +3372,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                         minWidth: '120px',
                       }}
                     >
-                      {skillDef.icon} {skillDef.name} {val}
+                      {badgeInfo.icon} {badgeInfo.fullName}
                     </div>
                     <p
                       className="preview-skill-desc"
@@ -3278,6 +3400,41 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     playSound?.(SOUNDS?.seClick);
+                                    if (part.targetKeyword || part.keyword) {
+                                      const keyword =
+                                        part.targetKeyword || part.keyword;
+                                      const matchedCards = (
+                                        CARD_MASTER || []
+                                      ).filter(
+                                        (c) =>
+                                          !c.isToken &&
+                                          typeof c.name === 'string' &&
+                                          c.name.includes(keyword)
+                                      );
+                                      setCardListModalData({
+                                        title: `「${keyword}」カード一覧`,
+                                        keyword,
+                                        cards: matchedCards,
+                                      });
+                                      return;
+                                    }
+                                    if (part.targetSkillId || part.skillId) {
+                                      const sId =
+                                        part.targetSkillId || part.skillId;
+                                      const skDef = SKILLS?.[sId];
+                                      const skName = skDef ? skDef.name : sId;
+                                      const matchedCards = (
+                                        CARD_MASTER || []
+                                      ).filter(
+                                        (c) =>
+                                          !c.isToken && hasSkillDeep(c, sId)
+                                      );
+                                      setCardListModalData({
+                                        title: `「${skName}」カード一覧`,
+                                        cards: matchedCards,
+                                      });
+                                      return;
+                                    }
                                     const tObj = CARD_MASTER.find(
                                       (c) => c.id === part.targetId
                                     );

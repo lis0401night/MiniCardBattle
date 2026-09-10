@@ -5,12 +5,14 @@ import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import {
   getCardImgUrl,
+  getSkillBadgeInfo,
   playSound,
   resolveCardChoices,
+  resolveCardSupremacySkills,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
-export default function CardPreviewContent({
+function CardPreviewContent({
   card,
   styleProps = {},
   showPremiumTag = false,
@@ -112,7 +114,7 @@ export default function CardPreviewContent({
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                if (onLinkClick && seg.targetId) onLinkClick(seg.targetId);
+                if (onLinkClick) onLinkClick(seg.targetId, seg);
               }}
             >
               {seg.value}
@@ -426,14 +428,25 @@ export default function CardPreviewContent({
                         ? s.desc(sk.value, sk)
                         : s.desc;
 
+                    const cardSupremacySkills =
+                      resolveCardSupremacySkills(card);
+                    const isAccordionSkill =
+                      sk.id === 'choice' ||
+                      sk.id === 'force' ||
+                      sk.id === 'supremacy';
+
+                    const targetChoices =
+                      sk.id === 'supremacy'
+                        ? cardSupremacySkills
+                        : sk.choiceGroup === 2
+                          ? cardChoices2
+                          : cardChoices;
+
                     if (
-                      (sk.id === 'choice' || sk.id === 'force') &&
-                      (Array.isArray(cardChoices) ||
-                        Array.isArray(cardChoices2))
+                      isAccordionSkill &&
+                      Array.isArray(targetChoices) &&
+                      targetChoices.length > 0
                     ) {
-                      const targetChoices =
-                        sk.choiceGroup === 2 ? cardChoices2 : cardChoices;
-                      if (!Array.isArray(targetChoices)) return null;
                       return (
                         <div key={idx} className="preview-skill-item">
                           <details
@@ -495,10 +508,6 @@ export default function CardPreviewContent({
                               {targetChoices.map((cho, cIdx) => {
                                 const cs = SKILLS?.[cho.id];
                                 if (!cs) return null;
-                                const cVal =
-                                  cho.value === null || cho.value === undefined
-                                    ? ''
-                                    : cho.value;
                                 const cDesc =
                                   typeof cs.desc === 'function'
                                     ? cs.desc(cho.value, cho)
@@ -523,8 +532,10 @@ export default function CardPreviewContent({
                                         fontSize: '0.75rem',
                                       }}
                                     >
-                                      {cs.icon} {cs.name}
-                                      {cVal}
+                                      {(() => {
+                                        const cInfo = getSkillBadgeInfo(cho);
+                                        return `${cInfo.icon} ${cInfo.fullName}`;
+                                      })()}
                                     </div>
                                     <p
                                       className="preview-skill-desc"
@@ -545,11 +556,12 @@ export default function CardPreviewContent({
                       );
                     }
 
+                    const badgeInfo = getSkillBadgeInfo(sk);
+
                     return (
                       <div key={idx} className="preview-skill-item">
                         <div className="preview-skill-badge">
-                          {s.icon} {s.name}
-                          {val}
+                          {badgeInfo.icon} {badgeInfo.fullName}
                         </div>
                         <p className="preview-skill-desc">
                           {renderDescContent(desc)}
@@ -815,3 +827,5 @@ export default function CardPreviewContent({
     </>
   );
 }
+
+export default CardPreviewContent;

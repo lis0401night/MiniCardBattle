@@ -26,14 +26,17 @@ import {
   resolveStartupFade,
   sleep,
   createGraveKeeperEvents,
+  matchesUnionMaterial,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
   canEquipCard,
+  checkAndTriggerCounter,
   checkWinCondition,
   cleanupDestroyedCards,
   confirmOverwrittenLane,
   discardCard,
+  discardCardsFromHand,
   drawCard,
   endTurnLogic,
   hasActiveSkill,
@@ -630,8 +633,7 @@ export async function executeLeaderSkillAction(
       const isUnion =
         unionSkill &&
         existingCard &&
-        (existingCard.baseId === unionSkill.targetId ||
-          existingCard.id === unionSkill.targetId);
+        matchesUnionMaterial(existingCard, unionSkill);
 
       // VFX（カードが出現する前に演出を再生する）
       if (window.triggerVfx && tLanes.length > 0) {
@@ -824,8 +826,7 @@ export async function executeLeaderSkillAction(
       const isUnion =
         unionSkill &&
         existingCard &&
-        (existingCard.baseId === unionSkill.targetId ||
-          existingCard.id === unionSkill.targetId);
+        matchesUnionMaterial(existingCard, unionSkill);
 
       const isEquip = canEquipCard(selectedCard, existingCard);
 
@@ -939,13 +940,17 @@ export async function executeLeaderSkillAction(
       // キャンセル(選ばずに完了)した場合でも、手札破棄が0枚になるだけで、後続の全体バフは発動させます
       if (selectedIndices && selectedIndices.length > 0) {
         selectedIndices.sort((a, b) => b - a);
+        const droppedCards = [];
         for (let i of selectedIndices) {
-          await discardCard(owner, h.splice(i, 1)[0]);
-          dc++;
+          const dropped = h.splice(i, 1)[0];
+          if (dropped) {
+            droppedCards.push(dropped);
+            dc++;
+          }
         }
+        for (let i = 0; i < dc; i++) drawCard(owner);
+        await discardCardsFromHand(owner, droppedCards);
       }
-
-      for (let i = 0; i < dc; i++) drawCard(owner);
     }
 
     events.push({ type: 'leader_skill', skill: action, side: owner });
@@ -982,13 +987,17 @@ export async function executeLeaderSkillAction(
 
       if (selectedIndices && selectedIndices.length > 0) {
         selectedIndices.sort((a, b) => b - a);
+        const droppedCards = [];
         for (let i of selectedIndices) {
-          await discardCard(owner, h.splice(i, 1)[0]);
-          dc++;
+          const dropped = h.splice(i, 1)[0];
+          if (dropped) {
+            droppedCards.push(dropped);
+            dc++;
+          }
         }
+        for (let i = 0; i < dc; i++) drawCard(owner);
+        await discardCardsFromHand(owner, droppedCards);
       }
-
-      for (let i = 0; i < dc; i++) drawCard(owner);
     } else {
       if (window.triggerVfx) {
         await Promise.all([
@@ -1009,7 +1018,7 @@ export async function executeLeaderSkillAction(
       if (opH.length > 0) {
         const randIdx = Math.floor(getSeededRandom() * opH.length);
         const discarded = opH.splice(randIdx, 1)[0];
-        await discardCard(opId, discarded, undefined, false);
+        await discardCard(opId, discarded, undefined, false, true);
         opDc++;
       }
     }
@@ -1057,11 +1066,15 @@ export async function executeLeaderSkillAction(
 
       if (selectedIndices && selectedIndices.length > 0) {
         selectedIndices.sort((a, b) => b - a);
+        const droppedCards = [];
         for (let i of selectedIndices) {
           const card = h.splice(i, 1)[0];
-          await discardCard(owner, card);
-          myDiscarded++;
+          if (card) {
+            droppedCards.push(card);
+            myDiscarded++;
+          }
         }
+        await discardCardsFromHand(owner, droppedCards);
       }
     } else {
       if (window.triggerVfx) {
@@ -1075,15 +1088,15 @@ export async function executeLeaderSkillAction(
     // 2. 相手の手札を全て捨てる
     let opDiscarded = 0;
     let voidDiscarded = 0;
-    const opCards = [...opH];
-    opH.length = 0;
+    const opCards = opH.splice(0, opH.length).filter(Boolean);
     for (const card of opCards) {
-      if (!card) continue;
       if (card.id === 'token_void' || card.baseId === 'token_void') {
         voidDiscarded++;
       }
-      await discardCard(opId, card, undefined, false);
       opDiscarded++;
+    }
+    if (opCards.length > 0) {
+      await discardCardsFromHand(opId, opCards);
     }
 
     // 相手が捨てた虚空の枚数分、相手がダメージを受ける
@@ -1738,18 +1751,18 @@ export async function executeLeaderSkillAction(
     const MY_DRAW_COUNT = 4;
     const OP_DRAW_COUNT = 3;
 
-    // 1. 互いの手札を正規に捨てる（discardCard でバフリセット・トークン消滅を適用）
+    // 1. 互いの手札を正規に捨てる（discardCardsFromHand でバフリセット・トークン消滅・狂気召喚を適用）
     const myHand = isBlue ? GameState.playerHand : GameState.enemyHand;
     const opHand = isBlue ? GameState.enemyHand : GameState.playerHand;
-    const myHandCopy = [...myHand];
-    const opHandCopy = [...opHand];
-    myHand.length = 0;
-    opHand.length = 0;
-    for (const card of myHandCopy) {
-      await discardCard(isBlue ? 'blue' : 'red', card, undefined, false);
+    const mySide = isBlue ? 'blue' : 'red';
+    const opSide = isBlue ? 'red' : 'blue';
+    const myHandCards = myHand.splice(0, myHand.length);
+    const opHandCards = opHand.splice(0, opHand.length);
+    if (myHandCards.length > 0) {
+      await discardCardsFromHand(mySide, myHandCards);
     }
-    for (const card of opHandCopy) {
-      await discardCard(isBlue ? 'red' : 'blue', card, undefined, false);
+    if (opHandCards.length > 0) {
+      await discardCardsFromHand(opSide, opHandCards);
     }
 
     // 2. 墓地をデッキに戻す（トークンは除外）
@@ -1913,10 +1926,31 @@ export async function executeLeaderSkillAction(
   }
 
   if (action !== 'iron_march' && action !== 'last_battalion') {
-    // イベント再生を開始する前に、一時的に盤面をリーダースキル発動前の元の状態に戻す
-    // これにより、playEvents 内で正しい上書き・墓地送り演出が実行されるようになる
-    GameState.playerBoard = savedPlayerBoard;
-    GameState.enemyBoard = savedEnemyBoard;
+    // 召喚・配置イベント（summon_token / summon_card）が存在する場合のみ、該当レーンの盤面を一時的に退避データへ戻す
+    // これにより、playEvents 内で正しい上書き・墓地送り演出が実行される。
+    // 召喚イベントのないリーダースキル（abyss_ritual, cycle, confession 等）や召喚対象外レーンでは巻き戻しを行わず、
+    // 手札破棄に伴う「狂気」スキル等で召喚された最新カードが盤面から消滅する不具合を完全に防止する。
+    const hasSummonEvents = events.some(
+      (ev) => ev.type === 'summon_token' || ev.type === 'summon_card'
+    );
+
+    if (hasSummonEvents) {
+      events.forEach((ev) => {
+        if (
+          (ev.type === 'summon_token' || ev.type === 'summon_card') &&
+          ev.lane !== undefined
+        ) {
+          if (ev.side === 'blue' && savedPlayerBoard[ev.lane] !== undefined) {
+            GameState.playerBoard[ev.lane] = savedPlayerBoard[ev.lane];
+          } else if (
+            ev.side === 'red' &&
+            savedEnemyBoard[ev.lane] !== undefined
+          ) {
+            GameState.enemyBoard[ev.lane] = savedEnemyBoard[ev.lane];
+          }
+        }
+      });
+    }
 
     await playEvents(events);
 
@@ -1940,6 +1974,10 @@ export async function executeLeaderSkillAction(
   for (let i = 0; i < 3; i++) {
     const cd = targetBoard[i];
     if (cd && cd.skillTriggered === false) {
+      // 試練の宮殿（dungeon_summon_leader）による「召喚」時、相手の「誘発（trigger）」スキルをチェック
+      if (action === 'dungeon_summon_leader') {
+        await checkAndTriggerCounter(owner, cd, i);
+      }
       if (hasActiveSkill(cd)) {
         await resolveOnPlaySkill(owner, i, cd);
       } else {

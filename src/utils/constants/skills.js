@@ -222,8 +222,317 @@ export const SKILLS = {
   resurrect: {
     name: '復活',
     icon: '⚰️',
-    desc: (val) =>
-      `召喚時、自分の墓地からパワー${val}以下のカード1枚を選択して配置する。`,
+    desc: (val, sk) => {
+      const targetIds =
+        sk?.targetIds ||
+        (sk?.targetId ? [sk.targetId] : null) ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'resurrect')?.targetIds
+          : null);
+      const isExcludeBoard =
+        sk?.excludeBoard ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'resurrect')?.excludeBoard
+          : false);
+      if (Array.isArray(targetIds) && targetIds.length > 0) {
+        const links = [];
+        targetIds.forEach((id, idx) => {
+          if (idx > 0) links.push({ type: 'text', value: '、' });
+          const card = CARD_MASTER?.find((c) => c.id === id);
+          const name = card ? card.name : id;
+          links.push({ type: 'link', value: `「${name}」`, targetId: id });
+        });
+        return [
+          {
+            type: 'text',
+            value: isExcludeBoard
+              ? '召喚時、自分の墓地から自分の場にいない'
+              : '召喚時、自分の墓地から',
+          },
+          ...links,
+          {
+            type: 'text',
+            value:
+              targetIds.length > 1
+                ? 'のいずれか1枚を選択して配置する。'
+                : 'を1枚選択して配置する。',
+          },
+        ];
+      }
+      if (isExcludeBoard) {
+        return `召喚時、自分の墓地から自分の場にいないパワー${val}以下のカード1枚を選択して配置する。`;
+      }
+      return `召喚時、自分の墓地からパワー${val}以下のカード1枚を選択して配置する。`;
+    },
+  },
+  summon: {
+    name: '召喚',
+    icon: '📢',
+    desc: (val, sk) => {
+      const targetIds =
+        sk?.targetIds ||
+        (sk?.targetId ? [sk.targetId] : null) ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'summon')?.targetIds
+          : null);
+      const isExcludeBoard =
+        sk?.excludeBoard ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'summon')?.excludeBoard
+          : false);
+      const isSelf = Boolean(
+        sk?.self ||
+        sk?.targetSelf ||
+        (Array.isArray(sk?.skills) &&
+          sk.skills.some((s) => s.id === 'summon' && (s.self || s.targetSelf)))
+      );
+      if (isSelf) {
+        return [
+          {
+            type: 'text',
+            value: isExcludeBoard
+              ? '召喚時、手札から自分の場にいない自身と同じカード1枚を召喚できる。そうした場合、手札に'
+              : '召喚時、手札から自身と同じカード1枚を召喚できる。そうした場合、手札に',
+          },
+          {
+            type: 'link',
+            value: '「虚空（パワー0）」',
+            targetId: 'token_void',
+          },
+          { type: 'text', value: 'を加える。' },
+        ];
+      }
+      if (Array.isArray(targetIds) && targetIds.length > 0) {
+        const links = [];
+        targetIds.forEach((id, idx) => {
+          if (idx > 0) links.push({ type: 'text', value: '、' });
+          const card = CARD_MASTER?.find((c) => c.id === id);
+          const name = card ? card.name : id;
+          links.push({ type: 'link', value: `「${name}」`, targetId: id });
+        });
+        return [
+          {
+            type: 'text',
+            value: isExcludeBoard
+              ? '召喚時、手札から自分の場にいない'
+              : '召喚時、手札から',
+          },
+          ...links,
+          {
+            type: 'text',
+            value:
+              targetIds.length > 1
+                ? 'のいずれか1枚を召喚できる。そうした場合、手札に'
+                : 'を1枚召喚できる。そうした場合、手札に',
+          },
+          {
+            type: 'link',
+            value: '「虚空（パワー0）」',
+            targetId: 'token_void',
+          },
+          { type: 'text', value: 'を加える。' },
+        ];
+      }
+      const targetKeyword =
+        sk?.targetKeyword ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'summon')?.targetKeyword
+          : null);
+      if (targetKeyword) {
+        return [
+          {
+            type: 'text',
+            value: isExcludeBoard
+              ? '召喚時、手札から自分の場にいない'
+              : '召喚時、手札から',
+          },
+          {
+            type: 'link',
+            value: `「${targetKeyword}」カード`,
+            targetKeyword,
+          },
+          {
+            type: 'text',
+            value: 'を1枚召喚できる。そうした場合、手札に',
+          },
+          {
+            type: 'link',
+            value: '「虚空（パワー0）」',
+            targetId: 'token_void',
+          },
+          { type: 'text', value: 'を加える。' },
+        ];
+      }
+      const rawSkillIds = Array.isArray(sk?.targetSkills)
+        ? sk.targetSkills.filter(Boolean)
+        : typeof sk?.targetSkills === 'string' && sk.targetSkills.trim() !== ''
+          ? [sk.targetSkills.trim()]
+          : sk?.targetSkill
+            ? [sk.targetSkill]
+            : Array.isArray(sk?.skills)
+              ? Array.isArray(
+                  sk.skills.find((s) => s.id === 'summon')?.targetSkills
+                )
+                ? sk.skills
+                    .find((s) => s.id === 'summon')
+                    ?.targetSkills.filter(Boolean)
+                : typeof sk.skills.find((s) => s.id === 'summon')
+                      ?.targetSkills === 'string' &&
+                    sk.skills
+                      .find((s) => s.id === 'summon')
+                      ?.targetSkills.trim() !== ''
+                  ? [
+                      sk.skills
+                        .find((s) => s.id === 'summon')
+                        ?.targetSkills.trim(),
+                    ]
+                  : sk.skills.find((s) => s.id === 'summon')?.targetSkill
+                    ? [sk.skills.find((s) => s.id === 'summon')?.targetSkill]
+                    : []
+              : [];
+      const targetSkills = [...new Set(rawSkillIds)];
+      if (targetSkills.length > 0) {
+        const links = [];
+        targetSkills.forEach((sId, idx) => {
+          if (idx > 0) links.push({ type: 'text', value: '、' });
+          const skDef = SKILLS?.[sId];
+          const name = skDef ? skDef.name : sId;
+          links.push({
+            type: 'link',
+            value: `「${name}」`,
+            targetSkillId: sId,
+          });
+        });
+        return [
+          {
+            type: 'text',
+            value: isExcludeBoard
+              ? '召喚時、手札から自分の場にいない'
+              : '召喚時、手札から',
+          },
+          ...links,
+          {
+            type: 'text',
+            value:
+              targetSkills.length > 1
+                ? '能力のいずれかを持つカード1枚を召喚できる。そうした場合、手札に'
+                : '能力を持つカード1枚を召喚できる。そうした場合、手札に',
+          },
+          {
+            type: 'link',
+            value: '「虚空（パワー0）」',
+            targetId: 'token_void',
+          },
+          { type: 'text', value: 'を加える。' },
+        ];
+      }
+      if (val !== undefined && val !== null) {
+        return [
+          {
+            type: 'text',
+            value: isExcludeBoard
+              ? `召喚時、手札から自分の場にいないパワー${val}以下のカード1枚を召喚できる。そうした場合、手札に`
+              : `召喚時、手札からパワー${val}以下のカード1枚を召喚できる。そうした場合、手札に`,
+          },
+          {
+            type: 'link',
+            value: '「虚空（パワー0）」',
+            targetId: 'token_void',
+          },
+          { type: 'text', value: 'を加える。' },
+        ];
+      }
+      return [
+        {
+          type: 'text',
+          value: isExcludeBoard
+            ? '召喚時、手札から自分の場にいないカードを召喚できる。そうした場合、手札に'
+            : '召喚時、手札からカードを召喚できる。そうした場合、手札に',
+        },
+        {
+          type: 'link',
+          value: '「虚空（パワー0）」',
+          targetId: 'token_void',
+        },
+        { type: 'text', value: 'を加える。' },
+      ];
+    },
+  },
+  assemble: {
+    name: '召集',
+    icon: '📜',
+    desc: (val, sk) => {
+      const isSelf = Boolean(
+        sk?.self ||
+        sk?.targetSelf ||
+        (Array.isArray(sk?.skills) &&
+          sk.skills.some(
+            (s) => s.id === 'assemble' && (s.self || s.targetSelf)
+          ))
+      );
+      if (isSelf) {
+        return '召喚時、デッキから自身と同じカード1枚を自分のレーンに召喚する。';
+      }
+      const targetIds =
+        sk?.targetIds ||
+        (sk?.targetId ? [sk.targetId] : null) ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'assemble')?.targetIds
+          : null);
+      if (Array.isArray(targetIds) && targetIds.length > 0) {
+        const links = [];
+        targetIds.forEach((id, idx) => {
+          if (idx > 0) links.push({ type: 'text', value: '、' });
+          const card = CARD_MASTER?.find((c) => c.id === id);
+          const name = card ? card.name : id;
+          links.push({ type: 'link', value: `「${name}」`, targetId: id });
+        });
+        return [
+          { type: 'text', value: '召喚時、デッキから' },
+          ...links,
+          {
+            type: 'text',
+            value:
+              targetIds.length > 1
+                ? 'のいずれか1枚を自分のレーンに召喚する。'
+                : 'を1枚自分のレーンに召喚する。',
+          },
+        ];
+      }
+      const targetKeyword =
+        sk?.targetKeyword ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'assemble')?.targetKeyword
+          : null);
+      if (targetKeyword) {
+        return [
+          { type: 'text', value: '召喚時、デッキから' },
+          {
+            type: 'link',
+            value: `「${targetKeyword}」カード`,
+            targetKeyword,
+          },
+          {
+            type: 'text',
+            value: '1枚を自分のレーンに召喚する。',
+          },
+        ];
+      }
+      if (val !== undefined && val !== null) {
+        return [
+          {
+            type: 'text',
+            value: `召喚時、デッキからパワー${val}以下のカード1枚を自分のレーンに召喚する。`,
+          },
+        ];
+      }
+      return [
+        {
+          type: 'text',
+          value: '召喚時、デッキからカード1枚を自分のレーンに召喚する。',
+        },
+      ];
+    },
   },
   standby: {
     name: '待機',
@@ -247,12 +556,14 @@ export const SKILLS = {
     desc: () =>
       '召喚時、お互いの手札を全て捨て、墓地をリセットする。その後、お互いにカードを3枚引く。',
   },
-  summon: {
-    name: '召喚',
+  servant: {
+    name: '使役',
     icon: '✨',
     desc: (val, sk) => {
       const summonId =
-        sk?.summonId || sk?.skills?.find((s) => s.id === 'summon')?.summonId;
+        sk?.summonId ||
+        sk?.tokenId ||
+        sk?.skills?.find((s) => s.id === 'servant')?.summonId;
       const summonCard = summonId
         ? CARD_MASTER.find((c) => c.id === summonId)
         : null;
@@ -357,6 +668,20 @@ export const SKILLS = {
       { type: 'text', value: 'を加える。' },
     ],
   },
+  madness: {
+    name: '狂気',
+    icon: '🚪',
+    desc: () => '手札から捨てられた時、自分のレーンに召喚できる。',
+  },
+  reanimate: {
+    name: '反魂',
+    icon: '👻',
+    /**
+     * 「反魂」スキルの説明テキストを生成する。
+     * @returns {string} スキル説明文
+     */
+    desc: () => 'デッキから墓地に送られた時、自分のレーンに召喚できる。',
+  },
   dispel: {
     name: '解除',
     icon: '🔓',
@@ -403,15 +728,95 @@ export const SKILLS = {
     ],
   },
   oblivion: {
-    name: '沈黙',
+    name: '忘却',
     icon: '⚪',
     desc: () => '召喚時、お互いの場のカードの全ての能力をなくす。',
+  },
+  silence: {
+    name: '沈黙',
+    icon: '🤐',
+    desc: () => '召喚時、正面のカードの全ての能力をなくす。',
+  },
+  trigger: {
+    name: '誘発',
+    icon: '⚡',
+    /**
+     * 「誘発」スキルの説明テキストを生成する。
+     * @returns {string} スキル説明文
+     */
+    desc: () =>
+      '相手がカードを召喚したとき、このカードを召喚できる。そうした場合、手札に「虚空（パワー0）」を加える。',
+    /**
+     * 「誘発」スキルのリッチテキストセグメントを生成する。
+     * @returns {Array<object>} テキストセグメント配列
+     */
+    descSegments: () => [
+      {
+        type: 'text',
+        value:
+          '相手がカードを召喚したとき、このカードを召喚できる。そうした場合、手札に',
+      },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      { type: 'text', value: 'を加える。' },
+    ],
   },
   call: {
     name: '号令',
     icon: '📯',
-    desc: (val) =>
-      `召喚時、自分のデッキの一番上のカードを公開し、その数値が${val}以下なら自分のレーンに召喚できる。`,
+    desc: (val, sk) => {
+      const targetIds =
+        sk?.targetIds ||
+        (sk?.targetId ? [sk.targetId] : null) ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'call')?.targetIds
+          : null);
+      if (Array.isArray(targetIds) && targetIds.length > 0) {
+        const links = [];
+        targetIds.forEach((id, idx) => {
+          if (idx > 0) links.push({ type: 'text', value: '、' });
+          const card = CARD_MASTER?.find((c) => c.id === id);
+          const name = card ? card.name : id;
+          links.push({ type: 'link', value: `「${name}」`, targetId: id });
+        });
+        return [
+          {
+            type: 'text',
+            value: '召喚時、自分のデッキの一番上のカードを公開し、',
+          },
+          ...links,
+          {
+            type: 'text',
+            value:
+              targetIds.length > 1
+                ? 'のいずれかなら自分のレーンに召喚できる。'
+                : 'なら自分のレーンに召喚できる。',
+          },
+        ];
+      }
+      const keyword =
+        sk?.targetKeyword ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'call')?.targetKeyword
+          : null);
+      if (keyword) {
+        return [
+          {
+            type: 'text',
+            value: '召喚時、自分のデッキの一番上のカードを公開し、',
+          },
+          {
+            type: 'link',
+            value: `「${keyword}」カード`,
+            targetKeyword: keyword,
+          },
+          { type: 'text', value: 'なら自分のレーンに召喚できる。' },
+        ];
+      }
+      if (val !== undefined && val !== null) {
+        return `召喚時、自分のデッキの一番上のカードを公開し、パワーが${val}以下なら自分のレーンに召喚できる。`;
+      }
+      return '召喚時、自分のデッキの一番上のカードを公開し、自分のレーンに召喚できる。';
+    },
   },
   bless: {
     name: '祝福',
@@ -489,31 +894,70 @@ export const SKILLS = {
     name: '合体',
     icon: '🔗',
     desc: (val, sk) => {
-      const targetCard =
-        sk && sk.targetId
-          ? CARD_MASTER.find((c) => c.id === sk.targetId)
-          : null;
-      const summonCard =
-        sk && sk.summonId
-          ? CARD_MASTER.find((c) => c.id === sk.summonId)
-          : null;
+      const unionSk =
+        sk && sk.id === 'union'
+          ? sk
+          : Array.isArray(sk?.skills)
+            ? sk.skills.find((s) => s.id === 'union')
+            : sk;
+      const targetId = unionSk?.targetId;
+      const targetIds = unionSk?.targetIds;
+      const targetKeyword = unionSk?.targetKeyword;
+      const summonId = unionSk?.summonId;
 
-      if (!targetCard && !summonCard) {
+      const targetCard = targetId
+        ? CARD_MASTER.find((c) => c.id === targetId)
+        : null;
+      const summonCard = summonId
+        ? CARD_MASTER.find((c) => c.id === summonId)
+        : null;
+
+      if (
+        !targetCard &&
+        !targetKeyword &&
+        (!Array.isArray(targetIds) || targetIds.length === 0) &&
+        !summonCard
+      ) {
         return '配置時、「対応するカード」の上に重ねた場合に「特別なカード」になる。';
       }
 
-      const targetStr = targetCard
-        ? `「${targetCard.name}」`
-        : '「対応するカード」';
       const summonStr = summonCard
         ? `「${summonCard.name}」`
         : '「特別なカード」';
 
+      let targetSegments = [];
+      if (targetCard) {
+        targetSegments = [
+          { type: 'link', value: `「${targetCard.name}」`, targetId: targetId },
+        ];
+      } else if (Array.isArray(targetIds) && targetIds.length > 0) {
+        targetIds.forEach((id, idx) => {
+          if (idx > 0) targetSegments.push({ type: 'text', value: '、' });
+          const card = CARD_MASTER?.find((c) => c.id === id);
+          const name = card ? card.name : id;
+          targetSegments.push({
+            type: 'link',
+            value: `「${name}」`,
+            targetId: id,
+          });
+        });
+      } else if (typeof targetKeyword === 'string' && targetKeyword) {
+        targetSegments = [
+          {
+            type: 'link',
+            value: `「${targetKeyword}」カード`,
+            targetKeyword,
+          },
+        ];
+      } else {
+        targetSegments = [{ type: 'text', value: '「対応するカード」' }];
+      }
+
       return [
         { type: 'text', value: '配置時、' },
-        { type: 'link', value: targetStr, targetId: sk.targetId || null },
+        ...targetSegments,
         { type: 'text', value: 'の上に重ねた場合に' },
-        { type: 'link', value: summonStr, targetId: sk.summonId || null },
+        { type: 'link', value: summonStr, targetId: summonId || null },
         { type: 'text', value: 'になる。' },
       ];
     },
@@ -578,8 +1022,61 @@ export const SKILLS = {
   explore: {
     name: '探索',
     icon: '🗺',
-    desc: () =>
-      '召喚時、デッキからカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。',
+    desc: (val, sk) => {
+      const targetIds =
+        sk?.targetIds ||
+        (sk?.targetId ? [sk.targetId] : null) ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'explore')?.targetIds
+          : null);
+      if (Array.isArray(targetIds) && targetIds.length > 0) {
+        const links = [];
+        targetIds.forEach((id, idx) => {
+          if (idx > 0) links.push({ type: 'text', value: '、' });
+          const card = CARD_MASTER?.find((c) => c.id === id);
+          const name = card ? card.name : id;
+          links.push({ type: 'link', value: `「${name}」`, targetId: id });
+        });
+        return [
+          {
+            type: 'text',
+            value: '召喚時、デッキから',
+          },
+          ...links,
+          {
+            type: 'text',
+            value:
+              targetIds.length > 1
+                ? 'のいずれか1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。'
+                : 'を1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。',
+          },
+        ];
+      }
+      const keyword =
+        sk?.targetKeyword ||
+        (Array.isArray(sk?.skills)
+          ? sk.skills.find((s) => s.id === 'explore')?.targetKeyword
+          : null);
+      if (keyword) {
+        return [
+          {
+            type: 'text',
+            value: '召喚時、デッキから',
+          },
+          {
+            type: 'link',
+            value: `「${keyword}」カード`,
+            targetKeyword: keyword,
+          },
+          {
+            type: 'text',
+            value:
+              'を1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。',
+          },
+        ];
+      }
+      return '召喚時、デッキからカードを1枚まで選択して手札に加える。その後、手札を1枚捨ててデッキをシャッフルする。';
+    },
   },
   possession: {
     name: '憑依',
@@ -657,16 +1154,9 @@ export const SKILLS = {
       '召喚時、追加のターンを1回行う。（ただし、追加ターン中はSPは溜まらず攻撃もできない）',
   },
   chant: {
-    name: '詠唱',
-    icon: '🔮',
-    desc: (val) => [
-      {
-        type: 'text',
-        value: `召喚時、手札からパワー${val}以下のカードを1枚召喚できる。そうした場合、手札に`,
-      },
-      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: 'を加える。' },
-    ],
+    name: '召喚',
+    icon: '📢',
+    desc: (val, sk) => SKILLS.summon.desc(val, sk),
   },
   arm_self: {
     name: '武装',
@@ -779,6 +1269,33 @@ export const SKILLS = {
     desc: () =>
       '召喚時、自分の場の元々の能力を持たないカード全てに「頑丈」を付与する。',
   },
+  buff: {
+    name: '強化',
+    icon: '💪',
+    desc: (val) => `召喚時、自身のパワーを+${val || 1}する。`,
+  },
+  inspire: {
+    name: '鼓舞',
+    icon: '🎺',
+    desc: (val) =>
+      `召喚時、自分の場の自身以外のカード1体を選択し、そのパワーを+${val || 1}する。`,
+  },
+  supremacy: {
+    name: '覇道',
+    icon: '🐉',
+    desc: () =>
+      '召喚時、自分の場に自身以外の元々のパワーが6以上のカードが存在する場合に以下の能力を発動する。',
+  },
+  unleash: {
+    name: '解放',
+    icon: '⛓',
+    desc: () => '召喚時、自身の防御をなくす。',
+  },
+  all_forms: {
+    name: '万相',
+    icon: '🎭',
+    desc: () => 'バトル中、すべてのカード名と同じとして扱う。',
+  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -807,7 +1324,9 @@ export const ACTIVE_SKILLS = [
   'artillery',
   'decree',
   'shuffle',
+  'servant',
   'summon',
+  'assemble',
   'ambush',
   'fate',
   'salvage',
@@ -846,8 +1365,13 @@ export const ACTIVE_SKILLS = [
   'support_void',
   'treason',
   'oblivion',
+  'silence',
   'grant_deadly',
   'grant_sturdy',
+  'buff',
+  'inspire',
+  'supremacy',
+  'unleash',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
@@ -889,6 +1413,10 @@ export const PASSIVE_SKILLS = [
   'intercept',
   'teleport',
   'samsara',
+  'madness',
+  'trigger',
+  'reanimate',
+  'all_forms',
 ];
 
 export const SKILL_CATEGORIES = [
@@ -909,21 +1437,23 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '状態付与',
-        skills: ['bind', 'freeze', 'toxic', 'seal', 'petrify', 'oblivion'],
+        skills: [
+          'bind',
+          'freeze',
+          'toxic',
+          'seal',
+          'petrify',
+          'oblivion',
+          'silence',
+        ],
       },
       {
-        name: '召喚・配置',
-        skills: [
-          'summon',
-          'ambush',
-          'clone',
-          'resurrect',
-          'puppet',
-          'invite',
-          'chant',
-          'forge',
-          'call',
-        ],
+        name: '召喚',
+        skills: ['summon', 'assemble', 'call', 'invite', 'forge'],
+      },
+      {
+        name: '配置',
+        skills: ['servant', 'ambush', 'clone', 'resurrect', 'puppet'],
       },
       {
         name: '手札・山札操作',
@@ -949,6 +1479,8 @@ export const SKILL_CATEGORIES = [
           'metamorph',
           'portent',
           'invade',
+          'buff',
+          'supremacy',
         ],
       },
       {
@@ -959,11 +1491,19 @@ export const SKILL_CATEGORIES = [
           'grant_deadly',
           'grant_sturdy',
           'bless',
+          'inspire',
         ],
       },
       {
         name: '行動変化・特殊',
-        skills: ['quick', 'stealth', 'leap', 'dominate', 'replicate'],
+        skills: [
+          'quick',
+          'stealth',
+          'leap',
+          'dominate',
+          'replicate',
+          'unleash',
+        ],
       },
       {
         name: '回復・SP',
@@ -999,7 +1539,16 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '戦闘時・破壊時',
-        skills: ['soul_bind', 'absorb', 'extort', 'split', 'retaliate'],
+        skills: [
+          'soul_bind',
+          'absorb',
+          'extort',
+          'split',
+          'retaliate',
+          'madness',
+          'trigger',
+          'reanimate',
+        ],
       },
       {
         name: 'ターン開始時',
@@ -1031,6 +1580,7 @@ export const SKILL_CATEGORIES = [
           'union',
           'grave_keeper',
           'miasma',
+          'all_forms',
         ],
       },
       {

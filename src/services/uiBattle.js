@@ -1,8 +1,11 @@
 import { SKILLS } from '../utils/constants/skills.js';
 import {
   getDialogue,
+  getSkillBadgeInfo,
+  getSkillTargetLabel,
   playSound,
   resolveCardChoices,
+  resolveCardSupremacySkills,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
@@ -103,13 +106,25 @@ export function updateCardDetail(c) {
 
     let grouped = [];
     skillCandidates.forEach((cand) => {
-      const existing = grouped.find(
-        (g) =>
-          g.id === cand.id &&
-          g.value === cand.value &&
-          g.isBind === cand.isBind &&
-          g.choiceGroup === cand.choiceGroup
-      );
+      const isExcludedFromMerge =
+        cand.id === 'choice' ||
+        cand.id === 'force' ||
+        cand.id === 'supremacy' ||
+        (['summon', 'call', 'explore', 'resurrect', 'assemble'].includes(
+          cand.id
+        ) &&
+          Boolean(getSkillTargetLabel(cand)));
+      const existing = isExcludedFromMerge
+        ? null
+        : grouped.find(
+            (g) =>
+              g.id === cand.id &&
+              g.value === cand.value &&
+              g.isBind === cand.isBind &&
+              g.choiceGroup === cand.choiceGroup &&
+              g.targetId === cand.targetId &&
+              g.targetKeyword === cand.targetKeyword
+          );
       if (existing) {
         existing.count++;
       } else {
@@ -126,47 +141,54 @@ export function updateCardDetail(c) {
     html = '<div class="card-detail-content">';
     if (grouped.length > 0) {
       const { choices: cChoices, choices2: cChoices2 } = resolveCardChoices(c);
+      const cSupremacySkills = resolveCardSupremacySkills(c);
 
       grouped.forEach((sk) => {
         const s = SKILLS[sk.id];
         if (s) {
           const isBind = sk.isBind;
-          const skillName = isBind ? '拘束' : s.name;
-          const val = isBind ? '' : (sk.value ?? '');
+          const badgeInfo = getSkillBadgeInfo(sk);
+          let skillName = isBind ? '拘束' : badgeInfo.name;
+          let val = isBind ? '' : badgeInfo.value;
+
           // 合体(union)など、第2引数にスキルオブジェクト自体（targetId/summonId等）を必要とするdescに対応
           const skillEffect = resolveDesc(
             typeof s.desc === 'function' ? s.desc(sk.value, sk) : s.desc
           );
           const countSuffix = sk.count > 1 ? ` * ${sk.count}` : '';
 
+          const isAccordionSkill =
+            sk.id === 'choice' || sk.id === 'force' || sk.id === 'supremacy';
+          const targetChoices =
+            sk.id === 'supremacy'
+              ? cSupremacySkills
+              : sk.choiceGroup === 2
+                ? cChoices2
+                : cChoices;
+
           if (
-            (sk.id === 'choice' || sk.id === 'force') &&
-            (Array.isArray(cChoices) || Array.isArray(cChoices2))
+            isAccordionSkill &&
+            Array.isArray(targetChoices) &&
+            targetChoices.length > 0
           ) {
             let subDetailsHtml = '';
-            const targetChoices = sk.choiceGroup === 2 ? cChoices2 : cChoices;
-            if (Array.isArray(targetChoices)) {
-              targetChoices.forEach((cho) => {
-                const cs = SKILLS[cho.id];
-                if (cs) {
-                  const cVal =
-                    cho.value === null || cho.value === undefined
-                      ? ''
-                      : cho.value;
-                  const cDesc = resolveDesc(
-                    typeof cs.desc === 'function'
-                      ? cs.desc(cho.value, cho)
-                      : cs.desc
-                  );
-                  subDetailsHtml += `
+            targetChoices.forEach((cho) => {
+              const cs = SKILLS[cho.id];
+              if (cs) {
+                const choInfo = getSkillBadgeInfo(cho);
+                const cDesc = resolveDesc(
+                  typeof cs.desc === 'function'
+                    ? cs.desc(cho.value, cho)
+                    : cs.desc
+                );
+                subDetailsHtml += `
                                         <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
-                                            <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${cs.icon} ${cs.name}${cVal}</div>
+                                            <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${choInfo.icon} ${choInfo.fullName}</div>
                                             <div class="skill-desc" style="font-size: 0.8rem; color: #94a3b8; padding-left: 0;">${cDesc}</div>
                                         </div>
                                     `;
-                }
-              });
-            }
+              }
+            });
 
             html += `
                             <details class="choice-accordion" style="margin-bottom: 4px; width: 100%;">
