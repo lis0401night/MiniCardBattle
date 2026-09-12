@@ -296,7 +296,7 @@
 
           <!-- 横縦ともにこのコンテナだけでスクロールさせ、thead の sticky を機能させる -->
           <div class="scroll-custom overflow-auto max-h-[70dvh]">
-            <div class="min-w-[900px]">
+            <div class="min-w-[980px]">
               <table class="w-full text-left">
                 <thead
                   class="bg-white/95 backdrop-blur-sm text-[10px] font-black uppercase text-slate-400 tracking-widest border-b sticky top-0 z-20 shadow-sm"
@@ -330,6 +330,16 @@
                         aria-label="防衛成功数で並び替え"
                       >
                         防衛成功数
+                      </button>
+                    </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 80px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('common')"
+                        aria-label="共通ポイントで並び替え"
+                      >
+                        共通ポイント
                       </button>
                     </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 80px">
@@ -1855,6 +1865,8 @@
             points: 1200 + idx * 150,
             total_points: 3500 + idx * 800,
             defense_wins: 12 + idx * 5,
+            common_points: 250 + idx * 40,
+            common_total_points: 700 + idx * 120,
             challenge_points: 800 + idx * 100,
             challenge_total_points: 2000 + idx * 300,
             challenge_max_streak: 5 + idx,
@@ -2132,6 +2144,9 @@
             ? p.unlocked_premium_cards.length
             : 0;
         }
+        if (key === 'common') {
+          return p.common_total_points ?? p.common_points ?? 0;
+        }
         const SORT_KEY_MAP = {
           defense: 'total_points',
           challenge: 'challenge_total_points',
@@ -2215,6 +2230,9 @@
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-amber-500">${p.defense_wins || 0}</div>
+              </td>
+              <td class="p-2 md:p-3 text-center" title="所持: ${formatNumber(p.common_points || 0)} Pt / 累計: ${formatNumber(p.common_total_points || p.common_points || 0)} Pt">
+                <div class="text-[11px] font-black text-yellow-600">${formatNumber(p.common_total_points || p.common_points || 0)}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-emerald-600">${formatNumber(p.challenge_total_points || 0)}</div>
@@ -2396,6 +2414,7 @@
         // 各モードの最大ポイントを算出（バーの表示比率に使用）
         const maxPoints = Math.max(
           p.total_points || 0,
+          p.common_total_points || 0,
           p.challenge_total_points || 0,
           p.tournament_total_points || 0,
           p.high_difficulty_total_points || 0,
@@ -2411,6 +2430,14 @@
             current: p.points || 0,
             total: p.total_points || 0,
             extra: `防衛成功数: ${p.defense_wins || 0}`,
+          },
+          {
+            label: '共通ポイント',
+            color: 'yellow',
+            gradient: 'from-yellow-400 to-amber-500',
+            current: p.common_points || 0,
+            total: p.common_total_points || p.common_points || 0,
+            extra: null,
           },
           {
             label: '試練ポイント',

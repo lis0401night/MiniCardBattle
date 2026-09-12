@@ -18,6 +18,8 @@ import NewsBanner from '../components/common/NewsBanner.jsx';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
 import { isProfileDefault } from '../state/gameState.js';
+import { hasClaimableDailyMissions } from '../utils/constants/dailyMissions.js';
+import DailyMissionsModal from '../components/common/DailyMissionsModal.jsx';
 
 /**
  * モード選択（メインメニュー）画面コンポーネント
@@ -27,9 +29,14 @@ import { isProfileDefault } from '../state/gameState.js';
 export default function ModeSelectScreen() {
   const images = UI_IMAGES || {};
   const [hasWaitingPublicRooms, setHasWaitingPublicRooms] = useState(false);
+  const [showDailyMissions, setShowDailyMissions] = useState(false);
+  const [hasClaimableMissions, setHasClaimableMissions] = useState(() =>
+    hasClaimableDailyMissions()
+  );
 
   useEffect(() => {
     let isMounted = true;
+    setHasClaimableMissions(hasClaimableDailyMissions());
     checkHasPublicWaitingRooms()
       .then((hasRooms) => {
         if (isMounted) {
@@ -54,6 +61,33 @@ export default function ModeSelectScreen() {
       )}
     >
       <div className="top-right-actions">
+        <button
+          className="btn-circle btn-daily-missions"
+          aria-label="デイリーミッション"
+          onClick={() => {
+            playSound?.(SOUNDS?.seClick);
+            setShowDailyMissions(true);
+          }}
+        >
+          📋
+          {hasClaimableMissions && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                width: '14px',
+                height: '14px',
+                background: '#ef4444',
+                border: '2px solid white',
+                borderRadius: '50%',
+                zIndex: 10,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            />
+          )}
+        </button>
+
         <button
           className="btn-circle btn-profile-menu"
           aria-label="プロフィール設定"
@@ -134,6 +168,18 @@ export default function ModeSelectScreen() {
           notificationBadge={hasUnclaimedAchievements()}
         />
       </div>
+
+      {showDailyMissions && (
+        <DailyMissionsModal
+          onClose={() => {
+            setShowDailyMissions(false);
+            setHasClaimableMissions(hasClaimableDailyMissions());
+          }}
+          onClaimSuccess={() => {
+            setHasClaimableMissions(hasClaimableDailyMissions());
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -47,6 +47,8 @@ function createDefaultPlayerData($uuid, $name = 'プレイヤー', $points = 0, 
         'fortune_max_grade' => -1,
         'fortune_max_total_cost' => 0,
         'fortune_cleared' => '{}',
+        'common_points' => 0,
+        'common_total_points' => 0,
         'inventory' => [],
         'unlocked_premium_cards' => [],
         'unlocked_icons' => [],
@@ -213,7 +215,7 @@ function sanitizeDeckList($rawDeck): array {
 
 /**
  * プレイヤーの全登録デッキデータをサニタイズします。
- * 最大30スロットまでのデッキ配列を検証し、各デッキのリーダーIDやカードリストを正規化します。
+ * 最大50スロットまでのデッキ配列を検証し、各デッキのリーダーIDやカードリストを正規化します。
  * 
  * @param mixed $decks 入力デッキ配列
  * @return array サニタイズ済みデッキ配列
@@ -223,7 +225,7 @@ function sanitizeRegisteredDecks($decks): array {
         return [];
     }
     $sanitized = [];
-    $maxDecks = 30;
+    $maxDecks = 50;
     $count = 0;
 
     foreach ($decks as $deck) {

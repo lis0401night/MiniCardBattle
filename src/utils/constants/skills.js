@@ -280,6 +280,33 @@ export const SKILLS = {
         (Array.isArray(sk?.skills)
           ? sk.skills.find((s) => s.id === 'summon')?.excludeBoard
           : false);
+      const isTargetToken = Boolean(
+        sk?.targetToken ||
+        sk?.targetType === 'token' ||
+        (Array.isArray(sk?.skills) &&
+          sk.skills.some(
+            (s) =>
+              s.id === 'summon' && (s.targetToken || s.targetType === 'token')
+          ))
+      );
+      if (isTargetToken) {
+        const powerText =
+          val !== undefined && val !== null ? `パワー${val}以下の` : '';
+        return [
+          {
+            type: 'text',
+            value: isExcludeBoard
+              ? `召喚時、手札から自分の場にいない${powerText}トークンカード1枚を召喚できる。そうした場合、手札に`
+              : `召喚時、手札から${powerText}トークンカード1枚を召喚できる。そうした場合、手札に`,
+          },
+          {
+            type: 'link',
+            value: '「虚空（パワー0）」',
+            targetId: 'token_void',
+          },
+          { type: 'text', value: 'を加える。' },
+        ];
+      }
       const isSelf = Boolean(
         sk?.self ||
         sk?.targetSelf ||
@@ -728,13 +755,13 @@ export const SKILLS = {
     ],
   },
   oblivion: {
-    name: '忘却',
+    name: '沈黙',
     icon: '⚪',
     desc: () => '召喚時、お互いの場のカードの全ての能力をなくす。',
   },
   silence: {
-    name: '沈黙',
-    icon: '🤐',
+    name: '忘却',
+    icon: '⚪',
     desc: () => '召喚時、正面のカードの全ての能力をなくす。',
   },
   trigger: {

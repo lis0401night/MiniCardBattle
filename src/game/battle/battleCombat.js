@@ -1210,11 +1210,20 @@ export async function cleanupDestroyedCards(excludeCard = null) {
     [GameState.playerBoard, GameState.enemyBoard].forEach((board, bIdx) => {
       const side = bIdx === 0 ? 'player' : 'enemy';
       for (let i = 0; i < 3; i++) {
+        // パワー0以下のカードを破壊対象にする。
+        // ただし、一度もダメージを受けておらず元々パワーが0のスペルカード等はスキル解決中（isSkillResolving）保護される。
+        // ダメージを受けてパワー0以下になったカードは、スキル解決中であっても即座に破壊対象となる。
+        const isProtectedZeroSpell =
+          board[i] &&
+          board[i].isSkillResolving &&
+          ((board[i].power || 0) === 0 || (board[i].basePower || 0) === 0) &&
+          !board[i].hasTakenDamage;
+
         if (
           board[i] &&
           board[i].currentPower <= 0 &&
           board[i] !== excludeCard &&
-          !board[i].isSkillResolving
+          !isProtectedZeroSpell
         ) {
           const el = document.querySelector(
             `#${side}-lanes .cell[data-lane="${i}"] .card`

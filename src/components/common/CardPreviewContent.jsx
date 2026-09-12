@@ -557,7 +557,7 @@ function CardPreviewContent({
                       fontWeight: 'bold',
                     }}
                   >
-                    収録カード（{styleProps.packCardCount || 42}枚）
+                    収録カード（{styleProps.packCardCount || 42}種類）
                   </div>
                   <button
                     type="button"

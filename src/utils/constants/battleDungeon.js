@@ -74,16 +74,19 @@ export const getRentalDeckOptions = () => {
     });
   };
 
-  // デフォルト: 2種類のブロンズキャラクター(rarity 1)を生成
-  for (let i = 0; i < 2; i++) {
-    addEnemyOption(1);
-  }
-
   // 開放状態を読み取って候補を追加
   try {
     const unlocks =
       JSON.parse(localStorage.getItem('mini_card_battle_dungeon_unlocks')) ||
       {};
+
+    // ブロンズリーダー（必要総ポイント0のトグル・デフォルト値は1 / 有効）
+    const isCharBronzeEnabled =
+      unlocks.char_bronze !== undefined ? Boolean(unlocks.char_bronze) : true;
+    if (isCharBronzeEnabled) {
+      addEnemyOption(1);
+      addEnemyOption(1);
+    }
 
     if (unlocks.char_silver) {
       addEnemyOption(2);
@@ -130,6 +133,12 @@ export const getRentalDeckOptions = () => {
     if (unlocks.deck_hard) addCharDecks('hard', '上級');
   } catch (e) {
     console.error('Failed to load dungeon unlocks:', e);
+  }
+
+  // フェイルセーフ: すべての候補がOFFに設定されて選択肢が0件になった場合は最低限ブロンズを2体生成
+  if (options.length === 0) {
+    addEnemyOption(1);
+    addEnemyOption(1);
   }
 
   return options;

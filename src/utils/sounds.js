@@ -116,6 +116,7 @@ export const AUDIO_INSTANCES = {
   bgmHighDifficulty: createAudioInstance(
     'assets/audio/bgm/bgm_high_difficulty.mp3'
   ),
+  bgmShop: createAudioInstance('assets/audio/bgm/bgm_shop.mp3'),
   bgmStageAndroid: createAudioInstance(
     'assets/audio/bgm/bgm_stage_android01.mp3'
   ),
@@ -684,6 +685,46 @@ export async function recreateAudioSystem() {
   });
 
   console.log('[Sound] サウンドシステムの再構築が完了しました。');
+}
+
+/**
+ * 画面IDに対応する標準BGMオーディオインスタンスを取得します。
+ * メニュー画面や交換所からの復帰時など、遷移先画面に応じたBGM特定に利用します。
+ *
+ * @param {string} screenId - 遷移先の画面ID（例: 'screen-mode-select', 'screen-defense-menu' 等）
+ * @returns {HTMLAudioElement|null} 対応するBGMインスタンス（見つからない場合はタイトルBGMまたはnull）
+ */
+export function getScreenBgm(screenId) {
+  switch (screenId) {
+    case 'screen-defense-menu':
+      return AUDIO_INSTANCES.bgmDefense || null;
+    case 'screen-tournament-menu':
+      return AUDIO_INSTANCES.bgmTournament1 || null;
+    case 'screen-fortune-menu':
+      return AUDIO_INSTANCES.bgmFortune1 || null;
+    case 'screen-high-difficulty-menu':
+      return AUDIO_INSTANCES.bgmHighDifficulty || null;
+    case 'screen-dungeon-menu':
+    case 'screen-challenge-unlock':
+      return AUDIO_INSTANCES.bgmChallenge || null;
+    case 'screen-gallery-menu':
+      return AUDIO_INSTANCES.bgmGallery || null;
+    case 'screen-online-menu':
+      return AUDIO_INSTANCES.bgmOnline || null;
+    case 'screen-common-exchange':
+    case 'screen-shop-menu':
+    case 'screen-exchange':
+    case 'screen-challenge-exchange':
+    case 'screen-tournament-exchange':
+    case 'screen-fortune-exchange':
+    case 'screen-high-difficulty-exchange':
+      return AUDIO_INSTANCES.bgmShop || null;
+    case 'screen-mode-select':
+    case 'screen-solo-menu':
+    case 'screen-event-menu':
+    default:
+      return AUDIO_INSTANCES.bgmTitle || null;
+  }
 }
 
 // 確実なオーディアンロックのためのネイティブDOMイベント監視 (React合成イベントの外側で処理)

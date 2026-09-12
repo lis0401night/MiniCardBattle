@@ -1666,6 +1666,9 @@ export function getBestSimulatedMove() {
                 }
               } else if (sk.id === 'summon') {
                 const isSelf = Boolean(sk.self || sk.targetSelf);
+                const isTargetToken = Boolean(
+                  sk.targetToken || sk.targetType === 'token'
+                );
                 const selfId = card ? card.baseId || card.id : null;
                 const targetIds =
                   sk.targetIds || (sk.targetId ? [sk.targetId] : null);
@@ -1705,6 +1708,17 @@ export function getBestSimulatedMove() {
                   let matches = true;
                   if (isSelf && selfId) {
                     matches = matchesCardId(childCard, selfId);
+                  } else if (isTargetToken) {
+                    const isTok = Boolean(
+                      childCard.isToken ||
+                      childCard.id?.startsWith('token_') ||
+                      childCard.baseId?.startsWith('token_')
+                    );
+                    matches =
+                      isTok &&
+                      (reqP !== undefined && reqP !== null
+                        ? (childCard.power || 0) <= reqP
+                        : true);
                   } else if (Array.isArray(targetIds) && targetIds.length > 0) {
                     matches = matchesCardIds(childCard, targetIds);
                   } else if (
@@ -3996,6 +4010,9 @@ export function evaluateAdhocTokenLanes(
       }
     } else if (sk.id === 'summon') {
       const isSelf = Boolean(sk.self || sk.targetSelf);
+      const isTargetToken = Boolean(
+        sk.targetToken || sk.targetType === 'token'
+      );
       const selfId = tokenCard ? tokenCard.baseId || tokenCard.id : null;
       const originalHand = GameState.enemyHand || [];
       const originalDiscard = GameState.enemyDiscard || [];
@@ -4034,6 +4051,17 @@ export function evaluateAdhocTokenLanes(
         let matches = true;
         if (isSelf && selfId) {
           matches = matchesCardId(childCard, selfId);
+        } else if (isTargetToken) {
+          const isTok = Boolean(
+            childCard.isToken ||
+            childCard.id?.startsWith('token_') ||
+            childCard.baseId?.startsWith('token_')
+          );
+          matches =
+            isTok &&
+            (reqP !== undefined && reqP !== null
+              ? (childCard.power || 0) <= reqP
+              : true);
         } else if (Array.isArray(targetIds) && targetIds.length > 0) {
           matches = matchesCardIds(childCard, targetIds);
         } else if (typeof targetKeyword === 'string' && targetKeyword) {

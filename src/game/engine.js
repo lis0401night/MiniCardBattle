@@ -420,6 +420,7 @@ export function damageCard(
 
   // 3. 実際のダメージ適用
   card.currentPower -= amount;
+  card.hasTakenDamage = true;
   events.push({
     type: 'damage_card',
     side,
@@ -598,12 +599,16 @@ export function processDestructionTriggers(state, events) {
 
     targets.forEach(({ board, side }) => {
       for (let i = 0; i < 3; i++) {
-        // パワー0以下のカードを破壊対象にするが、スキル解決中のカードは除外する
-        if (
+        // パワー0以下のカードを破壊対象にする。
+        // ただし、一度もダメージを受けておらず元々パワーが0のスペルカード等はスキル解決中（isSkillResolving）保護される。
+        // ダメージを受けてパワー0以下になったカードは、スキル解決中であっても即座に破壊対象となる。
+        const isProtectedZeroSpell =
           board[i] &&
-          board[i].currentPower <= 0 &&
-          !board[i].isSkillResolving
-        ) {
+          board[i].isSkillResolving &&
+          ((board[i].power || 0) === 0 || (board[i].basePower || 0) === 0) &&
+          !board[i].hasTakenDamage;
+
+        if (board[i] && board[i].currentPower <= 0 && !isProtectedZeroSpell) {
           const deadCard = board[i];
           destroyedThisLoop.push({ side, lane: i, card: deadCard });
 
@@ -759,8 +764,9 @@ export function applyActiveSkillLogic(
   const eB = owner === 'blue' ? state.enemyBoard : state.playerBoard;
   const oppOwner = owner === 'blue' ? 'red' : 'blue';
   const c = b[l];
-  // 自身（カードオブジェクト）が盤面に存在しないと解決できない（自己バフや自己付与の）スキル一覧
+  // 自身（カードオブジェクト）が盤面に存在しないと解決できない（自己バフや自己付与、速攻、覚醒などの）スキル一覧
   const requiresCard = [
+    'quick',
     'double_power',
     'decay',
     'hero',
@@ -777,6 +783,8 @@ export function applyActiveSkillLogic(
     'inspire',
     'supremacy',
     'unleash',
+    'awake',
+    'awake_legendary',
   ];
   if (!c && requiresCard.includes(sid)) return events;
 
@@ -1844,7 +1852,7 @@ export function applyActiveSkillLogic(
       let tNameEngine = null;
 
       // カード本体またはスキルから召喚IDを取得
-      const skillForSummonId = c.skills?.find(
+      const skillForSummonId = c?.skills?.find(
         (s) =>
           (s.id === 'servant' ||
             s.id === 'awake' ||
@@ -1852,10 +1860,10 @@ export function applyActiveSkillLogic(
             s.id === 'split') &&
           s.summonId
       );
-      tIdEngine = c.summonId || skillForSummonId?.summonId;
+      tIdEngine = c?.summonId || skillForSummonId?.summonId;
 
       if (!tIdEngine) {
-        const engineCId = c.baseId || c.id;
+        const engineCId = c?.baseId || c?.id;
         if (engineCId === 'admiral') {
           tIdEngine = 'token_knight';
         } else if (summonTargetPower >= 5) {
@@ -1910,7 +1918,7 @@ export function applyActiveSkillLogic(
             id: `sm_sim_${Math.floor(getSeededRandom() * 1000000000)}_${i}`,
             baseId: tIdEngine,
             owner,
-            isPremium: c.isPremium,
+            isPremium: c?.isPremium || false,
             imgUrl: `assets/cards/card_${tIdEngine}.webp`,
             power: summonTargetPower,
             basePower: summonTargetPower,
@@ -5371,6 +5379,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         amount: dmgToDef,
       });
       dC.currentPower -= dmgToDef;
+      dC.hasTakenDamage = true;
 
       if (hasSkill(aC, 'deadly')) {
         if (!hasSkill(dC, 'immune')) {
@@ -5395,6 +5404,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         amount: dmgToAtk,
       });
       aC_defend.currentPower -= dmgToAtk;
+      aC_defend.hasTakenDamage = true;
       if (originalTarget && hasSkill(originalTarget, 'deadly')) {
         if (!hasSkill(aC_defend, 'immune')) {
           aC_defend.currentPower = 0;

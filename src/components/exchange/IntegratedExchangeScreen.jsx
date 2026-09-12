@@ -10,7 +10,11 @@ import ExchangeQuantityModal from './ExchangeQuantityModal.jsx';
 import PackOpeningModal from './PackOpeningModal.jsx';
 import PointConversionModal from './PointConversionModal.jsx';
 import { GameState } from '../../state/gameState.js';
-import { getLatestOwnership } from '../../utils/apiUtils.js';
+import {
+  getLatestOwnership,
+  savePointsToServer,
+  fetchPlayerDecks,
+} from '../../utils/apiUtils.js';
 import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
@@ -32,8 +36,13 @@ import {
   drawCardFromPack,
   getPackById,
 } from '../../utils/constants/packs.js';
-import { playSound } from '../../utils/gameUtils.js';
-import { SOUNDS } from '../../utils/sounds.js';
+import {
+  currentBgmAudio,
+  getOrCreateUUID,
+  playSound,
+  switchScreen as defaultSwitchScreen,
+} from '../../utils/gameUtils.js';
+import { AUDIO_INSTANCES, getScreenBgm, SOUNDS } from '../../utils/sounds.js';
 
 /**
  * 統合交換所の各イベントタブ設定定義一覧
@@ -58,9 +67,9 @@ const EXCHANGE_TABS = Object.freeze([
     label: '共通',
     pointLabel: '共通ポイント',
     color: '#facc15',
-    bg: '',
+    bg: 'background_shop.webp',
     backTo: 'screen-mode-select',
-    apiEndpoint: '',
+    apiEndpoint: 'update_common_points.php',
     pointsKey: 'common',
     pointsLocalKey: COMMON_POINTS_KEY,
     pointsTotalLocalKey: COMMON_TOTAL_POINTS_KEY,
@@ -173,16 +182,22 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
    * @param {number} [amount=100] - 付与するポイント量
    */
   const grantDebugPoints = useCallback((amount = 100) => {
+    let nextCurrent = 0;
+    let nextTotal = 0;
     setCurrentPoints((prev) => {
       const next = prev + amount;
       localStorage.setItem(COMMON_POINTS_KEY, String(next));
+      nextCurrent = next;
       return next;
     });
     setTotalPoints((prev) => {
       const next = prev + amount;
       localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(next));
+      nextTotal = next;
       return next;
     });
+    // サーバーへ共通ポイントを同期保存
+    savePointsToServer('update_common_points.php', nextCurrent, nextTotal);
   }, []);
 
   // 親コンポーネントのタイトルイースターエッグへデバッグ付与関数を登録
@@ -191,6 +206,57 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
       onMountDebugGrant(grantDebugPoints);
     }
   }, [grantDebugPoints, onMountDebugGrant]);
+
+  // マウント時: サーバーからプレイヤーデータを取得し、共通ポイントをローカルと同期・復元
+  useEffect(() => {
+    let cancelled = false;
+
+    /**
+     * サーバー上の共通ポイントを取得し、ローカルデータと安全にマージする非同期処理
+     */
+    const fetchCommonPoints = async () => {
+      try {
+        const result = await fetchPlayerDecks();
+        if (cancelled) return;
+        if (result?.success) {
+          const myUuid = getOrCreateUUID?.();
+          const myData = result.players?.find((p) => p.uuid === myUuid);
+          if (myData) {
+            const serverPts = myData.common_points || 0;
+            const serverTotalPts = myData.common_total_points || serverPts || 0;
+
+            const curLocal =
+              parseInt(localStorage.getItem(COMMON_POINTS_KEY), 10) || 0;
+            const totLocal =
+              parseInt(localStorage.getItem(COMMON_TOTAL_POINTS_KEY), 10) || 0;
+
+            const mergedCur = Math.max(curLocal, serverPts);
+            const mergedTot = Math.max(totLocal, serverTotalPts);
+
+            if (mergedCur !== curLocal) {
+              localStorage.setItem(COMMON_POINTS_KEY, String(mergedCur));
+              setCurrentPoints(mergedCur);
+            }
+            if (mergedTot !== totLocal) {
+              localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(mergedTot));
+              setTotalPoints(mergedTot);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(
+          '[CommonExchange] サーバーからの共通ポイント取得をスキップしました:',
+          err
+        );
+      }
+    };
+
+    fetchCommonPoints();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /**
    * パック交換・開封処理ハンドラ
@@ -222,6 +288,8 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
         const newCurrent = currentPoints - totalCost;
         setCurrentPoints(newCurrent);
         localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
+        // サーバーへ共通ポイントを同期保存
+        savePointsToServer('update_common_points.php', newCurrent, totalPoints);
 
         // 2. 最新の所持状況を取得してパックからカードを抽選（4枚所持カードは除外）
         const latestOwnership = getLatestOwnership();
@@ -266,7 +334,7 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
         setIsOpening(false);
       }
     },
-    [isOpening, currentPoints]
+    [isOpening, currentPoints, totalPoints]
   );
 
   // 共通交換所ラインナップ
@@ -754,15 +822,37 @@ export default function IntegratedExchangeScreen({
     EXCHANGE_TABS.find((t) => t.mode === initialMode)?.backTo ||
     currentTab.backTo;
 
+  // 交換所画面マウント時にショップBGMを再生し、アンマウント時（画面離脱時）に元の画面のBGMへ復帰
+  useEffect(() => {
+    playSound(AUDIO_INSTANCES.bgmShop);
+
+    return () => {
+      // 交換所から離れる際、再生中のBGMがショップBGMのままの場合は戻り先画面のBGMを復帰
+      if (currentBgmAudio === AUDIO_INSTANCES.bgmShop) {
+        const restoreBgm = getScreenBgm(resolvedBackTo);
+        if (restoreBgm) {
+          playSound(restoreBgm);
+        }
+      }
+    };
+  }, [resolvedBackTo]);
+
   /**
-   * 戻るボタンクリックハンドラ（switchScreenが提供されている場合はそれを優先呼び出し）
+   * 戻るボタンクリックハンドラ
+   * クリック音および戻り先画面に対応するBGMの復帰を行い、指定の画面へ遷移します。
    */
-  const handleBackClick = () => {
+  const handleBackClick = useCallback(() => {
     playSound(SOUNDS?.seClick);
+    const restoreBgm = getScreenBgm(resolvedBackTo);
+    if (restoreBgm) {
+      playSound(restoreBgm);
+    }
     if (typeof switchScreen === 'function') {
       switchScreen(resolvedBackTo);
+    } else {
+      defaultSwitchScreen(resolvedBackTo);
     }
-  };
+  }, [resolvedBackTo, switchScreen]);
 
   return (
     <CompactScreenLayout
@@ -772,7 +862,7 @@ export default function IntegratedExchangeScreen({
       titleColor={currentTab.color}
       titleGlow={true}
       onTitleClick={handleTitleClick}
-      onBackClick={switchScreen ? handleBackClick : undefined}
+      onBackClick={handleBackClick}
       backTo={resolvedBackTo}
     >
       {/* イベントタブ切り替えバー（現在のタブのみ表示＋左右ボタンで切り替え） */}

@@ -63,6 +63,7 @@ import {
   showConfirmModal,
   showPointAcquisitionModal,
 } from '../../services/uiModals.js';
+import { recordDailyMissionWin } from '../../utils/constants/dailyMissions.js';
 import { showDefenseBattleList } from '../../services/uiMainCore.js';
 import {
   DEFENSE_POINTS_KEY,
@@ -828,6 +829,11 @@ export function endBattle() {
     GameState.gameMode !== 'tutorial'
   ) {
     incrementStat('freeBattleWins');
+  }
+
+  // デイリーミッション進捗記録（防衛戦・試練の宮殿・夢幻の闘技祭）
+  if (GameState.lastBattleResult === 'win') {
+    recordDailyMissionWin(GameState.gameMode);
   }
 
   setTimeout(() => {

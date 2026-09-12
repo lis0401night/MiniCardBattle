@@ -113,7 +113,10 @@ export async function playEvents(events) {
       case 'damage_card': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-        if (board[ev.lane]) board[ev.lane].currentPower -= ev.amount;
+        if (board[ev.lane]) {
+          board[ev.lane].currentPower -= ev.amount;
+          board[ev.lane].hasTakenDamage = true;
+        }
 
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
@@ -701,7 +704,7 @@ export async function playEvents(events) {
             `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
           );
           if (cEl) {
-            createDamagePopup(cEl, '忘却', '#cbd5e1');
+            createDamagePopup(cEl, '沈黙', '#cbd5e1');
           }
           playSound(SOUNDS.seSkill);
           await sleep(200);
@@ -730,7 +733,7 @@ export async function playEvents(events) {
             `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
           );
           if (cEl) {
-            createDamagePopup(cEl, '沈黙', '#cbd5e1');
+            createDamagePopup(cEl, '忘却', '#cbd5e1');
           }
           playSound(SOUNDS.seSkill);
           await sleep(200);

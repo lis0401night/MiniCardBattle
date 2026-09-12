@@ -855,6 +855,7 @@ export function goBackFromDeckEdit(isCancel = false) {
  */
 export function showCommonExchange() {
   playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmShop);
   switchScreen('screen-common-exchange');
 }
 
@@ -1598,6 +1599,7 @@ export let exchangeDebugClickCount = 0;
 
 export function showExchangeScreen() {
   playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmShop);
   switchScreen('screen-exchange');
 }
 

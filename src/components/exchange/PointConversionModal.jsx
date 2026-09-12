@@ -9,14 +9,14 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import {
+  addConvertedPointsByMode,
+  savePointsToServer,
+} from '../../utils/apiUtils.js';
+import {
   COMMON_POINTS_KEY,
   COMMON_TOTAL_POINTS_KEY,
   POINT_CONVERSION_MODES,
 } from '../../utils/constants/config.js';
-import {
-  addConvertedPointsByMode,
-  savePointsToServer,
-} from '../../utils/apiUtils.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
@@ -147,16 +147,6 @@ export default function PointConversionModal({
     return Object.values(amounts).reduce((sum, val) => sum + (val || 0), 0);
   }, [amounts]);
 
-  // 指定があるモード一覧
-  const activeConvertList = useMemo(() => {
-    return POINT_CONVERSION_MODES.filter((m) => (amounts[m.id] || 0) > 0).map(
-      (m) => ({
-        ...m,
-        amount: amounts[m.id] || 0,
-      })
-    );
-  }, [amounts]);
-
   // 全モードの合計所持ポイント
   const totalAvailableAcrossModes = useMemo(() => {
     return POINT_CONVERSION_MODES.reduce((sum, m) => {
@@ -225,6 +215,13 @@ export default function PointConversionModal({
 
       localStorage.setItem(COMMON_POINTS_KEY, String(newCommonCurrent));
       localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(newCommonTotal));
+
+      // 共通ポイントのサーバー同期
+      savePointsToServer(
+        'update_common_points.php',
+        newCommonCurrent,
+        newCommonTotal
+      );
 
       // 3. 成功SE再生
       playSound(SOUNDS?.seLevelUp || SOUNDS?.seSkill);
@@ -324,7 +321,7 @@ export default function PointConversionModal({
               marginTop: '4px',
             }}
           >
-            各イベントのポイントを合算して共通ポイントに変換します
+            各イベントのポイントを共通ポイントに変換します
           </div>
         </div>
 
@@ -337,9 +334,6 @@ export default function PointConversionModal({
             padding: '4px 2px',
           }}
         >
-          <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-            変換するポイントを指定
-          </span>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
               className="btn"
@@ -622,49 +616,6 @@ export default function PointConversionModal({
             fontSize: '0.78rem',
           }}
         >
-          {/* 指定内訳 */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '2px',
-              borderBottom: '1px solid rgba(148, 163, 184, 0.15)',
-              paddingBottom: '6px',
-            }}
-          >
-            <span style={{ color: '#94a3b8' }}>変換内訳:</span>
-            {activeConvertList.length > 0 ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '6px',
-                  marginTop: '2px',
-                }}
-              >
-                {activeConvertList.map((item) => (
-                  <span
-                    key={item.id}
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      border: `1px solid ${item.color}66`,
-                      color: item.color,
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    {item.shortLabel}: {item.amount} Pt
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                指定されていません
-              </span>
-            )}
-          </div>
-
           {/* 獲得共通ポイント（合算） */}
           <div
             style={{
@@ -676,7 +627,7 @@ export default function PointConversionModal({
               fontSize: '0.92rem',
             }}
           >
-            <span>獲得する共通ポイント</span>
+            <span>獲得ポイント</span>
             <span style={{ fontSize: '1.1rem' }}>+{totalConvertAmount} Pt</span>
           </div>
 
@@ -710,7 +661,7 @@ export default function PointConversionModal({
             border: '1px solid rgba(239, 68, 68, 0.25)',
           }}
         >
-          ⚠ 一度変換したポイントは元に戻せません（不可逆）
+          ⚠ 一度変換したポイントは元に戻せません
         </div>
 
         {/* アクションボタン */}
@@ -761,10 +712,8 @@ export default function PointConversionModal({
             {isProcessing
               ? '変換中...'
               : canConvert
-                ? `一括変換する (合計 ${totalConvertAmount} Pt)`
-                : totalAvailableAcrossModes <= 0
-                  ? 'ポイント残高なし'
-                  : '変換ポイントを指定'}
+                ? `変換 (合計 ${totalConvertAmount} Pt)`
+                : '変換 0 Pt'}
           </button>
         </div>
       </div>

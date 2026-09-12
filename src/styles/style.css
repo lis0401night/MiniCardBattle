@@ -536,6 +536,11 @@ h2 {
   font-size: 1.5rem !important;
 }
 
+.btn-daily-missions {
+  position: relative !important;
+  font-size: 1.5rem !important;
+}
+
 @media (hover: hover) {
   .btn-gear:hover {
     transform: rotate(45deg) scale(1.1);

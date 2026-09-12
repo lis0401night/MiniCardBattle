@@ -7,11 +7,11 @@ import { CARD_MASTER } from './cards.js';
 import { MAX_CARD_COPIES, PACK_EXCHANGE_COST } from './config.js';
 
 /**
- * 第1弾拡張パック（vol01:ビギニング）の封入カードID一覧（全43枚）
+ * 第1弾拡張パック（vol01:ビギニング）の封入カードID一覧（全45種類）
  * @type {ReadonlyArray<string>}
  */
 export const PACK_VOL01_CARD_IDS = Object.freeze([
-  // ★2: シルバーカード（26枚）
+  // ★2: シルバーカード（27枚）
   'laser',
   'gunship',
   'royalguard',
@@ -36,9 +36,10 @@ export const PACK_VOL01_CARD_IDS = Object.freeze([
   'sisters',
   'maiden',
   'gleipnir',
+  'firstlight',
   'elementalburst',
   'mimic',
-  // ★3: ゴールドカード（14枚）
+  // ★3: ゴールドカード（15枚）
   'factory',
   'enlisteddragon',
   'mercenarycamp',
@@ -51,8 +52,9 @@ export const PACK_VOL01_CARD_IDS = Object.freeze([
   'falconpriest',
   'prototype',
   'thor',
-  'elementalguide',
   'catastrophe',
+  'elementalguide',
+  'hameln',
   // ★4: レジェンドカード（3枚）
   'fallenangel',
   'elementalmaster',
@@ -99,8 +101,7 @@ export const PACK_MASTER = Object.freeze([
     packId: 1,
     type: 'pack',
     name: 'vol01:ビギニング',
-    description:
-      'Ver 0.4.0で追加された全43種類のカードが封入された拡張パック。',
+    description: '全45種類のカードが封入された拡張パック。',
     cost: PACK_EXCHANGE_COST,
     pointsKey: 'common',
     cardsPerPack: 1,

@@ -5,6 +5,7 @@ import { SOUNDS } from '../utils/sounds.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
 
 const UNLOCK_ITEMS = [
+  { id: 'char_bronze', name: 'ブロンズのリーダーを追加', cost: 0 },
   { id: 'deck_easy', name: '初級のデッキを追加', cost: 3 },
   { id: 'char_silver', name: 'シルバーのリーダーを追加', cost: 10 },
   { id: 'deck_normal', name: '中級のデッキを追加', cost: 20 },
@@ -23,18 +24,24 @@ export default function ChallengeUnlockScreen() {
   );
   const [unlocks, setUnlocks] = useState(() => {
     try {
-      return (
+      const saved =
         JSON.parse(localStorage.getItem('mini_card_battle_dungeon_unlocks')) ||
-        {}
-      );
+        {};
+      if (saved.char_bronze === undefined) {
+        saved.char_bronze = 1;
+      }
+      return saved;
     } catch {
-      return {};
+      return { char_bronze: 1 };
     }
   });
 
   const toggleUnlock = (id) => {
     playSound(SOUNDS?.seClick);
-    const nextState = { ...unlocks, [id]: !unlocks[id] };
+    const currentVal =
+      unlocks[id] !== undefined ? Boolean(unlocks[id]) : id === 'char_bronze';
+    const nextVal = currentVal ? 0 : 1;
+    const nextState = { ...unlocks, [id]: nextVal };
     setUnlocks(nextState);
     localStorage.setItem(
       'mini_card_battle_dungeon_unlocks',
@@ -98,7 +105,10 @@ export default function ChallengeUnlockScreen() {
         >
           {UNLOCK_ITEMS.map((item) => {
             const isUnlocked = totalPoints >= item.cost;
-            const isON = !!unlocks[item.id];
+            const isON =
+              unlocks[item.id] !== undefined
+                ? Boolean(unlocks[item.id])
+                : item.id === 'char_bronze';
 
             return (
               <div

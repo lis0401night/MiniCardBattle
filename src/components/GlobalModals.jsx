@@ -804,6 +804,13 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [favCardModalOpen, profileModalVisible]);
 
+  /**
+   * カードプレビューモーダルを閉じます。
+   * 親プレビューが存在する場合は親プレビューへ復帰し、
+   * カード一覧モーダルから開かれたプレビューの場合は直前のプレビュー状態に復帰します。
+   *
+   * @param {React.MouseEvent} [e] クリックイベント
+   */
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
     playSound?.(SOUNDS?.seClick);
@@ -811,6 +818,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       // 親プレビュー（パック詳細等）が存在する場合は親プレビューへ復帰
       if (prev?.parentPreview) {
         return prev.parentPreview;
+      }
+      if (prev?.parentCard?.isListParent && prev?.previousPreview) {
+        return prev.previousPreview;
       }
       return null;
     });
@@ -1041,14 +1051,19 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       }
 
       setCardPreviewData({
-        card: validItemObj || {
-          id: data.id,
-          name: data.titleName,
-          flavor: data.displayFlavor,
-          skills: [],
+        card: {
+          ...(validItemObj || {
+            id: data.id,
+            name: data.titleName,
+            flavor: data.displayFlavor,
+            skills: [],
+          }),
+          imgUrl: autoImgUrl,
         },
         styleProps: {
+          imgUrl: autoImgUrl,
           titleName: data.titleName || data.itemObj?.name || data.id,
+          titleColor: data.titleColor,
           displayType:
             data.displayType ||
             EXCHANGE_DISPLAY_TYPE_LABELS[data.type] ||
@@ -1266,7 +1281,11 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         isRevealed={true}
         onEquipClick={(eqCard) => {
           playSound?.(SOUNDS?.seClick);
-          setCardPreviewData({ card: eqCard, parentCard: card });
+          setCardPreviewData((prev) => ({
+            card: eqCard,
+            parentCard: card,
+            previousPreview: prev,
+          }));
         }}
         onLinkClick={(targetId, seg) => {
           playSound?.(SOUNDS?.seClick);
@@ -1301,13 +1320,24 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             return;
           }
           const tObj = CARD_MASTER.find((c) => c.id === targetId);
-          if (tObj) setCardPreviewData({ card: tObj, parentCard: card });
+          if (tObj) {
+            setCardPreviewData((prev) => ({
+              card: tObj,
+              parentCard: card,
+              previousPreview: prev,
+            }));
+          }
         }}
         onParentBack={() => {
-          if (cardPreviewData?.parentCard?.isListParent) {
-            setCardPreviewData(null);
-          } else {
+          if (cardPreviewData?.previousPreview) {
+            setCardPreviewData(cardPreviewData.previousPreview);
+          } else if (
+            cardPreviewData?.parentCard &&
+            !cardPreviewData?.parentCard?.isListParent
+          ) {
             setCardPreviewData({ card: cardPreviewData.parentCard });
+          } else {
+            setCardPreviewData(null);
           }
           playSound?.(SOUNDS?.seClick);
         }}
@@ -1739,7 +1769,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       {cardListModalData && (
         <div
           className="modal-overlay"
-          style={{ zIndex: 4100, display: 'flex' }}
+          style={{
+            zIndex: enemyDeckData ? 5200 : 4200,
+            display: 'flex',
+          }}
           onClick={() => {
             playSound?.(SOUNDS?.seClick);
             setCardListModalData(null);
@@ -1778,10 +1811,11 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                       className="deck-card-item gallery-card-wrapper"
                       onClick={() => {
                         playSound?.(SOUNDS?.seClick);
-                        setCardPreviewData({
+                        setCardPreviewData((prev) => ({
                           card: displayCard,
                           parentCard: { isListParent: true },
-                        });
+                          previousPreview: prev,
+                        }));
                       }}
                     >
                       <div className={`card blue${rarityClass}`}>
@@ -1827,19 +1861,22 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           style={{
             zIndex: cardPreviewData?.styleProps?.isPack
               ? 4000
-              : enemyDeckData
-                ? 5000
-                : cardListModalData
-                  ? 4200
+              : cardPreviewData?.parentCard?.isListParent
+                ? enemyDeckData
+                  ? 5300
+                  : 4300
+                : enemyDeckData
+                  ? 5000
                   : 4000,
             display: 'flex',
           }}
           onClick={handleCloseCardPreview}
         >
-          {renderCardPreviewContent(
-            cardPreviewData.card,
-            cardPreviewData.styleProps || { showPreviewActions: true }
-          )}
+          {renderCardPreviewContent(cardPreviewData.card, {
+            showPreviewActions: true,
+            ...(cardPreviewData.styleProps || {}),
+            parentCard: cardPreviewData.parentCard,
+          })}
         </div>
       )}
 

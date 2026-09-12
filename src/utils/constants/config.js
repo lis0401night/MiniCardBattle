@@ -27,7 +27,7 @@ export const DAMAGE_TYPE = {
 };
 
 export const MAX_CARD_COPIES = 4; // 同一カードの最大編成枚数
-export const MAX_DECK_SLOTS = 30; // デッキ登録の最大上限数
+export const MAX_DECK_SLOTS = 50; // デッキ登録の最大上限数
 /** ボスキャラクターのIDリスト */
 export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
 
@@ -125,8 +125,8 @@ export const HIGH_DIFFICULTY_CONVERTED_POINTS_KEY =
 export const POINT_CONVERSION_MODES = Object.freeze([
   Object.freeze({
     id: 'high_difficulty',
-    label: '超級ポイント',
-    shortLabel: '超級',
+    label: '高難易度ポイント',
+    shortLabel: '高難易度',
     color: '#a855f7',
     pointsKey: HIGH_DIFFICULTY_POINTS_KEY,
     totalPointsKey: HIGH_DIFFICULTY_TOTAL_POINTS_KEY,

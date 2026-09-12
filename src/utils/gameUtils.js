@@ -1034,6 +1034,14 @@ export function getSkillTargetLabel(sk) {
     return '自身';
   }
 
+  // 0.5. targetToken プロパティ（トークンを対象とする指定）
+  if (sk.targetToken || sk.targetType === 'token') {
+    if (sk.excludeBoard) {
+      return '唯一/トークン';
+    }
+    return 'トークン';
+  }
+
   // 1. targetIds（配列）または targetId（単一ID）を配列に正規化
   const rawIds = Array.isArray(sk.targetIds)
     ? sk.targetIds.filter(Boolean)
@@ -2176,13 +2184,30 @@ export function matchesCardKeyword(card, targetKeyword) {
  * @param {string} [criteria.targetKeyword] - 対象キーワード
  * @param {string} [criteria.targetSkill] - 単一の対象スキルID
  * @param {string|Array<string>} [criteria.targetSkills] - 対象スキルIDまたは配列
+ * @param {boolean} [criteria.targetToken] - トークンカードを対象とするフラグ
+ * @param {string} [criteria.targetType] - 対象タイプ（'token'など）
  * @returns {boolean} 条件に合致する場合は true
  */
 export function matchesCardTarget(
   card,
-  { targetId, targetIds, targetKeyword, targetSkill, targetSkills } = {}
+  {
+    targetId,
+    targetIds,
+    targetKeyword,
+    targetSkill,
+    targetSkills,
+    targetToken,
+    targetType,
+  } = {}
 ) {
   if (!card) return false;
+  if (targetToken || targetType === 'token') {
+    return Boolean(
+      card.isToken ||
+      card.id?.startsWith('token_') ||
+      card.baseId?.startsWith('token_')
+    );
+  }
   if (targetId && matchesCardId(card, targetId)) return true;
   if (
     Array.isArray(targetIds) &&

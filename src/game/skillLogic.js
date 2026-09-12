@@ -370,8 +370,8 @@ export async function resolveActiveSkillEffect(
       sacrifice: '代償',
       soul_bind: '魂縛',
       quick: '速攻',
-      oblivion: '忘却',
-      silence: '沈黙',
+      oblivion: '沈黙',
+      silence: '忘却',
       trigger: '誘発',
       choice: '選択',
       artillery: '砲撃',
@@ -651,6 +651,9 @@ export async function resolveActiveSkillEffect(
     const reqPower = skillValue;
 
     const isSelf = Boolean(currentSkill?.self || currentSkill?.targetSelf);
+    const isTargetToken = Boolean(
+      currentSkill?.targetToken || currentSkill?.targetType === 'token'
+    );
     const selfId = c ? c.baseId || c.id : null;
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -674,6 +677,14 @@ export async function resolveActiveSkillEffect(
       }
       if (isSelf && selfId) {
         return matchesCardId(card, selfId);
+      }
+      if (isTargetToken) {
+        const isTok = Boolean(
+          card.isToken ||
+          card.id?.startsWith('token_') ||
+          card.baseId?.startsWith('token_')
+        );
+        if (!isTok) return false;
       }
       if (Array.isArray(targetIds) && targetIds.length > 0) {
         return matchesCardIds(card, targetIds);
@@ -751,9 +762,13 @@ export async function resolveActiveSkillEffect(
             ? `召喚: 「${targetSkillNames}」能力を持つカードを1枚まで選んでください`
             : Array.isArray(targetIds) && targetIds.length > 0
               ? '召喚: 召喚するカードを1枚まで選んでください'
-              : reqPower !== undefined && reqPower !== null
-                ? `パワー${reqPower}以下のカードを1枚まで選んでください`
-                : '召喚: 召喚するカードを1枚まで選んでください';
+              : isTargetToken
+                ? reqPower !== undefined && reqPower !== null
+                  ? `召喚: パワー${reqPower}以下のトークンカードを1枚まで選んでください`
+                  : '召喚: トークンカードを1枚まで選んでください'
+                : reqPower !== undefined && reqPower !== null
+                  ? `パワー${reqPower}以下のカードを1枚まで選んでください`
+                  : '召喚: 召喚するカードを1枚まで選んでください';
           const arr = await waitPlayerHandSelection(1, o, false, promptMsg);
           if (!arr || arr.length === 0) {
             break; // キャンセル
@@ -772,13 +787,17 @@ export async function resolveActiveSkillEffect(
                 ? '既に自分の場に存在するカードは召喚できません。'
                 : isSelf
                   ? '自身と同じカードのみ召喚できます。'
-                  : targetSkillNames
-                    ? `「${targetSkillNames}」能力を持つカードのみ召喚できます。`
-                    : Array.isArray(targetIds) && targetIds.length > 0
-                      ? '指定されたカードのみ召喚できます。'
-                      : reqPower !== undefined && reqPower !== null
-                        ? `パワー${reqPower}以下のカードのみ召喚できます。`
-                        : '召喚の対象外のカードです。';
+                  : isTargetToken
+                    ? reqPower !== undefined && reqPower !== null
+                      ? `パワー${reqPower}以下のトークンカードのみ召喚できます。`
+                      : 'トークンカードのみ召喚できます。'
+                    : targetSkillNames
+                      ? `「${targetSkillNames}」能力を持つカードのみ召喚できます。`
+                      : Array.isArray(targetIds) && targetIds.length > 0
+                        ? '指定されたカードのみ召喚できます。'
+                        : reqPower !== undefined && reqPower !== null
+                          ? `パワー${reqPower}以下のカードのみ召喚できます。`
+                          : '召喚の対象外のカードです。';
               window.showAlertModal(alertMsg);
             }
             await sleep(500);
@@ -1606,8 +1625,11 @@ export async function resolveActiveSkillEffect(
       await applyLeaderDamageWithGuard(o, dmg, 'fate', c, o);
     }
   } else if (skillId === 'quick') {
-    await sleep(400);
-    await executeSingleCombat(o, l);
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (board[l] === c) {
+      await sleep(400);
+      await executeSingleCombat(o, l);
+    }
   } else if (skillId === 'oblivion') {
     const myBoard = GameState.playerBoard;
     const oppBoard = GameState.enemyBoard;
@@ -1657,13 +1679,13 @@ export async function resolveActiveSkillEffect(
       targetCard.stunAppliedThisTurn = false;
       targetCard.isSkillResolving = false;
 
-      // 対象カードのエレメントを取得してポップアップ「沈黙」を表示
+      // 対象カードのエレメントを取得してポップアップ「忘却」を表示
       const targetSidePrefix = oppSide === 'player' ? 'player' : 'enemy';
       const targetEl = document.querySelector(
         `#${targetSidePrefix}-lanes .cell[data-lane="${l}"] .card`
       );
       if (targetEl) {
-        createDamagePopup(targetEl, '沈黙', '#cbd5e1');
+        createDamagePopup(targetEl, '忘却', '#cbd5e1');
       }
 
       playSound(SOUNDS.seSkill);
@@ -1788,6 +1810,7 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'hero') {
     // 【開発ガイドライン適用】直接トリガー型アクティブスキル
     const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (board[l] !== c) return;
     const occ = board.filter((x, idx) => x !== null && idx !== l).length;
     const hVal = occ * (skillValue || 3);
     if (hVal > 0) {
@@ -1815,6 +1838,8 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'adversity') {
     // 【開発ガイドライン適用】直接トリガー型アクティブスキル
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (board[l] !== c) return;
     const opB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     const occ = opB.filter((x) => x !== null).length;
     const advVal = occ * (skillValue || 1);
