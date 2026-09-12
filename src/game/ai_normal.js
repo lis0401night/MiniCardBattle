@@ -1449,11 +1449,7 @@ export function getBestSimulatedMove() {
                 tokenTargetCount += sk.value || 1;
 
               // 【重要仕様】スキルの値(value)の解釈：
-              // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
-              if (sk.id === 'resurrect') {
-                // 復活: 値(value) = トークンのパワー / 個数は常に「1体」
-                tc += 1;
-              }
+              // ※ clone, summon, resurrect は buildSkillBranch 内で個別管理するため tc には含めない
             });
           };
           gatherCounts(card);
@@ -1466,9 +1462,8 @@ export function getBestSimulatedMove() {
               if (!sk) return;
               if (['snipe', 'artillery', 'seal'].includes(sk.id))
                 tokenTargetCount += sk.value || 1;
-              // ※ clone, summon は buildSkillBranch 内の token_placement で個別管理するため tc には含めない
+              // ※ clone, summon, resurrect は buildSkillBranch 内で個別管理するため tc には含めない
               // ※ call, metamorph は実行時の動的判断（アドホック）や自身への適用となるため、事前のレーン確保は不要
-              if (sk.id === 'resurrect') tc += 1;
             });
           };
           countInChoices(c1, card.choices);
@@ -1952,7 +1947,18 @@ export function getBestSimulatedMove() {
                   results.push([{ type: 'leap' }, ...nb]);
                 }
               } else if (sk.id === 'resurrect') {
-                const maxP = sk.value || 1;
+                // 【重要】特定対象（targetIds / targetKeyword）が指定されている復活スキルの場合、
+                // パワー制限（sk.value）は存在しないため maxP を undefined としてパワー上限チェックを解除する。
+                // （sk.value が未指定の場合に 1 と誤認してパワー1超のカードを不正棄却するバグを防止）
+                const hasSpecificTarget =
+                  (Array.isArray(sk.targetIds) && sk.targetIds.length > 0) ||
+                  sk.targetId ||
+                  (typeof sk.targetKeyword === 'string' && sk.targetKeyword);
+                const maxP = hasSpecificTarget
+                  ? undefined
+                  : sk.value !== undefined && sk.value !== null
+                    ? sk.value
+                    : 1;
                 const candidates = [...originalDiscard, ...currentDiscarded];
                 const isExcludeBoard = Boolean(sk.excludeBoard);
                 const presentBoardIds = isExcludeBoard
@@ -3723,6 +3729,22 @@ export function evaluateTriggerSimulation(
       }
       consumedCard.owner = owner;
       consumedCard.skillTriggered = false;
+
+      // パワーの正規化（currentPower未定義によるパワー0カードの残留・壁化バグを完全に防止）
+      if (
+        consumedCard.currentPower === undefined ||
+        Number.isNaN(consumedCard.currentPower) ||
+        (consumedCard.currentPower <= 0 && (consumedCard.power || 0) > 0)
+      ) {
+        consumedCard.currentPower = consumedCard.power || 0;
+        consumedCard.basePower = consumedCard.power || 0;
+      }
+
+      // 出現時スキル解決中は一時保護フラグを立てる
+      if (hasActiveSkill(consumedCard)) {
+        consumedCard.isSkillResolving = true;
+      }
+
       boardArray[lane] = consumedCard;
       simState.lastPlayedLane = lane;
 
@@ -3745,7 +3767,10 @@ export function evaluateTriggerSimulation(
         consumedCard.skillTriggered = true;
       }
 
-      // 出現時スキル解決後の破壊クリーンアップ
+      // スキル解決完了に伴い保護フラグを解除（パワー0のスペルカード等が確実に消滅するようにする）
+      consumedCard.isSkillResolving = false;
+
+      // 出現時スキル解決後の破壊クリーンアップ（パワー0カードはここで盤面から即座に墓地送り/null化）
       processDestructionTriggers(simState, []);
 
       // ターン状況（自ターン/相手ターン）に応じた戦闘シミュレーションと評価
@@ -4209,7 +4234,18 @@ export function evaluateAdhocTokenLanes(
       }
     } else if (sk.id === 'resurrect') {
       const originalDiscard = GameState.enemyDiscard || [];
-      const maxP = sk.value || 1;
+      // 【重要】特定対象（targetIds / targetKeyword）が指定されている復活スキルの場合、
+      // パワー制限（sk.value）は存在しないため maxP を undefined としてパワー上限チェックを解除する。
+      // （sk.value が未指定の場合に 1 と誤認してパワー1超のカードを不正棄却するバグを防止）
+      const hasSpecificTarget =
+        (Array.isArray(sk.targetIds) && sk.targetIds.length > 0) ||
+        sk.targetId ||
+        (typeof sk.targetKeyword === 'string' && sk.targetKeyword);
+      const maxP = hasSpecificTarget
+        ? undefined
+        : sk.value !== undefined && sk.value !== null
+          ? sk.value
+          : 1;
       const candidates = [...originalDiscard, ...currentDiscard];
       const isExcludeBoard = Boolean(sk.excludeBoard);
       const presentBoardIds = isExcludeBoard

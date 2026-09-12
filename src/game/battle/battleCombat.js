@@ -580,123 +580,51 @@ export async function triggerReanimateSkill(owner, card) {
 }
 
 /**
- * 誘発（trigger）スキルによるカード召喚を実行する。
- * 召喚演出、装備/上書き墓地送り、盤面配置、オンプレイスキル発動、クリーンアップを一括処理する。
+ * 誘発（trigger）による召喚のフォールバック用関数（非推奨）。
+ * 通常の手札プレイ・招来・召喚と同様に playCard へ統合されました。
  *
+ * @deprecated 共通召喚処理（playCard）に統合されたため非推奨です。
  * @param {string} owner - 所有者 ('blue' | 'red')
  * @param {object} card - 召喚するカードオブジェクト
  * @param {number} targetLane - 配置先レーン (0〜2)
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>}
  */
 export async function executeTriggerSummon(owner, card, targetLane) {
-  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-
-  // 演出：召喚アニメーション
-  await playSummonAnimation(card, owner);
-
-  const existingCard = board[targetLane];
-  if (existingCard && hasSkill(existingCard, 'startup')) {
-    await handleStartupDispelled(owner, existingCard, targetLane, card);
-  } else if (canEquipCard(card, board[targetLane])) {
-    const targetCard = board[targetLane];
-    const { equipSkills } = applyEquipment(targetCard, card);
-
-    let events = [
-      {
-        type: 'summon_card',
-        side: owner,
-        lane: targetLane,
-        card: targetCard,
-        source: 'trigger',
-      },
-    ];
-    await playEvents(events);
-
-    // 装備されたカードのアクティブスキル即時発動
-    for (const sk of equipSkills) {
-      if (ACTIVE_SKILLS.includes(sk.id)) {
-        await sleep(50);
-        const enhancedSk = {
-          ...sk,
-          _sourceChoices: card.choices,
-          _sourceChoices2: card.choices2,
-        };
-        await resolveActiveSkillEffect(
-          owner,
-          targetLane,
-          targetCard,
-          sk.id,
-          sk.value,
-          enhancedSk
-        );
-      }
-    }
-    await cleanupDestroyedCards();
-  } else {
-    card.uid =
-      card.uid ||
-      `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
-    card.owner = owner;
-
-    // 配置直前に既存カードを安全に墓地へ送る（上書き）
-    if (board[targetLane]) {
-      if (!(await discardCard(owner, board[targetLane], targetLane, false))) {
-        board[targetLane] = null;
-      }
-    }
-    board[targetLane] = card;
-
-    if (hasActiveSkill(card)) {
-      card.isSkillResolving = true;
-    }
-
-    let events = [
-      {
-        type: 'summon_card',
-        side: owner,
-        lane: targetLane,
-        card: card,
-        source: 'trigger',
-      },
-    ];
-    await playEvents(events);
-
-    if (hasActiveSkill(card)) {
-      await resolveOnPlaySkill(owner, targetLane, card);
-    } else {
-      card.isSkillResolving = false;
-    }
-    await cleanupDestroyedCards();
+  const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+  let idx = hand.indexOf(card);
+  if (idx === -1) {
+    hand.push(card);
+    idx = hand.length - 1;
   }
+  return await playCard(owner, idx, targetLane);
 }
-
-let isTriggeringCounter = false;
 
 /**
  * 相手がカードを召喚したとき、手札の「誘発（trigger）」スキルを持つカードを検知して召喚する。
- * 発動条件（パワーや特定スキル）は撤廃され、相手の召喚時に無条件で誘発可能。
- * 複数の誘発カードを所持している場合でも同時に召喚できるのは1枚のみであり、
- * プレイヤーまたはAIが出すカードを1枚選択する（キャンセル可能）。
- * 召喚に成功した場合、手札に「虚空（パワー0）」トークンを1枚追加する。
+ * 通常の手札プレイや「招来（invite）」「召喚（summon）」等と同じく、手札選択・レーン選択を経て
+ * 共通の召喚処理（playCard）を実行する。
+ * playCard 内部で相手の checkAndTriggerCounter が自動的に呼ばれるため、自然にチェーン連鎖が解決される。
  *
- * @param {string} summonOwner - カードを召喚したプレイヤー ('blue' | 'red')
- * @param {object} summonedCard - 召喚されたカードオブジェクト
- * @param {number} [_summonedLane] - 召喚されたレーン番号（シミュレーション自律判定のため任意）
+ * @param {string} initialSummonOwner - 直前にカードを召喚したプレイヤー ('blue' | 'red')
+ * @param {object} initialSummonedCard - 直前に召喚されたカードオブジェクト
+ * @param {number} [_initialSummonedLane] - 直前に召喚されたレーン番号
+ * @param {number} [depth=0] - 誘発連鎖（チェーン）の深さ。無限ループ防止用
  * @returns {Promise<boolean>} 誘発による召喚が実行された場合は true
  */
 export async function checkAndTriggerCounter(
-  summonOwner,
-  summonedCard,
-  _summonedLane
+  initialSummonOwner,
+  initialSummonedCard,
+  _initialSummonedLane,
+  depth = 0
 ) {
-  if (!summonedCard || isTriggeringCounter) return false;
+  if (!initialSummonedCard || depth >= 10) return false;
 
-  const triggerOwner = summonOwner === 'blue' ? 'red' : 'blue';
+  const triggerOwner = initialSummonOwner === 'blue' ? 'red' : 'blue';
   const triggerHand =
     triggerOwner === 'blue' ? GameState.playerHand : GameState.enemyHand;
   if (!triggerHand || triggerHand.length === 0) return false;
 
-  // 手札に「誘発」スキルを持つカードが1枚もなければ何もしない
+  // 手札に「誘発」スキルを持つカードが1枚もなければ終了
   const hasTrigger = triggerHand.some((c) => c && hasSkill(c, 'trigger'));
   if (!hasTrigger) return false;
 
@@ -712,131 +640,122 @@ export async function checkAndTriggerCounter(
   let selectedIdx = -1;
   let chosenLane = -1;
 
-  isTriggeringCounter = true;
-  try {
-    if (
-      triggerOwner === 'red' &&
-      GameState.gameMode !== 'online' &&
-      GameState.gameMode !== 'pvp'
-    ) {
-      // 【敵AIの場合】
-      // 相手ターンの攻撃フェーズから次の自ターンの攻撃後までシミュレートし最善手（またはパス）を決定
-      const decision = evaluateBestTriggerMove(validTriggerCards, triggerOwner);
-      if (!decision || decision.cardIdx === -1 || decision.laneIdx === -1) {
+  if (
+    triggerOwner === 'red' &&
+    GameState.gameMode !== 'online' &&
+    GameState.gameMode !== 'pvp'
+  ) {
+    // 【敵AIの場合】
+    // 相手ターンの攻撃フェーズから次の自ターンの攻撃後までシミュレートし最善手（またはパス）を決定
+    const decision = evaluateBestTriggerMove(validTriggerCards, triggerOwner);
+    if (!decision || decision.cardIdx === -1 || decision.laneIdx === -1) {
+      return false; // AIがパス（誘発しない）を選択
+    }
+    selectedIdx = decision.cardIdx;
+    chosenLane = decision.laneIdx;
+    await sleep(300);
+  } else {
+    // 【プレイヤーの場合（オンライン/PVPのターンプレイヤー含む）】
+    const promptMsg = '誘発: 召喚するカードを1枚選んでください';
+
+    while (true) {
+      const arr = await waitPlayerHandSelection(
+        1,
+        triggerOwner,
+        false,
+        promptMsg
+      );
+      if (!arr || arr.length === 0) {
+        // キャンセル（誘発しない / パス）
         return false;
       }
-      selectedIdx = decision.cardIdx;
-      chosenLane = decision.laneIdx;
-      await sleep(300);
-    } else {
-      // 【プレイヤーの場合（オンライン/PVPのターンプレイヤー含む）】
-      while (true) {
-        const promptMsg =
-          '誘発: 召喚するカードを1枚選んでください（未選択完了でスキップ）';
-        const arr = await waitPlayerHandSelection(
-          1,
-          triggerOwner,
-          false,
-          promptMsg
-        );
-        if (!arr || arr.length === 0) {
-          // キャンセル（誘発しない）
-          return false;
+
+      const sIdx = arr[0];
+      const pickedCard = triggerHand[sIdx];
+
+      if (!pickedCard || !hasSkill(pickedCard, 'trigger')) {
+        if (typeof window.showAlertModal === 'function') {
+          window.showAlertModal('「誘発」スキルを持つカードのみ召喚できます。');
         }
-
-        const sIdx = arr[0];
-        const pickedCard = triggerHand[sIdx];
-
-        if (!pickedCard || !hasSkill(pickedCard, 'trigger')) {
-          if (typeof window.showAlertModal === 'function') {
-            window.showAlertModal(
-              '「誘発」スキルを持つカードのみ召喚できます。'
-            );
-          }
-          await sleep(500);
-          continue;
-        }
-
-        const validLanes = getValidSummonLanes(triggerOwner, pickedCard);
-        if (validLanes.length === 0) {
-          if (typeof window.showAlertModal === 'function') {
-            window.showAlertModal('このカードを召喚できるレーンがありません。');
-          }
-          await sleep(500);
-          continue;
-        }
-
-        GameState.placementMessage = `誘発: 「${pickedCard.name}」を召喚するレーンを選んでください`;
-        const selectedLanes = await waitPlayerLaneSelection(
-          1,
-          triggerOwner,
-          pickedCard,
-          false, // isLeaderSkill
-          validLanes, // tokenLanes
-          true, // checkConstraints
-          true, // canCancel
-          'キャンセル', // buttonText
-          true // _skipImmediateDiscard
-        );
-        GameState.placementMessage = null;
-
-        if (!selectedLanes || selectedLanes.length === 0) {
-          // レーン選択キャンセル時は手札選択に戻る
-          await sleep(200);
-          continue;
-        }
-
-        const candidateLane = selectedLanes[0];
-        // 上書き確認
-        const proceed = await confirmOverwrittenLane(
-          triggerOwner,
-          pickedCard,
-          candidateLane
-        );
-        if (!proceed) {
-          await sleep(200);
-          continue;
-        }
-
-        selectedIdx = sIdx;
-        chosenLane = candidateLane;
-        break;
+        await sleep(500);
+        continue;
       }
+
+      const validLanes = getValidSummonLanes(triggerOwner, pickedCard);
+      if (validLanes.length === 0) {
+        if (typeof window.showAlertModal === 'function') {
+          window.showAlertModal('このカードを召喚できるレーンがありません。');
+        }
+        await sleep(500);
+        continue;
+      }
+
+      GameState.placementMessage = `誘発: 「${pickedCard.name}」を召喚するレーンを選んでください`;
+      const selectedLanes = await waitPlayerLaneSelection(
+        1,
+        triggerOwner,
+        pickedCard,
+        false, // isLeaderSkill
+        validLanes, // tokenLanes
+        true, // checkConstraints
+        true, // canCancel
+        'キャンセル', // buttonText
+        true // _skipImmediateDiscard
+      );
+      GameState.placementMessage = null;
+
+      if (!selectedLanes || selectedLanes.length === 0) {
+        // レーン選択キャンセル時は手札選択に戻る
+        await sleep(200);
+        continue;
+      }
+
+      const candidateLane = selectedLanes[0];
+      // 上書き確認
+      const proceed = await confirmOverwrittenLane(
+        triggerOwner,
+        pickedCard,
+        candidateLane
+      );
+      if (!proceed) {
+        await sleep(200);
+        continue;
+      }
+
+      selectedIdx = sIdx;
+      chosenLane = candidateLane;
+      break;
     }
-
-    if (selectedIdx === -1 || chosenLane === -1) return false;
-
-    // 召喚確定：手札からカードを消費（1枚のみ）
-    const consumedCard = triggerHand.splice(selectedIdx, 1)[0];
-
-    // 手札に「虚空（パワー0）」トークンを追加
-    const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-      name: '虚空',
-      power: 0,
-    };
-    const voidToken = {
-      ...voidTpl,
-      id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_trigger`,
-      uid: `${triggerOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void_trigger`,
-      baseId: 'token_void',
-      filter: voidTpl.filter,
-      power: voidTpl.power,
-      currentPower: voidTpl.power,
-      basePower: voidTpl.power,
-      voiceCategory: voidTpl.voiceCategory || 'stone',
-      isToken: true,
-      isMorphToken: true,
-    };
-    triggerHand.push(voidToken);
-    renderHand();
-    await sleep(200);
-
-    // 召喚を実行
-    await executeTriggerSummon(triggerOwner, consumedCard, chosenLane);
-    return true;
-  } finally {
-    isTriggeringCounter = false;
   }
+
+  if (selectedIdx === -1 || chosenLane === -1) return false;
+
+  // 手札に「虚空（パワー0）」トークンを追加（playCardの前に追加し、召喚時スキル発動前に手札にある状態にする）
+  const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+    name: '虚空',
+    power: 0,
+  };
+  const voidToken = {
+    ...voidTpl,
+    id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_trigger`,
+    uid: `${triggerOwner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void_trigger`,
+    baseId: 'token_void',
+    filter: voidTpl.filter,
+    power: voidTpl.power,
+    currentPower: voidTpl.power,
+    basePower: voidTpl.power,
+    voiceCategory: voidTpl.voiceCategory || 'stone',
+    isToken: true,
+    isMorphToken: true,
+  };
+  triggerHand.push(voidToken);
+  renderHand();
+  await sleep(200);
+
+  // 招来や召喚と同様、共通の標準召喚関数 playCard を呼び出して召喚を実行
+  // （playCard 内部で手札消費、配置アニメーション、上書き、オンプレイ能力解決、相手の誘発チェックが自然に連鎖する）
+  await playCard(triggerOwner, selectedIdx, chosenLane, depth + 1);
+  return true;
 }
 
 /**
@@ -1442,9 +1361,10 @@ export function drawCard(owner) {
  * @param {string} o - プレイヤー種別 ('blue' | 'red')
  * @param {number} hI - 手札のインデックス番号
  * @param {number} l - プレイ対象のレーンインデックス (0~2)
+ * @param {number} [depth=0] - 誘発連鎖（チェーン）の深さ
  * @returns {Promise<boolean>} プレイ成功時は true、失敗/キャンセル時は false
  */
-export async function playCard(o, hI, l) {
+export async function playCard(o, hI, l, depth = 0) {
   const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand,
     b = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const playingCard = h[hI];
@@ -1686,7 +1606,7 @@ export async function playCard(o, hI, l) {
   trackMissionPower(GameState);
 
   // 相手の手札の「誘発（trigger）」スキルチェック
-  await checkAndTriggerCounter(o, c, l);
+  await checkAndTriggerCounter(o, c, l, depth);
 
   // 出現時スキルの発動（単一または複数。沈黙等でスキルが消去された場合は発動しない）
   if (hasActiveSkill(c)) {
