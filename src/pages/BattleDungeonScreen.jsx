@@ -85,6 +85,7 @@ export default function BattleDungeonScreen() {
       () => {
         playSound(SOUNDS.seClick);
         saveDungeonProgress();
+        GameState.gameMode = null;
         switchScreen('screen-mode-select');
         playSound(AUDIO_INSTANCES.bgmTitle);
       }
@@ -272,7 +273,14 @@ export default function BattleDungeonScreen() {
  * 再開・やり直し選択画面
  */
 function ResumeSelect() {
-  const [saveData, setSaveData] = useState(null);
+  const [saveData, setSaveData] = useState(() => {
+    try {
+      const json = localStorage.getItem('mini_card_battle_dungeon_save');
+      return json ? JSON.parse(json) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     const json = localStorage.getItem('mini_card_battle_dungeon_save');
@@ -304,15 +312,16 @@ function ResumeSelect() {
     }
   }, []);
   const pConf = useMemo(() => {
+    if (!saveData) return null;
     const charId =
-      saveData?.charId ||
-      saveData?.playerConfig?.id ||
-      saveData?.leaderId ||
+      saveData.charId ||
+      saveData.playerConfig?.id ||
+      saveData.leaderId ||
       'android';
     return hydratePlayerConfig(
       charId,
-      saveData?.playerConfig,
-      saveData?.playerSkins
+      saveData.playerConfig,
+      saveData.playerSkins
     );
   }, [saveData]);
   const pCurrentHp = saveData?.playerHP !== undefined ? saveData.playerHP : 20;
@@ -338,7 +347,7 @@ function ResumeSelect() {
   const handleCheckPocket = () => {
     playSound(SOUNDS.seClick);
     if (saveData) {
-      if (saveData.playerConfig) GameState.playerConfig = saveData.playerConfig;
+      if (pConf) GameState.playerConfig = pConf;
       if (window.showEnemyDeckModal) {
         window.showEnemyDeckModal(
           saveData.cards || [],
@@ -353,7 +362,7 @@ function ResumeSelect() {
   const handleCheckDeck = () => {
     playSound(SOUNDS.seClick);
     if (saveData) {
-      if (saveData.playerConfig) GameState.playerConfig = saveData.playerConfig;
+      if (pConf) GameState.playerConfig = pConf;
       if (window.showEnemyDeckModal) {
         const deck = saveData.deck || saveData.cards?.slice(0, 20) || [];
         window.showEnemyDeckModal(deck, 'デッキ確認', pConf?.leaderSkill, {

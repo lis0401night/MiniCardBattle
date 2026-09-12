@@ -1,5 +1,6 @@
 import { prepareBattle } from '../game/battle/index.js';
 import { resolveDungeonDeck } from '../game/battleDungeon.js';
+import { hydratePlayerConfig } from '../utils/constants/battleDungeon.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -733,8 +734,9 @@ export function loadDeck() {
     if (dungeonSaved) {
       try {
         const deckObj = JSON.parse(dungeonSaved);
-        if (deckObj && GameState.playerConfig?.id) {
-          deckObj.leaderId = GameState.playerConfig.id;
+        // 保存された leaderId が存在しない場合のみフォールバックする（初期値アイギスによる上書き破壊を防止）
+        if (deckObj && !deckObj.leaderId) {
+          deckObj.leaderId = GameState.playerConfig?.id || 'android';
         }
         GameState.decks = [deckObj];
       } catch {
@@ -753,10 +755,10 @@ export function loadDeck() {
               id: 'dungeon_deck',
               name: '試練の宮殿デッキ',
               leaderId:
-                GameState.playerConfig?.id ||
                 data.charId ||
                 data.playerConfig?.id ||
                 data.leaderId ||
+                GameState.playerConfig?.id ||
                 'android',
               playmatId: null,
               playerSkins: {},
@@ -891,13 +893,22 @@ export function loadDeck() {
     if (!GameState.playerConfig || GameState.appState !== 'select_player') {
       // トーナメント進行中はstartTournamentMatchで設定済みのplayerConfig（名前・スキン設定）を保持する
       // ストーリーモードはinitStoryMode/resumeStoryProgressで設定済みのplayerConfig（選択したリーダー）を保持する
+      // 試練の宮殿（ダンジョン）進行中はhydratePlayerConfig等で設定済みのplayerConfig（選択リーダー/モブリーダー）を保持する
       if (
         (GameState.gameMode === 'tournament' &&
           GameState.tournament &&
           GameState.playerConfig) ||
-        (GameState.gameMode === 'story' && GameState.playerConfig)
+        (GameState.gameMode === 'story' && GameState.playerConfig) ||
+        (GameState.gameMode === 'battle_dungeon' && GameState.playerConfig)
       ) {
         // playerConfigは維持し、上書きしない
+      } else if (GameState.gameMode === 'battle_dungeon') {
+        // ダンジョンモードで万一playerConfigが存在しない場合、hydratePlayerConfigでモブ/キャラ問わず安全に復元
+        GameState.playerConfig = hydratePlayerConfig(
+          activeDeck.leaderId,
+          undefined,
+          GameState.playerSkins
+        );
       } else {
         GameState.playerConfig = { ...templateChar };
       }

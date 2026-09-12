@@ -83,19 +83,42 @@ export function initBattleDungeon() {
   switchScreen('screen-battle-dungeon');
 }
 
+/**
+ * 試練の宮殿用デッキキャッシュ（mini_card_battle_dungeon_deck_obj）の leaderId を同期する
+ * キャッシュが存在しない場合は新規に作成・保存して同期漏れを防止する
+ * @param {string} charId - 同期するキャラクターIDまたはモブリーダーID
+ * @returns {void}
+ */
 function syncDungeonDeckLeaderId(charId) {
   if (!charId) return;
   try {
     const json = localStorage.getItem('mini_card_battle_dungeon_deck_obj');
-    if (json) {
-      const obj = JSON.parse(json);
-      if (obj && obj.leaderId !== charId) {
+    let obj = json ? JSON.parse(json) : null;
+    if (obj) {
+      if (obj.leaderId !== charId) {
         obj.leaderId = charId;
         localStorage.setItem(
           'mini_card_battle_dungeon_deck_obj',
           JSON.stringify(obj)
         );
       }
+    } else {
+      const deckCards = (GameState.playerDeckSelection || []).map(
+        (c) => (typeof c === 'string' ? c : c.id || c.baseId)
+      );
+      obj = {
+        id: 'dungeon_deck',
+        name: '試練の宮殿デッキ',
+        leaderId: charId,
+        playmatId: GameState.selectedPlaymatId || null,
+        playerSkins: {},
+        premiumCards: [...(GameState.premiumCards || [])],
+        cards: deckCards,
+      };
+      localStorage.setItem(
+        'mini_card_battle_dungeon_deck_obj',
+        JSON.stringify(obj)
+      );
     }
   } catch (e) {
     console.error('Failed to sync dungeon deck leaderId', e);

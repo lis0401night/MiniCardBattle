@@ -2036,7 +2036,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 0,
     skills: [{ id: 'trigger' }, { id: 'snipe', value: 2 }],
-    voiceCategory: 'magic',
+    voiceCategory: 'bird',
     flavor:
       '天を裂く雷鳴と共に落ちる稲妻。自然が振るう猛威の前では、いかなる者も逃れることはできない。',
   },
@@ -2143,7 +2143,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 3,
     skills: [{ id: 'reanimate' }],
-    voiceCategory: 'undead',
+    voiceCategory: 'sword',
     flavor: '廃都エリュシオンでは倒れた狩人たちの霊が力を貸してくれる。',
   },
   {
@@ -2305,7 +2305,7 @@ export const CARD_MASTER = [
       { id: 'draw', value: 1 },
       { id: 'draw', value: 1 },
     ],
-    voiceCategory: 'magic',
+    voiceCategory: 'human_female_cute',
     flavor:
       'この世界に呼び覚ました始まりの光。新たな運命の糸を静かに手繰り寄せる。',
   },
@@ -4063,7 +4063,7 @@ export const CARD_MASTER = [
         excludeBoard: true,
       },
     ],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'magic',
     flavor:
       '異なる意志、重なる信念。四人の絆が交錯する時、それぞれの技が美しく響き合う。',
   },
