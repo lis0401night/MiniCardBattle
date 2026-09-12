@@ -7,7 +7,7 @@ import { CARD_MASTER } from './cards.js';
 import { MAX_CARD_COPIES, PACK_EXCHANGE_COST } from './config.js';
 
 /**
- * 第1弾拡張パック（vol1:ビギニング）の封入カードID一覧（全43枚）
+ * 第1弾拡張パック（vol01:ビギニング）の封入カードID一覧（全43枚）
  * @type {ReadonlyArray<string>}
  */
 export const PACK_VOL01_CARD_IDS = Object.freeze([
@@ -98,7 +98,7 @@ export const PACK_MASTER = Object.freeze([
     id: 1,
     packId: 1,
     type: 'pack',
-    name: 'vol1:ビギニング',
+    name: 'vol01:ビギニング',
     description:
       'Ver 0.4.0で追加された全43種類のカードが封入された拡張パック。',
     cost: PACK_EXCHANGE_COST,

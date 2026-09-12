@@ -150,7 +150,7 @@ export default function PackCoverImage({
           decoding="async"
           style={{
             position: 'absolute',
-            top: '36%',
+            top: '40%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: '86%',

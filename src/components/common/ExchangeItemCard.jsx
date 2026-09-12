@@ -5,13 +5,13 @@ import {
   MAX_CARD_COPIES,
 } from '../../utils/constants/config.js';
 import {
-  getPlaymatImgUrl,
-  PLAYMAT_MASTER,
-} from '../../utils/constants/playmats.js';
-import {
   getPackById,
   PACK_VOL01_CARD_IDS,
 } from '../../utils/constants/packs.js';
+import {
+  getPlaymatImgUrl,
+  PLAYMAT_MASTER,
+} from '../../utils/constants/playmats.js';
 import {
   getCardImgUrl,
   isTransitioning,
@@ -99,7 +99,7 @@ export default function ExchangeItemCard({
   let displayDesc = item.description;
 
   if (isPack) {
-    displayName = item.name || 'vol1:ビギニング';
+    displayName = item.name || 'vol01:ビギニング';
     displayDesc = item.description || '';
   } else if (isCard || isPremium) {
     const cardTarget = isPremium

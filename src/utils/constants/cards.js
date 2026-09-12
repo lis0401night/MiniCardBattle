@@ -3797,7 +3797,7 @@ export const CARD_MASTER = [
   {
     id: 'angelpray',
     obtain: ['pack_1'],
-    name: '聖なる祈り',
+    name: '白き翼の福音',
     rarity: 3,
     power: 0,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],

@@ -583,7 +583,7 @@ function CardPreviewContent({
                       if (window.showEnemyDeckModal && styleProps.packCardIds) {
                         window.showEnemyDeckModal(
                           styleProps.packCardIds,
-                          `${styleProps.titleName || 'vol1:ビギニング'} 収録カード`,
+                          `${styleProps.titleName || 'vol01:ビギニング'} 収録カード`,
                           null,
                           {
                             isPlayerDeck: true,

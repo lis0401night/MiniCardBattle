@@ -331,7 +331,7 @@ export default function PackOpeningModal({
         /* パックタイトルロゴ画像（最前面レイヤー） */
         .pack-logo-image {
           position: absolute;
-          top: 36%;
+          top: 40%;
           left: 50%;
           transform: translate(-50%, -50%);
           width: 86%;
