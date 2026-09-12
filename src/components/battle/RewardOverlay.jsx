@@ -13,6 +13,10 @@ import { SOUNDS } from '../../utils/sounds.js';
 
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
 
+const MANUAL_REVEAL_DELAY_MS = 800; // 手動タップ時の公開遅延(ms)
+const AUTO_REVEAL_DELAY_MS = 600; // 自動開封時の公開遅延(ms)
+const TURNOVER_SE_DELAY_MS = 150; // めくり効果音の遅延(ms)
+
 export default function RewardOverlay() {
   const [isVisible, setIsVisible] = useState(false);
   const [card, setCard] = useState(null);
@@ -24,6 +28,26 @@ export default function RewardOverlay() {
   const clearAllTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+  }, []);
+
+  /**
+   * パック開封アニメーションシーケンスを開始します。
+   * カード飛び出し音の再生後、指定された遅延時間でカード公開フェーズへ移行します。
+   *
+   * @param {number} revealDelayMs - カード公開フェーズへ移行するまでの待機時間(ms)
+   */
+  const startOpeningAnimation = useCallback((revealDelayMs) => {
+    setPhase('animating');
+    const timer1 = setTimeout(() => {
+      playSound(SOUNDS.seTurnover);
+    }, TURNOVER_SE_DELAY_MS);
+    timersRef.current.push(timer1);
+
+    const timer2 = setTimeout(() => {
+      setPhase('reveal');
+      playSound(SOUNDS.seSkill || SOUNDS.seClick);
+    }, revealDelayMs);
+    timersRef.current.push(timer2);
   }, []);
 
   const setupReward = useCallback(
@@ -50,23 +74,13 @@ export default function RewardOverlay() {
 
         if (autoAnimate) {
           // パックのタップは最初の一回のみ。2枚目以降は自動で開封アニメーションへ進行
-          setPhase('animating');
-          const timer1 = setTimeout(() => {
-            playSound(SOUNDS.seTurnover);
-          }, 150);
-          timersRef.current.push(timer1);
-
-          const timer2 = setTimeout(() => {
-            setPhase('reveal');
-            playSound(SOUNDS.seSkill || SOUNDS.seClick);
-          }, 600);
-          timersRef.current.push(timer2);
+          startOpeningAnimation(AUTO_REVEAL_DELAY_MS);
         } else {
           setPhase('pack');
         }
       }
     },
-    [clearAllTimers]
+    [clearAllTimers, startOpeningAnimation]
   );
 
   useEffect(() => {
@@ -93,24 +107,13 @@ export default function RewardOverlay() {
 
   if (!isVisible || !card) return null;
 
+  /**
+   * パックをクリック（タップ）した際の手動開封ハンドラ
+   */
   const handlePackClick = () => {
     if (phase !== 'pack') return;
     playSound(SOUNDS.seClick);
-    setPhase('animating');
-
-    // カードがシュッと飛び出すタイミングでめくるSEを再生 (タップ音と重なりすぎないよう150ms遅延)
-    const timer1 = setTimeout(() => {
-      playSound(SOUNDS.seTurnover);
-    }, 150);
-    timersRef.current.push(timer1);
-
-    // 0.8秒後にカード表示フェーズへ移行
-    const timer2 = setTimeout(() => {
-      setPhase('reveal');
-      // 表示される瞬間はインパクトのある音を鳴らす
-      playSound(SOUNDS.seSkill || SOUNDS.seClick);
-    }, 800);
-    timersRef.current.push(timer2);
+    startOpeningAnimation(MANUAL_REVEAL_DELAY_MS);
   };
 
   const handleNext = (e) => {

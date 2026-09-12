@@ -213,9 +213,12 @@ function sanitizeDeckList($rawDeck): array {
     return sortDeckCardsByMasterOrder($result);
 }
 
+/** 登録デッキの最大保存スロット数（クライアント側 config.js の MAX_DECK_SLOTS と同期すること） */
+const MAX_REGISTERED_DECKS = 50;
+
 /**
  * プレイヤーの全登録デッキデータをサニタイズします。
- * 最大50スロットまでのデッキ配列を検証し、各デッキのリーダーIDやカードリストを正規化します。
+ * 最大スロット数（MAX_REGISTERED_DECKS）までのデッキ配列を検証し、各デッキのリーダーIDやカードリストを正規化します。
  * 
  * @param mixed $decks 入力デッキ配列
  * @return array サニタイズ済みデッキ配列
@@ -225,7 +228,7 @@ function sanitizeRegisteredDecks($decks): array {
         return [];
     }
     $sanitized = [];
-    $maxDecks = 50;
+    $maxDecks = MAX_REGISTERED_DECKS;
     $count = 0;
 
     foreach ($decks as $deck) {

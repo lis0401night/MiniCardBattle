@@ -35,11 +35,10 @@ export default function ExchangeQuantityModal({
   onCancel,
 }) {
   const cost = Number(item?.cost) || 0;
-  const isPack =
-    item?.type === 'pack' ||
-    Boolean(item?.packId || item?.packObj || item?.cardIds);
-  const isCard = item?.type === 'card' && !isPack;
-  const itemType = isPack ? 'pack' : isCard ? 'card' : item?.type;
+  // アイテム種別は item.type を唯一の判定基準とする（構造からの推測を行わない）
+  const itemType = item?.type;
+  const isPack = itemType === 'pack';
+  const isCard = itemType === 'card';
   const isOneTimeItem =
     itemType === 'skin' ||
     itemType === 'premium' ||

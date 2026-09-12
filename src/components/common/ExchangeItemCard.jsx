@@ -191,7 +191,8 @@ export default function ExchangeItemCard({
         logoUrl: item.logoUrl || item.packObj?.logoUrl,
         packCardIds: item.packObj?.cardIds || item.cardIds || [],
         packCardCount:
-          (item.packObj?.cardIds || item.cardIds || []).length || 43,
+          (item.packObj?.cardIds || item.cardIds || []).length ||
+          PACK_VOL01_CARD_IDS.length,
         imgUrl: originalImgUrl,
         onConfirm: () => {
           onExchange?.({

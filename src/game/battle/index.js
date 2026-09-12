@@ -11,6 +11,7 @@ import {
   registerDiscardCard,
   registerTriggerMadnessSkill,
   registerDiscardCardsFromDeck,
+  registerDiscardCardsFromHand,
 } from '../eventRenderer.js';
 import { registerQueueDependencies } from './battleQueue.js';
 import {
@@ -18,6 +19,7 @@ import {
   discardCard,
   triggerMadnessSkill,
   discardCardsFromDeck,
+  discardCardsFromHand,
 } from './battleCombat.js';
 import { endTurnLogic } from './battleTurn.js';
 import { checkWinCondition } from './battleResult.js';
@@ -136,6 +138,7 @@ export function initBattleModule() {
   registerDiscardCard(discardCard);
   registerTriggerMadnessSkill(triggerMadnessSkill);
   registerDiscardCardsFromDeck(discardCardsFromDeck);
+  registerDiscardCardsFromHand(discardCardsFromHand);
 }
 
 // モジュール読み込み時にも安全に初期化を実行する

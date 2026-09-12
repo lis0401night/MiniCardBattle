@@ -109,10 +109,6 @@ export function goToModeSelect() {
   switchScreen('screen-mode-select');
 }
 
-export function showBeginnerGuide() {
-  playSound(SOUNDS.seClick);
-  switchScreen('screen-beginner-guide');
-}
 
 export function showTutorialSelect() {
   playSound(SOUNDS.seClick);

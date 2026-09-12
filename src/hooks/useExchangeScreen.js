@@ -260,10 +260,17 @@ export function useExchangeScreen({
     const isPremium = item.type === 'premium';
     let isAlreadyUnlocked = false;
 
-    const safeCount = isCard ? Math.max(1, Math.floor(Number(count) || 1)) : 1;
+    // 最新のインベントリから所持枚数と残り交換可能枠を安全に算出
+    const currentCardCount = isCard
+      ? getLatestOwnership().inventory[item.id] || 0
+      : 0;
+    const remainingCount = Math.max(0, MAX_CARD_COPIES - currentCardCount);
+    const requestedCount = Math.max(1, Math.floor(Number(count) || 1));
+    // 請求個数は残り枠を上限として安全に制限（過剰請求・ポイント消失バグを防止）
+    const safeCount = isCard ? Math.min(requestedCount, remainingCount) : 1;
 
     if (isCard) {
-      isAlreadyUnlocked = (inventory[item.id] || 0) >= MAX_CARD_COPIES;
+      isAlreadyUnlocked = safeCount === 0;
     } else if (isPlaymat) {
       isAlreadyUnlocked = unlockedPlaymats.includes(item.id);
     } else if (isIcon) {

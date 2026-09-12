@@ -17,6 +17,7 @@ import { playCardVoice } from '../utils/constants/voices.js';
 import {
   addDamagePopupHook,
   applyEquipMerge,
+  clearCardAbilities,
   createDamagePopup,
   getSeededRandom,
   hasSkill,
@@ -80,6 +81,18 @@ let discardCardsFromDeckRef = null;
  */
 export function registerDiscardCardsFromDeck(fn) {
   discardCardsFromDeckRef = fn;
+}
+
+let discardCardsFromHandRef = null;
+/**
+ * 循環参照を回避しつつ、battleCombat.jsのdiscardCardsFromHand関数を登録するための依存性注入用関数。
+ * 手札からのカード破棄処理および狂気スキルの召喚を一元管理します。
+ *
+ * @param {Function} fn - discardCardsFromHand関数
+ * @returns {void}
+ */
+export function registerDiscardCardsFromHand(fn) {
+  discardCardsFromHandRef = fn;
 }
 
 /**
@@ -626,6 +639,13 @@ export async function playEvents(events) {
           if (idx !== -1) {
             const discardedCard = hand.splice(idx, 1)[0];
 
+            // 破棄と狂気召喚の解決は共通関数（discardCardsFromHand）へ委譲し、処理順序・初期化処理を一元化する
+            if (discardCardsFromHandRef) {
+              await discardCardsFromHandRef(ev.side, [discardedCard]);
+              break;
+            }
+
+            // フォールバック: discardCardsFromHandRef が未登録の場合
             // 手札から捨てられた時かつ「狂気」を持つ場合、召喚を試行
             if (
               !discardedCard.isToken &&
@@ -643,34 +663,22 @@ export async function playEvents(events) {
               }
             }
 
-            const discardArr =
-              ev.side === 'blue'
-                ? GameState.playerDiscard
-                : GameState.enemyDiscard;
-
-            // 墓地送り時の完全リセット
-            const masterData = CARD_MASTER.find(
-              (m) => m.id === (discardedCard.baseId || discardedCard.id)
-            );
-            let restoredCard;
-            if (masterData) {
-              restoredCard = JSON.parse(JSON.stringify(masterData));
-              restoredCard.uid = discardedCard.uid;
-              restoredCard.owner = ev.side;
-              restoredCard.baseId = discardedCard.baseId || discardedCard.id;
-              if (discardedCard.isPremium !== undefined)
-                restoredCard.isPremium = discardedCard.isPremium;
-              restoredCard.basePower = restoredCard.power;
-              restoredCard.currentPower = restoredCard.power;
+            if (discardCardRef) {
+              await discardCardRef(
+                ev.side,
+                discardedCard,
+                undefined,
+                false,
+                false
+              );
             } else {
-              restoredCard = { ...discardedCard };
-              if ('basePower' in restoredCard)
-                restoredCard.power = restoredCard.basePower;
-              restoredCard.currentPower = restoredCard.power;
-              restoredCard.skills = [];
-            }
-            if (!discardedCard.isToken) {
-              discardArr.push(restoredCard);
+              const discardArr =
+                ev.side === 'blue'
+                  ? GameState.playerDiscard
+                  : GameState.enemyDiscard;
+              if (!discardedCard.isToken) {
+                discardArr.push(discardedCard);
+              }
             }
           }
         }
@@ -681,15 +689,7 @@ export async function playEvents(events) {
       case 'oblivion_clear': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-        const targetCard = board[ev.lane];
-        if (targetCard) {
-          targetCard.skills = [];
-          targetCard.choices = [];
-          targetCard.choices2 = null;
-          if ('summonId' in targetCard) delete targetCard.summonId;
-          targetCard.stunTurns = 0;
-          targetCard.stunAppliedThisTurn = false;
-        }
+        clearCardAbilities(board[ev.lane]);
 
         if (window.updateCardVisualsReact) {
           window.updateCardVisualsReact(ev.lane, sidePrefix);
@@ -714,15 +714,7 @@ export async function playEvents(events) {
       case 'silence_clear': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-        const targetCard = board[ev.lane];
-        if (targetCard) {
-          targetCard.skills = [];
-          targetCard.choices = [];
-          targetCard.choices2 = null;
-          if ('summonId' in targetCard) delete targetCard.summonId;
-          targetCard.stunTurns = 0;
-          targetCard.stunAppliedThisTurn = false;
-        }
+        clearCardAbilities(board[ev.lane]);
 
         if (window.updateCardVisualsReact) {
           window.updateCardVisualsReact(ev.lane, sidePrefix);

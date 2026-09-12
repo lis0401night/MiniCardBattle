@@ -167,6 +167,7 @@ export default function PointConversionModal({
    * 指定されたすべてのモードのポイントを減算・保存し、
    * 整合性チェック用累計変換キーを加算保存、サーバー非同期同期、
    * および共通ポイントの加算保存を一括でアトミックに実行します。
+   * 書き込み前に全キーのスナップショットを取得し、途中で例外が発生した場合は完全復元（ロールバック）します。
    */
   const handleExecuteBatchConversion = useCallback(async () => {
     if (!canConvert || isProcessing) return;
@@ -174,10 +175,41 @@ export default function PointConversionModal({
     setIsProcessing(true);
     playSound(SOUNDS?.seClick);
 
+    // 失敗時に完全復元するため、書き換える全キーの現在値を退避するスナップショット
+    const snapshot = new Map();
+
+    /**
+     * 指定されたキーの現在のLocalStorageの値をスナップショットに退避する。
+     *
+     * @param {string} key - 退避対象のLocalStorageキー
+     * @returns {void}
+     */
+    const backupKey = (key) => {
+      if (key && !snapshot.has(key)) {
+        snapshot.set(key, localStorage.getItem(key));
+      }
+    };
+
+    /**
+     * 退避したスナップショットの値へLocalStorageを完全にロールバック（復元）する。
+     *
+     * @returns {void}
+     */
+    const rollback = () => {
+      snapshot.forEach((value, key) => {
+        if (value === null) {
+          localStorage.removeItem(key);
+        } else {
+          localStorage.setItem(key, value);
+        }
+      });
+    };
+
     try {
       const conversionSummary = {};
+      const pendingServerSyncs = [];
 
-      // 1. 各モードのポイント減算・累計変換キー記録・サーバー同期
+      // 1. 各モードのポイント減算・累計変換キー記録（サーバー同期はローカル確定後に行う）
       for (const mode of POINT_CONVERSION_MODES) {
         const convertAmt = amounts[mode.id] || 0;
         if (convertAmt <= 0) continue;
@@ -186,15 +218,23 @@ export default function PointConversionModal({
         const totalPts = modeDataMap[mode.id]?.total || currentPts;
         const newSourcePoints = currentPts - convertAmt;
 
+        // 書き換え対象キー（所持ポイントおよび変換累計ポイント）のスナップショットを退避
+        backupKey(mode.pointsKey);
+        backupKey(mode.convertedKey);
+
         // LocalStorageの所持ポイントを更新
         localStorage.setItem(mode.pointsKey, String(newSourcePoints));
 
         // 整合性チェック（reconcile）用の変換累計消費ポイントを加算保存
         addConvertedPointsByMode(mode.id, convertAmt);
 
-        // サーバーへ同期（バックグラウンド非同期）
+        // サーバー同期パラメータを保留リストに記録
         if (mode.apiEndpoint) {
-          savePointsToServer(mode.apiEndpoint, newSourcePoints, totalPts);
+          pendingServerSyncs.push([
+            mode.apiEndpoint,
+            newSourcePoints,
+            totalPts,
+          ]);
         }
 
         conversionSummary[mode.id] = {
@@ -213,29 +253,42 @@ export default function PointConversionModal({
       const newCommonCurrent = curCommon + totalConvertAmount;
       const newCommonTotal = totCommon + totalConvertAmount;
 
+      // 共通ポイントキーのスナップショットを退避
+      backupKey(COMMON_POINTS_KEY);
+      backupKey(COMMON_TOTAL_POINTS_KEY);
+
       localStorage.setItem(COMMON_POINTS_KEY, String(newCommonCurrent));
       localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(newCommonTotal));
 
-      // 共通ポイントのサーバー同期
-      savePointsToServer(
+      // 共通ポイントのサーバー同期を保留リストに追加
+      pendingServerSyncs.push([
         'update_common_points.php',
         newCommonCurrent,
-        newCommonTotal
-      );
+        newCommonTotal,
+      ]);
 
-      // 3. 成功SE再生
+      // 3. ローカルのデータ整合性が完全に確定した後にのみ、サーバー同期を一括発行する
+      pendingServerSyncs.forEach(([endpoint, cur, tot]) => {
+        Promise.resolve(savePointsToServer(endpoint, cur, tot)).catch((e) => {
+          console.error('[PointConversion] サーバー同期に失敗しました:', e);
+        });
+      });
+
+      // 4. 成功SE再生
       playSound(SOUNDS?.seLevelUp || SOUNDS?.seSkill);
 
-      // 4. 親コンポーネントへのコールバック通知
+      // 5. 親コンポーネントへのコールバック通知
       if (typeof onSuccess === 'function') {
         onSuccess(conversionSummary, totalConvertAmount, newCommonCurrent);
       }
 
-      // 5. モーダルを閉じる
+      // 6. モーダルを閉じる
       if (typeof onClose === 'function') {
         onClose();
       }
     } catch (err) {
+      // ローカルデータを変換前の状態へ完全復元（ロールバック）する
+      rollback();
       console.error(
         '[PointConversion] 一括ポイント変換中にエラーが発生しました:',
         err
@@ -277,7 +330,7 @@ export default function PointConversionModal({
         style={{
           width: '95%',
           maxWidth: '380px',
-          maxHeight: '90vh',
+          maxHeight: '90dvh',
           background: 'linear-gradient(135deg, #1e293b, #0f172a)',
           border: '1px solid #475569',
           borderRadius: '12px',

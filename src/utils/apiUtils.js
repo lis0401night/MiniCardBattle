@@ -423,38 +423,45 @@ export function calculateFortuneTotalPointsFromCleared(
 }
 
 /**
+ * 指定されたモードが共通ポイント変換対象として許可されているか検証し、その設定を取得します（ホワイトリスト方式）。
+ *
+ * @param {string} mode - モード識別子
+ * @returns {Object|null} 変換モード設定オブジェクト（未許可モードまたは不正な値の場合はnull）
+ */
+export function getPointConversionModeConfig(mode) {
+  if (!mode || typeof mode !== 'string') return null;
+  return POINT_CONVERSION_MODES.find((m) => m.id === mode) || null;
+}
+
+/**
  * 指定されたモードの共通ポイント変換累計ポイントを取得します。
+ * ホワイトリストに登録された許可モードのみを対象とし、未登録モードは 0 を返します。
  *
  * @param {string} mode - モード識別子 ('defense' | 'challenge' | 'tournament' | 'high_difficulty')
  * @returns {number} 共通ポイントへ変換した累計ポイント数
  */
 export function getConvertedPointsByMode(mode) {
-  if (!mode || mode === 'fortune') return 0;
-  const config = POINT_CONVERSION_MODES.find((m) => m.id === mode);
-  const key = config
-    ? config.convertedKey
-    : `mini_card_battle_${mode}_converted_points`;
-  return parseInt(localStorage.getItem(key), 10) || 0;
+  const config = getPointConversionModeConfig(mode);
+  if (!config) return 0;
+  return parseInt(localStorage.getItem(config.convertedKey), 10) || 0;
 }
 
 /**
  * 指定されたモードの共通ポイント変換累計ポイントを加算して永続化します。
+ * ホワイトリストに登録された許可モードのみを対象とします。
  *
  * @param {string} mode - モード識別子 ('defense' | 'challenge' | 'tournament' | 'high_difficulty')
  * @param {number} amount - 加算するポイント数
- * @returns {number} 加算後の累計ポイント数
+ * @returns {number} 加算後の累計ポイント数（未許可モードは 0）
  */
 export function addConvertedPointsByMode(mode, amount) {
-  if (!mode || mode === 'fortune') return 0;
+  const config = getPointConversionModeConfig(mode);
+  if (!config) return 0;
   const addVal = Math.max(0, parseInt(amount, 10) || 0);
   if (addVal <= 0) return getConvertedPointsByMode(mode);
-  const config = POINT_CONVERSION_MODES.find((m) => m.id === mode);
-  const key = config
-    ? config.convertedKey
-    : `mini_card_battle_${mode}_converted_points`;
-  const current = parseInt(localStorage.getItem(key), 10) || 0;
+  const current = parseInt(localStorage.getItem(config.convertedKey), 10) || 0;
   const next = current + addVal;
-  localStorage.setItem(key, String(next));
+  localStorage.setItem(config.convertedKey, String(next));
   return next;
 }
 

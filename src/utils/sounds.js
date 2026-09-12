@@ -688,6 +688,29 @@ export async function recreateAudioSystem() {
 }
 
 /**
+ * 画面IDと標準BGMキーの対応マップ
+ * 未定義・未登録の画面IDはタイトルBGM（bgmTitle）へフォールバックします。
+ * @type {Readonly<Record<string, string>>}
+ */
+const SCREEN_BGM_KEY_MAP = Object.freeze({
+  'screen-defense-menu': 'bgmDefense',
+  'screen-tournament-menu': 'bgmTournament1',
+  'screen-fortune-menu': 'bgmFortune1',
+  'screen-high-difficulty-menu': 'bgmHighDifficulty',
+  'screen-dungeon-menu': 'bgmChallenge',
+  'screen-challenge-unlock': 'bgmChallenge',
+  'screen-gallery-menu': 'bgmGallery',
+  'screen-online-menu': 'bgmOnline',
+  'screen-common-exchange': 'bgmShop',
+  'screen-shop-menu': 'bgmShop',
+  'screen-exchange': 'bgmShop',
+  'screen-challenge-exchange': 'bgmShop',
+  'screen-tournament-exchange': 'bgmShop',
+  'screen-fortune-exchange': 'bgmShop',
+  'screen-high-difficulty-exchange': 'bgmShop',
+});
+
+/**
  * 画面IDに対応する標準BGMオーディオインスタンスを取得します。
  * メニュー画面や交換所からの復帰時など、遷移先画面に応じたBGM特定に利用します。
  *
@@ -695,36 +718,8 @@ export async function recreateAudioSystem() {
  * @returns {HTMLAudioElement|null} 対応するBGMインスタンス（見つからない場合はタイトルBGMまたはnull）
  */
 export function getScreenBgm(screenId) {
-  switch (screenId) {
-    case 'screen-defense-menu':
-      return AUDIO_INSTANCES.bgmDefense || null;
-    case 'screen-tournament-menu':
-      return AUDIO_INSTANCES.bgmTournament1 || null;
-    case 'screen-fortune-menu':
-      return AUDIO_INSTANCES.bgmFortune1 || null;
-    case 'screen-high-difficulty-menu':
-      return AUDIO_INSTANCES.bgmHighDifficulty || null;
-    case 'screen-dungeon-menu':
-    case 'screen-challenge-unlock':
-      return AUDIO_INSTANCES.bgmChallenge || null;
-    case 'screen-gallery-menu':
-      return AUDIO_INSTANCES.bgmGallery || null;
-    case 'screen-online-menu':
-      return AUDIO_INSTANCES.bgmOnline || null;
-    case 'screen-common-exchange':
-    case 'screen-shop-menu':
-    case 'screen-exchange':
-    case 'screen-challenge-exchange':
-    case 'screen-tournament-exchange':
-    case 'screen-fortune-exchange':
-    case 'screen-high-difficulty-exchange':
-      return AUDIO_INSTANCES.bgmShop || null;
-    case 'screen-mode-select':
-    case 'screen-solo-menu':
-    case 'screen-event-menu':
-    default:
-      return AUDIO_INSTANCES.bgmTitle || null;
-  }
+  const bgmKey = (screenId && SCREEN_BGM_KEY_MAP[screenId]) || 'bgmTitle';
+  return AUDIO_INSTANCES[bgmKey] || AUDIO_INSTANCES.bgmTitle || null;
 }
 
 // 確実なオーディアンロックのためのネイティブDOMイベント監視 (React合成イベントの外側で処理)

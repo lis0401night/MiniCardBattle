@@ -3251,8 +3251,8 @@ export const CARD_MASTER = [
     power: 0,
     skills: [{ id: 'choice', value: 2 }],
     choices: [
-      { id: 'call', value: 1, targetKeyword: '傭兵' },
-      { id: 'explore', value: 1, targetKeyword: '傭兵' },
+      { id: 'call', targetKeyword: '傭兵' },
+      { id: 'explore', targetKeyword: '傭兵' },
       { id: 'support', value: 2 },
       { id: 'heal', value: 2 },
     ],
@@ -3346,7 +3346,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_female_cool',
     flavor:
-      '将軍の密命を受け、影で暗躍する女忍者。音もなく標的に忍び寄り、冷たい刃で確実に息の根を止める。。',
+      '将軍の密命を受け、影で暗躍する女忍者。音もなく標的に忍び寄り、冷たい刃で確実に息の根を止める。',
   },
   {
     id: 'falconpriest',
@@ -3354,7 +3354,7 @@ export const CARD_MASTER = [
     name: '隼の神官',
     rarity: 3,
     power: 4,
-    skills: [{ id: 'assemble', targetId: 'falcon' }],
+    skills: [{ id: 'assemble', targetIds: ['falcon'] }],
     voiceCategory: 'human_male_ikemen',
     flavor: '隼と視覚を共有し、砂漠に潜むあらゆる脅威を見通す。',
   },
@@ -3485,7 +3485,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 2,
     skills: [
-      { id: 'union', targetId: 'gearB', summonId: 'token_gearC' },
+      { id: 'union', targetIds: ['gearB'], summonId: 'token_gearC' },
       { id: 'spread', value: 1 },
     ],
     voiceCategory: 'machine_new',
@@ -3498,7 +3498,7 @@ export const CARD_MASTER = [
     rarity: 4,
     power: 8,
     skills: [
-      { id: 'union', targetId: 'gearA', summonId: 'token_gearC' },
+      { id: 'union', targetIds: ['gearA'], summonId: 'token_gearC' },
       { id: 'defender' },
       { id: 'artillery', value: 1 },
     ],
@@ -3515,7 +3515,7 @@ export const CARD_MASTER = [
     skills: [
       {
         id: 'union',
-        targetId: 'token_drone',
+        targetIds: ['token_drone'],
         summonId: 'token_reinforceddrone',
       },
       { id: 'snipe', value: 2 },

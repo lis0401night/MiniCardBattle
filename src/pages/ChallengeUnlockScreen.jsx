@@ -14,6 +14,31 @@ const UNLOCK_ITEMS = [
   { id: 'char_legend', name: 'レジェンドのリーダーを追加', cost: 80 },
 ];
 
+const DEFAULT_ON_UNLOCK_ID = 'char_bronze';
+
+/**
+ * 指定された解放項目の有効/無効状態を解決します。
+ * 未設定の場合はデフォルトON項目（ブロンズリーダー）のみ true を返します。
+ *
+ * @param {Record<string, any>} [unlocks={}] - 解放状態辞書
+ * @param {string} id - 解放項目ID
+ * @returns {boolean} 有効な場合は true、無効な場合は false
+ */
+function resolveUnlockState(unlocks, id) {
+  if (!unlocks || typeof unlocks !== 'object') {
+    return id === DEFAULT_ON_UNLOCK_ID;
+  }
+  return unlocks[id] !== undefined
+    ? Boolean(unlocks[id])
+    : id === DEFAULT_ON_UNLOCK_ID;
+}
+
+/**
+ * 試練の宮殿（ダンジョン）開放設定画面コンポーネント
+ * 総試練ポイントに応じたリーダーや敵デッキの追加・トグル設定画面を提供する。
+ *
+ * @returns {import('react').ReactElement} 開放設定画面
+ */
 export default function ChallengeUnlockScreen() {
   const [totalPoints] = useState(
     () =>
@@ -27,19 +52,23 @@ export default function ChallengeUnlockScreen() {
       const saved =
         JSON.parse(localStorage.getItem('mini_card_battle_dungeon_unlocks')) ||
         {};
-      if (saved.char_bronze === undefined) {
-        saved.char_bronze = 1;
+      if (saved[DEFAULT_ON_UNLOCK_ID] === undefined) {
+        saved[DEFAULT_ON_UNLOCK_ID] = 1;
       }
       return saved;
     } catch {
-      return { char_bronze: 1 };
+      return { [DEFAULT_ON_UNLOCK_ID]: 1 };
     }
   });
 
+  /**
+   * 指定項目の開放状態（ON/OFF）をトグルして永続化します。
+   *
+   * @param {string} id - 開放項目ID
+   */
   const toggleUnlock = (id) => {
     playSound(SOUNDS?.seClick);
-    const currentVal =
-      unlocks[id] !== undefined ? Boolean(unlocks[id]) : id === 'char_bronze';
+    const currentVal = resolveUnlockState(unlocks, id);
     const nextVal = currentVal ? 0 : 1;
     const nextState = { ...unlocks, [id]: nextVal };
     setUnlocks(nextState);
@@ -105,10 +134,7 @@ export default function ChallengeUnlockScreen() {
         >
           {UNLOCK_ITEMS.map((item) => {
             const isUnlocked = totalPoints >= item.cost;
-            const isON =
-              unlocks[item.id] !== undefined
-                ? Boolean(unlocks[item.id])
-                : item.id === 'char_bronze';
+            const isON = resolveUnlockState(unlocks, item.id);
 
             return (
               <div

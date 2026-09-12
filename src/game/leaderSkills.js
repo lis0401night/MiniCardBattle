@@ -1013,13 +1013,17 @@ export async function executeLeaderSkillAction(
       else c.power += 2;
     });
 
+    // 相手の手札からランダムに最大2枚を取り出し、虚空トークンを補充した上で一括破棄（狂気召喚含む）を実行
     let opDc = 0;
+    const opDroppedCards = [];
     for (let i = 0; i < 2; i++) {
       if (opH.length > 0) {
         const randIdx = Math.floor(getSeededRandom() * opH.length);
         const discarded = opH.splice(randIdx, 1)[0];
-        await discardCard(opId, discarded, undefined, false, true);
-        opDc++;
+        if (discarded) {
+          opDroppedCards.push(discarded);
+          opDc++;
+        }
       }
     }
 
@@ -1039,6 +1043,11 @@ export async function executeLeaderSkillAction(
           currentPower: voidTpl.power ?? 0,
         });
       }
+    }
+
+    // 捨てられたカード群を一括破棄し、狂気スキル等の割り込み召喚を安全に解決
+    if (opDroppedCards.length > 0) {
+      await discardCardsFromHand(opId, opDroppedCards);
     }
     renderHand();
   } else if (action === 'void_purge') {

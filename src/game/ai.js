@@ -268,7 +268,7 @@ export function evaluateBestLanesForToken(
  * どのカードをどのレーンに出すかを評価・決定する。
  *
  * @param {Array<object>} validTriggerCards - 手札にある召喚可能な誘発スキル所持カード群
- * @param {string} [owner='red'] - 誘発を行う陣営 ('red' | 'blue')
+ * @param {string} [owner='red'] - 誘発を行う陣営。AI側の 'red' のみ対応（それ以外は null を返却）
  * @returns {{ cardIdx: number, laneIdx: number, score: number }|null} 最善手（パスまたは不可なら null）
  */
 export function evaluateBestTriggerMove(validTriggerCards, owner = 'red') {

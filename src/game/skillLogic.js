@@ -22,13 +22,13 @@ import {
 } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  clearCardAbilities,
   createDamagePopup,
   getCardImgUrl,
   getSeededRandom,
   getSkillTargetLabel,
   getSkillValue,
   hasSkill,
-  hasSkillDeep,
   playSound,
   shuffleArray,
   sleep,
@@ -39,6 +39,8 @@ import {
   matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
+  matchesResurrectTarget,
+  matchesSummonTarget,
   matchesUnionMaterial,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
@@ -664,48 +666,14 @@ export async function resolveActiveSkillEffect(
           .filter(Boolean)
       : [];
 
-    // 手札内の有効なカード判定
-    const isValidSummonCard = (card) => {
-      if (!card) return false;
-      if (isExcludeBoard) {
-        if (
-          presentBoardIds.includes(card.id) ||
-          (card.baseId && presentBoardIds.includes(card.baseId))
-        ) {
-          return false;
-        }
-      }
-      if (isSelf && selfId) {
-        return matchesCardId(card, selfId);
-      }
-      if (isTargetToken) {
-        const isTok = Boolean(
-          card.isToken ||
-          card.id?.startsWith('token_') ||
-          card.baseId?.startsWith('token_')
-        );
-        if (!isTok) return false;
-      }
-      if (Array.isArray(targetIds) && targetIds.length > 0) {
-        return matchesCardIds(card, targetIds);
-      }
-      if (typeof targetKeyword === 'string' && targetKeyword) {
-        return matchesCardKeyword(card, targetKeyword);
-      }
-      if (Array.isArray(targetSkills) && targetSkills.length > 0) {
-        const masterCard = CARD_MASTER?.find((m) => m.id === card.id);
-        const hasMatchingSkill = targetSkills.some(
-          (sId) =>
-            hasSkillDeep(card, sId) ||
-            (masterCard && hasSkillDeep(masterCard, sId))
-        );
-        if (!hasMatchingSkill) return false;
-      }
-      if (reqPower !== undefined && reqPower !== null) {
-        return (card.power || 0) <= reqPower;
-      }
-      return true;
-    };
+    /**
+     * 手札内のカードが召喚スキルの対象として有効か判定する（共通関数 matchesSummonTarget に委譲）。
+     *
+     * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+     * @returns {boolean} 召喚対象として有効であれば true
+     */
+    const isValidSummonCard = (card) =>
+      matchesSummonTarget(card, currentSkill, { selfId, presentBoardIds });
 
     if (
       o === 'red' &&
@@ -762,13 +730,15 @@ export async function resolveActiveSkillEffect(
             ? `召喚: 「${targetSkillNames}」能力を持つカードを1枚まで選んでください`
             : Array.isArray(targetIds) && targetIds.length > 0
               ? '召喚: 召喚するカードを1枚まで選んでください'
-              : isTargetToken
-                ? reqPower !== undefined && reqPower !== null
-                  ? `召喚: パワー${reqPower}以下のトークンカードを1枚まで選んでください`
-                  : '召喚: トークンカードを1枚まで選んでください'
-                : reqPower !== undefined && reqPower !== null
-                  ? `パワー${reqPower}以下のカードを1枚まで選んでください`
-                  : '召喚: 召喚するカードを1枚まで選んでください';
+              : targetKeyword
+                ? `召喚: 「${targetKeyword}」カードを1枚まで選んでください`
+                : isTargetToken
+                  ? reqPower !== undefined && reqPower !== null
+                    ? `召喚: パワー${reqPower}以下のトークンカードを1枚まで選んでください`
+                    : '召喚: トークンカードを1枚まで選んでください'
+                  : reqPower !== undefined && reqPower !== null
+                    ? `パワー${reqPower}以下のカードを1枚まで選んでください`
+                    : '召喚: 召喚するカードを1枚まで選んでください';
           const arr = await waitPlayerHandSelection(1, o, false, promptMsg);
           if (!arr || arr.length === 0) {
             break; // キャンセル
@@ -795,9 +765,11 @@ export async function resolveActiveSkillEffect(
                       ? `「${targetSkillNames}」能力を持つカードのみ召喚できます。`
                       : Array.isArray(targetIds) && targetIds.length > 0
                         ? '指定されたカードのみ召喚できます。'
-                        : reqPower !== undefined && reqPower !== null
-                          ? `パワー${reqPower}以下のカードのみ召喚できます。`
-                          : '召喚の対象外のカードです。';
+                        : targetKeyword
+                          ? `「${targetKeyword}」カードのみ召喚できます。`
+                          : reqPower !== undefined && reqPower !== null
+                            ? `パワー${reqPower}以下のカードのみ召喚できます。`
+                            : '召喚の対象外のカードです。';
               window.showAlertModal(alertMsg);
             }
             await sleep(500);
@@ -1671,13 +1643,7 @@ export async function resolveActiveSkillEffect(
 
     if (targetCard) {
       // 正面のカードの全ての能力をなくし、一時的効果もクリアする
-      targetCard.skills = [];
-      targetCard.choices = [];
-      targetCard.choices2 = null;
-      if ('summonId' in targetCard) delete targetCard.summonId;
-      targetCard.stunTurns = 0;
-      targetCard.stunAppliedThisTurn = false;
-      targetCard.isSkillResolving = false;
+      clearCardAbilities(targetCard);
 
       // 対象カードのエレメントを取得してポップアップ「忘却」を表示
       const targetSidePrefix = oppSide === 'player' ? 'player' : 'enemy';
@@ -2349,24 +2315,10 @@ export async function resolveActiveSkillEffect(
           .filter(Boolean)
       : [];
 
-    const validCards = discard.filter((card) => {
-      if (card.isToken) return false;
-      if (isExcludeBoard) {
-        if (
-          presentBoardIds.includes(card.id) ||
-          (card.baseId && presentBoardIds.includes(card.baseId))
-        ) {
-          return false;
-        }
-      }
-      if (Array.isArray(targetIds) && targetIds.length > 0) {
-        return matchesCardIds(card, targetIds);
-      }
-      if (typeof targetKeyword === 'string' && targetKeyword) {
-        return matchesCardKeyword(card, targetKeyword);
-      }
-      return (card.power || 0) <= maxPow;
-    });
+    // 墓地内の有効な復活対象カード判定（共通関数 matchesResurrectTarget に委譲）
+    const validCards = discard.filter((card) =>
+      matchesResurrectTarget(card, currentSkill, { presentBoardIds })
+    );
     let tokenLanes = null;
 
     if (validCards.length > 0) {
@@ -2419,9 +2371,13 @@ export async function resolveActiveSkillEffect(
             ? isExcludeBoard
               ? '自分の墓地から自分の場にいない対象のカードを1枚配置します。'
               : '自分の墓地から対象のカードを1枚配置します。'
-            : isExcludeBoard
-              ? `自分の墓地から自分の場にいないパワー${maxPow}以下のカードを1枚配置します。`
-              : `自分の墓地からパワー${maxPow}以下のカードを1枚配置します。`;
+            : targetKeyword
+              ? isExcludeBoard
+                ? `自分の墓地から自分の場にいない「${targetKeyword}」カードを1枚配置します。`
+                : `自分の墓地から「${targetKeyword}」カードを1枚配置します。`
+              : isExcludeBoard
+                ? `自分の墓地から自分の場にいないパワー${maxPow}以下のカードを1枚配置します。`
+                : `自分の墓地からパワー${maxPow}以下のカードを1枚配置します。`;
         selectedCard = await waitPlayerDiscardSelection(
           validCards,
           maxPow,
@@ -3193,6 +3149,9 @@ export async function resolveActiveSkillEffect(
               source: 'assemble',
             });
             await playEvents(callEvents);
+
+            // 相手の誘発スキルチェック
+            await checkAndTriggerCounter(o, restoredCard, targetLane);
 
             if (hasActiveSkill(restoredCard)) {
               await resolveOnPlaySkill(o, targetLane, restoredCard);

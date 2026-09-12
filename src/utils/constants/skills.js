@@ -3,6 +3,82 @@
  */
 import { CARD_MASTER } from './cards.js';
 
+/**
+ * スキル定義またはカードオブジェクトから対象カードID配列を解決する。
+ *
+ * @param {object|null|undefined} sk - 対象のスキルオブジェクト、またはカードオブジェクト
+ * @param {string} [skillId] - 解決対象のスキルID
+ * @returns {Array<string>|null} 対象カードID配列。未指定ならnull
+ */
+function resolveTargetIds(sk, skillId) {
+  if (!sk) return null;
+  const direct =
+    sk.targetIds ||
+    (sk.targetId ? [sk.targetId] : null);
+  if (direct) return direct;
+
+  if (skillId && Array.isArray(sk.skills)) {
+    const nested = sk.skills.find((s) => s.id === skillId);
+    if (nested) {
+      return (
+        nested.targetIds ||
+        (nested.targetId ? [nested.targetId] : null)
+      );
+    }
+  }
+  return null;
+}
+
+/**
+ * 対象カードID配列からリンクセグメント配列（読点区切りのカードリンク）を生成する。
+ *
+ * @param {Array<string>|null|undefined} targetIds - 対象カードID配列
+ * @returns {Array<{type: string, value: string, targetId?: string}>} リンクセグメント配列
+ */
+function createCardLinkSegments(targetIds) {
+  if (!Array.isArray(targetIds) || targetIds.length === 0) return [];
+  const links = [];
+  targetIds.forEach((id, idx) => {
+    if (idx > 0) links.push({ type: 'text', value: '、' });
+    const card = CARD_MASTER?.find((c) => c.id === id);
+    const name = card ? card.name : id;
+    links.push({ type: 'link', value: `「${name}」`, targetId: id });
+  });
+  return links;
+}
+
+/**
+ * スキル定義またはカードオブジェクトから対象スキルID配列を解決する。
+ *
+ * @param {object|null|undefined} sk - 対象のスキルオブジェクト、またはカードオブジェクト
+ * @param {string} [skillId] - 解決対象のスキルID（例: 'summon'）
+ * @returns {Array<string>} 重複を除去した対象スキルID配列
+ */
+function resolveTargetSkills(sk, skillId) {
+  if (!sk) return [];
+  const targetSource =
+    sk.targetSkills !== undefined || sk.targetSkill !== undefined
+      ? sk
+      : skillId && Array.isArray(sk.skills)
+        ? sk.skills.find((s) => s.id === skillId)
+        : null;
+
+  if (!targetSource) return [];
+
+  let raw = [];
+  if (Array.isArray(targetSource.targetSkills)) {
+    raw = targetSource.targetSkills.filter(Boolean);
+  } else if (
+    typeof targetSource.targetSkills === 'string' &&
+    targetSource.targetSkills.trim() !== ''
+  ) {
+    raw = [targetSource.targetSkills.trim()];
+  } else if (targetSource.targetSkill) {
+    raw = [targetSource.targetSkill];
+  }
+  return [...new Set(raw)];
+}
+
 export const SKILLS = {
   none: { name: '通常', icon: '', desc: () => '' },
   quick: {
@@ -223,25 +299,14 @@ export const SKILLS = {
     name: '復活',
     icon: '⚰️',
     desc: (val, sk) => {
-      const targetIds =
-        sk?.targetIds ||
-        (sk?.targetId ? [sk.targetId] : null) ||
-        (Array.isArray(sk?.skills)
-          ? sk.skills.find((s) => s.id === 'resurrect')?.targetIds
-          : null);
+      const targetIds = resolveTargetIds(sk, 'resurrect');
       const isExcludeBoard =
         sk?.excludeBoard ||
         (Array.isArray(sk?.skills)
           ? sk.skills.find((s) => s.id === 'resurrect')?.excludeBoard
           : false);
       if (Array.isArray(targetIds) && targetIds.length > 0) {
-        const links = [];
-        targetIds.forEach((id, idx) => {
-          if (idx > 0) links.push({ type: 'text', value: '、' });
-          const card = CARD_MASTER?.find((c) => c.id === id);
-          const name = card ? card.name : id;
-          links.push({ type: 'link', value: `「${name}」`, targetId: id });
-        });
+        const links = createCardLinkSegments(targetIds);
         return [
           {
             type: 'text',
@@ -269,12 +334,7 @@ export const SKILLS = {
     name: '召喚',
     icon: '📢',
     desc: (val, sk) => {
-      const targetIds =
-        sk?.targetIds ||
-        (sk?.targetId ? [sk.targetId] : null) ||
-        (Array.isArray(sk?.skills)
-          ? sk.skills.find((s) => s.id === 'summon')?.targetIds
-          : null);
+      const targetIds = resolveTargetIds(sk, 'summon');
       const isExcludeBoard =
         sk?.excludeBoard ||
         (Array.isArray(sk?.skills)
@@ -330,13 +390,7 @@ export const SKILLS = {
         ];
       }
       if (Array.isArray(targetIds) && targetIds.length > 0) {
-        const links = [];
-        targetIds.forEach((id, idx) => {
-          if (idx > 0) links.push({ type: 'text', value: '、' });
-          const card = CARD_MASTER?.find((c) => c.id === id);
-          const name = card ? card.name : id;
-          links.push({ type: 'link', value: `「${name}」`, targetId: id });
-        });
+        const links = createCardLinkSegments(targetIds);
         return [
           {
             type: 'text',
@@ -390,34 +444,7 @@ export const SKILLS = {
           { type: 'text', value: 'を加える。' },
         ];
       }
-      const rawSkillIds = Array.isArray(sk?.targetSkills)
-        ? sk.targetSkills.filter(Boolean)
-        : typeof sk?.targetSkills === 'string' && sk.targetSkills.trim() !== ''
-          ? [sk.targetSkills.trim()]
-          : sk?.targetSkill
-            ? [sk.targetSkill]
-            : Array.isArray(sk?.skills)
-              ? Array.isArray(
-                  sk.skills.find((s) => s.id === 'summon')?.targetSkills
-                )
-                ? sk.skills
-                    .find((s) => s.id === 'summon')
-                    ?.targetSkills.filter(Boolean)
-                : typeof sk.skills.find((s) => s.id === 'summon')
-                      ?.targetSkills === 'string' &&
-                    sk.skills
-                      .find((s) => s.id === 'summon')
-                      ?.targetSkills.trim() !== ''
-                  ? [
-                      sk.skills
-                        .find((s) => s.id === 'summon')
-                        ?.targetSkills.trim(),
-                    ]
-                  : sk.skills.find((s) => s.id === 'summon')?.targetSkill
-                    ? [sk.skills.find((s) => s.id === 'summon')?.targetSkill]
-                    : []
-              : [];
-      const targetSkills = [...new Set(rawSkillIds)];
+      const targetSkills = resolveTargetSkills(sk, 'summon');
       if (targetSkills.length > 0) {
         const links = [];
         targetSkills.forEach((sId, idx) => {
@@ -500,20 +527,9 @@ export const SKILLS = {
       if (isSelf) {
         return '召喚時、デッキから自身と同じカード1枚を自分のレーンに召喚する。';
       }
-      const targetIds =
-        sk?.targetIds ||
-        (sk?.targetId ? [sk.targetId] : null) ||
-        (Array.isArray(sk?.skills)
-          ? sk.skills.find((s) => s.id === 'assemble')?.targetIds
-          : null);
+      const targetIds = resolveTargetIds(sk, 'assemble');
       if (Array.isArray(targetIds) && targetIds.length > 0) {
-        const links = [];
-        targetIds.forEach((id, idx) => {
-          if (idx > 0) links.push({ type: 'text', value: '、' });
-          const card = CARD_MASTER?.find((c) => c.id === id);
-          const name = card ? card.name : id;
-          links.push({ type: 'link', value: `「${name}」`, targetId: id });
-        });
+        const links = createCardLinkSegments(targetIds);
         return [
           { type: 'text', value: '召喚時、デッキから' },
           ...links,
@@ -791,20 +807,9 @@ export const SKILLS = {
     name: '号令',
     icon: '📯',
     desc: (val, sk) => {
-      const targetIds =
-        sk?.targetIds ||
-        (sk?.targetId ? [sk.targetId] : null) ||
-        (Array.isArray(sk?.skills)
-          ? sk.skills.find((s) => s.id === 'call')?.targetIds
-          : null);
+      const targetIds = resolveTargetIds(sk, 'call');
       if (Array.isArray(targetIds) && targetIds.length > 0) {
-        const links = [];
-        targetIds.forEach((id, idx) => {
-          if (idx > 0) links.push({ type: 'text', value: '、' });
-          const card = CARD_MASTER?.find((c) => c.id === id);
-          const name = card ? card.name : id;
-          links.push({ type: 'link', value: `「${name}」`, targetId: id });
-        });
+        const links = createCardLinkSegments(targetIds);
         return [
           {
             type: 'text',
@@ -958,16 +963,7 @@ export const SKILLS = {
           { type: 'link', value: `「${targetCard.name}」`, targetId: targetId },
         ];
       } else if (Array.isArray(targetIds) && targetIds.length > 0) {
-        targetIds.forEach((id, idx) => {
-          if (idx > 0) targetSegments.push({ type: 'text', value: '、' });
-          const card = CARD_MASTER?.find((c) => c.id === id);
-          const name = card ? card.name : id;
-          targetSegments.push({
-            type: 'link',
-            value: `「${name}」`,
-            targetId: id,
-          });
-        });
+        targetSegments = createCardLinkSegments(targetIds);
       } else if (typeof targetKeyword === 'string' && targetKeyword) {
         targetSegments = [
           {
@@ -1050,20 +1046,9 @@ export const SKILLS = {
     name: '探索',
     icon: '🗺',
     desc: (val, sk) => {
-      const targetIds =
-        sk?.targetIds ||
-        (sk?.targetId ? [sk.targetId] : null) ||
-        (Array.isArray(sk?.skills)
-          ? sk.skills.find((s) => s.id === 'explore')?.targetIds
-          : null);
+      const targetIds = resolveTargetIds(sk, 'explore');
       if (Array.isArray(targetIds) && targetIds.length > 0) {
-        const links = [];
-        targetIds.forEach((id, idx) => {
-          if (idx > 0) links.push({ type: 'text', value: '、' });
-          const card = CARD_MASTER?.find((c) => c.id === id);
-          const name = card ? card.name : id;
-          links.push({ type: 'link', value: `「${name}」`, targetId: id });
-        });
+        const links = createCardLinkSegments(targetIds);
         return [
           {
             type: 'text',

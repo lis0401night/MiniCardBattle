@@ -4,16 +4,16 @@ import { CARD_MASTER, PREMIUM_CARD_IDS } from './constants/cards.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import {
   appendVersionQuery,
+  DAMAGE_TYPE,
   DEFAULT_PLAYER_NAME,
+  DEFAULT_SOUND_VOLUME,
   DEFENSE_TARGET_COUNT,
+  HEAVY_DAMAGE_THRESHOLD,
+  HIGH_DIFFICULTY_CLEARED_KEY,
   HIGH_TIER_PICK_COUNT,
   LOW_TIER_PICK_COUNT,
   MID_TIER_PICK_COUNT,
   PROFILE_NAME_KEY,
-  HIGH_DIFFICULTY_CLEARED_KEY,
-  DEFAULT_SOUND_VOLUME,
-  HEAVY_DAMAGE_THRESHOLD,
-  DAMAGE_TYPE,
 } from './constants/config.js';
 import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
 import { setCurrentScreen } from './errorReporter.js';
@@ -845,6 +845,37 @@ export function unmergeCardSkills(targetCard, equipSkills) {
 }
 
 /**
+ * 対象カードの全能力と一時効果を消去する共通処理（沈黙・忘却等で共用）。
+ * スキル配列、選択肢、召喚ID、スタン状態、スキル解決中フラグ等を初期化します。
+ *
+ * @param {object|null} targetCard - 対象カード
+ */
+export function clearCardAbilities(targetCard) {
+  if (!targetCard) return;
+  targetCard.skills = [];
+  targetCard.choices = [];
+  targetCard.choices2 = null;
+  if ('summonId' in targetCard) delete targetCard.summonId;
+  targetCard.stunTurns = 0;
+  targetCard.stunAppliedThisTurn = false;
+  if ('isSkillResolving' in targetCard) targetCard.isSkillResolving = false;
+}
+
+/**
+ * カードが「スキル解決中のパワー0スペル保護」の対象かを判定する。
+ * 一度もダメージを受けておらず、元々パワーが0のカードのみ保護する。
+ * ダメージを受けてパワー0以下になったカードは保護しない。
+ *
+ * @param {object|null|undefined} card - 判定対象のカード
+ * @returns {boolean} 保護対象の場合は true、それ以外は false
+ */
+export function isProtectedZeroPowerCard(card) {
+  if (!card || !card.isSkillResolving) return false;
+  if (card.hasTakenDamage) return false;
+  return (card.power || 0) === 0 || (card.basePower || 0) === 0;
+}
+
+/**
  * 武装(arm_self)スキルの消費・維持処理。
  * 下のカードの武装(1回分)を消費しつつ、上のカード自身が「武装」を持っている場合は
  * 上のカード由来の新たな「武装(1回分)」を付与して保持します。
@@ -1090,7 +1121,7 @@ export function getSkillTargetLabel(sk) {
     baseLabel = skDef ? skDef.name : sId;
   }
 
-  // 4. excludeBoard（自陣盤面存在カード除外）プロパティがある場合
+  // 5. excludeBoard（自陣盤面存在カード除外）プロパティがある場合
   if (sk.excludeBoard) {
     if (baseLabel) {
       return `唯一/${baseLabel}`;
@@ -2264,16 +2295,181 @@ export function matchesUnionMaterial(card, unionSkill) {
 }
 
 /**
- * 移動またはプレイしようとしているカードが、盤面に既に存在するカードと合体可能かを判定する。
- * 移動元カードが合体スキル（union）を持ち、かつ盤面の既存カードがその合体素材条件を満たしている場合に true を返す。
+ * 対象カードが「召喚（summon）」スキルの発動条件・対象指定に合致するか判定する共通関数。
+ * 実戦（skillLogic.js）とAIシミュレーション（ai_normal.js）で同一の判定ロジック・順序を共有し、挙動の乖離を構造的に防ぎます。
  *
- * @param {object|null|undefined} movingCard - プレイまたは移動しようとしているカード
- * @param {object|null|undefined} existingCard - 盤面に既に存在するカード
- * @returns {boolean} 合体可能な場合 true、それ以外は false
+ * 判定順序および論理構造：
+ * 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）は除外（false）
+ * 2. self / targetSelf: 自身と同じカード指定（一致すれば true、不一致なら false）
+ * 3. targetToken: トークンカード限定指定（トークンでなければ false、トークンなら後続条件も評価）
+ * 4. targetIds: 特定カードID配列の指定（指定がある場合は合致判定結果を即返却）
+ * 5. targetKeyword: カード名のキーワード指定（指定がある場合は合致判定結果を即返却）
+ * 6. targetSkills: 所持スキル指定（指定がある場合、対象スキルを持っていなければ false、持っていれば後続判定へ）
+ * 7. value / reqPower: パワー制限（指定がある場合、パワー超過なら false）
+ * 8. 上記の除外条件に該当しなければ true
+ *
+ * @param {object|null|undefined} card - 判定対象の手札カードオブジェクト
+ * @param {object|null|undefined} skill - 召喚スキル定義オブジェクト（targetIds, targetSkills, targetToken, value 等）
+ * @param {object} [options={}] - 判定用オプション
+ * @param {string|null} [options.selfId=null] - 発動元カードのIDまたはbaseId（self/targetSelf 指定時の照合用）
+ * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard 指定時の除外用）
+ * @returns {boolean} 召喚対象として有効であれば true、そうでなければ false
  */
-export function canUnionWithCard(movingCard, existingCard) {
-  if (!movingCard || !existingCard) return false;
-  const unionSkill = movingCard.skills?.find((s) => s.id === 'union');
-  if (!unionSkill) return false;
-  return matchesUnionMaterial(existingCard, unionSkill);
+export function matchesSummonTarget(card, skill, options = {}) {
+  if (
+    !card ||
+    typeof card !== 'object' ||
+    !skill ||
+    typeof skill !== 'object'
+  ) {
+    return false;
+  }
+
+  const { selfId = null, presentBoardIds = [] } = options;
+
+  // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
+  if (
+    skill.excludeBoard &&
+    Array.isArray(presentBoardIds) &&
+    presentBoardIds.length > 0
+  ) {
+    if (
+      presentBoardIds.includes(card.id) ||
+      (card.baseId && presentBoardIds.includes(card.baseId))
+    ) {
+      return false;
+    }
+  }
+
+  // 2. self / targetSelf: 自身と同じカード指定
+  const isSelf = Boolean(skill.self || skill.targetSelf);
+  if (isSelf && selfId) {
+    return matchesCardId(card, selfId);
+  }
+
+  // 3. targetToken / targetType === 'token': トークン限定指定
+  const isTargetToken = Boolean(
+    skill.targetToken || skill.targetType === 'token'
+  );
+  if (isTargetToken) {
+    const isTok = Boolean(
+      card.isToken ||
+        card.id?.startsWith('token_') ||
+        card.baseId?.startsWith('token_')
+    );
+    if (!isTok) return false;
+  }
+
+  // 4. targetIds / targetId: 特定カードID指定
+  const targetIds = Array.isArray(skill.targetIds)
+    ? skill.targetIds
+    : skill.targetId
+      ? [skill.targetId]
+      : null;
+  if (Array.isArray(targetIds) && targetIds.length > 0) {
+    return matchesCardIds(card, targetIds);
+  }
+
+  // 5. targetKeyword: キーワード指定（属性や種族等）
+  if (typeof skill.targetKeyword === 'string' && skill.targetKeyword) {
+    return matchesCardKeyword(card, skill.targetKeyword);
+  }
+
+  // 6. targetSkills / targetSkill: 特定スキル所持指定
+  const rawSkillIds = Array.isArray(skill.targetSkills)
+    ? skill.targetSkills.filter(Boolean)
+    : typeof skill.targetSkills === 'string' && skill.targetSkills.trim() !== ''
+      ? [skill.targetSkills.trim()]
+      : skill.targetSkill
+        ? [skill.targetSkill]
+        : [];
+  const targetSkills = [...new Set(rawSkillIds)];
+  if (targetSkills.length > 0) {
+    const masterCard = CARD_MASTER?.find((m) => m.id === card.id);
+    const hasMatchingSkill = targetSkills.some(
+      (sId) =>
+        hasSkillDeep(card, sId) ||
+        (masterCard && hasSkillDeep(masterCard, sId))
+    );
+    if (!hasMatchingSkill) return false;
+  }
+
+  // 7. value / reqPower: パワー制限（指定パワー以下）
+  const reqPower = skill.value !== undefined ? skill.value : skill.reqPower;
+  if (reqPower !== undefined && reqPower !== null) {
+    return (card.power || 0) <= reqPower;
+  }
+
+  return true;
+}
+
+/**
+ * 対象カードが「復活（resurrect）」スキルの発動条件・対象指定に合致するか判定する共通関数。
+ * 実戦（skillLogic.js）とAIシミュレーション（ai_normal.js）で同一の判定ロジック・順序を共有し、挙動の乖離を構造的に防ぎます。
+ *
+ * 判定順序および論理構造：
+ * 1. トークンカードは復活不可（false）
+ * 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）は除外（false）
+ * 3. targetIds / targetId: 特定カードID指定（万相 all_forms を含む一致判定、指定があれば合致結果を即返却）
+ * 4. targetKeyword: カード名のキーワード指定（万相 all_forms を含む一致判定、指定があれば合致結果を即返却）
+ * 5. value / maxPower: パワー制限（指定値以下のパワーであれば true、未指定時は1以下）
+ *
+ * @param {object|null|undefined} card - 判定対象の墓地カードオブジェクト
+ * @param {object|null|undefined} skill - 復活スキル定義オブジェクト（targetIds, targetKeyword, value 等）
+ * @param {object} [options={}] - 判定用オプション
+ * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard 指定時の除外用）
+ * @returns {boolean} 復活対象として有効であれば true、そうでなければ false
+ */
+export function matchesResurrectTarget(card, skill, options = {}) {
+  if (
+    !card ||
+    typeof card !== 'object' ||
+    !skill ||
+    typeof skill !== 'object'
+  ) {
+    return false;
+  }
+
+  // 1. トークンカードは復活不可
+  if (card.isToken) return false;
+
+  const { presentBoardIds = [] } = options;
+
+  // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
+  if (
+    skill.excludeBoard &&
+    Array.isArray(presentBoardIds) &&
+    presentBoardIds.length > 0
+  ) {
+    if (
+      presentBoardIds.includes(card.id) ||
+      (card.baseId && presentBoardIds.includes(card.baseId))
+    ) {
+      return false;
+    }
+  }
+
+  // 3. targetIds / targetId: 特定カードID指定（万相カードは matchesCardIds 内で自動判定）
+  const targetIds = Array.isArray(skill.targetIds)
+    ? skill.targetIds
+    : skill.targetId
+      ? [skill.targetId]
+      : null;
+  if (Array.isArray(targetIds) && targetIds.length > 0) {
+    return matchesCardIds(card, targetIds);
+  }
+
+  // 4. targetKeyword: キーワード指定（属性や種族等、万相カードは matchesCardKeyword 内で自動判定）
+  if (typeof skill.targetKeyword === 'string' && skill.targetKeyword) {
+    return matchesCardKeyword(card, skill.targetKeyword);
+  }
+
+  // 5. value / maxPower: パワー制限（未指定時は 1）
+  const maxPower =
+    skill.value !== undefined && skill.value !== null ? skill.value : 1;
+  const master = CARD_MASTER?.find(
+    (m) => m.id === card.id || (card.baseId && m.id === card.baseId)
+  );
+  const cardPower = master ? master.power : card.power || 0;
+  return cardPower <= maxPower;
 }

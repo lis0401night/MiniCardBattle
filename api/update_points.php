@@ -84,15 +84,18 @@ if ($fileSize === 0) {
 }
 
 if ($playerData) {
+    $currentPoints = isset($playerData['points']) ? intval($playerData['points']) : 0;
+    $currentTotal = isset($playerData['total_points']) ? intval($playerData['total_points']) : 0;
+
     if ($increment) {
-        $playerData['points'] = ($playerData['points'] ?? 0) + $points;
+        $playerData['points'] = max(0, $currentPoints + $points);
         if ($total_points > 0) {
-            $playerData['total_points'] = ($playerData['total_points'] ?? $playerData['points'] ?? 0) + $total_points;
+            $playerData['total_points'] = max(0, $currentTotal + $total_points);
         }
     } else {
-        $playerData['points'] = $points;
+        $playerData['points'] = max(0, $points);
         if ($total_points > 0) {
-            $playerData['total_points'] = $total_points;
+            $playerData['total_points'] = max(0, $total_points);
         }
     }
 

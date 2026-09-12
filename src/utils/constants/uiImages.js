@@ -6,7 +6,6 @@ export const UI_IMAGES = {
   MENU_PRACTICE: appendVersionQuery('assets/ui/ui_practice01.png'),
   MENU_EVENT: appendVersionQuery('assets/ui/ui_eventbutton01.png'),
   MENU_SHOP: appendVersionQuery('assets/ui/ui_shopbutton01.png'),
-  MENU_RULES: appendVersionQuery('assets/ui/ui_shopbutton01.png'),
   MENU_FREE: appendVersionQuery('assets/ui/ui_freebattlebutton01.png'),
   MENU_GALLERY: appendVersionQuery('assets/ui/ui_gallerybutton01.png'),
   EVENT_HIGH_DIFF: appendVersionQuery(

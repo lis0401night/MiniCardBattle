@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
+import {
+  PACK_DEFAULT_RARITY_WEIGHTS,
+  PACK_VOL01_CARD_IDS,
+} from '../../utils/constants/packs.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import {
   getCardImgUrl,
@@ -45,6 +49,16 @@ function CardPreviewContent({
   const isPack = styleProps.isPack || false;
   const isStandardCard =
     !isSkin && !styleProps.isPlaymat && !styleProps.isIcon && !isPack;
+
+  // パックの場合の排出確率を動的に算出（PACK_DEFAULT_RARITY_WEIGHTSフォールバック付き）
+  const packWeights = styleProps.rarityWeights || PACK_DEFAULT_RARITY_WEIGHTS;
+  const legendWeight = packWeights[4] ?? PACK_DEFAULT_RARITY_WEIGHTS[4] ?? 10;
+  const goldWeight = packWeights[3] ?? PACK_DEFAULT_RARITY_WEIGHTS[3] ?? 30;
+  const silverWeight = packWeights[2] ?? PACK_DEFAULT_RARITY_WEIGHTS[2] ?? 60;
+  const totalWeight = legendWeight + goldWeight + silverWeight || 100;
+  const legendPct = Math.round((legendWeight / totalWeight) * 100);
+  const goldPct = Math.round((goldWeight / totalWeight) * 100);
+  const silverPct = Math.max(0, 100 - legendPct - goldPct);
   const imgUrl =
     styleProps.imgUrl || (!isPack && getCardImgUrl ? getCardImgUrl(card) : '');
   const rarityClass = card.isToken
@@ -69,6 +83,8 @@ function CardPreviewContent({
 
   const { choices: cardChoices, choices2: cardChoices2 } =
     resolveCardChoices(card);
+  // 覇道スキルの選択肢はカード単位で不変のため、ループ外で一度だけ解決する
+  const cardSupremacySkills = resolveCardSupremacySkills(card);
 
   let lookupId = String(card.baseId || card.id || '');
   let isPremiumActive = false;
@@ -511,7 +527,7 @@ function CardPreviewContent({
                       >
                         ★4 レジェンド
                       </span>
-                      <span>10%</span>
+                      <span>{legendPct}%</span>
                     </div>
                     <div
                       style={{
@@ -522,7 +538,7 @@ function CardPreviewContent({
                       <span style={{ color: '#facc15', fontWeight: 'bold' }}>
                         ★3 ゴールド
                       </span>
-                      <span>30%</span>
+                      <span>{goldPct}%</span>
                     </div>
                     <div
                       style={{
@@ -533,7 +549,7 @@ function CardPreviewContent({
                       <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
                         ★2 シルバー
                       </span>
-                      <span>60%</span>
+                      <span>{silverPct}%</span>
                     </div>
                   </div>
                 </div>
@@ -557,7 +573,11 @@ function CardPreviewContent({
                       fontWeight: 'bold',
                     }}
                   >
-                    収録カード（{styleProps.packCardCount || 42}種類）
+                    収録カード（
+                    {styleProps.packCardCount ||
+                      styleProps.packCardIds?.length ||
+                      PACK_VOL01_CARD_IDS.length}
+                    種類）
                   </div>
                   <button
                     type="button"
@@ -583,7 +603,7 @@ function CardPreviewContent({
                       if (window.showEnemyDeckModal && styleProps.packCardIds) {
                         window.showEnemyDeckModal(
                           styleProps.packCardIds,
-                          `${styleProps.titleName || 'vol01:ビギニング'} 収録カード`,
+                          `${styleProps.titleName || card?.name || 'パック'} 収録カード`,
                           null,
                           {
                             isPlayerDeck: true,
@@ -617,8 +637,6 @@ function CardPreviewContent({
                         ? s.desc(sk.value, sk)
                         : s.desc;
 
-                    const cardSupremacySkills =
-                      resolveCardSupremacySkills(card);
                     const isAccordionSkill =
                       sk.id === 'choice' ||
                       sk.id === 'force' ||
@@ -1001,8 +1019,8 @@ function CardPreviewContent({
           {isPack ? (
             <div
               style={{
-                width: 'min(85vw, calc(85vh * 298 / 500))',
-                height: 'min(85vh, calc(85vw * 500 / 298))',
+                width: 'min(85vw, calc(85dvh * 298 / 500))',
+                height: 'min(85dvh, calc(85vw * 500 / 298))',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
@@ -1020,8 +1038,8 @@ function CardPreviewContent({
               src={imgUrl}
               decoding="sync"
               style={{
-                width: 'min(95vw, calc(95vh * 2 / 3))',
-                height: 'min(95vh, calc(95vw * 3 / 2))',
+                width: 'min(95vw, calc(95dvh * 2 / 3))',
+                height: 'min(95dvh, calc(95vw * 3 / 2))',
                 objectFit: 'contain',
                 borderRadius: '12px',
                 boxShadow: '0 0 40px rgba(0,0,0,0.8)',

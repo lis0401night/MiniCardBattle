@@ -14,7 +14,6 @@ export const OBTAIN_METHOD_MAP = {
   achievement: '実績',
   token: 'トークン（特殊効果による配置）',
   gacha: 'ガチャなど',
-  pack_1: 'パック（vol01:ビギニング）',
 };
 
 const DIFFICULTY_MAP = {

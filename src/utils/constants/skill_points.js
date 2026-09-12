@@ -437,7 +437,7 @@ export const SKILL_POINTS = {
   },
   supremacy: {
     base: 0,
-    multiplier: 1,
+    multiplier: 0,
   },
   unleash: {
     base: 0,

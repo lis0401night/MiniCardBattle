@@ -15,6 +15,7 @@ import {
 } from '../../utils/constants/dailyMissions.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import { showAlertModal } from '../../services/uiModals.js';
 import PackOpeningModal from '../exchange/PackOpeningModal.jsx';
 
 /**
@@ -56,6 +57,10 @@ export default function DailyMissionsModal({ onClose, onClaimSuccess }) {
       const result = claimDailyMissionReward(missionId);
       if (!result.success) {
         console.warn('報酬受取失敗:', result.error);
+        showAlertModal?.(
+          result.error ||
+            '報酬の受け取りに失敗しました。時間をおいて再度お試しください。'
+        );
         return;
       }
 
@@ -178,10 +183,17 @@ export default function DailyMissionsModal({ onClose, onClaimSuccess }) {
                 !isPackCompleted && state.progress >= mission.targetCount;
               const isClaimable =
                 !isPackCompleted && isCleared && !state.isClaimed;
-              const progressPercent = isPackCompleted ? 0 : isCleared ? 100 : 0;
               const displayProgress = isPackCompleted
                 ? 0
                 : Math.min(state.progress, mission.targetCount);
+              // 進捗率は実際の達成数から算出する（部分進捗も反映）
+              const progressPercent =
+                isPackCompleted || !mission.targetCount
+                  ? 0
+                  : Math.min(
+                      100,
+                      Math.round((displayProgress / mission.targetCount) * 100)
+                    );
 
               // カードの枠線・背景色
               const bgColor = isClaimable

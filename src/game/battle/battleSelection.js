@@ -1215,12 +1215,8 @@ export async function waitPlayerDiscardSelection(
       const shuffled = shuffleArray([...validCards]);
       return shuffled.slice(0, maxChoices);
     } else {
-      // 探索（explore）や召集（assemble）の場合は、選べる中で最大パワーのカードからランダムに選ぶ
-      if (
-        skillId === 'explore' ||
-        skillId === 'assemble' ||
-        (title && (title.includes('探索') || title.includes('召集')))
-      ) {
+      // 探索（explore）や召集（assemble）のフォールバック時は、選べる中で最大パワーのカードからランダムに選ぶ
+      if (skillId === 'explore' || skillId === 'assemble') {
         const maxP = Math.max(...validCards.map((c) => c.power || 0));
         const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
         return bestCards[Math.floor(getSeededRandom() * bestCards.length)];

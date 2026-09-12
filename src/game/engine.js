@@ -6,13 +6,15 @@ import {
 } from '../utils/constants/skills.js';
 import {
   applyEquipment,
+  clearCardAbilities,
   getSeededRandom,
   getSkillValue,
   hasSkill,
+  isProtectedZeroPowerCard,
   resolveCardSupremacySkills,
   resolveStartupFade,
   unmergeCardSkills,
-  matchesCardId,
+  matchesCardIds,
   matchesCardKeyword,
   matchesUnionMaterial,
 } from '../utils/gameUtils.js';
@@ -599,16 +601,11 @@ export function processDestructionTriggers(state, events) {
 
     targets.forEach(({ board, side }) => {
       for (let i = 0; i < 3; i++) {
-        // パワー0以下のカードを破壊対象にする。
-        // ただし、一度もダメージを受けておらず元々パワーが0のスペルカード等はスキル解決中（isSkillResolving）保護される。
-        // ダメージを受けてパワー0以下になったカードは、スキル解決中であっても即座に破壊対象となる。
-        const isProtectedZeroSpell =
+        if (
           board[i] &&
-          board[i].isSkillResolving &&
-          ((board[i].power || 0) === 0 || (board[i].basePower || 0) === 0) &&
-          !board[i].hasTakenDamage;
-
-        if (board[i] && board[i].currentPower <= 0 && !isProtectedZeroSpell) {
+          board[i].currentPower <= 0 &&
+          !isProtectedZeroPowerCard(board[i])
+        ) {
           const deadCard = board[i];
           destroyedThisLoop.push({ side, lane: i, card: deadCard });
 
@@ -823,12 +820,7 @@ export function applyActiveSkillLogic(
       const oppBoard = owner === 'blue' ? state.enemyBoard : state.playerBoard;
       const targetCard = oppBoard[l];
       if (targetCard) {
-        targetCard.skills = [];
-        targetCard.choices = [];
-        targetCard.choices2 = null;
-        if ('summonId' in targetCard) delete targetCard.summonId;
-        targetCard.stunTurns = 0;
-        targetCard.stunAppliedThisTurn = false;
+        clearCardAbilities(targetCard);
 
         events.push({
           type: 'silence_clear',
@@ -1334,16 +1326,20 @@ export function applyActiveSkillLogic(
         let validCards = myDeckSim.filter((card) => card !== undefined);
 
         const exploreSkill = c?.skills?.find((s) => s.id === 'explore');
+        const targetIds = Array.isArray(exploreSkill?.targetIds)
+          ? exploreSkill.targetIds
+          : exploreSkill?.targetId
+            ? [exploreSkill.targetId]
+            : [];
         const targetKeyword = exploreSkill?.targetKeyword;
-        const targetId = exploreSkill?.targetId;
 
-        if (typeof targetKeyword === 'string' && targetKeyword) {
+        if (targetIds.length > 0) {
+          validCards = validCards.filter((card) =>
+            matchesCardIds(card, targetIds)
+          );
+        } else if (typeof targetKeyword === 'string' && targetKeyword) {
           validCards = validCards.filter((card) =>
             matchesCardKeyword(card, targetKeyword)
-          );
-        } else if (targetId) {
-          validCards = validCards.filter((card) =>
-            matchesCardId(card, targetId)
           );
         }
 
@@ -3418,12 +3414,7 @@ export function applyLeaderSkillLogic(
 
       // 【能力をなくす処理（沈黙化）】
       // 破壊前に対象カードのすべてのスキル・一時効果を消去する
-      targetCard.skills = [];
-      targetCard.choices = [];
-      targetCard.choices2 = null;
-      if ('summonId' in targetCard) delete targetCard.summonId;
-      targetCard.stunTurns = 0;
-      targetCard.stunAppliedThisTurn = false;
+      clearCardAbilities(targetCard);
 
       events.push({
         type: 'oblivion_clear',
@@ -3509,12 +3500,7 @@ export function applyLeaderSkillLogic(
 
       // 【能力をなくす処理（沈黙化）】
       // 破壊前に対象カードのすべてのスキル・一時効果を消去する
-      targetCard.skills = [];
-      targetCard.choices = [];
-      targetCard.choices2 = null;
-      if ('summonId' in targetCard) delete targetCard.summonId;
-      targetCard.stunTurns = 0;
-      targetCard.stunAppliedThisTurn = false;
+      clearCardAbilities(targetCard);
 
       events.push({
         type: 'oblivion_clear',

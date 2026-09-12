@@ -73,22 +73,25 @@ if ($fileSize === 0) {
 }
 
 if ($playerData) {
+    $currentPoints = isset($playerData['common_points']) ? intval($playerData['common_points']) : 0;
+    $currentTotal = isset($playerData['common_total_points']) ? intval($playerData['common_total_points']) : 0;
+
     if ($increment) {
-        $playerData['common_points'] = ($playerData['common_points'] ?? 0) + $points;
+        $playerData['common_points'] = max(0, $currentPoints + $points);
         if ($total_points > 0) {
-            $playerData['common_total_points'] = ($playerData['common_total_points'] ?? $playerData['common_points'] ?? 0) + $total_points;
+            $playerData['common_total_points'] = max(0, $currentTotal + $total_points);
         } else {
             if ($points > 0) {
-                $playerData['common_total_points'] = ($playerData['common_total_points'] ?? 0) + $points;
+                $playerData['common_total_points'] = max(0, $currentTotal + $points);
             }
         }
     } else {
-        $playerData['common_points'] = $points;
+        $playerData['common_points'] = max(0, $points);
         if ($total_points > 0) {
-            $playerData['common_total_points'] = $total_points;
+            $playerData['common_total_points'] = max(0, $total_points);
         } else {
-            if (!isset($playerData['common_total_points']) || $playerData['common_total_points'] < $points) {
-                $playerData['common_total_points'] = $points;
+            if (!isset($playerData['common_total_points']) || $playerData['common_total_points'] < $playerData['common_points']) {
+                $playerData['common_total_points'] = $playerData['common_points'];
             }
         }
     }

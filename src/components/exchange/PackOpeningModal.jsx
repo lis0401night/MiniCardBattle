@@ -16,9 +16,6 @@ import CardPreviewContent from '../common/CardPreviewContent.jsx';
 
 /**
  * パック開封演出モーダル。
- *
-/**
- * パック開封演出モーダル。
  * 単一または複数のパック開封に対応し、複数パック時は待機パックのスタック表示および
  * 連続開封（次へ）遷移を提供します。
  *

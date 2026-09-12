@@ -50,6 +50,7 @@ import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { getLatestOwnership, syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { PACK_VOL01_CARD_IDS } from '../utils/constants/packs.js';
 import {
   BOSS_CHARACTER_IDS,
   canShowUnlockableCharacter,
@@ -1076,7 +1077,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           logoUrl: data.logoUrl || data.packObj?.logoUrl,
           packCardIds: data.packCardIds || data.packObj?.cardIds || [],
           packCardCount:
-            data.packCardCount || data.packObj?.cardIds?.length || 43,
+            data.packCardCount ||
+            data.packObj?.cardIds?.length ||
+            PACK_VOL01_CARD_IDS.length,
           rarityWeights: data.rarityWeights || data.packObj?.rarityWeights,
           flavorOverride: data.displayFlavor,
           showPreviewActions: false,

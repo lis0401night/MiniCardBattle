@@ -27,7 +27,6 @@ const ALLOWED_SHORTCUTS = [
   'screen-common-exchange',
   'screen-shop-menu',
   'screen-rules',
-  'screen-beginner-guide',
   'screen-tutorial-select',
   'screen-options',
   'screen-gallery-menu',

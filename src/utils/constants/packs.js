@@ -189,9 +189,9 @@ export function drawCardFromPack(packOrId, playerInventory = {}) {
   };
 
   const weights = pack.rarityWeights || PACK_DEFAULT_RARITY_WEIGHTS;
-  const legendWeight = weights[4] || 10;
-  const goldWeight = weights[3] || 30;
-  const silverWeight = weights[2] || 60;
+  const legendWeight = weights[4] ?? PACK_DEFAULT_RARITY_WEIGHTS[4];
+  const goldWeight = weights[3] ?? PACK_DEFAULT_RARITY_WEIGHTS[3];
+  const silverWeight = weights[2] ?? PACK_DEFAULT_RARITY_WEIGHTS[2];
   const totalWeight = legendWeight + goldWeight + silverWeight;
 
   // 4. 1〜totalWeight（通常100）の乱数で当選レアリティを判定

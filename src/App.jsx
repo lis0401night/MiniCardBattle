@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 
 import GlobalModals from './components/GlobalModals.jsx';
 import DamageOverlay from './components/common/DamageOverlay.jsx';
-import BeginnerGuideScreen from './pages/BeginnerGuideScreen.jsx';
 import DefenseMenuScreen from './pages/DefenseMenuScreen.jsx';
 import DefenseRulesScreen from './pages/DefenseRulesScreen.jsx';
 import EventMenuScreen from './pages/EventMenuScreen.jsx';
@@ -128,7 +127,6 @@ const SCREEN_COMPONENTS = {
   'screen-shop-menu': CommonExchangeScreen,
   'screen-solo-menu': SoloMenuScreen,
   'screen-rules': RulesScreen,
-  'screen-beginner-guide': BeginnerGuideScreen,
   'screen-tutorial-select': TutorialSelectScreen,
   'screen-options': OptionsScreen,
   'screen-gallery-menu': GalleryMenuScreen,

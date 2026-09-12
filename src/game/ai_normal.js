@@ -11,6 +11,8 @@ import {
   matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
+  matchesResurrectTarget,
+  matchesSummonTarget,
   matchesUnionMaterial,
 } from '../utils/gameUtils.js';
 import {
@@ -93,6 +95,39 @@ function createSplitSimToken(execCard, tgtLane, owner = 'red') {
  *   号令で出されたカードがさらに号令や変身を持っていても、同じルールで正しく評価される。
  */
 const METAMORPH_ESTIMATED_POWER = 5;
+
+/**
+ * 号令（call）および召集（assemble）スキルによる盤面戦力の上昇値（パワーボーナス）を近似計算する共通関数。
+ * 対象指定（targetIds / targetId）が存在する場合はその対象カードのパワー（複数候補がある場合は最大パワー）を採用し、
+ * キーワード指定（targetKeyword）や通常指定の場合は sk.value または規定フォールバック値（4）で近似する。
+ *
+ * @param {object|null|undefined} sk - 号令または召集のスキル定義オブジェクト
+ * @returns {number} 近似されるパワーボーナス値
+ */
+function estimateCallAssembleBonus(sk) {
+  if (!sk || typeof sk !== 'object') return 4;
+  let callBonus = sk.value || 4;
+
+  // targetIds（配列）または targetId（単数フォールバック）から候補ID配列を正規化
+  const rawTargetIds = Array.isArray(sk.targetIds)
+    ? sk.targetIds.filter(Boolean)
+    : sk.targetId
+      ? [sk.targetId]
+      : [];
+
+  if (rawTargetIds.length > 0) {
+    let maxPower = 0;
+    for (const id of rawTargetIds) {
+      const targetCard = CARD_MASTER?.find((c) => c.id === id);
+      const p = targetCard?.power ?? 6;
+      if (p > maxPower) {
+        maxPower = p;
+      }
+    }
+    callBonus = maxPower > 0 ? maxPower : 6;
+  }
+  return callBonus;
+}
 
 /**
  * ボード上の全カードの「無敵（invincible）」スキルの持続ターンを減退・解除する共通ヘルパー
@@ -431,13 +466,7 @@ export function processActionSequence(
                 return;
               // 号令・召集: デッキからカードを出す動的スキルのため、パワーボーナスで近似
               if (sk.id === 'call' || sk.id === 'assemble') {
-                let callBonus = sk.value || 4;
-                if (sk.targetId) {
-                  const targetCard = CARD_MASTER.find(
-                    (c) => c.id === sk.targetId
-                  );
-                  callBonus = targetCard?.power || 6;
-                }
+                const callBonus = estimateCallAssembleBonus(sk);
                 boardCard.currentPower =
                   (boardCard.currentPower || 0) + callBonus;
                 boardCard.basePower = (boardCard.basePower || 0) + callBonus;
@@ -1120,14 +1149,8 @@ export function processActionSequence(
                   (AI_SKILL_UTILITY[sk.id] || 0);
               }
             }
-            if (sk.id === 'call') {
-              let callBonus = sk.value || 4;
-              if (sk.targetId) {
-                const targetCard = CARD_MASTER.find(
-                  (c) => c.id === sk.targetId
-                );
-                callBonus = targetCard?.power || 6;
-              }
+            if (sk.id === 'call' || sk.id === 'assemble') {
+              const callBonus = estimateCallAssembleBonus(sk);
               const boardCard = simState.enemyBoard[lIdx];
               if (boardCard) {
                 boardCard.currentPower =
@@ -1665,24 +1688,7 @@ export function getBestSimulatedMove() {
                   }
                 }
               } else if (sk.id === 'summon') {
-                const isSelf = Boolean(sk.self || sk.targetSelf);
-                const isTargetToken = Boolean(
-                  sk.targetToken || sk.targetType === 'token'
-                );
                 const selfId = card ? card.baseId || card.id : null;
-                const targetIds =
-                  sk.targetIds || (sk.targetId ? [sk.targetId] : null);
-                const targetKeyword = sk.targetKeyword;
-                const rawSkillIds = Array.isArray(sk.targetSkills)
-                  ? sk.targetSkills.filter(Boolean)
-                  : typeof sk.targetSkills === 'string' &&
-                      sk.targetSkills.trim() !== ''
-                    ? [sk.targetSkills.trim()]
-                    : sk.targetSkill
-                      ? [sk.targetSkill]
-                      : [];
-                const targetSkills = [...new Set(rawSkillIds)];
-                const reqP = sk.value;
                 const isExcludeBoard = Boolean(sk.excludeBoard);
                 const presentBoardIds = isExcludeBoard
                   ? activeEnemyBoard
@@ -1695,54 +1701,15 @@ export function getBestSimulatedMove() {
                   if (currentUsedHand.includes(i)) continue;
                   let childCard = originalHand[i];
 
-                  if (isExcludeBoard) {
-                    if (
-                      presentBoardIds.includes(childCard.id) ||
-                      (childCard.baseId &&
-                        presentBoardIds.includes(childCard.baseId))
-                    ) {
-                      continue;
-                    }
-                  }
-
-                  let matches = true;
-                  if (isSelf && selfId) {
-                    matches = matchesCardId(childCard, selfId);
-                  } else if (isTargetToken) {
-                    const isTok = Boolean(
-                      childCard.isToken ||
-                      childCard.id?.startsWith('token_') ||
-                      childCard.baseId?.startsWith('token_')
-                    );
-                    matches =
-                      isTok &&
-                      (reqP !== undefined && reqP !== null
-                        ? (childCard.power || 0) <= reqP
-                        : true);
-                  } else if (Array.isArray(targetIds) && targetIds.length > 0) {
-                    matches = matchesCardIds(childCard, targetIds);
-                  } else if (
-                    typeof targetKeyword === 'string' &&
-                    targetKeyword
+                  // skillLogic.js の isValidSummonCard と同一の判定順序・論理（matchesSummonTarget）で評価
+                  if (
+                    !matchesSummonTarget(childCard, sk, {
+                      selfId,
+                      presentBoardIds,
+                    })
                   ) {
-                    matches = matchesCardKeyword(childCard, targetKeyword);
-                  } else if (
-                    Array.isArray(targetSkills) &&
-                    targetSkills.length > 0
-                  ) {
-                    const masterCard = CARD_MASTER?.find(
-                      (m) => m.id === childCard.id
-                    );
-                    matches = targetSkills.some(
-                      (sId) =>
-                        hasSkillDeep(childCard, sId) ||
-                        (masterCard && hasSkillDeep(masterCard, sId))
-                    );
-                  } else if (reqP !== undefined && reqP !== null) {
-                    matches = (childCard.power || 0) <= reqP;
+                    continue;
                   }
-
-                  if (!matches) continue;
 
                   let children = buildCardPlayTree(
                     childCard,
@@ -1985,8 +1952,6 @@ export function getBestSimulatedMove() {
                   results.push([{ type: 'leap' }, ...nb]);
                 }
               } else if (sk.id === 'resurrect') {
-                const targetIds =
-                  sk.targetIds || (sk.targetId ? [sk.targetId] : null);
                 const maxP = sk.value || 1;
                 const candidates = [...originalDiscard, ...currentDiscarded];
                 const isExcludeBoard = Boolean(sk.excludeBoard);
@@ -2001,26 +1966,13 @@ export function getBestSimulatedMove() {
                   if (currentUsedDiscard.includes(i)) continue;
                   let resCard = candidates[i];
 
-                  if (resCard.isToken) continue;
-
-                  if (isExcludeBoard) {
-                    if (
-                      presentBoardIds.includes(resCard.id) ||
-                      (resCard.baseId &&
-                        presentBoardIds.includes(resCard.baseId))
-                    ) {
-                      continue;
-                    }
-                  }
-
-                  if (Array.isArray(targetIds) && targetIds.length > 0) {
-                    if (!matchesCardIds(resCard, targetIds)) continue;
-                  } else {
-                    const master = CARD_MASTER.find(
-                      (m) => m.id === resCard.id || m.id === resCard.baseId
-                    );
-                    const baseP = master ? master.power : resCard.power || 0;
-                    if (baseP > maxP) continue;
+                  // skillLogic.js の実戦判定（matchesResurrectTarget）と同一ロジックで評価
+                  if (
+                    !matchesResurrectTarget(resCard, sk, {
+                      presentBoardIds,
+                    })
+                  ) {
+                    continue;
                   }
 
                   for (let j = 0; j < 3; j++) {
@@ -4009,24 +3961,9 @@ export function evaluateAdhocTokenLanes(
         }
       }
     } else if (sk.id === 'summon') {
-      const isSelf = Boolean(sk.self || sk.targetSelf);
-      const isTargetToken = Boolean(
-        sk.targetToken || sk.targetType === 'token'
-      );
       const selfId = tokenCard ? tokenCard.baseId || tokenCard.id : null;
       const originalHand = GameState.enemyHand || [];
       const originalDiscard = GameState.enemyDiscard || [];
-      const targetIds = sk.targetIds || (sk.targetId ? [sk.targetId] : null);
-      const targetKeyword = sk.targetKeyword;
-      const rawSkillIds = Array.isArray(sk.targetSkills)
-        ? sk.targetSkills.filter(Boolean)
-        : typeof sk.targetSkills === 'string' && sk.targetSkills.trim() !== ''
-          ? [sk.targetSkills.trim()]
-          : sk.targetSkill
-            ? [sk.targetSkill]
-            : [];
-      const targetSkills = [...new Set(rawSkillIds)];
-      const reqP = sk.value;
       const isExcludeBoard = Boolean(sk.excludeBoard);
       const presentBoardIds = isExcludeBoard
         ? activeEnemyBoard
@@ -4039,45 +3976,15 @@ export function evaluateAdhocTokenLanes(
         if (currentUsedHand.includes(i)) continue;
         let childCard = originalHand[i];
 
-        if (isExcludeBoard) {
-          if (
-            presentBoardIds.includes(childCard.id) ||
-            (childCard.baseId && presentBoardIds.includes(childCard.baseId))
-          ) {
-            continue;
-          }
+        // skillLogic.js の isValidSummonCard と同一の判定順序・論理（matchesSummonTarget）で評価
+        if (
+          !matchesSummonTarget(childCard, sk, {
+            selfId,
+            presentBoardIds,
+          })
+        ) {
+          continue;
         }
-
-        let matches = true;
-        if (isSelf && selfId) {
-          matches = matchesCardId(childCard, selfId);
-        } else if (isTargetToken) {
-          const isTok = Boolean(
-            childCard.isToken ||
-            childCard.id?.startsWith('token_') ||
-            childCard.baseId?.startsWith('token_')
-          );
-          matches =
-            isTok &&
-            (reqP !== undefined && reqP !== null
-              ? (childCard.power || 0) <= reqP
-              : true);
-        } else if (Array.isArray(targetIds) && targetIds.length > 0) {
-          matches = matchesCardIds(childCard, targetIds);
-        } else if (typeof targetKeyword === 'string' && targetKeyword) {
-          matches = matchesCardKeyword(childCard, targetKeyword);
-        } else if (Array.isArray(targetSkills) && targetSkills.length > 0) {
-          const masterCard = CARD_MASTER?.find((m) => m.id === childCard.id);
-          matches = targetSkills.some(
-            (sId) =>
-              hasSkillDeep(childCard, sId) ||
-              (masterCard && hasSkillDeep(masterCard, sId))
-          );
-        } else if (reqP !== undefined && reqP !== null) {
-          matches = (childCard.power || 0) <= reqP;
-        }
-
-        if (!matches) continue;
 
         let children = buildCardPlayTreeAdhoc(
           childCard,
@@ -4302,7 +4209,6 @@ export function evaluateAdhocTokenLanes(
       }
     } else if (sk.id === 'resurrect') {
       const originalDiscard = GameState.enemyDiscard || [];
-      const targetIds = sk.targetIds || (sk.targetId ? [sk.targetId] : null);
       const maxP = sk.value || 1;
       const candidates = [...originalDiscard, ...currentDiscard];
       const isExcludeBoard = Boolean(sk.excludeBoard);
@@ -4317,29 +4223,13 @@ export function evaluateAdhocTokenLanes(
         if (currentUsedDiscard.includes(i)) continue;
         let resCard = candidates[i];
 
-        if (resCard.isToken) continue;
-
-        if (isExcludeBoard) {
-          if (
-            presentBoardIds.includes(resCard.id) ||
-            (resCard.baseId && presentBoardIds.includes(resCard.baseId))
-          ) {
-            continue;
-          }
-        }
-
-        if (Array.isArray(targetIds) && targetIds.length > 0) {
-          if (
-            !targetIds.includes(resCard.id) &&
-            !targetIds.includes(resCard.baseId)
-          )
-            continue;
-        } else {
-          const master = CARD_MASTER.find(
-            (m) => m.id === resCard.id || m.id === resCard.baseId
-          );
-          const baseP = master ? master.power : resCard.power || 0;
-          if (baseP > maxP) continue;
+        // skillLogic.js の実戦判定（matchesResurrectTarget）と同一ロジックで評価
+        if (
+          !matchesResurrectTarget(resCard, sk, {
+            presentBoardIds,
+          })
+        ) {
+          continue;
         }
 
         for (let j = 0; j < 3; j++) {
@@ -5605,13 +5495,7 @@ export function simulateMove(
               if (sk.id === 'call' || sk.id === 'assemble') {
                 // 【号令・召集の仮評価（simulateMove版）】
                 // processActionSequence と同じロジック: call/assembleの値分のパワーを仮加算
-                let callBonus = sk.value || 4;
-                if (sk.targetId) {
-                  const targetCard = CARD_MASTER.find(
-                    (c) => c.id === sk.targetId
-                  );
-                  callBonus = targetCard?.power || 6;
-                }
+                const callBonus = estimateCallAssembleBonus(sk);
                 const boardCard = simState.enemyBoard[laneIdx];
                 if (boardCard) {
                   boardCard.currentPower =
