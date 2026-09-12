@@ -91,11 +91,19 @@ if ($playerData) {
         $playerData['points'] = max(0, $currentPoints + $points);
         if ($total_points > 0) {
             $playerData['total_points'] = max(0, $currentTotal + $total_points);
+        } else {
+            if ($points > 0) {
+                $playerData['total_points'] = max(0, $currentTotal + $points);
+            }
         }
     } else {
         $playerData['points'] = max(0, $points);
         if ($total_points > 0) {
             $playerData['total_points'] = max(0, $total_points);
+        } else {
+            if (!isset($playerData['total_points']) || $playerData['total_points'] < $playerData['points']) {
+                $playerData['total_points'] = $playerData['points'];
+            }
         }
     }
 

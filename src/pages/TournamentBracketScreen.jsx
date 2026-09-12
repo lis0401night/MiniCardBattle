@@ -10,7 +10,11 @@ import { SCHOOL_NAMES } from '../utils/constants/eventTournamentDialogues.js';
 import { playSound, switchScreen } from '../utils/gameUtils.js';
 import { savePointsToServer } from '../utils/apiUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  TOURNAMENT_POINTS_KEY,
+  TOURNAMENT_TOTAL_POINTS_KEY,
+} from '../utils/constants/config.js';
 
 const SVG_WIDTH = 1100;
 const SVG_HEIGHT = 900;
@@ -75,20 +79,13 @@ export default function TournamentBracketScreen() {
       GameState.gameMode = 'free';
       if (points > 0) {
         let currentPts =
-          parseInt(
-            localStorage.getItem('mini_card_battle_tournament_points')
-          ) || 0;
+          parseInt(localStorage.getItem(TOURNAMENT_POINTS_KEY), 10) || 0;
         let totalPts =
-          parseInt(
-            localStorage.getItem('mini_card_battle_tournament_total_points')
-          ) || 0;
+          parseInt(localStorage.getItem(TOURNAMENT_TOTAL_POINTS_KEY), 10) || 0;
         currentPts += points;
         totalPts += points;
-        localStorage.setItem('mini_card_battle_tournament_points', currentPts);
-        localStorage.setItem(
-          'mini_card_battle_tournament_total_points',
-          totalPts
-        );
+        localStorage.setItem(TOURNAMENT_POINTS_KEY, String(currentPts));
+        localStorage.setItem(TOURNAMENT_TOTAL_POINTS_KEY, String(totalPts));
 
         // サーバーにポイントを同期（keepalive: true により画面遷移しても裏で最後まで送信されます）
         savePointsToServer(

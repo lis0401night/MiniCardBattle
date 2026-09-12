@@ -44,7 +44,7 @@ $timestamp = time();
 
 // パラメータのバリデーション・サニタイズ
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
-$name = htmlspecialchars($data['name'], ENT_QUOTES, 'UTF-8');
+$name = isset($data['name']) ? sanitizePlayerDisplayName($data['name']) : 'プレイヤー';
 $character = preg_replace('/[^a-z0-9_]/', '', $data['character']);
 $deck = sanitizeDeckList($data['deck'] ?? null);
 $skin = isset($data['skin']) ? preg_replace('/[^a-z0-9_]/', '', $data['skin']) : 'default';

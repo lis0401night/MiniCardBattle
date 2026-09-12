@@ -109,7 +109,6 @@ export function goToModeSelect() {
   switchScreen('screen-mode-select');
 }
 
-
 export function showTutorialSelect() {
   playSound(SOUNDS.seClick);
   switchScreen('screen-tutorial-select');

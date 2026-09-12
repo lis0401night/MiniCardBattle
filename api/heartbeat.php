@@ -25,7 +25,7 @@ if (!$data || !isset($data['uuid'])) {
 
 // パラメータのバリデーション・サニタイズ
 $uuid = preg_replace('/[^a-z0-9-]/', '', $data['uuid']);
-$name = isset($data['name']) ? sanitizePlayerDisplayName($data['name']) : '挑戦者';
+$name = isset($data['name']) ? sanitizePlayerDisplayName($data['name']) : 'プレイヤー';
 $icon = isset($data['icon']) ? preg_replace('/[^a-z0-9_]/', '', $data['icon']) : 'player';
 
 if (strlen($uuid) < 10) {

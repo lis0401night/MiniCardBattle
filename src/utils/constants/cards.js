@@ -2326,7 +2326,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 4,
     skills: [{ id: 'all_forms' }],
-    voiceCategory: 'machine_new',
+    voiceCategory: 'stone',
     flavor:
       'あらゆる姿形に変幻する流体金属。その存在は固定されず、見る者の意志に応じて姿を変える。',
   },
@@ -3420,7 +3420,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 4,
     skills: [{ id: 'summon', targetToken: true }],
-    voiceCategory: 'human_male_ikemen',
+    voiceCategory: 'human_male_trickstar',
     flavor: '約束を違えた愚かな街には、甘く残酷な復讐の調べがよく似合う。',
   },
   {

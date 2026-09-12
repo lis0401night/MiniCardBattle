@@ -2354,8 +2354,8 @@ export function matchesSummonTarget(card, skill, options = {}) {
   if (isTargetToken) {
     const isTok = Boolean(
       card.isToken ||
-        card.id?.startsWith('token_') ||
-        card.baseId?.startsWith('token_')
+      card.id?.startsWith('token_') ||
+      card.baseId?.startsWith('token_')
     );
     if (!isTok) return false;
   }
@@ -2388,8 +2388,7 @@ export function matchesSummonTarget(card, skill, options = {}) {
     const masterCard = CARD_MASTER?.find((m) => m.id === card.id);
     const hasMatchingSkill = targetSkills.some(
       (sId) =>
-        hasSkillDeep(card, sId) ||
-        (masterCard && hasSkillDeep(masterCard, sId))
+        hasSkillDeep(card, sId) || (masterCard && hasSkillDeep(masterCard, sId))
     );
     if (!hasMatchingSkill) return false;
   }

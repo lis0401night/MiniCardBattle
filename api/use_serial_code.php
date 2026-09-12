@@ -164,10 +164,10 @@ if (isset($serials_config[$code])) {
             $player_data['unlocked_icons'][] = $rewardValue;
         }
     } else if ($rewardType === 'card') {
-        if (!isset($player_data['player_inventory']) || !is_array($player_data['player_inventory'])) {
-            $player_data['player_inventory'] = [];
+        if (!isset($player_data['inventory']) || !is_array($player_data['inventory'])) {
+            $player_data['inventory'] = [];
         }
-        $player_data['player_inventory'][$rewardValue] = ($player_data['player_inventory'][$rewardValue] ?? 0) + 1;
+        $player_data['inventory'][$rewardValue] = min(99, ($player_data['inventory'][$rewardValue] ?? 0) + 1);
     }
 
     // 使用済みシリアルコードを追加

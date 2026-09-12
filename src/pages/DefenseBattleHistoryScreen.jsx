@@ -10,6 +10,7 @@ import {
 } from '../utils/constants/characters.js';
 import {
   appendVersionQuery,
+  DEFAULT_PLAYER_NAME,
   DEFENSE_HISTORY_KEY,
 } from '../utils/constants/config.js';
 import { getOrCreateUUID, playSound } from '../utils/gameUtils.js';
@@ -81,7 +82,7 @@ export default function DefenseBattleHistoryScreen() {
   const handleRecordClick = (item) => {
     playSound?.(SOUNDS?.seClick);
     const deckCards = Array.isArray(item.attackerDeck) ? item.attackerDeck : [];
-    const attackerName = item.attackerName || '挑戦者';
+    const attackerName = item.attackerName || DEFAULT_PLAYER_NAME;
 
     const charKey = item.attackerCharacter || 'android';
     const charData = CHARACTERS?.[charKey] || CHARACTERS?.android;
@@ -218,7 +219,7 @@ export default function DefenseBattleHistoryScreen() {
                         marginRight: '10px',
                       }}
                     >
-                      {item.attackerName || '挑戦者'}
+                      {item.attackerName || DEFAULT_PLAYER_NAME}
                     </span>
                     <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
                       (Pt: {ptsVal})
