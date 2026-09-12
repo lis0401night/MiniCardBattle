@@ -1,198 +1,185 @@
+/**
+ * パック開封演出モーダルコンポーネント
+ *
+ * 交換所等でのパック交換時に表示されるパック画面。
+ * 画面中央に立体的なパックを表示し、プレイヤーがタップすることで開封アニメーション
+ * （シェイク・カード飛び出し・めくりSE）が発生し、フリップイン演出とともに
+ * 排出されたカードの詳細プレビューを表示します。
+ */
+
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { saveDeck } from '../../services/deck.js';
-import { setupDialogueScreen } from '../../services/uiDialogue.js';
-import {
-  cleanupBattleState,
-  resolveHighDifficultyRewards,
-} from '../../game/battle/index.js';
-import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
-import { checkIsHighDiffMode, playSound } from '../../utils/gameUtils.js';
+import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
-
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
 
-export default function RewardOverlay() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [card, setCard] = useState(null);
-  const [phase, setPhase] = useState('pack'); // 'pack' | 'animating' | 'reveal'
+/**
+ * パック開封演出モーダル。
+ *
+/**
+ * パック開封演出モーダル。
+ * 単一または複数のパック開封に対応し、複数パック時は待機パックのスタック表示および
+ * 連続開封（次へ）遷移を提供します。
+ *
+ * @param {Object} props
+ * @param {string} [props.cardId] - 排出されたカードのID（単一パック用）
+ * @param {Array<string>} [props.cardIds] - 排出されたカードIDの配列（複数パック用）
+ * @param {string} [props.coverCardId='catastrophe'] - パック表紙として合成するカードのID
+ * @param {string} [props.logoUrl] - パック表面に重ねるタイトルロゴ画像のURL（省略時はpackvol01.pngを自動解決）
+ * @param {Function} props.onClose - モーダル終了（OK押下時）のコールバック関数
+ * @returns {JSX.Element|null} パック開封モーダル要素
+ */
+export default function PackOpeningModal({
+  cardId,
+  cardIds = [],
+  coverCardId = 'catastrophe',
+  logoUrl,
+  onClose,
+}) {
+  // 初期開封キュー（配列指定を優先、単一IDも後方互換サポート）
+  const initialQueue =
+    Array.isArray(cardIds) && cardIds.length > 0
+      ? cardIds
+      : cardId
+        ? [cardId]
+        : ['catastrophe'];
+
+  const [queue, setQueue] = useState(initialQueue);
+  // フェーズ管理: 'pack'（パック待機） -> 'animating'（開封演出中） -> 'reveal'（カード公開）
+  const [phase, setPhase] = useState('pack');
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const [rewardQueue, setRewardQueue] = useState([]);
   const timersRef = useRef([]);
 
+  // 現在開封中のカードIDおよびカードデータ
+  const currentCardId = queue[0];
+  const card =
+    CARD_MASTER.find((m) => m.id === currentCardId) ||
+    CARD_MASTER.find((m) => m.id === 'catastrophe') ||
+    CARD_MASTER[0];
+
+  /**
+   * 登録されたすべてのタイマーをクリアするユーティリティ関数
+   */
   const clearAllTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
   }, []);
 
-  const setupReward = useCallback(
-    (rewardCardId, autoAnimate = false) => {
-      // 新しい報酬を表示する前に既存のタイマーをすべてクリア
-      clearAllTimers();
-
-      let rewardCardTemplate = CARD_MASTER.find((m) => m.id === rewardCardId);
-      if (!rewardCardTemplate) {
-        // カードデータが見つからない場合、スケルトンをフォールバックとして使用
-        rewardCardTemplate =
-          CARD_MASTER.find((m) => m.id === 'skeleton') || CARD_MASTER[0];
-      }
-      if (rewardCardTemplate) {
-        setCard({ ...rewardCardTemplate, owner: 'blue' });
-
-        // 報酬を即座に付与（アニメーションのタイミングに依存しない）
-        GameState.playerInventory[rewardCardId] =
-          (GameState.playerInventory[rewardCardId] || 0) + 1;
-        saveDeck();
-
-        setIsFadingOut(false);
-        setIsVisible(true);
-
-        if (autoAnimate) {
-          // パックのタップは最初の一回のみ。2枚目以降は自動で開封アニメーションへ進行
-          setPhase('animating');
-          const timer1 = setTimeout(() => {
-            playSound(SOUNDS.seTurnover);
-          }, 150);
-          timersRef.current.push(timer1);
-
-          const timer2 = setTimeout(() => {
-            setPhase('reveal');
-            playSound(SOUNDS.seSkill || SOUNDS.seClick);
-          }, 600);
-          timersRef.current.push(timer2);
-        } else {
-          setPhase('pack');
-        }
-      }
-    },
-    [clearAllTimers]
-  );
-
   useEffect(() => {
-    window.showCardRewardReact = (rewardCardIds) => {
-      const ids = Array.isArray(rewardCardIds)
-        ? rewardCardIds
-        : [rewardCardIds];
-      if (ids.length === 0) return;
-      setRewardQueue(ids);
-      setupReward(ids[0]);
-    };
-
-    window.closeRewardScreenReact = () => {
-      clearAllTimers();
-      setIsVisible(false);
-    };
-
     return () => {
-      delete window.showCardRewardReact;
-      delete window.closeRewardScreenReact;
       clearAllTimers();
     };
-  }, [setupReward, clearAllTimers]);
+  }, [clearAllTimers]);
 
-  if (!isVisible || !card) return null;
-
-  const handlePackClick = () => {
+  /**
+   * パッククリック/タップ時の開封アニメーション開始ハンドラ
+   */
+  const handlePackClick = useCallback(() => {
     if (phase !== 'pack') return;
-    playSound(SOUNDS.seClick);
+
+    playSound(SOUNDS?.seClick);
     setPhase('animating');
 
-    // カードがシュッと飛び出すタイミングでめくるSEを再生 (タップ音と重なりすぎないよう150ms遅延)
+    // 150ms後にカードめくりSEを再生
     const timer1 = setTimeout(() => {
-      playSound(SOUNDS.seTurnover);
+      playSound(SOUNDS?.seTurnover);
     }, 150);
     timersRef.current.push(timer1);
 
-    // 0.8秒後にカード表示フェーズへ移行
+    // 800ms後にカード公開フェーズへ移行し、出現SEを再生
     const timer2 = setTimeout(() => {
       setPhase('reveal');
-      // 表示される瞬間はインパクトのある音を鳴らす
-      playSound(SOUNDS.seSkill || SOUNDS.seClick);
+      playSound(SOUNDS?.seSkill || SOUNDS?.seClick);
     }, 800);
     timersRef.current.push(timer2);
-  };
+  }, [phase]);
 
-  const handleNext = (e) => {
-    e.stopPropagation();
-    playSound(SOUNDS.seClick);
-
-    // デモモードの場合、ダイアログを挟まずにソロメニューへ戻る
-    if (GameState.gameMode === 'reward_demo') {
-      GameState.gameMode = null;
-      setIsFadingOut(true);
-
-      // 先に裏の画面を切り替え
-      if (typeof window.switchScreen === 'function') {
-        window.switchScreen('screen-solo-menu');
-      }
-
-      clearAllTimers();
-
-      // フェードアウト時間300ms待ってから消去
-      const timer3 = setTimeout(() => {
-        setIsVisible(false);
-        setIsFadingOut(false);
-      }, 300);
-      timersRef.current.push(timer3);
-      return;
-    }
-
-    if (rewardQueue.length > 1) {
-      const nextQueue = rewardQueue.slice(1);
-      setRewardQueue(nextQueue);
-      setupReward(nextQueue[0], true);
-      return;
-    }
-
-    // 報酬確認が終わったら
+  /**
+   * カードプレビュー確認後の閉じる処理ハンドラ
+   */
+  const handleClose = useCallback(() => {
+    playSound(SOUNDS?.seClick);
+    setIsFadingOut(true);
     clearAllTimers();
-    setIsVisible(false);
 
-    // 高難易度イベント（超級）の場合、カード獲得確認後にポイント獲得モーダルへ遷移
-    if (checkIsHighDiffMode(GameState.gameMode)) {
-      if (typeof resolveHighDifficultyRewards === 'function') {
-        resolveHighDifficultyRewards();
-        return;
+    // 300msのフェードアウト後にクローズコールバックを呼び出し
+    const timer = setTimeout(() => {
+      if (typeof onClose === 'function') {
+        onClose();
       }
+    }, 300);
+    timersRef.current.push(timer);
+  }, [clearAllTimers, onClose]);
+
+  /**
+   * 次のパックへ進むハンドラ（複数パック開封時）
+   * パックのタップは最初の1回のみとし、2枚目以降は「次へ」押下で自動的に
+   * 開封アニメーション（飛び出し・SE）を経てスムーズにカード公開へ進行します。
+   */
+  const handleNext = useCallback(() => {
+    if (queue.length > 1) {
+      playSound(SOUNDS?.seClick);
+      clearAllTimers();
+      setQueue((prev) => prev.slice(1));
+
+      // パックのタップは最初の1回のみ。2枚目以降は自動で開封アニメーションへ移行
+      setPhase('animating');
+
+      // 150ms後にカードめくりSEを再生
+      const timer1 = setTimeout(() => {
+        playSound(SOUNDS?.seTurnover);
+      }, 150);
+      timersRef.current.push(timer1);
+
+      // 600ms後にカード公開フェーズへ移行し、出現SEを再生
+      const timer2 = setTimeout(() => {
+        setPhase('reveal');
+        playSound(SOUNDS?.seSkill || SOUNDS?.seClick);
+      }, 600);
+      timersRef.current.push(timer2);
+    } else {
+      handleClose();
     }
+  }, [queue, handleClose, clearAllTimers]);
 
-    cleanupBattleState();
-    setupDialogueScreen();
-  };
-
-  const renderSkillTagReact = (c) => {
+  /**
+   * スキルタグ描画ヘルパー関数
+   *
+   * @param {Object} c - 対象カードオブジェクト
+   * @returns {JSX.Element|null} スキルタグHTML要素
+   */
+  const renderSkillTagReact = useCallback((c) => {
     if (!window.renderSkillTag) return null;
     return (
       <div
         dangerouslySetInnerHTML={{ __html: window.renderSkillTag(c, false) }}
-      ></div>
+      />
     );
-  };
+  }, []);
 
-  // 対戦相手の画像を取得(フォールバック付き)
-  const enemyId = GameState.enemyConfig?.id || 'android';
-  const enemyImg = appendVersionQuery(
-    GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.webp`
+  if (!card) return null;
+
+  // 表紙カード画像URL
+  const coverImgUrl = appendVersionQuery(
+    `assets/cards/card_${coverCardId}.webp`
   );
-
-  // 難易度に応じた発光色を判定
-  const getGlowColorClass = () => {
-    if (checkIsHighDiffMode(GameState.gameMode)) return 'glow-rainbow';
-
-    const level = GameState.aiLevel || 1;
-    if (level === 1) return 'glow-green';
-    if (level === 2) return 'glow-yellow';
-    if (level >= 3) return 'glow-red';
-    return 'glow-green';
-  };
+  // パックタイトルロゴ画像URL
+  const resolvedLogoUrl =
+    logoUrl !== undefined
+      ? logoUrl
+        ? appendVersionQuery(logoUrl)
+        : null
+      : appendVersionQuery('assets/ui/packvol01.png');
 
   return (
     <div
-      className={`screen active reward-overlay-container ${isFadingOut ? 'fade-out' : ''}`}
+      className={`screen active pack-opening-modal-container ${
+        isFadingOut ? 'fade-out' : ''
+      }`}
       style={{
-        zIndex: 2000,
-        background: 'rgba(0,0,0,0.85)',
+        zIndex: 5000,
+        background: 'rgba(0,0,0,0.88)',
         display: 'flex',
         position: 'fixed',
         top: 0,
@@ -204,13 +191,13 @@ export default function RewardOverlay() {
       }}
     >
       <style>{`
-        /* 閉じる際のフェードアウト */
-        @keyframes reward-fade-out {
+        /* 閉じる際のフェードアウトアニメーション */
+        @keyframes pack-modal-fade-out {
           0% { opacity: 1; }
           100% { opacity: 0; }
         }
-        .reward-overlay-container.fade-out {
-          animation: reward-fade-out 0.3s forwards;
+        .pack-opening-modal-container.fade-out {
+          animation: pack-modal-fade-out 0.3s forwards;
           pointer-events: none;
         }
 
@@ -253,7 +240,19 @@ export default function RewardOverlay() {
           }
         }
 
-        .reward-pack-wrapper {
+        .stacked-pack {
+          position: absolute;
+          top: -15px;
+          right: -25px;
+          width: 280px;
+          height: 380px;
+          transform: scale(0.95);
+          z-index: 0;
+          filter: brightness(0.85);
+          pointer-events: none;
+        }
+
+        .pack-wrapper {
           position: relative;
           width: 280px;
           height: 380px;
@@ -278,39 +277,25 @@ export default function RewardOverlay() {
           animation: pack-pop-shake 0.55s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        /* 難易度によるパック背後の発光 */
+        /* パック背後の発光 */
         .pack-glow {
           position: absolute;
           top: 50%;
           left: 50%;
-          width: 85%;
-          height: 85%;
+          width: 95%;
+          height: 95%;
           transform: translate(-50%, -50%);
           border-radius: 50%;
           filter: blur(40px);
           z-index: -1;
           pointer-events: none;
-        }
-        .glow-green { background: #22c55e; animation: pulse-glow 2s infinite; }
-        .glow-yellow { background: #eab308; animation: pulse-glow 2s infinite; }
-        .glow-red { background: #ef4444; animation: pulse-glow 1.5s infinite; }
-        .glow-rainbow {
-          background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
-          width: 120%;
-          height: 120%;
-          filter: blur(50px);
-          animation: rainbow-spin 3s linear infinite;
+          background: #eab308;
+          animation: pulse-glow 2s infinite;
         }
 
         @keyframes pulse-glow {
           0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.9); }
           50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-        }
-        
-        @keyframes rainbow-spin {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.9); opacity: 0.8; }
-          50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.1); opacity: 1; }
-          100% { transform: translate(-50%, -50%) rotate(360deg) scale(0.9); opacity: 0.8; }
         }
 
         .pack-image {
@@ -325,13 +310,13 @@ export default function RewardOverlay() {
 
         /* 光沢と陰影をブレンドするレイヤー */
         .pack-image.specular {
-          mix-blend-mode: overlay; /* 色のメリハリを出すためoverlayに戻しつつ */
-          opacity: 0.55; /* 不透明度を下げて白飛びを防止 */
+          mix-blend-mode: overlay;
+          opacity: 0.55;
           z-index: 12;
           pointer-events: none;
         }
 
-        /* パックテキスト画像（最前面レイヤー） */
+        /* パックテキスト画像 */
         .pack-text-image {
           position: absolute;
           top: 0;
@@ -343,15 +328,27 @@ export default function RewardOverlay() {
           pointer-events: none;
         }
 
-        .enemy-portrait-frame {
+        /* パックタイトルロゴ画像（最前面レイヤー） */
+        .pack-logo-image {
+          position: absolute;
+          top: 36%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 86%;
+          max-height: 40%;
+          object-fit: contain;
+          z-index: 14;
+          pointer-events: none;
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+        }
+
+        .cover-portrait-frame {
           position: absolute;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
           z-index: 11;
-          
-          /* パック形状での切り抜き (はみ出し防止) */
           mask-image: url('${appendVersionQuery('assets/ui/packimg01.png')}');
           mask-size: contain;
           mask-repeat: no-repeat;
@@ -360,33 +357,29 @@ export default function RewardOverlay() {
           -webkit-mask-size: contain;
           -webkit-mask-repeat: no-repeat;
           -webkit-mask-position: center;
-          
           display: flex;
           align-items: center;
           justify-content: center;
           pointer-events: none;
         }
 
-        .enemy-portrait-img {
+        .cover-portrait-img {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          /* 発色が強すぎないように彩度とコントラストを微調整 */
           filter: contrast(1.08) saturate(1.15) brightness(0.98);
           mix-blend-mode: multiply;
-          opacity: 1; /* 透けすぎによる色褪せを防ぐため1に */
+          opacity: 1;
         }
 
         .tap-prompt {
           position: absolute;
           bottom: -40px;
-          /* transformがアニメーション(pulse)で上書きされるのを防ぐため、margin: autoで中央揃え */
           left: 0;
           right: 0;
           margin: auto;
           width: max-content;
           text-align: center;
-          
           color: #ffffff;
           font-weight: bold;
           font-size: 1.1rem;
@@ -399,42 +392,30 @@ export default function RewardOverlay() {
 
         .shooting-card {
           position: absolute;
-          bottom: 45px; /* パックの背後に収まるよう初期位置を調整 */
+          bottom: 45px;
           left: 50%;
-          width: 210px; /* パックサイズに合わせて大きく */
-          height: 290px; /* パックサイズに合わせて大きく */
+          width: 210px;
+          height: 290px;
           background: linear-gradient(135deg, #1e3a8a, #0f172a);
           border: 3px solid #38bdf8;
           border-radius: 10px;
           box-shadow: 0 0 20px rgba(56, 189, 248, 0.7);
           animation: card-shoot-up 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-          z-index: 1; /* パックの後ろ側に配置 */
+          z-index: 1;
           pointer-events: none;
         }
 
         .reveal-wrapper {
           animation: card-flip-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           display: flex;
-          max-height: 95dvh; /* 画面内に収めてスクロール領域を有効化 */
-        }
-
-        .stacked-pack {
-          position: absolute;
-          top: -15px;
-          right: -25px;
-          width: 280px;
-          height: 380px;
-          transform: scale(0.95);
-          z-index: 0;
-          filter: brightness(0.85);
-          pointer-events: none;
+          max-height: 95dvh;
         }
       `}</style>
 
       {phase !== 'reveal' ? (
-        <div className="reward-pack-wrapper">
+        <div className="pack-wrapper">
           {/* 背後の待機パック（残り枚数分だけ奥へ重ねて表示。多すぎると見づらいので最大3枚まで） */}
-          {Array.from({ length: Math.min(rewardQueue.length - 1, 3) })
+          {Array.from({ length: Math.min(queue.length - 1, 3) })
             .map((_, i) => i)
             .reverse()
             .map((i) => (
@@ -452,11 +433,11 @@ export default function RewardOverlay() {
                   src={appendVersionQuery('assets/ui/packimg01.png')}
                   alt="Booster Pack"
                 />
-                <div className="enemy-portrait-frame">
+                <div className="cover-portrait-frame">
                   <img
-                    className="enemy-portrait-img"
-                    src={enemyImg}
-                    alt="Enemy Key Visual"
+                    className="cover-portrait-img"
+                    src={coverImgUrl}
+                    alt="Pack Cover"
                   />
                 </div>
                 <img
@@ -469,19 +450,29 @@ export default function RewardOverlay() {
                   src={appendVersionQuery('assets/ui/packtextimg01.png')}
                   alt="Pack Text"
                 />
+                {/* 5. パックタイトルロゴ */}
+                {resolvedLogoUrl && (
+                  <img
+                    className="pack-logo-image"
+                    src={resolvedLogoUrl}
+                    alt="Pack Logo"
+                  />
+                )}
               </div>
             ))}
 
-          {/* 飛び出すカード(パックの後ろに描画) */}
+          {/* 飛び出すカード (パックの後ろに描画) */}
           {phase === 'animating' && <div className="shooting-card" />}
 
           {/* パック本体 */}
           <div
-            className={`pack-container ${phase === 'animating' ? 'shaking' : ''}`}
+            className={`pack-container ${
+              phase === 'animating' ? 'shaking' : ''
+            }`}
             onClick={handlePackClick}
           >
-            {/* 0. 難易度ごとの後光（発光）エフェクト */}
-            <div className={`pack-glow ${getGlowColorClass()}`} />
+            {/* パック後光エフェクト */}
+            <div className="pack-glow" />
 
             {/* 1. パック画像（底） */}
             <img
@@ -489,26 +480,38 @@ export default function RewardOverlay() {
               src={appendVersionQuery('assets/ui/packimg01.png')}
               alt="Booster Pack"
             />
-            {/* 2. キャラクター画像（中・乗算ブレンド） */}
-            <div className="enemy-portrait-frame">
+
+            {/* 2. 表紙カード画像（中・乗算ブレンド） */}
+            <div className="cover-portrait-frame">
               <img
-                className="enemy-portrait-img"
-                src={enemyImg}
-                alt="Enemy Key Visual"
+                className="cover-portrait-img"
+                src={coverImgUrl}
+                alt="Pack Cover"
               />
             </div>
-            {/* 3. パック画像（天・オーバーレイでハイライトを強調） */}
+
+            {/* 3. パック画像（天・光沢オーバーレイ） */}
             <img
               className="pack-image specular"
               src={appendVersionQuery('assets/ui/packimg01.png')}
               alt="Booster Pack Specular"
             />
-            {/* 4. パックのテキスト画像（最前面） */}
+
+            {/* 4. パックのテキスト画像 */}
             <img
               className="pack-text-image"
               src={appendVersionQuery('assets/ui/packtextimg01.png')}
               alt="Pack Text"
             />
+
+            {/* 5. パックタイトルロゴ（最前面） */}
+            {resolvedLogoUrl && (
+              <img
+                className="pack-logo-image"
+                src={resolvedLogoUrl}
+                alt="Pack Logo"
+              />
+            )}
 
             {phase === 'pack' && (
               <div className="tap-prompt">タップしてパックを開封！</div>
@@ -518,7 +521,7 @@ export default function RewardOverlay() {
       ) : (
         <div className="reveal-wrapper">
           <CardPreviewContent
-            card={card}
+            card={{ ...card, owner: 'blue' }}
             isRevealed={true}
             renderSkillTagReact={renderSkillTagReact}
             customActionSlot={
@@ -529,6 +532,10 @@ export default function RewardOverlay() {
                   width: '100%',
                   flexShrink: 0,
                   background: 'linear-gradient(45deg, #22c55e, #16a34a)',
+                  color: '#ffffff',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  padding: '10px 0',
                 }}
                 onClick={handleNext}
               >

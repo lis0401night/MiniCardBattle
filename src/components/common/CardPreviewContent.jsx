@@ -11,6 +11,7 @@ import {
   resolveCardSupremacySkills,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import PackCoverImage from './PackCoverImage.jsx';
 
 function CardPreviewContent({
   card,
@@ -40,10 +41,12 @@ function CardPreviewContent({
 
   if (!card) return null;
 
-  const imgUrl =
-    styleProps.imgUrl || (getCardImgUrl ? getCardImgUrl(card) : '');
   const isSkin = styleProps.isSkin || false;
-  const isStandardCard = !isSkin && !styleProps.isPlaymat && !styleProps.isIcon;
+  const isPack = styleProps.isPack || false;
+  const isStandardCard =
+    !isSkin && !styleProps.isPlaymat && !styleProps.isIcon && !isPack;
+  const imgUrl =
+    styleProps.imgUrl || (!isPack && getCardImgUrl ? getCardImgUrl(card) : '');
   const rarityClass = card.isToken
     ? ' rarity-0'
     : card.rarity !== undefined && card.rarity !== null
@@ -67,7 +70,7 @@ function CardPreviewContent({
   const { choices: cardChoices, choices2: cardChoices2 } =
     resolveCardChoices(card);
 
-  let lookupId = card.baseId || card.id;
+  let lookupId = String(card.baseId || card.id || '');
   let isPremiumActive = false;
   let isPremiumUnlocked = false;
 
@@ -98,7 +101,9 @@ function CardPreviewContent({
     ? { width: 280, height: 140 }
     : styleProps.isIcon
       ? { width: 140, height: 140 }
-      : { width: 180, height: 240 };
+      : styleProps.isPack
+        ? { width: 155, height: 260 }
+        : { width: 180, height: 240 };
 
   const renderDescContent = (descContent) => {
     if (Array.isArray(descContent)) {
@@ -179,43 +184,55 @@ function CardPreviewContent({
           >
             <div
               className={
-                styleProps.isPlaymat || styleProps.isIcon
+                styleProps.isPlaymat || styleProps.isIcon || styleProps.isPack
                   ? ''
                   : `card blue${!isSkin ? rarityClass : ''}`
               }
               style={
-                styleProps.isPlaymat
+                styleProps.isPack
                   ? {
                       width: `${cardDims.width}px`,
                       height: `${cardDims.height}px`,
                       position: 'relative',
                       overflow: 'hidden',
                       cursor: 'pointer',
-                      border: '2px solid #38bdf8',
+                      border: '2px solid rgba(250, 204, 21, 0.6)',
                       borderRadius: '8px',
-                      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.6)',
-                      backgroundColor: '#000',
+                      boxShadow: '0 4px 15px rgba(250, 204, 21, 0.3)',
+                      backgroundColor: '#0f172a',
                     }
-                  : styleProps.isIcon
+                  : styleProps.isPlaymat
                     ? {
                         width: `${cardDims.width}px`,
                         height: `${cardDims.height}px`,
                         position: 'relative',
                         overflow: 'hidden',
                         cursor: 'pointer',
-                        border: 'none',
-                        borderRadius: '50%',
-                        boxShadow: 'none',
-                        backgroundColor: '#0f172a',
+                        border: '2px solid #38bdf8',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.6)',
+                        backgroundColor: '#000',
                       }
-                    : {
-                        width: `${cardDims.width}px`,
-                        height: `${cardDims.height}px`,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        backgroundColor: 'transparent',
-                      }
+                    : styleProps.isIcon
+                      ? {
+                          width: `${cardDims.width}px`,
+                          height: `${cardDims.height}px`,
+                          position: 'relative',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          border: 'none',
+                          borderRadius: '50%',
+                          boxShadow: 'none',
+                          backgroundColor: '#0f172a',
+                        }
+                      : {
+                          width: `${cardDims.width}px`,
+                          height: `${cardDims.height}px`,
+                          position: 'relative',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          backgroundColor: 'transparent',
+                        }
               }
               onClick={(e) => {
                 e.stopPropagation();
@@ -228,42 +245,59 @@ function CardPreviewContent({
             >
               {isRevealed ? (
                 <>
-                  <div
-                    className="card-bg"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      position: 'relative',
-                      backgroundColor:
-                        styleProps.isPlaymat || styleProps.isIcon
-                          ? '#0f172a'
-                          : '',
-                    }}
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={card.name}
-                      decoding="sync"
+                  {isPack ? (
+                    <div
+                      className="card-bg"
                       style={{
                         width: '100%',
                         height: '100%',
-                        objectFit: isSkin
-                          ? 'contain'
-                          : styleProps.isPlaymat
-                            ? 'cover'
-                            : styleProps.isIcon
-                              ? 'contain'
-                              : 'cover',
-                        objectPosition: isSkin
-                          ? 'top center'
-                          : styleProps.isPlaymat || styleProps.isIcon
-                            ? 'center'
-                            : 'center center',
-                        filter: filter,
-                        display: 'block',
+                        position: 'relative',
+                        backgroundColor: '#0f172a',
                       }}
-                    />
-                  </div>
+                    >
+                      <PackCoverImage
+                        coverCardId={styleProps.coverCardId || 'catastrophe'}
+                        logoUrl={styleProps.logoUrl || card.logoUrl}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="card-bg"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'relative',
+                        backgroundColor:
+                          styleProps.isPlaymat || styleProps.isIcon
+                            ? '#0f172a'
+                            : '',
+                      }}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={card.name}
+                        decoding="sync"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: isSkin
+                            ? 'contain'
+                            : styleProps.isPlaymat
+                              ? 'cover'
+                              : styleProps.isIcon
+                                ? 'contain'
+                                : 'cover',
+                          objectPosition: isSkin
+                            ? 'top center'
+                            : styleProps.isPlaymat || styleProps.isIcon
+                              ? 'center'
+                              : 'center center',
+                          filter: filter,
+                          display: 'block',
+                        }}
+                      />
+                    </div>
+                  )}
                   {styleProps.isIcon && (
                     <img
                       src={appendVersionQuery(
@@ -411,6 +445,161 @@ function CardPreviewContent({
           </h2>
 
           <div className="preview-scroll-area">
+            {isPack && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
+                {/* パック説明文 */}
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#cbd5e1',
+                    lineHeight: '1.5',
+                    background: 'rgba(15, 23, 42, 0.4)',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(148, 163, 184, 0.1)',
+                  }}
+                >
+                  {styleProps.flavorOverride ||
+                    'Ver 0.4.0で追加されたカードが封入された拡張パック。'}
+                </div>
+
+                {/* 確率表記 */}
+                <div
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(250, 204, 21, 0.3)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      color: '#facc15',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    排出確率
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#cbd5e1',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span
+                        className="rarity-4-text"
+                        style={{ fontWeight: 'bold' }}
+                      >
+                        ★4 レジェンド
+                      </span>
+                      <span>10%</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ color: '#facc15', fontWeight: 'bold' }}>
+                        ★3 ゴールド
+                      </span>
+                      <span>30%</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
+                        ★2 シルバー
+                      </span>
+                      <span>60%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 収録カード（x枚）横に虫眼鏡アイコン */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'rgba(30, 41, 59, 0.6)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.85rem',
+                      color: '#e2e8f0',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    収録カード（{styleProps.packCardCount || 42}枚）
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="収録カード一覧を確認"
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid #38bdf8',
+                      borderRadius: '6px',
+                      color: '#38bdf8',
+                      cursor: 'pointer',
+                      padding: '4px 10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s ease',
+                      userSelect: 'none',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playSound?.(SOUNDS?.seClick);
+                      if (window.showEnemyDeckModal && styleProps.packCardIds) {
+                        window.showEnemyDeckModal(
+                          styleProps.packCardIds,
+                          `${styleProps.titleName || 'vol1:ビギニング'} 収録カード`,
+                          null,
+                          {
+                            isPlayerDeck: true,
+                            zIndex: 4500,
+                            hideCount: true,
+                            hideLeaderSkill: true,
+                          }
+                        );
+                      }
+                    }}
+                  >
+                    🔍
+                  </button>
+                </div>
+              </div>
+            )}
             {isStandardCard && (
               <div className="preview-skills-list">
                 {!isRevealed ? (
@@ -574,7 +763,7 @@ function CardPreviewContent({
                 )}
               </div>
             )}
-            {isRevealed && (
+            {isRevealed && !isPack && (
               <p className="preview-flavor-text" style={{ display: 'block' }}>
                 {styleProps.flavorOverride || card.flavor || '...'}
               </p>
@@ -797,7 +986,7 @@ function CardPreviewContent({
             width: '100%',
             height: '100%',
             background: 'rgba(0,0,0,0.9)',
-            zIndex: 4000,
+            zIndex: 5000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -809,19 +998,38 @@ function CardPreviewContent({
             playSound?.(SOUNDS?.seClick);
           }}
         >
-          <img
-            src={imgUrl}
-            decoding="sync"
-            style={{
-              width: 'min(95vw, calc(95vh * 2 / 3))',
-              height: 'min(95vh, calc(95vw * 3 / 2))',
-              objectFit: 'contain',
-              borderRadius: '12px',
-              boxShadow: '0 0 40px rgba(0,0,0,0.8)',
-              backgroundColor: isSkin ? 'transparent' : '#000',
-            }}
-            alt="Enlarged"
-          />
+          {isPack ? (
+            <div
+              style={{
+                width: 'min(85vw, calc(85vh * 298 / 500))',
+                height: 'min(85vh, calc(85vw * 500 / 298))',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.9))',
+              }}
+            >
+              <PackCoverImage
+                coverCardId={styleProps.coverCardId || 'catastrophe'}
+                logoUrl={styleProps.logoUrl || card.logoUrl}
+              />
+            </div>
+          ) : (
+            <img
+              src={imgUrl}
+              decoding="sync"
+              style={{
+                width: 'min(95vw, calc(95vh * 2 / 3))',
+                height: 'min(95vh, calc(95vw * 3 / 2))',
+                objectFit: 'contain',
+                borderRadius: '12px',
+                boxShadow: '0 0 40px rgba(0,0,0,0.8)',
+                backgroundColor: isSkin ? 'transparent' : '#000',
+              }}
+              alt="Enlarged"
+            />
+          )}
         </div>
       )}
     </>

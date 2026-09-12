@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { UI_IMAGES } from '../utils/constants/uiImages.js';
 import { showGallery } from '../services/uiGallery.js';
 import {
-  showBeginnerGuide,
+  showCommonExchange,
   showOptions,
   showSoloMenu,
   showDeckEditMenu,
@@ -97,9 +97,9 @@ export default function ModeSelectScreen() {
 
       <div className="menu-btn-grid">
         <MenuImageButton
-          label="遊び方"
-          image={images.MENU_RULES}
-          onClick={() => showBeginnerGuide?.()}
+          label="交換所"
+          image={images.MENU_SHOP}
+          onClick={() => showCommonExchange?.()}
         />
 
         <MenuImageButton

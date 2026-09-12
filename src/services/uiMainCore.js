@@ -849,6 +849,23 @@ export function goBackFromDeckEdit(isCancel = false) {
   }
 }
 
+/**
+ * 共通交換所画面（直接「共通」タブ）を表示する
+ * @returns {void}
+ */
+export function showCommonExchange() {
+  playSound(SOUNDS.seClick);
+  switchScreen('screen-common-exchange');
+}
+
+/**
+ * ショップメニュー画面を表示する（後方互換用: 共通交換所へ遷移）
+ * @returns {void}
+ */
+export function showShopMenu() {
+  showCommonExchange();
+}
+
 export function showSoloMenu() {
   playSound(SOUNDS.seClick);
   switchScreen('screen-solo-menu');

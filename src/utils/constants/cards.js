@@ -3575,7 +3575,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'laser',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '航空支援',
     rarity: 2,
     power: 0,
@@ -3590,7 +3590,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gunship',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'アサルト・ガンシップ',
     rarity: 2,
     power: 6,
@@ -3605,7 +3605,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'factory',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'ファクトリー',
     rarity: 3,
     power: 0,
@@ -3622,7 +3622,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'royalguard',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '帝国近衛兵',
     rarity: 2,
     power: 4,
@@ -3634,7 +3634,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'lightning',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '雷撃',
     rarity: 2,
     power: 0,
@@ -3645,7 +3645,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'enlisteddragon',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '徴兵されたドラゴン',
     rarity: 3,
     power: 6,
@@ -3657,7 +3657,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'shielder',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'アラモスの盾持ち',
     rarity: 2,
     power: 2,
@@ -3668,7 +3668,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mercenaryleader',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '傭兵隊長',
     rarity: 2,
     power: 5,
@@ -3679,7 +3679,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mercenarycamp',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '傭兵キャンプ',
     rarity: 3,
     power: 0,
@@ -3696,7 +3696,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ameba',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'ルミナス・アメーバ',
     rarity: 2,
     power: 2,
@@ -3707,7 +3707,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'marimo',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '光る毬藻',
     rarity: 2,
     power: 5,
@@ -3722,7 +3722,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gammaray',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '眼魔の霊',
     rarity: 3,
     power: 1,
@@ -3733,8 +3733,8 @@ export const CARD_MASTER = [
   },
   {
     id: 'gorilla',
-    obtain: [],
-    name: '森の賢者',
+    obtain: ['pack_1'],
+    name: 'ゴリラの族長',
     rarity: 2,
     power: 4,
     skills: [{ id: 'inspire', value: 3 }],
@@ -3744,7 +3744,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'rage',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'レイジ',
     rarity: 2,
     power: 0,
@@ -3755,7 +3755,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'deadleaves',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '枯葉族のシャーマン',
     rarity: 3,
     power: 1,
@@ -3770,7 +3770,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'warriormonk',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '残光の守護者',
     rarity: 2,
     power: 3,
@@ -3781,7 +3781,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'goblet',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '聖なるゴブレット',
     rarity: 2,
     power: 0,
@@ -3796,7 +3796,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'angelpray',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '聖なる祈り',
     rarity: 3,
     power: 0,
@@ -3811,7 +3811,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ghost',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '狩人の霊',
     rarity: 2,
     power: 3,
@@ -3821,7 +3821,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'lantern',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '魂の道しるべ',
     rarity: 2,
     power: 0,
@@ -3836,7 +3836,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'ghoul',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '堕ちたる審問官',
     rarity: 3,
     power: 2,
@@ -3851,7 +3851,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'oblivious',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '忘却術師',
     rarity: 2,
     power: 4,
@@ -3862,7 +3862,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'countermagic',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'カウンター・マジック',
     rarity: 2,
     power: 0,
@@ -3873,7 +3873,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'omnipotent',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '全知のウィザード',
     rarity: 3,
     power: 5,
@@ -3889,7 +3889,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'kappa',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '水面の潜入者',
     rarity: 2,
     power: 2,
@@ -3900,7 +3900,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'tomb',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '怨念の首塚',
     rarity: 2,
     power: 7,
@@ -3910,7 +3910,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'yasha',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '黒夜叉',
     rarity: 3,
     power: 5,
@@ -3926,7 +3926,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'jackal',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '吠えるジャッカル',
     rarity: 2,
     power: 3,
@@ -3937,7 +3937,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'predator',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'クロコダイル',
     rarity: 2,
     power: 6,
@@ -3948,7 +3948,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'falconpriest',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '隼の神官',
     rarity: 3,
     power: 4,
@@ -3958,7 +3958,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'raid',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '保安局の襲撃',
     rarity: 2,
     power: 0,
@@ -3974,7 +3974,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'sisters',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'シスターズ',
     rarity: 2,
     power: 0,
@@ -3999,7 +3999,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'prototype',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '革命派の試作機',
     rarity: 3,
     power: 4,
@@ -4017,7 +4017,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'maiden',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '聖火の女祭司',
     rarity: 2,
     power: 3,
@@ -4028,7 +4028,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'gleipnir',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'マグマの鎖',
     rarity: 2,
     power: 2,
@@ -4043,7 +4043,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'thor',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '雷神',
     rarity: 3,
     power: 5,
@@ -4054,7 +4054,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'elementalburst',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '精霊破',
     rarity: 2,
     power: 0,
@@ -4064,7 +4064,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'mimic',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'ミミック',
     rarity: 2,
     power: 4,
@@ -4075,7 +4075,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'elementalguide',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '精霊の導き手',
     rarity: 3,
     power: 3,
@@ -4086,7 +4086,7 @@ export const CARD_MASTER = [
   },
   {
     id: 'catastrophe',
-    obtain: [],
+    obtain: ['pack_1'],
     name: '大災厄',
     rarity: 3,
     power: 0,
@@ -4100,8 +4100,24 @@ export const CARD_MASTER = [
     flavor: '大地は割れ、空は轟き、あらゆる時間と世界が統合した。',
   },
   {
+    id: 'fallenangel',
+    obtain: ['pack_1'],
+    name: '戦の女神',
+    rarity: 4,
+    power: 4,
+    skills: [
+      { id: 'legendary' },
+      { id: 'draw', value: 2 },
+      { id: 'inspire', value: 2 },
+      { id: 'heal', value: 2 },
+    ],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '堕ちてなお気高き戦の女神。その黒き翼で戦場を舞い、絶望に抗う者たちへ勝利と癒やしをもたらす。',
+  },
+  {
     id: 'elementalmaster',
-    obtain: [],
+    obtain: ['pack_1'],
     name: 'エレメンタル・マスター',
     rarity: 4,
     power: 4,
@@ -4111,8 +4127,8 @@ export const CARD_MASTER = [
       '地水火風、すべての属性を統べる魔術師。絶対的な支配力をもって、高位の精霊たちを従属させる。',
   },
   {
-    id: 'rwby',
-    obtain: [],
+    id: 'combination',
+    obtain: ['pack_1'],
     name: 'コンビネーション',
     rarity: 4,
     power: 0,

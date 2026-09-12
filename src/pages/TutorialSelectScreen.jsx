@@ -50,6 +50,10 @@ const TUTORIAL_REWARDS = {
 
 const DEBUG_MODE_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
+/**
+ * チュートリアル選択画面コンポーネント
+ * @returns {import('react').ReactElement} チュートリアル選択画面
+ */
 export default function TutorialSelectScreen() {
   const [clickCount, setClickCount] = useState(0);
   const [tutorialProgress, setTutorialProgress] = useState({
@@ -547,7 +551,7 @@ export default function TutorialSelectScreen() {
           background: 'transparent',
         }}
       >
-        <BackButton to="screen-beginner-guide" />
+        <BackButton to="screen-solo-menu" />
       </div>
     </div>
   );

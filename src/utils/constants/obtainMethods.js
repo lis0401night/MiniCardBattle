@@ -2,6 +2,7 @@
  * Mini Card Battle - 入手方法の表示定数と変換ヘルパー
  */
 import { CHARACTERS } from './characters.js';
+import { getPackById } from './packs.js';
 
 export const OBTAIN_METHOD_MAP = {
   initial: '初期カード',
@@ -13,6 +14,7 @@ export const OBTAIN_METHOD_MAP = {
   achievement: '実績',
   token: 'トークン（特殊効果による配置）',
   gacha: 'ガチャなど',
+  pack_1: 'パック（vol1:ビギニング）',
 };
 
 const DIFFICULTY_MAP = {
@@ -59,6 +61,15 @@ export function getObtainMethodsText(obtainIds, isToken = false) {
       const charName = rawName.split(/[\s\u3000]+/).pop();
       const diffName = DIFFICULTY_MAP[diffKey] || diffKey;
       return `${charName}（${diffName}）`;
+    }
+
+    // パックIDの場合 (例: pack_1, pack_2)
+    const packMatch = id.match(/^pack_(\d+)$/);
+    if (packMatch) {
+      const packId = parseInt(packMatch[1], 10);
+      const pack = getPackById(packId);
+      const packName = pack?.name || 'パック';
+      return `パック（${packName}）`;
     }
 
     return id;

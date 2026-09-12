@@ -48,7 +48,7 @@ import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
 import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
 
 import { saveDungeonProgress } from '../game/battleDungeon.js';
-import { syncUserProfile } from '../utils/apiUtils.js';
+import { getLatestOwnership, syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   BOSS_CHARACTER_IDS,
@@ -83,6 +83,7 @@ const EXCHANGE_DISPLAY_TYPE_LABELS = {
   icon: 'アイコン',
   premium: 'プレミアム',
   skin: 'スキン',
+  pack: 'パック',
 };
 
 // ============================================================
@@ -789,6 +790,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [favCardPremiumMap, setFavCardPremiumMap] = useState({});
   const [viewProfileData, setViewProfileData] = useState(null);
   const [cardListModalData, setCardListModalData] = useState(null);
+  // 収録カード一覧モーダルでの所持枚数表示切替トグル状態
+  const [showOwnershipMode, setShowOwnershipMode] = useState(false);
 
   const ownedMasterCards = useMemo(() => {
     const inventory = GameState.playerInventory || {};
@@ -804,12 +807,19 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const handleCloseCardPreview = (e) => {
     if (e && e.target.classList.contains('preview-content')) return;
     playSound?.(SOUNDS?.seClick);
-    setCardPreviewData(null);
+    setCardPreviewData((prev) => {
+      // 親プレビュー（パック詳細等）が存在する場合は親プレビューへ復帰
+      if (prev?.parentPreview) {
+        return prev.parentPreview;
+      }
+      return null;
+    });
   };
 
   const closeEnemyDeckModal = () => {
     playSound?.(SOUNDS?.seClick);
     setEnemyDeckData(null);
+    setShowOwnershipMode(false);
   };
 
   useEffect(() => {
@@ -860,12 +870,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       extraOpts = {}
     ) => {
       playSound?.(SOUNDS?.seClick);
+      setShowOwnershipMode(false);
       setEnemyDeckData({
         deck: deck || [],
         title: title || '敵デッキ確認',
         leaderSkill,
         premiumCards: extraOpts.premiumCards || extraOpts.premium || [],
         isPlayerDeck: !!extraOpts.isPlayerDeck,
+        zIndex: extraOpts.zIndex,
+        hideCount: !!extraOpts.hideCount,
+        hideLeaderSkill: !!extraOpts.hideLeaderSkill,
       });
     };
 
@@ -873,10 +887,11 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
 
     setOpenCardPreviewHook((card, styleProps = {}) => {
       playSound?.(SOUNDS?.seClick);
-      setCardPreviewData({
+      setCardPreviewData((prev) => ({
         card,
         styleProps: { ...styleProps, showPreviewActions: true },
-      });
+        parentPreview: prev,
+      }));
     });
 
     setCloseCardPreviewHook(handleCloseCardPreview);
@@ -1012,7 +1027,12 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           ? data.itemObj
           : null;
 
-      if (!autoImgUrl && validItemObj && typeof getCardImgUrl === 'function') {
+      if (
+        data.type !== 'pack' &&
+        !autoImgUrl &&
+        validItemObj &&
+        typeof getCardImgUrl === 'function'
+      ) {
         autoImgUrl = getCardImgUrl(
           data.type === 'premium'
             ? { ...validItemObj, isPremium: true }
@@ -1033,10 +1053,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             data.displayType ||
             EXCHANGE_DISPLAY_TYPE_LABELS[data.type] ||
             'カード',
-          imgUrl: autoImgUrl,
           isSkin: data.type === 'skin',
           isPlaymat: data.type === 'playmat',
           isIcon: data.type === 'icon',
+          isPack: data.type === 'pack',
+          coverCardId: data.coverCardId || 'catastrophe',
+          logoUrl: data.logoUrl || data.packObj?.logoUrl,
+          packCardIds: data.packCardIds || data.packObj?.cardIds || [],
+          packCardCount:
+            data.packCardCount || data.packObj?.cardIds?.length || 43,
+          rarityWeights: data.rarityWeights || data.packObj?.rarityWeights,
           flavorOverride: data.displayFlavor,
           showPreviewActions: false,
           showExchangeActions: true,
@@ -1447,7 +1473,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       {enemyDeckData && (
         <div
           className="modal-overlay"
-          style={{ zIndex: 2000, display: 'flex' }}
+          style={{
+            zIndex: enemyDeckData.zIndex || (cardPreviewData ? 4500 : 2000),
+            display: 'flex',
+          }}
           onClick={closeEnemyDeckModal}
         >
           <div
@@ -1476,6 +1505,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     if (!grouped[cardId]) grouped[cardId] = 0;
                     grouped[cardId]++;
                   });
+
+                  // 最新の所持インベントリ辞書を取得
+                  const latestOwnership =
+                    typeof getLatestOwnership === 'function'
+                      ? getLatestOwnership()
+                      : null;
+                  const currentInventory =
+                    latestOwnership?.inventory ||
+                    GameState.playerInventory ||
+                    {};
 
                   return Object.keys(grouped).map((cardId) => {
                     const count = grouped[cardId];
@@ -1519,6 +1558,13 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                     const cardThemeClass = enemyDeckData.isPlayerDeck
                       ? 'blue'
                       : 'red';
+
+                    // 所持枚数モード時の状態判定（0枚時はカード一覧画面と同様に半透明グレーアウト）
+                    const ownedCount = Number(currentInventory[cardId]) || 0;
+                    const isOwned = ownedCount > 0;
+                    const cardOpacity =
+                      showOwnershipMode && !isOwned ? '0.4' : '1';
+
                     return (
                       <div
                         key={cardId}
@@ -1529,6 +1575,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           className={`card ${cardThemeClass}${rarityClass}${
                             isPremium ? ' premium' : ''
                           }`}
+                          style={{
+                            opacity: cardOpacity,
+                            transition: 'opacity 0.2s ease',
+                          }}
                         >
                           <div
                             className="card-bg"
@@ -1545,23 +1595,48 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             {displayCard.power}
                           </div>
                           {renderSkillTagReact(displayCard)}
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: '4px',
-                              right: '4px',
-                              background: 'rgba(0,0,0,0.85)',
-                              color: '#facc15',
-                              padding: '1px 6px',
-                              borderRadius: '10px',
-                              fontWeight: 'bold',
-                              fontSize: '0.75rem',
-                              zIndex: 6,
-                              border: '1px solid #facc15',
-                            }}
-                          >
-                            x{count}
-                          </div>
+
+                          {/* 1. 通常デッキ時の枚数バッジ（hideCount が false の場合） */}
+                          {!enemyDeckData.hideCount && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                right: '4px',
+                                background: 'rgba(0,0,0,0.85)',
+                                color: '#facc15',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem',
+                                zIndex: 6,
+                                border: '1px solid #facc15',
+                              }}
+                            >
+                              x{count}
+                            </div>
+                          )}
+
+                          {/* 2. 所持枚数表示モード時の所持枚数バッジ（カード一覧画面 CardListScreen と完全一致） */}
+                          {showOwnershipMode && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                right: '4px',
+                                background: 'rgba(0,0,0,0.85)',
+                                color: '#facc15',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem',
+                                zIndex: 6,
+                                border: '1px solid #facc15',
+                              }}
+                            >
+                              x{ownedCount}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -1569,51 +1644,86 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 })()}
               </div>
             </div>
-            {(() => {
-              const cfg = enemyDeckData.isPlayerDeck
-                ? GameState.playerConfig
-                : GameState.enemyConfig;
-              const charId =
-                cfg?.id ||
-                cfg?.charId ||
-                cfg?.leaderCardId ||
-                cfg?.leaderId ||
-                'android';
-              const targetSkill =
-                enemyDeckData.leaderSkill ||
-                cfg?.leaderSkill ||
-                CHARACTERS[charId]?.leaderSkill ||
-                CHARACTERS.android.leaderSkill;
+            {!enemyDeckData.hideLeaderSkill &&
+              (() => {
+                const cfg = enemyDeckData.isPlayerDeck
+                  ? GameState.playerConfig
+                  : GameState.enemyConfig;
+                const charId =
+                  cfg?.id ||
+                  cfg?.charId ||
+                  cfg?.leaderCardId ||
+                  cfg?.leaderId ||
+                  'android';
+                const targetSkill =
+                  enemyDeckData.leaderSkill ||
+                  cfg?.leaderSkill ||
+                  CHARACTERS[charId]?.leaderSkill ||
+                  CHARACTERS.android.leaderSkill;
 
-              if (!targetSkill) return null;
+                if (!targetSkill) return null;
 
-              return (
-                <button
-                  className="btn"
-                  style={{
-                    marginTop: '20px',
-                    width: '100%',
-                    background: '#475569',
-                    fontSize: '1rem',
-                    padding: '8px',
-                    marginBottom: '0',
-                  }}
-                  onClick={() => {
-                    playSound?.(SOUNDS?.seClick);
-                    if (window.showSkillConfirmModalReact) {
-                      window.showSkillConfirmModalReact({
-                        skill: targetSkill,
-                        statusText: '',
-                        color: '#94a3b8',
-                        canExecute: false,
-                      });
-                    }
-                  }}
-                >
-                  リーダースキル
-                </button>
-              );
-            })()}
+                return (
+                  <button
+                    className="btn"
+                    style={{
+                      marginTop: '20px',
+                      width: '100%',
+                      background: '#475569',
+                      fontSize: '1rem',
+                      padding: '8px',
+                      marginBottom: '0',
+                    }}
+                    onClick={() => {
+                      playSound?.(SOUNDS?.seClick);
+                      if (window.showSkillConfirmModalReact) {
+                        window.showSkillConfirmModalReact({
+                          skill: targetSkill,
+                          statusText: '',
+                          color: '#94a3b8',
+                          canExecute: false,
+                        });
+                      }
+                    }}
+                  >
+                    リーダースキル
+                  </button>
+                );
+              })()}
+            {/* 収録カードモーダル用の所持枚数切替トグルボタン（閉じるボタンの上） */}
+            {enemyDeckData.hideLeaderSkill && (
+              <button
+                type="button"
+                className="btn"
+                style={{
+                  marginTop: '20px',
+                  width: '100%',
+                  fontSize: '1rem',
+                  padding: '8px',
+                  marginBottom: '0',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease',
+                  background: showOwnershipMode
+                    ? 'linear-gradient(135deg, #f59e0b, #eab308)'
+                    : '#334155',
+                  color: showOwnershipMode ? '#0f172a' : '#cbd5e1',
+                  border: showOwnershipMode
+                    ? '2px solid #fef08a'
+                    : '1px solid rgba(148, 163, 184, 0.3)',
+                  boxShadow: showOwnershipMode
+                    ? '0 0 16px rgba(250, 204, 21, 0.85), inset 0 0 8px rgba(255, 255, 255, 0.6)'
+                    : 'none',
+                  transform: showOwnershipMode ? 'scale(1.02)' : 'none',
+                }}
+                onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
+                  setShowOwnershipMode((prev) => !prev);
+                }}
+              >
+                {showOwnershipMode ? '所持枚数表示中' : '所持枚数に切替'}
+              </button>
+            )}
             <button
               className="btn"
               style={{ marginTop: '10px', width: '100%' }}
@@ -1714,7 +1824,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       {cardPreviewData && (
         <div
           className="modal-overlay"
-          style={{ zIndex: 4000, display: 'flex' }}
+          style={{
+            zIndex: cardPreviewData?.styleProps?.isPack
+              ? 4000
+              : enemyDeckData
+                ? 5000
+                : cardListModalData
+                  ? 4200
+                  : 4000,
+            display: 'flex',
+          }}
           onClick={handleCloseCardPreview}
         >
           {renderCardPreviewContent(

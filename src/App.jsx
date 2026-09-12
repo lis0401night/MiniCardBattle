@@ -15,6 +15,7 @@ import HighDifficultyRankingScreen from './pages/HighDifficultyRankingScreen.jsx
 import ModeSelectScreen from './pages/ModeSelectScreen.jsx';
 import OptionsScreen from './pages/OptionsScreen.jsx';
 import RulesScreen from './pages/RulesScreen.jsx';
+import CommonExchangeScreen from './pages/CommonExchangeScreen.jsx';
 import SoloMenuScreen from './pages/SoloMenuScreen.jsx';
 import TitleScreen from './pages/TitleScreen.jsx';
 import TournamentBracketScreen from './pages/TournamentBracketScreen.jsx';
@@ -123,6 +124,8 @@ const SCREEN_COMPONENTS = {
   'screen-loading': LoadingScreen,
   'screen-title': TitleScreen,
   'screen-mode-select': ModeSelectScreen,
+  'screen-common-exchange': CommonExchangeScreen,
+  'screen-shop-menu': CommonExchangeScreen,
   'screen-solo-menu': SoloMenuScreen,
   'screen-rules': RulesScreen,
   'screen-beginner-guide': BeginnerGuideScreen,

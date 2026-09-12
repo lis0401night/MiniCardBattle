@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CompactScreenLayout from '../common/CompactScreenLayout.jsx';
 import ExchangeItemCard from '../common/ExchangeItemCard.jsx';
 import { useEasterEgg } from '../../hooks/useEasterEgg.js';
 import { useExchangeScreen } from '../../hooks/useExchangeScreen.js';
 import { useGridVirtualizer } from '../../hooks/useGridVirtualizer.js';
+import { saveDeck } from '../../services/deck.js';
 import { showAlertModal, showConfirmModal } from '../../services/uiModals.js';
+import ExchangeQuantityModal from './ExchangeQuantityModal.jsx';
+import PackOpeningModal from './PackOpeningModal.jsx';
+import PointConversionModal from './PointConversionModal.jsx';
+import { GameState } from '../../state/gameState.js';
+import { getLatestOwnership } from '../../utils/apiUtils.js';
 import {
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
@@ -16,7 +22,16 @@ import {
   HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   FORTUNE_POINTS_KEY,
   FORTUNE_TOTAL_POINTS_KEY,
+  COMMON_POINTS_KEY,
+  COMMON_TOTAL_POINTS_KEY,
+  PACK_EXCHANGE_COST,
+  INVENTORY_KEY,
 } from '../../utils/constants/config.js';
+import {
+  PACK_MASTER,
+  drawCardFromPack,
+  getPackById,
+} from '../../utils/constants/packs.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
@@ -38,6 +53,19 @@ import { SOUNDS } from '../../utils/sounds.js';
  * }>>}
  */
 const EXCHANGE_TABS = Object.freeze([
+  {
+    mode: 'common',
+    label: '共通',
+    pointLabel: '共通ポイント',
+    color: '#facc15',
+    bg: '',
+    backTo: 'screen-mode-select',
+    apiEndpoint: '',
+    pointsKey: 'common',
+    pointsLocalKey: COMMON_POINTS_KEY,
+    pointsTotalLocalKey: COMMON_TOTAL_POINTS_KEY,
+    easterEggName: '共通',
+  },
   {
     mode: 'high_difficulty',
     label: '高難易度',
@@ -104,6 +132,399 @@ const EXCHANGE_TABS = Object.freeze([
     easterEggName: '運命の邂逅',
   },
 ]);
+/**
+ * 共通交換所のコンテンツコンポーネント。
+ * 共通ポイントの管理・表示、イースターエッグによるデバッグポイントチャージ、
+ * パックの表示・開封および戦闘終了後と同様のカード入手演出（モーダル）を提供します。
+ *
+ * @param {Object} props
+ * @param {Object} props.tabConfig - 共通交換所の定義オブジェクト
+ * @param {Function} [props.onMountDebugGrant] - 親のイースターエッグ連動用デバッグポイント付与関数の登録コールバック
+ * @returns {JSX.Element} 共通交換所コンテンツ要素
+ */
+function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
+  // 共通ポイントステート（LocalStorageから読み込み）
+  const [currentPoints, setCurrentPoints] = useState(() => {
+    const savedCurrent = localStorage.getItem(COMMON_POINTS_KEY);
+    return savedCurrent !== null ? parseInt(savedCurrent, 10) || 0 : 0;
+  });
+  const [totalPoints, setTotalPoints] = useState(() => {
+    const savedTotal = localStorage.getItem(COMMON_TOTAL_POINTS_KEY);
+    return savedTotal !== null ? parseInt(savedTotal, 10) || 0 : 0;
+  });
+
+  // パック開封演出中の二重実行防止フラグ
+  const [isOpening, setIsOpening] = useState(false);
+  // パック開封演出モーダル（パック画面）用データ
+  const [packOpeningData, setPackOpeningData] = useState(null);
+  // 個数確認モーダル対象アイテム
+  const [quantityModalItem, setQuantityModalItem] = useState(null);
+  // ポイント変換モーダル表示フラグ
+  const [isConversionModalOpen, setIsConversionModalOpen] = useState(false);
+  // プレイヤーの最新カードインベントリ
+  const [inventory, setInventory] = useState(
+    () => getLatestOwnership()?.inventory || {}
+  );
+
+  /**
+   * デバッグ用ポイント付与ハンドラ
+   * タイトルクリック等のイースターエッグから呼び出されます。
+   *
+   * @param {number} [amount=100] - 付与するポイント量
+   */
+  const grantDebugPoints = useCallback((amount = 100) => {
+    setCurrentPoints((prev) => {
+      const next = prev + amount;
+      localStorage.setItem(COMMON_POINTS_KEY, String(next));
+      return next;
+    });
+    setTotalPoints((prev) => {
+      const next = prev + amount;
+      localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(next));
+      return next;
+    });
+  }, []);
+
+  // 親コンポーネントのタイトルイースターエッグへデバッグ付与関数を登録
+  useEffect(() => {
+    if (typeof onMountDebugGrant === 'function') {
+      onMountDebugGrant(grantDebugPoints);
+    }
+  }, [grantDebugPoints, onMountDebugGrant]);
+
+  /**
+   * パック交換・開封処理ハンドラ
+   * 指定個数分の共通ポイントを消費し、パックからカードを抽選してインベントリに保存後、
+   * パック画面（タップしてパックを開封する演出モーダル）を表示します。
+   *
+   * @param {Object} pack - 交換対象のパック定義オブジェクト
+   * @param {number} [count=1] - 交換パック個数
+   */
+  const handleOpenPack = useCallback(
+    (pack, count = 1) => {
+      if (isOpening) return;
+      const safeCount = Math.max(1, Math.floor(Number(count) || 1));
+      const singleCost = pack.cost ?? PACK_EXCHANGE_COST;
+      const totalCost = singleCost * safeCount;
+
+      // ポイント残高チェック
+      if (currentPoints < totalCost) {
+        showAlertModal('ポイントが不足しています。');
+        return;
+      }
+
+      setIsOpening(true);
+
+      try {
+        playSound?.(SOUNDS?.seCardPlace);
+
+        // 1. 共通ポイントを減算してLocalStorageに保存
+        const newCurrent = currentPoints - totalCost;
+        setCurrentPoints(newCurrent);
+        localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
+
+        // 2. 最新の所持状況を取得してパックからカードを抽選（4枚所持カードは除外）
+        const latestOwnership = getLatestOwnership();
+        const currentInventory = { ...(latestOwnership?.inventory || {}) };
+        const drawnCardIds = [];
+
+        for (let i = 0; i < safeCount; i++) {
+          const drawnCardId = drawCardFromPack(pack.id, currentInventory);
+          if (!drawnCardId) break;
+          drawnCardIds.push(drawnCardId);
+          // 4枚カンスト除外ルールを次回の抽選ループに反映するため一時カウント
+          currentInventory[drawnCardId] =
+            (currentInventory[drawnCardId] || 0) + 1;
+        }
+
+        if (drawnCardIds.length === 0) {
+          showAlertModal('カードの抽選に失敗しました。');
+          setIsOpening(false);
+          return;
+        }
+
+        // 3. インベントリを更新・保存
+        Object.assign(GameState, { playerInventory: currentInventory });
+        localStorage.setItem(INVENTORY_KEY, JSON.stringify(currentInventory));
+        setInventory({ ...currentInventory });
+        if (typeof saveDeck === 'function') {
+          saveDeck();
+        }
+
+        // 4. パック開封画面（パックをタップして開封しカードを入手するモーダル）を表示
+        setPackOpeningData({
+          cardIds: drawnCardIds,
+          coverCardId: pack.coverCardId || 'catastrophe',
+          logoUrl: pack.logoUrl,
+        });
+      } catch (err) {
+        console.error(
+          '[CommonExchange] パック開封中にエラーが発生しました:',
+          err
+        );
+        showAlertModal('パック開封中にエラーが発生しました。');
+        setIsOpening(false);
+      }
+    },
+    [isOpening, currentPoints]
+  );
+
+  // 共通交換所ラインナップ
+  const lineup = useMemo(
+    () =>
+      PACK_MASTER.map((pack) => ({
+        id: pack.id,
+        type: 'pack',
+        cost: pack.cost,
+        name: pack.name,
+        description: pack.description,
+        coverCardId: pack.coverCardId || 'catastrophe',
+        logoUrl: pack.logoUrl,
+        packObj: pack,
+      })),
+    []
+  );
+
+  return (
+    <>
+      <div
+        id="exchange-points-display"
+        style={{
+          fontSize: '0.9rem',
+          marginBottom: '10px',
+          color: '#cbd5e1',
+          textAlign: 'center',
+        }}
+      >
+        {tabConfig?.pointLabel || '共通ポイント'}：所持 {currentPoints} Pt / 総{' '}
+        {totalPoints} Pt
+      </div>
+
+      <div
+        className="card-list-container"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          maxHeight: '500px',
+          overflowY: 'auto',
+          position: 'relative',
+        }}
+      >
+        <div
+          className="card-list-grid-3col"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px',
+            padding: '4px',
+          }}
+        >
+          {/* ポイント変換枠（パックの左に商品として配置） */}
+          <div
+            className="deck-card-item point-conversion-item"
+            style={{
+              cursor: 'pointer',
+              userSelect: 'none',
+              transition: 'transform 0.15s ease',
+            }}
+            onClick={() => {
+              playSound?.(SOUNDS?.seClick);
+              setIsConversionModalOpen(true);
+            }}
+            title="他イベントのポイントを共通ポイントに変換します"
+          >
+            <div
+              className="card blue"
+              style={{
+                backgroundColor: '#0f172a',
+                border: '2px solid #eab308',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(234, 179, 8, 0.25)',
+                overflow: 'hidden',
+              }}
+            >
+              {/* カード内部コンテンツ全体を上下左右中央揃えにするラッパー */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 4px',
+                  boxSizing: 'border-box',
+                  position: 'relative',
+                  textAlign: 'center',
+                }}
+              >
+                {/* 背景グロー装飾（中央配置） */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: '120px',
+                    height: '120px',
+                    background:
+                      'radial-gradient(circle, rgba(234, 179, 8, 0.2) 0%, transparent 70%)',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+
+                {/* 上部バッジ */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    left: '4px',
+                    background: 'rgba(234, 179, 8, 0.95)',
+                    color: '#000000',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    fontWeight: 'bold',
+                    fontSize: '0.65rem',
+                    zIndex: 2,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  変換
+                </div>
+
+                {/* アイコン */}
+                <div
+                  style={{
+                    fontSize: '2.2rem',
+                    marginBottom: '6px',
+                    filter:
+                      'drop-shadow(0 2px 8px rgba(56, 189, 248, 0.7)) drop-shadow(0 0 12px rgba(250, 204, 21, 0.5))',
+                    lineHeight: 1,
+                    zIndex: 1,
+                  }}
+                >
+                  💎
+                </div>
+
+                {/* タイトル */}
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    color: '#facc15',
+                    marginBottom: '4px',
+                    textShadow: '0 1px 4px rgba(0, 0, 0, 0.8)',
+                    zIndex: 1,
+                  }}
+                >
+                  ポイント変換
+                </div>
+
+                {/* 説明テキスト */}
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    color: '#94a3b8',
+                    lineHeight: '1.25',
+                    zIndex: 1,
+                    padding: '0 2px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  各イベントPtを
+                  <br />
+                  共通Ptへ変換
+                </div>
+
+                {/* アクションボタン風表示 */}
+                <div
+                  style={{
+                    padding: '2px 10px',
+                    background: 'linear-gradient(45deg, #eab308, #ca8a04)',
+                    color: '#000000',
+                    borderRadius: '12px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    zIndex: 1,
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                  }}
+                >
+                  変換する
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 拡張パック */}
+          {lineup.map((item) => (
+            <ExchangeItemCard
+              key={`${item.type}_${item.id}`}
+              item={item}
+              currentPoints={currentPoints}
+              inventory={inventory}
+              onExchange={(clickedItem) => {
+                const target = clickedItem || item;
+                const pack =
+                  target.packObj ||
+                  getPackById(target.packId || target.id || target) ||
+                  PACK_MASTER[0];
+                setQuantityModalItem({
+                  ...pack,
+                  ...target,
+                  type: 'pack',
+                  packObj: pack,
+                  cost: target.cost ?? pack.cost ?? PACK_EXCHANGE_COST,
+                });
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ポイント変換モーダル */}
+      {isConversionModalOpen && (
+        <PointConversionModal
+          commonPoints={currentPoints}
+          onSuccess={(_summary, totalAmount, newCommon) => {
+            setCurrentPoints(newCommon);
+            const savedTot =
+              parseInt(localStorage.getItem(COMMON_TOTAL_POINTS_KEY), 10) ||
+              totalPoints + totalAmount;
+            setTotalPoints(savedTot);
+          }}
+          onClose={() => setIsConversionModalOpen(false)}
+        />
+      )}
+
+      {/* 交換個数確認モーダル */}
+      {quantityModalItem && (
+        <ExchangeQuantityModal
+          item={quantityModalItem}
+          currentPoints={currentPoints}
+          inventory={inventory}
+          onConfirm={(targetItem, chosenCount) => {
+            setQuantityModalItem(null);
+            handleOpenPack(targetItem.packObj || targetItem, chosenCount);
+          }}
+          onCancel={() => setQuantityModalItem(null)}
+        />
+      )}
+
+      {/* パック開封演出モーダル（パック画面から開封してカード入手画面へ遷移） */}
+      {packOpeningData && (
+        <PackOpeningModal
+          cardIds={packOpeningData.cardIds}
+          coverCardId={packOpeningData.coverCardId}
+          logoUrl={packOpeningData.logoUrl}
+          onClose={() => {
+            setPackOpeningData(null);
+            setIsOpening(false);
+          }}
+        />
+      )}
+    </>
+  );
+}
 
 /**
  * 交換所タブコンテンツコンポーネント。
@@ -132,6 +553,9 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
     pointsTotalLocalKey: tabConfig.pointsTotalLocalKey,
     apiEndpoint: tabConfig.apiEndpoint,
   });
+
+  // 個数確認モーダル対象アイテム
+  const [quantityModalItem, setQuantityModalItem] = useState(null);
 
   // 親コンポーネントのタイトルイースターエッグからポイント付与できるようハンドラを登録
   useEffect(() => {
@@ -208,7 +632,7 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
                     unlockedPlaymats={unlockedPlaymats}
                     unlockedIcons={unlockedIcons}
                     unlockedPremium={unlockedPremium}
-                    onExchange={handleExchange}
+                    onExchange={setQuantityModalItem}
                   />
                 ))}
               </div>
@@ -216,6 +640,20 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
           })}
         </div>
       </div>
+
+      {/* 交換個数確認モーダル */}
+      {quantityModalItem && (
+        <ExchangeQuantityModal
+          item={quantityModalItem}
+          currentPoints={points.current}
+          inventory={inventory}
+          onConfirm={(targetItem, chosenCount) => {
+            setQuantityModalItem(null);
+            handleExchange(targetItem, chosenCount);
+          }}
+          onCancel={() => setQuantityModalItem(null)}
+        />
+      )}
     </>
   );
 }
@@ -233,7 +671,7 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
  */
 export default function IntegratedExchangeScreen({
   id = 'screen-exchange',
-  initialMode = 'high_difficulty',
+  initialMode = 'common',
   backTo: propBackTo,
   switchScreen,
 }) {
@@ -267,6 +705,30 @@ export default function IntegratedExchangeScreen({
       );
     }
   });
+
+  // 現在選択されているタブのインデックス
+  const currentTabIndex = EXCHANGE_TABS.findIndex(
+    (tab) => tab.mode === activeMode
+  );
+
+  /**
+   * 前のイベントタブへ切り替えるハンドラ
+   */
+  const handlePrevTab = () => {
+    playSound?.(SOUNDS?.seClick);
+    const prevIndex =
+      (currentTabIndex - 1 + EXCHANGE_TABS.length) % EXCHANGE_TABS.length;
+    setActiveMode(EXCHANGE_TABS[prevIndex].mode);
+  };
+
+  /**
+   * 次のイベントタブへ切り替えるハンドラ
+   */
+  const handleNextTab = () => {
+    playSound?.(SOUNDS?.seClick);
+    const nextIndex = (currentTabIndex + 1) % EXCHANGE_TABS.length;
+    setActiveMode(EXCHANGE_TABS[nextIndex].mode);
+  };
 
   /**
    * タブ切り替えクリックハンドラ
@@ -313,60 +775,136 @@ export default function IntegratedExchangeScreen({
       onBackClick={switchScreen ? handleBackClick : undefined}
       backTo={resolvedBackTo}
     >
-      {/* イベントタブ切り替えバー */}
+      {/* イベントタブ切り替えバー（現在のタブのみ表示＋左右ボタンで切り替え） */}
       <div
         className="exchange-tab-bar"
         style={{
           display: 'flex',
-          width: '95%',
-          maxWidth: '440px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '90%',
+          maxWidth: '340px',
           margin: '0 auto 10px auto',
           borderRadius: '8px',
-          overflow: 'hidden',
-          border: '1px solid rgba(148, 163, 184, 0.3)',
+          padding: '4px',
+          border: `1px solid ${currentTab.color}66`,
           flexShrink: 0,
           background: 'rgba(15, 23, 42, 0.85)',
+          boxShadow: `0 2px 10px ${currentTab.color}22`,
         }}
       >
-        {EXCHANGE_TABS.map((tab) => {
-          const isActive = activeMode === tab.mode;
-          return (
-            <button
-              key={tab.mode}
-              type="button"
-              onClick={() => handleTabChange(tab.mode)}
-              style={{
-                flex: 1,
-                padding: '8px 2px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '0.75rem',
-                transition: 'all 0.2s ease',
-                background: isActive
-                  ? `linear-gradient(135deg, ${tab.color}dd, ${tab.color}88)`
-                  : 'transparent',
-                color: isActive ? '#fff' : '#94a3b8',
-                borderBottom: isActive
-                  ? `2px solid ${tab.color}`
-                  : '2px solid transparent',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                overflow: 'hidden',
-              }}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
+        <button
+          type="button"
+          onClick={handlePrevTab}
+          aria-label="前の交換所へ"
+          style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '6px',
+            color: '#cbd5e1',
+            fontSize: '1rem',
+            width: '38px',
+            height: '38px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            userSelect: 'none',
+            touchAction: 'manipulation',
+          }}
+        >
+          ◀
+        </button>
+
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2px 8px',
+            userSelect: 'none',
+          }}
+        >
+          <span
+            style={{
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              color: currentTab.color,
+              textShadow: `0 0 10px ${currentTab.color}88`,
+              letterSpacing: '1px',
+            }}
+          >
+            {currentTab.label}
+          </span>
+          <div
+            style={{
+              display: 'flex',
+              gap: '5px',
+              marginTop: '4px',
+            }}
+          >
+            {EXCHANGE_TABS.map((tab, idx) => (
+              <span
+                key={tab.mode}
+                onClick={() => handleTabChange(tab.mode)}
+                style={{
+                  width: idx === currentTabIndex ? '14px' : '6px',
+                  height: '6px',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  background:
+                    idx === currentTabIndex
+                      ? currentTab.color
+                      : 'rgba(148, 163, 184, 0.3)',
+                  transition: 'all 0.2s ease',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleNextTab}
+          aria-label="次の交換所へ"
+          style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '6px',
+            color: '#cbd5e1',
+            fontSize: '1rem',
+            width: '38px',
+            height: '38px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            userSelect: 'none',
+            touchAction: 'manipulation',
+          }}
+        >
+          ▶
+        </button>
       </div>
 
       {/* 選択中イベントのコンテンツ（keyによってタブ切り替え時にクリーンに再初期化） */}
-      <ExchangeTabContent
-        key={activeMode}
-        tabConfig={currentTab}
-        onMountDebugGrant={handleMountDebugGrant}
-      />
+      {currentTab.mode === 'common' ? (
+        <CommonExchangeTabContent
+          key="common"
+          tabConfig={currentTab}
+          onMountDebugGrant={handleMountDebugGrant}
+        />
+      ) : (
+        <ExchangeTabContent
+          key={activeMode}
+          tabConfig={currentTab}
+          onMountDebugGrant={handleMountDebugGrant}
+        />
+      )}
     </CompactScreenLayout>
   );
 }

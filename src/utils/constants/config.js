@@ -107,6 +107,66 @@ export const HIGH_DIFFICULTY_TOTAL_POINTS_KEY =
   'mini_card_battle_high_difficulty_total_points';
 export const HIGH_DIFFICULTY_CLEARED_KEY =
   'mini_card_battle_high_difficulty_cleared';
+export const COMMON_POINTS_KEY = 'mini_card_battle_common_points';
+export const COMMON_TOTAL_POINTS_KEY = 'mini_card_battle_common_total_points';
+export const DEFENSE_CONVERTED_POINTS_KEY =
+  'mini_card_battle_defense_converted_points';
+export const CHALLENGE_CONVERTED_POINTS_KEY =
+  'mini_card_battle_challenge_converted_points';
+export const TOURNAMENT_CONVERTED_POINTS_KEY =
+  'mini_card_battle_tournament_converted_points';
+export const HIGH_DIFFICULTY_CONVERTED_POINTS_KEY =
+  'mini_card_battle_high_difficulty_converted_points';
+
+/**
+ * 共通ポイントへの変換が許可されたイベントモード設定一覧
+ * ※ 運命ポイント（fortune）は除外されます。
+ */
+export const POINT_CONVERSION_MODES = Object.freeze([
+  Object.freeze({
+    id: 'high_difficulty',
+    label: '超級ポイント',
+    shortLabel: '超級',
+    color: '#a855f7',
+    pointsKey: HIGH_DIFFICULTY_POINTS_KEY,
+    totalPointsKey: HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
+    convertedKey: HIGH_DIFFICULTY_CONVERTED_POINTS_KEY,
+    apiEndpoint: 'update_high_difficulty_points.php',
+  }),
+  Object.freeze({
+    id: 'defense',
+    label: '防衛ポイント',
+    shortLabel: '防衛',
+    color: '#3b82f6',
+    pointsKey: DEFENSE_POINTS_KEY,
+    totalPointsKey: DEFENSE_TOTAL_POINTS_KEY,
+    convertedKey: DEFENSE_CONVERTED_POINTS_KEY,
+    apiEndpoint: 'update_defense_points.php',
+  }),
+  Object.freeze({
+    id: 'tournament',
+    label: '大会ポイント',
+    shortLabel: '大会',
+    color: '#eab308',
+    pointsKey: TOURNAMENT_POINTS_KEY,
+    totalPointsKey: TOURNAMENT_TOTAL_POINTS_KEY,
+    convertedKey: TOURNAMENT_CONVERTED_POINTS_KEY,
+    apiEndpoint: 'update_tournament_points.php',
+  }),
+  Object.freeze({
+    id: 'challenge',
+    label: '試練ポイント',
+    shortLabel: '試練',
+    color: '#ef4444',
+    pointsKey: CHALLENGE_POINTS_KEY,
+    totalPointsKey: CHALLENGE_TOTAL_POINTS_KEY,
+    convertedKey: CHALLENGE_CONVERTED_POINTS_KEY,
+    apiEndpoint: 'update_challenge_points.php',
+  }),
+]);
+
+export const PACK_EXCHANGE_COST = 3;
+export const DEBUG_COMMON_POINTS_GRANT = 30;
 
 /** 高難易度イベント（超級）の獲得ポイント配点 */
 export const HIGH_DIFFICULTY_REWARD_POINTS = Object.freeze({

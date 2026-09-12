@@ -919,7 +919,7 @@ export function getCardImgUrl(card, useThumb = false) {
     if (card.id === 'token_satan' || card.baseId === 'token_satan')
       return 'assets/cards/card_token_satan.webp';
 
-    let lookupId = card.baseId || card.id;
+    let lookupId = String(card.baseId || card.id || '');
     if (!lookupId) return 'assets/cards/card_default.webp';
 
     // トークン等は '_' 以降（タイムスタンプ等）を除去したベースIDを使用する

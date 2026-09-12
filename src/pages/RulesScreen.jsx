@@ -6,6 +6,7 @@ import { SOUNDS } from '../utils/sounds.js';
 /**
  * ソロルール説明画面
  * useEasterEggカスタムフックによりデバッグモード起動処理をスマートに共通化。
+ * @returns {import('react').ReactElement} ルール画面
  */
 export default function RulesScreen() {
   // 「ルール」タイトルを10回クリックでデバッグバトル画面を起動
@@ -21,7 +22,7 @@ export default function RulesScreen() {
       titleColor="#facc15"
       backgroundImage="background_select.webp"
       onTitleClick={handleTitleClick}
-      backTo="screen-beginner-guide"
+      backTo="screen-solo-menu"
     >
       <div className="rule-box">
         <div className="rule-section">

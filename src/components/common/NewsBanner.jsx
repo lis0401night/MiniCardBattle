@@ -24,6 +24,8 @@ const ALLOWED_SHORTCUTS = [
   'screen-title',
   'screen-mode-select',
   'screen-solo-menu',
+  'screen-common-exchange',
+  'screen-shop-menu',
   'screen-rules',
   'screen-beginner-guide',
   'screen-tutorial-select',

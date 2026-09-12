@@ -117,7 +117,8 @@ export function useExchangeScreen({
       rawCur,
       rawTot,
       resolvedLineup,
-      getLatestOwnership()
+      getLatestOwnership(),
+      pointsKey
     );
     return {
       current: initialRecon.current,
@@ -180,7 +181,8 @@ export function useExchangeScreen({
               mergedCurrent,
               mergedTotal,
               resolvedLineup,
-              latestOwnership
+              latestOwnership,
+              pointsKey
             );
 
             if (cancelled) return;
@@ -208,7 +210,8 @@ export function useExchangeScreen({
               currentPts,
               totalPts,
               resolvedLineup,
-              latestOwnership
+              latestOwnership,
+              pointsKey
             );
             if (cancelled) return;
             if (recon.reconciled) {
@@ -243,17 +246,21 @@ export function useExchangeScreen({
 
   /**
    * アイテム交換処理。
-   * サーバー同期の成功を待ってからローカルストレージ・インベントリをアトミックに確定します。
+   * 指定された個数（count）分の交換を行い、サーバー同期の成功を待ってから
+   * ローカルストレージ・インベントリをアトミックに確定します。
    *
    * @param {Object} item - 交換対象アイテム
+   * @param {number} [count=1] - 交換個数
    */
-  const handleExchange = async (item) => {
+  const handleExchange = async (item, count = 1) => {
     if (isExchangingRef.current) return;
     const isCard = item.type === 'card';
     const isPlaymat = item.type === 'playmat';
     const isIcon = item.type === 'icon';
     const isPremium = item.type === 'premium';
     let isAlreadyUnlocked = false;
+
+    const safeCount = isCard ? Math.max(1, Math.floor(Number(count) || 1)) : 1;
 
     if (isCard) {
       isAlreadyUnlocked = (inventory[item.id] || 0) >= MAX_CARD_COPIES;
@@ -276,7 +283,9 @@ export function useExchangeScreen({
       showAlertModal('交換情報が不正です。');
       return;
     }
-    if (points.current < item.cost) {
+
+    const totalCost = item.cost * safeCount;
+    if (points.current < totalCost) {
       showAlertModal('ポイントが不足しています。');
       return;
     }
@@ -285,7 +294,7 @@ export function useExchangeScreen({
 
     try {
       playSound(SOUNDS?.seCardPlace);
-      const newPts = points.current - item.cost;
+      const newPts = points.current - totalCost;
 
       // 【重要】サーバーへの同期完了（成功）を厳格に確認してからローカルのポイント減算・アイテム付与を確定
       const saveSuccess = await savePointsToServer(
@@ -310,7 +319,7 @@ export function useExchangeScreen({
         const currentCount = latestInventory[item.id] || 0;
         const newInventory = {
           ...latestInventory,
-          [item.id]: currentCount + 1,
+          [item.id]: Math.min(MAX_CARD_COPIES, currentCount + safeCount),
         };
         Object.assign(GameState, { playerInventory: newInventory });
         localStorage.setItem(INVENTORY_KEY, JSON.stringify(newInventory));

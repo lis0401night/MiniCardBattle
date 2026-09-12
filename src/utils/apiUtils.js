@@ -28,6 +28,7 @@ import {
   LAST_HEARTBEAT_KEY,
   PROFILE_ICON_KEY,
   EXCHANGE_LINEUPS_BY_MODE,
+  POINT_CONVERSION_MODES,
   INVENTORY_KEY,
   UNLOCKED_SKINS_KEY,
   OWNED_PLAYMATS_KEY,
@@ -422,31 +423,99 @@ export function calculateFortuneTotalPointsFromCleared(
 }
 
 /**
- * 累計ポイントと交換済みアイテム消費ポイントから、所持ポイントの期待値（失われたポイントの復元・補填）を検証・修復します。
+ * 指定されたモードの共通ポイント変換累計ポイントを取得します。
+ *
+ * @param {string} mode - モード識別子 ('defense' | 'challenge' | 'tournament' | 'high_difficulty')
+ * @returns {number} 共通ポイントへ変換した累計ポイント数
+ */
+export function getConvertedPointsByMode(mode) {
+  if (!mode || mode === 'fortune') return 0;
+  const config = POINT_CONVERSION_MODES.find((m) => m.id === mode);
+  const key = config
+    ? config.convertedKey
+    : `mini_card_battle_${mode}_converted_points`;
+  return parseInt(localStorage.getItem(key), 10) || 0;
+}
+
+/**
+ * 指定されたモードの共通ポイント変換累計ポイントを加算して永続化します。
+ *
+ * @param {string} mode - モード識別子 ('defense' | 'challenge' | 'tournament' | 'high_difficulty')
+ * @param {number} amount - 加算するポイント数
+ * @returns {number} 加算後の累計ポイント数
+ */
+export function addConvertedPointsByMode(mode, amount) {
+  if (!mode || mode === 'fortune') return 0;
+  const addVal = Math.max(0, parseInt(amount, 10) || 0);
+  if (addVal <= 0) return getConvertedPointsByMode(mode);
+  const config = POINT_CONVERSION_MODES.find((m) => m.id === mode);
+  const key = config
+    ? config.convertedKey
+    : `mini_card_battle_${mode}_converted_points`;
+  const current = parseInt(localStorage.getItem(key), 10) || 0;
+  const next = current + addVal;
+  localStorage.setItem(key, String(next));
+  return next;
+}
+
+/**
+ * 交換所ラインナップオブジェクトから対応するゲームモード識別子を逆引き判定します。
+ *
+ * @param {Array<Object>} lineup - 交換所ラインナップ配列
+ * @returns {string|null} モード識別子（判定不能時はnull）
+ */
+export function resolveModeFromLineup(lineup) {
+  if (!Array.isArray(lineup) || lineup.length === 0) return null;
+  for (const [modeKey, mLineup] of Object.entries(EXCHANGE_LINEUPS_BY_MODE)) {
+    if (mLineup === lineup) return modeKey;
+  }
+  // アイテムIDの特徴からフォールバック判定
+  if (lineup.some((i) => i.id === 'gaston' || i.id === 'rosenberg'))
+    return 'high_difficulty';
+  if (lineup.some((i) => i.id === 'badwolf' || i.id === 'redhood'))
+    return 'defense';
+  if (lineup.some((i) => i.id === 'valkyria' || i.id === 'automata'))
+    return 'fortune';
+  if (lineup.some((i) => i.id === 'gungnir' || i.id === 'dwarf'))
+    return 'challenge';
+  if (lineup.some((i) => i.id === 'dreadnought' || i.id === 'mjolnir'))
+    return 'tournament';
+  return null;
+}
+
+/**
+ * 累計ポイント、交換済みアイテム消費ポイント、および共通ポイント変換消費ポイントから、
+ * 所持ポイントの期待値（失われたポイントの復元・補填および変換減算の正確な維持）を検証・修復します。
  *
  * @param {number} currentPoints - 現在の所持ポイント
  * @param {number} totalPoints - 累計獲得ポイント
  * @param {Array<Object>} lineup - 当該交換所のラインナップ
  * @param {Object|null} [ownership=null] - 所持状況オブジェクト
- * @returns {{ current: number, total: number, spent: number, reconciled: boolean }} 修復後のポイント情報
+ * @param {string|null} [mode=null] - ゲームモード識別子（省略時はlineupから自動判定）
+ * @returns {{ current: number, total: number, spent: number, itemSpent: number, convertedSpent: number, reconciled: boolean }} 修復後のポイント情報
  */
 export function reconcilePointsWithPurchases(
   currentPoints,
   totalPoints,
   lineup,
-  ownership = null
+  ownership = null,
+  mode = null
 ) {
   const cPts = Math.max(0, parseInt(currentPoints, 10) || 0);
   const tPts = Math.max(0, parseInt(totalPoints, 10) || 0);
-  const spent = calculateSpentPoints(lineup, ownership);
+  const targetMode = mode || resolveModeFromLineup(lineup);
+
+  const itemSpent = calculateSpentPoints(lineup, ownership);
+  const convertedSpent = targetMode ? getConvertedPointsByMode(targetMode) : 0;
+  const totalSpent = itemSpent + convertedSpent;
 
   let finalCurrent = cPts;
   let reconciled = false;
 
-  // 交換所アイテムの所持情報が存在する場合（spent > 0）、
-  // 総ポイントから消費ポイントを差し引いた正確な残高を算出して所持ポイントを補填・補正する
-  if (spent > 0) {
-    const expectedCurrent = Math.max(0, tPts - spent);
+  // 交換所アイテムの所持情報または共通ポイント変換履歴が存在する場合（totalSpent > 0）、
+  // 総ポイントから消費ポイント（アイテム消費＋共通ポイント変換消費）を差し引いた正確な残高を算出して所持ポイントを補填・補正する
+  if (totalSpent > 0) {
+    const expectedCurrent = Math.max(0, tPts - totalSpent);
     if (cPts !== expectedCurrent) {
       finalCurrent = expectedCurrent;
       reconciled = true;
@@ -456,7 +525,9 @@ export function reconcilePointsWithPurchases(
   return {
     current: finalCurrent,
     total: tPts,
-    spent,
+    spent: totalSpent,
+    itemSpent,
+    convertedSpent,
     reconciled,
   };
 }
@@ -645,7 +716,9 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       const recon = reconcilePointsWithPurchases(
         mergedCurrent,
         mergedTotal,
-        lineup
+        lineup,
+        null,
+        mode
       );
       const finalPts = recon.current;
       const finalTotal = recon.total;
@@ -705,7 +778,13 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       }
     } else {
       // サーバーデータがない場合（新規プレイヤーまたはオフライン時）
-      const recon = reconcilePointsWithPurchases(localPts, localTotal, lineup);
+      const recon = reconcilePointsWithPurchases(
+        localPts,
+        localTotal,
+        lineup,
+        null,
+        mode
+      );
       const finalPts = recon.current;
       const finalTotal = recon.total;
 
