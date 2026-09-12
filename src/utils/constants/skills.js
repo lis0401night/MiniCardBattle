@@ -12,18 +12,13 @@ import { CARD_MASTER } from './cards.js';
  */
 function resolveTargetIds(sk, skillId) {
   if (!sk) return null;
-  const direct =
-    sk.targetIds ||
-    (sk.targetId ? [sk.targetId] : null);
+  const direct = sk.targetIds || (sk.targetId ? [sk.targetId] : null);
   if (direct) return direct;
 
   if (skillId && Array.isArray(sk.skills)) {
     const nested = sk.skills.find((s) => s.id === skillId);
     if (nested) {
-      return (
-        nested.targetIds ||
-        (nested.targetId ? [nested.targetId] : null)
-      );
+      return nested.targetIds || (nested.targetId ? [nested.targetId] : null);
     }
   }
   return null;
@@ -1312,7 +1307,7 @@ export const SKILLS = {
     name: '保護',
     icon: '🪽',
     desc: () =>
-      '召喚時、味方カード1体を選択し、次の自分のターン開始時まで「加護」（全てのダメージを受けず、破壊されない）を付与する。',
+      '召喚時、自分の場のカード1体を選択し、次の自分のターン開始時まで「加護」（全てのダメージを受けず、破壊されない）を付与する。',
   },
 };
 
