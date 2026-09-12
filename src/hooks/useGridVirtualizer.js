@@ -62,7 +62,9 @@ export function useGridVirtualizer({
     const el = listContainerRef.current;
     if (!el) return undefined;
     const updateSize = () => {
-      const width = el.clientWidth;
+      // スクロールバーの出現/消滅（約17px）による幅変動でジッター（再計算ループ）が発生するのを防止するため、
+      // 要素の枠幅（offsetWidth）を基準にコンテナ幅を安定化します
+      const width = el.offsetWidth || el.clientWidth;
       setContainerWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
     };
     updateSize();

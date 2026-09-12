@@ -644,8 +644,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'stealth', value: 1 }],
     voiceCategory: 'human_male_normal',
-    flavor:
-      '影に潜み、音もなく標的に近づく工作員。その姿を捉えることは困難である。',
+    flavor: '影に潜み、標的に近づく工作員。その姿を捉えることは困難である。',
   },
   {
     id: 'ogre',
@@ -1244,7 +1243,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'legendary' }, { id: 'stealth', value: 1 }],
     voiceCategory: 'stone',
     flavor:
-      '濃霧の奥底より音もなく現れる呪われた船。朽ち果てた帆に亡者たちの嘆きを孕み、目撃した者を永遠の深淵へと引きずり込む。',
+      '濃霧の奥底より現れる呪われた船。朽ち果てた帆に亡者たちの嘆きを孕み、目撃した者を永遠の深淵へと引きずり込む。',
   },
   {
     id: 'splite',
@@ -2265,8 +2264,8 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 3,
     skills: [
-      { id: 'choice', value: 1 },
       { id: 'explode', value: 4 },
+      { id: 'choice', value: 1 },
     ],
     choices: [
       { id: 'spread', value: 2 },
@@ -3586,7 +3585,8 @@ export const CARD_MASTER = [
       { id: 'snipe', value: 3 },
     ],
     voiceCategory: 'machine_new',
-    flavor: '',
+    flavor:
+      '上空からの容赦ないレーザー照射。ピンポイントで目標を捕捉し、一瞬にして正確に焼き尽くす。',
   },
   {
     id: 'gunship',
@@ -3600,7 +3600,8 @@ export const CARD_MASTER = [
       { id: 'split', value: 1, summonId: 'token_drone' },
     ],
     voiceCategory: 'machine_new',
-    flavor: '',
+    flavor:
+      '最新鋭の装甲と重火器を備えた強襲攻撃機。目標の上空を旋回し、無慈悲な砲火の雨を降らせる。',
   },
   {
     id: 'factory',
@@ -3616,7 +3617,8 @@ export const CARD_MASTER = [
       { id: 'summon', targetSkills: 'union' },
     ],
     voiceCategory: 'machine_new',
-    flavor: '',
+    flavor:
+      '昼夜を問わず稼働する完全自動化された生産ライン。次々と新たな機械兵器を組み立て、戦地へと送り出す。',
   },
   {
     id: 'royalguard',
@@ -3638,7 +3640,8 @@ export const CARD_MASTER = [
     power: 0,
     skills: [{ id: 'trigger' }, { id: 'snipe', value: 2 }],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor:
+      '天を裂く雷鳴と共に落ちる稲妻。自然が振るう猛威の前では、いかなる者も逃れることはできない。',
   },
   {
     id: 'enlisteddragon',
@@ -3660,7 +3663,8 @@ export const CARD_MASTER = [
     power: 2,
     skills: [{ id: 'trigger' }, { id: 'guardian' }],
     voiceCategory: 'human_male_warrior',
-    flavor: '',
+    flavor:
+      '国境地帯の砦を守る屈強な戦士。傷だらけの大盾は、これまで幾度となく仲間の命を救ってきた。',
   },
   {
     id: 'mercenaryleader',
@@ -3687,7 +3691,8 @@ export const CARD_MASTER = [
       { id: 'heal', value: 2 },
     ],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor:
+      '傭兵たちが集う野営地。新たな戦力との契約から傷の癒やしまで、戦場を生き抜くための拠点。',
   },
   {
     id: 'ameba',
@@ -3697,12 +3702,13 @@ export const CARD_MASTER = [
     power: 2,
     skills: [{ id: 'madness' }],
     voiceCategory: 'sea',
-    flavor: '',
+    flavor:
+      '暗い海を漂う発光性の粘菌。その美しくも不気味な光を浴びた者は、理性を失い、狂気に囚われる。',
   },
   {
     id: 'marimo',
     obtain: [],
-    name: '毬藻',
+    name: '清澄の毬藻',
     rarity: 2,
     power: 5,
     skills: [
@@ -3711,7 +3717,8 @@ export const CARD_MASTER = [
       { id: 'bless', value: 1 },
     ],
     voiceCategory: 'sea',
-    flavor: '',
+    flavor:
+      '静かな水底で育つ丸い藻塊。ゆっくりと水を浄化するその働きは、水生生物たちの健やかな命を育む',
   },
   {
     id: 'gammaray',
@@ -3721,7 +3728,8 @@ export const CARD_MASTER = [
     power: 1,
     skills: [{ id: 'madness' }, { id: 'artillery', value: 2 }],
     voiceCategory: 'monster',
-    flavor: '',
+    flavor:
+      '巨大な一つ眼を持つ悪霊。その瞳から放たれる不可視の熱線は、対象の肉体を貫き、精神を破壊する。',
   },
   {
     id: 'gorilla',
@@ -3731,7 +3739,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'inspire', value: 3 }],
     voiceCategory: 'beast',
-    flavor: '',
+    flavor:
+      '長きを生き、深い知恵を身につけた森の長老。静かなる眼差しと雄大な背中で、同胞たちを力強く鼓舞する。',
   },
   {
     id: 'rage',
@@ -3741,7 +3750,8 @@ export const CARD_MASTER = [
     power: 0,
     skills: [{ id: 'trigger' }, { id: 'inspire', value: 3 }],
     voiceCategory: 'beast',
-    flavor: '',
+    flavor:
+      '内に秘めた野生を限界まで引き出す本能の解放。沸き上がる激しい怒りが、肉体を鋼へと変える。',
   },
   {
     id: 'deadleaves',
@@ -3756,7 +3766,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_male_old',
     flavor:
-      '飛び散る火の粉を物ともせず、重い金槌を振るう男。彼が魂を込めて鍛えた剣は、多くの戦士の命を救った。',
+      '朽ちる命があれば、芽吹く命もある。死と誕生の理を説く老エルフは、静かに森の循環を見守っている。',
   },
   {
     id: 'warriormonk',
@@ -3781,7 +3791,8 @@ export const CARD_MASTER = [
       { id: 'protection', value: 1 },
     ],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor:
+      '神聖な儀式に用いられる美しい黄金の杯。なみなみと注がれた清らかな水は、口にする者に神の恩寵をもたらす。',
   },
   {
     id: 'angelpray',
@@ -3795,7 +3806,8 @@ export const CARD_MASTER = [
       { id: 'heal', value: 7 },
     ],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor:
+      '神はとうに去った。それでも祈りをやめなかった者の元へ、名もなき奇跡が静かに舞い降りる。',
   },
   {
     id: 'ghost',
@@ -3805,7 +3817,7 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'reanimate' }],
     voiceCategory: 'undead',
-    flavor: '',
+    flavor: '廃都エリュシオンでは倒れた狩人たちの霊が力を貸してくれる。',
   },
   {
     id: 'lantern',
@@ -3819,7 +3831,8 @@ export const CARD_MASTER = [
       { id: 'recurse', value: 3 },
     ],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor:
+      '廃都の探索に欠かせない旅人の明かり。死の気配が立ち込める道中で、唯一の希望となる。',
   },
   {
     id: 'ghoul',
@@ -3833,7 +3846,8 @@ export const CARD_MASTER = [
       { id: 'deadly' },
     ],
     voiceCategory: 'undead',
-    flavor: '',
+    flavor:
+      '悪魔を狩る使命はとうに忘れ去られた。腐肉と化した躯を動かすのは、血を求める果てしない狩りの本能だけだ。',
   },
   {
     id: 'oblivious',
@@ -3843,7 +3857,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'silence' }],
     voiceCategory: 'human_male_ikemen',
-    flavor: '',
+    flavor:
+      'ゴブリンは怒る理由をすっかり忘れ、ただぽかんと口を開けて立ち尽くした。',
   },
   {
     id: 'countermagic',
@@ -3853,7 +3868,8 @@ export const CARD_MASTER = [
     power: 0,
     skills: [{ id: 'trigger' }, { id: 'silence' }],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor:
+      '放たれた魔力は空中で散らされ、霧へと変わる。相手の術式を瞬時に読み解き、根源から無効化する対抗魔術。',
   },
   {
     id: 'omnipotent',
@@ -3868,7 +3884,8 @@ export const CARD_MASTER = [
       { id: 'draw', value: 1 },
     ],
     voiceCategory: 'human_male_ikemen',
-    flavor: '',
+    flavor:
+      '世界の真理に到達した魔術師。彼の脳内には、あらゆる事象の結末が描かれている。',
   },
   {
     id: 'kappa',
@@ -3878,7 +3895,8 @@ export const CARD_MASTER = [
     power: 2,
     skills: [{ id: 'trigger' }],
     voiceCategory: 'monster',
-    flavor: '',
+    flavor:
+      '濁った水面から覗く不気味な眼光。その影に気づいたときには、すでに水底へと引きずり込まれている。',
   },
   {
     id: 'tomb',
@@ -3888,12 +3906,13 @@ export const CARD_MASTER = [
     power: 6,
     skills: [{ id: 'defender' }, { id: 'seal', value: 2 }],
     voiceCategory: 'stone',
-    flavor: '',
+    flavor:
+      '謀略に倒れた名高き侍の首を沈めた塚。遺された無念が生者の足を縛る。',
   },
   {
     id: 'yasha',
     obtain: [],
-    name: '夜叉',
+    name: '麗しの夜叉',
     rarity: 3,
     power: 5,
     skills: [
@@ -3903,7 +3922,8 @@ export const CARD_MASTER = [
       { id: 'stealth', value: 2 },
     ],
     voiceCategory: 'human_female_cool',
-    flavor: '',
+    flavor:
+      '将軍の密命を受け、影で暗躍する女忍者。音もなく標的に忍び寄り、冷たい刃で確実に息の根を止める。。',
   },
   {
     id: 'jackal',
@@ -3913,7 +3933,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'assemble', self: true }],
     voiceCategory: 'wolf',
-    flavor: '',
+    flavor:
+      '太陽が照りつける昼の砂漠。陽炎の向こうに響く甲高い遠吠えは、獲物を追い詰める群れの狩りの合図だ。',
   },
   {
     id: 'predator',
@@ -3923,7 +3944,8 @@ export const CARD_MASTER = [
     power: 6,
     skills: [{ id: 'trigger' }, { id: 'takeover' }],
     voiceCategory: 'monster',
-    flavor: '',
+    flavor:
+      '遺跡の地下深く、冷たい水源に潜む捕食者。水を求めて迷い込んだ獲物を、鋭い牙で一瞬にして噛み砕く。',
   },
   {
     id: 'falconpriest',
@@ -3933,7 +3955,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'assemble', targetId: 'falcon' }],
     voiceCategory: 'human_male_ikemen',
-    flavor: '',
+    flavor: '隼と視覚を共有し、砂漠に潜むあらゆる脅威を見通す。',
   },
   {
     id: 'raid',
@@ -3948,7 +3970,8 @@ export const CARD_MASTER = [
       { id: 'ambush', value: 1, summonId: 'token_automata' },
     ],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor:
+      '保安局本部への突然の襲撃。窓ガラスを打ち砕いて侵入した機械の群れは、警備隊を容赦なく蹂躙していく。',
   },
   {
     id: 'sisters',
@@ -3972,24 +3995,26 @@ export const CARD_MASTER = [
       { id: 'ambush', value: 1, summonId: 'token_automata' },
     ],
     voiceCategory: 'machine_new',
-    flavor: '',
+    flavor:
+      '折り重なり、融合した無数の機械の乙女たち。同じ顔を持つおぞましい群体が、街を這いずり回る。',
   },
   {
     id: 'prototype',
     obtain: [],
     name: '革命派の試作機',
     rarity: 3,
-    power: 5,
+    power: 4,
     skills: [
       { id: 'legendary' },
       { id: 'defender' },
       { id: 'startup' },
-      { id: 'choice', value: 1 },
       { id: 'sturdy' },
+      { id: 'choice', value: 1 },
     ],
-    choices: [{ id: 'buff', value: 5 }, { id: 'unleash' }],
+    choices: [{ id: 'buff', value: 4 }, { id: 'unleash' }],
     voiceCategory: 'machine_new',
-    flavor: '',
+    flavor:
+      '極秘裏に組み上げた重装甲の試作機。極彩色のグラフィティは、体制への強烈な反逆の意志を示している。',
   },
   {
     id: 'maiden',
@@ -3999,7 +4024,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'protection', value: 1 }],
     voiceCategory: 'human_female_sexy',
-    flavor: '',
+    flavor:
+      '美しくも恐ろしい火の信仰の先導者。彼女の指先から放たれる神聖な炎は、外敵を阻む絶対の壁となる。',
   },
   {
     id: 'gleipnir',
@@ -4013,7 +4039,8 @@ export const CARD_MASTER = [
       { id: 'salvage', value: 1 },
     ],
     voiceCategory: 'stone',
-    flavor: '',
+    flavor:
+      '煮えたぎる溶岩から引き上げられた灼熱の鎖。アグニカに仇なす者を縛り上げ、灰になるまで焼き焦がす。',
   },
   {
     id: 'thor',
@@ -4023,7 +4050,8 @@ export const CARD_MASTER = [
     power: 5,
     skills: [{ id: 'legendary' }, { id: 'forge' }, { id: 'crush' }],
     voiceCategory: 'human_male_warrior',
-    flavor: '',
+    flavor:
+      '炎の民が崇拝する神の一柱。天高く掲げられたその神槌は、創造の火花と破壊の轟音をもたらす。',
   },
   {
     id: 'mimic',
@@ -4034,7 +4062,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'all_forms' }],
     voiceCategory: 'machine_new',
     flavor:
-      'あらゆる姿形と名を取り込む未知の流体金属。その存在は固定されず、見る者の意志に応じて姿を変える。',
+      'あらゆる姿形に変幻する流体金属。その存在は固定されず、見る者の意志に応じて姿を変える。',
   },
   {
     id: 'elementalguide',
@@ -4044,7 +4072,8 @@ export const CARD_MASTER = [
     power: 3,
     skills: [{ id: 'call', targetKeyword: '精霊' }],
     voiceCategory: 'human_female_cute',
-    flavor: '',
+    flavor:
+      '大地と風の声に耳を傾ける部族の少女。大いなる自然の力が彼女に呼応する。',
   },
   {
     id: 'rwby',
@@ -4077,7 +4106,8 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'legendary' }, { id: 'summon', targetKeyword: '精霊' }],
     voiceCategory: 'human_male_ikemen',
-    flavor: '',
+    flavor:
+      '地水火風、すべての属性を統べる魔術師。絶対的な支配力をもって、高位の精霊たちを従属させる。',
   },
   {
     id: 'catastrophe',
@@ -4092,7 +4122,7 @@ export const CARD_MASTER = [
       { id: 'spread', value: 6 },
     ],
     voiceCategory: 'magic',
-    flavor: '',
+    flavor: '大地は割れ、空は轟き、あらゆる時間と世界が統合した。',
   },
   // トークンカード
   {

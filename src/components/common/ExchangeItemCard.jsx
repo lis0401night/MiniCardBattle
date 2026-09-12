@@ -26,6 +26,7 @@ import { SOUNDS } from '../../utils/sounds.js';
  * @param {Array<string>} [props.unlockedSkins=[]] - 解放済みスキンID配列
  * @param {Array<string>} [props.unlockedPlaymats=[]] - 解放済みプレイマットID配列
  * @param {Array<string>} [props.unlockedIcons=[]] - 解放済みアイコンID配列
+ * @param {Array<string>} [props.unlockedPremium=[]] - 解放済みプレミアムカードID配列
  * @param {Function} props.onExchange - 交換確定時コールバック
  * @returns {JSX.Element} 交換所アイテムカード要素
  */
@@ -36,9 +37,11 @@ export default function ExchangeItemCard({
   unlockedSkins = [],
   unlockedPlaymats = [],
   unlockedIcons = [],
+  unlockedPremium = [],
   onExchange,
 }) {
   const isCard = item.type === 'card';
+  const isPremium = item.type === 'premium';
   const isPlaymat = item.type === 'playmat';
   const isIcon = item.type === 'icon';
 
@@ -46,6 +49,8 @@ export default function ExchangeItemCard({
   let isUnlocked = false;
   if (isCard) {
     isUnlocked = (inventory[item.id] || 0) >= MAX_CARD_COPIES;
+  } else if (isPremium) {
+    isUnlocked = unlockedPremium.includes(item.id);
   } else if (isPlaymat) {
     isUnlocked = unlockedPlaymats.includes(item.id);
   } else if (isIcon) {
@@ -61,14 +66,16 @@ export default function ExchangeItemCard({
 
   // マスターデータ情報の取得
   let masterClass = {};
-  if (isCard) {
+  if (isCard || isPremium) {
     masterClass = CARD_MASTER.find((c) => c.id === item.id) || {};
   } else if (isPlaymat) {
     masterClass = PLAYMAT_MASTER.find((p) => p.id === item.id) || {};
   }
 
   const rarityClass =
-    isCard && masterClass.rarity ? ` rarity-${masterClass.rarity}` : '';
+    (isCard || isPremium) && masterClass.rarity
+      ? ` rarity-${masterClass.rarity}`
+      : '';
 
   // 画像URLおよびテキスト情報の解決
   let imgUrl = '';
@@ -76,16 +83,19 @@ export default function ExchangeItemCard({
   let displayName = item.name;
   let displayDesc = item.description;
 
-  if (isCard) {
+  if (isCard || isPremium) {
+    const cardTarget = isPremium
+      ? { ...masterClass, isPremium: true }
+      : masterClass;
     imgUrl =
       masterClass.imgUrl ||
       (typeof getCardImgUrl === 'function'
-        ? getCardImgUrl(masterClass, true)
+        ? getCardImgUrl(cardTarget, true)
         : `assets/cards/card_${masterClass.id || item.id}_thumb.webp`);
     originalImgUrl =
       masterClass.imgUrl ||
       (typeof getCardImgUrl === 'function'
-        ? getCardImgUrl(masterClass, false)
+        ? getCardImgUrl(cardTarget, false)
         : `assets/cards/card_${masterClass.id || item.id}.webp`);
     displayName = masterClass.name || item.name;
     displayDesc = masterClass.flavor || item.description;
@@ -122,11 +132,13 @@ export default function ExchangeItemCard({
 
   const displayTypeLabel = isCard
     ? 'カード'
-    : isPlaymat
-      ? 'プレイマット'
-      : isIcon
-        ? 'アイコン'
-        : 'スキン';
+    : isPremium
+      ? 'プレミアム特典'
+      : isPlaymat
+        ? 'プレイマット'
+        : isIcon
+          ? 'アイコン'
+          : 'スキン';
 
   /**
    * アイテムカードクリック時の詳細モーダル表示処理
@@ -139,14 +151,15 @@ export default function ExchangeItemCard({
         id: item.id,
         type: item.type,
         cost: item.cost,
-        itemObj: isCard ? masterClass : {},
-        titleColor: isCard
-          ? null
-          : isPlaymat || isIcon
-            ? '#facc15'
-            : charObj
-              ? charObj.color
-              : '#fff',
+        itemObj: isCard || isPremium ? masterClass : {},
+        titleColor:
+          isCard || isPremium
+            ? null
+            : isPlaymat || isIcon
+              ? '#facc15'
+              : charObj
+                ? charObj.color
+                : '#fff',
         canExchange: canAfford,
         isMaxed: isUnlocked,
         titleName: displayName,
@@ -189,11 +202,12 @@ export default function ExchangeItemCard({
             loading="lazy"
             decoding="async"
             style={{
-              objectFit: isCard
-                ? 'cover'
-                : isPlaymat || isIcon
-                  ? 'contain'
-                  : 'cover',
+              objectFit:
+                isCard || isPremium
+                  ? 'cover'
+                  : isPlaymat || isIcon
+                    ? 'contain'
+                    : 'cover',
               objectPosition: isPlaymat || isIcon ? 'center' : 'top center',
               width: '100%',
               height: '100%',
@@ -222,25 +236,27 @@ export default function ExchangeItemCard({
           />
         )}
 
-        {isCard && (
+        {(isCard || isPremium) && (
           <>
-            <div
-              style={{
-                position: 'absolute',
-                top: '4px',
-                right: '4px',
-                background: 'rgba(0,0,0,0.85)',
-                color: '#facc15',
-                padding: '1px 6px',
-                borderRadius: '10px',
-                fontWeight: 'bold',
-                fontSize: '0.75rem',
-                zIndex: 6,
-                border: '1px solid #facc15',
-              }}
-            >
-              {inventory[item.id] || 0}/{MAX_CARD_COPIES}
-            </div>
+            {isCard && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  background: 'rgba(0,0,0,0.85)',
+                  color: '#facc15',
+                  padding: '1px 6px',
+                  borderRadius: '10px',
+                  fontWeight: 'bold',
+                  fontSize: '0.75rem',
+                  zIndex: 6,
+                  border: '1px solid #facc15',
+                }}
+              >
+                {inventory[item.id] || 0}/{MAX_CARD_COPIES}
+              </div>
+            )}
             <div
               className="card-power"
               style={{
