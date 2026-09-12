@@ -2957,16 +2957,62 @@ export async function resolveActiveSkillEffect(
                 ? `デッキからパワー${skillValue}以下のカードを1枚選び、自分のレーンに召喚します。`
                 : 'デッキからカードを1枚選び、自分のレーンに召喚します。';
 
-      const selectedCard = await waitPlayerDiscardSelection(
-        validCards,
-        999,
-        o,
-        '召集するカードを選択',
-        keywordDesc,
-        true,
-        1,
-        'assemble'
-      );
+      // AIのアクションキューから assemble を取得
+      let aiAction = null;
+      if (
+        o === 'red' &&
+        GameState.gameMode !== 'online' &&
+        GameState.gameMode !== 'pvp'
+      ) {
+        if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
+          const aIdx = GameState.aiDecision.actionQueue.findIndex(
+            (a) => a.type === 'assemble'
+          );
+          if (aIdx !== -1) {
+            aiAction = GameState.aiDecision.actionQueue[aIdx];
+            GameState.aiDecision.actionQueue.splice(aIdx, 1);
+            if (aiAction.cardTokenLanes) {
+              if (!GameState.aiDecision.cardTokenLanes) {
+                GameState.aiDecision.cardTokenLanes = [];
+              }
+              GameState.aiDecision.cardTokenLanes = [
+                ...aiAction.cardTokenLanes,
+                ...GameState.aiDecision.cardTokenLanes,
+              ];
+            }
+          }
+        }
+      }
+
+      let selectedCard = null;
+      if (aiAction) {
+        if (aiAction.laneIdx === -1 || aiAction.targetIdx === -1) {
+          selectedCard = null; // AIが明示的に召集をキャンセル
+        } else {
+          selectedCard =
+            validCards.find(
+              (card) =>
+                card &&
+                (card.uid === aiAction.targetUid ||
+                  card.id === aiAction.targetUid ||
+                  card.baseId === aiAction.targetUid)
+            ) ||
+            validCards[aiAction.targetIdx] ||
+            validCards[0];
+        }
+      } else {
+        selectedCard = await waitPlayerDiscardSelection(
+          validCards,
+          999,
+          o,
+          '召集するカードを選択',
+          keywordDesc,
+          true,
+          1,
+          'assemble'
+        );
+      }
+
       if (o === 'red' && selectedCard) {
         // AIの思考時間を演出
         await sleep(AI_THINKING_DURATION);
@@ -2998,42 +3044,51 @@ export async function resolveActiveSkillEffect(
         let successCall = false;
         let targetLane = -1;
         while (!successCall) {
-          GameState.placementMessage = `召集: 「${restoredCard.name}」を召喚するレーンを選んでください`;
-          const selectedLanes = await waitPlayerLaneSelection(
-            1,
-            o,
-            restoredCard,
-            true, // isLeaderSkill（手札外からの召喚モード）
-            null, // 全レーン候補
-            true, // checkConstraints（召喚ルール制約チェック有効）
-            true, // canCancel（キャンセル可能）
-            '召喚完了'
-          );
-          GameState.placementMessage = null;
+          if (
+            aiAction &&
+            aiAction.laneIdx !== undefined &&
+            aiAction.laneIdx !== -1
+          ) {
+            targetLane = aiAction.laneIdx;
+            successCall = true;
+          } else {
+            GameState.placementMessage = `召集: 「${restoredCard.name}」を召喚するレーンを選んでください`;
+            const selectedLanes = await waitPlayerLaneSelection(
+              1,
+              o,
+              restoredCard,
+              true, // isLeaderSkill（手札外からの召喚モード）
+              null, // 全レーン候補
+              true, // checkConstraints（召喚ルール制約チェック有効）
+              true, // canCancel（キャンセル可能）
+              '召喚完了'
+            );
+            GameState.placementMessage = null;
 
-          if (GameState.gameMode !== 'online' && o !== 'blue') {
-            await sleep(600); // 敵AIの場合のみ間を空ける
-          }
+            if (GameState.gameMode !== 'online' && o !== 'blue') {
+              await sleep(600); // 敵AIの場合のみ間を空ける
+            }
 
-          if (!selectedLanes || selectedLanes.length === 0) {
-            // レーン選択キャンセル時は、デッキに戻して終了
-            deck.push(selectedCard);
-            updateDeckDisplay(o);
-            return;
-          }
-          targetLane = selectedLanes[0];
+            if (!selectedLanes || selectedLanes.length === 0) {
+              // レーン選択キャンセル時は、デッキに戻して終了
+              deck.push(selectedCard);
+              updateDeckDisplay(o);
+              return;
+            }
+            targetLane = selectedLanes[0];
 
-          // 上書き確認
-          const proceed = await confirmOverwrittenLane(
-            o,
-            restoredCard,
-            targetLane
-          );
-          if (!proceed) {
-            await sleep(200);
-            continue; // キャンセル時はレーン選択からやり直す
+            // 上書き確認
+            const proceed = await confirmOverwrittenLane(
+              o,
+              restoredCard,
+              targetLane
+            );
+            if (!proceed) {
+              await sleep(200);
+              continue; // キャンセル時はレーン選択からやり直す
+            }
+            successCall = true;
           }
-          successCall = true;
         }
 
         if (targetLane !== -1) {
@@ -3297,6 +3352,17 @@ export async function resolveActiveSkillEffect(
         // キャンセル可能なレーン選択（ループによるやり直しに対応）
         let successCall = false;
         let targetLane = -1;
+        if (
+          o === 'red' &&
+          GameState.gameMode !== 'online' &&
+          GameState.gameMode !== 'pvp'
+        ) {
+          // 号令はデッキからめくれたカードに対して最新盤面でのリアルタイムシミュレーション（evaluateBestLanesForToken）を行うため、
+          // 直前のスキルやアクションの残骸キューによってシミュレーションが誤バイパスされないようクリーンアップする
+          if (GameState.aiDecision && GameState.aiDecision.cardTokenLanes) {
+            delete GameState.aiDecision.cardTokenLanes;
+          }
+        }
         while (!successCall) {
           GameState.placementMessage = `号令: 「${topCard.name}」を召喚するレーンを選んでください`;
           const selectedLanes = await waitPlayerLaneSelection(
@@ -3999,17 +4065,17 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'protection') {
     // 【「保護」スキル処理】
-    // 召喚時、自分以外の味方カード1体を選択し、次の自分のターン開始時まで「加護」を付与する。
+    // 召喚時、味方カード1体（自身含む）を選択し、次の自分のターン開始時まで「加護」を付与する。
     const isBlue = o === 'blue';
     const myBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
-    // 自陣の自分以外の配置済みレーンを収集
-    const otherLanes = myBoard
-      .map((bc, i) => (bc !== null && i !== l ? i : -1))
+    // 自陣の配置済みレーンを収集（自身含む）
+    const occupiedLanes = myBoard
+      .map((bc, i) => (bc !== null ? i : -1))
       .filter((i) => i !== -1);
 
-    if (otherLanes.length === 0) {
-      // 自分以外の味方カードが存在しないため不発
+    if (occupiedLanes.length === 0) {
+      // 対象となる味方カードが存在しないため不発
       if (cEl) createDamagePopup(cEl, '対象なし', '#94a3b8');
       await sleep(300);
     } else {
@@ -4019,8 +4085,8 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        // AIの場合：自分以外の味方で最もパワーの高いカード（加護未付与を優先）を選択
-        const sortedLanes = [...otherLanes].sort((a, b) => {
+        // AIの場合：味方（自身含む）で最もパワーの高いカード（加護未付与を優先）を選択
+        const sortedLanes = [...occupiedLanes].sort((a, b) => {
           const gA = Boolean(myBoard[a].valkyriaGuard);
           const gB = Boolean(myBoard[b].valkyriaGuard);
           if (gA !== gB) return gA ? 1 : -1;
@@ -4032,8 +4098,8 @@ export async function resolveActiveSkillEffect(
         selectedLanes = [sortedLanes[0]];
         await sleep(AI_THINKING_DURATION);
       } else {
-        // プレイヤーの場合：自分以外の味方カード1枚を選択させる（自身[l]は除外）
-        selectedLanes = await waitPlayerAlliedLaneSelection(1, o, false, [l]);
+        // プレイヤーの場合：味方カード1枚を選択させる（自身[l]も対象に含めるため除外リストは空）
+        selectedLanes = await waitPlayerAlliedLaneSelection(1, o, false, []);
       }
 
       if (selectedLanes && selectedLanes.length > 0) {

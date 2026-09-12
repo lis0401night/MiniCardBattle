@@ -164,6 +164,18 @@ export async function waitPlayerLaneSelection(
       tokenLanes.length > 0
     ) {
       selectedLanes = tokenLanes.splice(0, count);
+      // tokenLanesが渡されて消費された場合、もしGameState.aiDecision.cardTokenLanesにも同一の指示が残っていれば同期消費する
+      if (
+        typeof GameState.aiDecision !== 'undefined' &&
+        GameState.aiDecision &&
+        Array.isArray(GameState.aiDecision.cardTokenLanes) &&
+        GameState.aiDecision.cardTokenLanes.length > 0
+      ) {
+        GameState.aiDecision.cardTokenLanes.splice(0, count);
+        if (GameState.aiDecision.cardTokenLanes.length === 0) {
+          delete GameState.aiDecision.cardTokenLanes;
+        }
+      }
     } else if (
       tokenLanes !== null &&
       Array.isArray(tokenLanes) &&
@@ -172,6 +184,13 @@ export async function waitPlayerLaneSelection(
       // AIが意図的に空配列を渡した場合（例: summonのキャンセル、holy_marchの0体バフのみ）、配置なしとして返す
       selectedLanes = [];
       intentionalEmpty = true;
+      if (
+        typeof GameState.aiDecision !== 'undefined' &&
+        GameState.aiDecision &&
+        Array.isArray(GameState.aiDecision.cardTokenLanes)
+      ) {
+        delete GameState.aiDecision.cardTokenLanes;
+      }
     } else {
       // まず現在のアクション自体に紐づく指示があるか確認
       // 【重要】deleteではなくspliceで消費する。summonスキルを複数持つカード（例：慈悲なき提督）では
@@ -192,6 +211,7 @@ export async function waitPlayerLaneSelection(
           'devilhunter_resurrect',
           'servant',
           'call',
+          'assemble',
           'leader_skill',
           'clone',
           'move',
@@ -222,9 +242,9 @@ export async function waitPlayerLaneSelection(
         }
       }
       if (!selectedLanes) {
-        // 【号令(call)専用フォールバック】
-        // 号令はデッキトップのカードが実行時に判明するため、事前にレーンを決定できない。
-        // そのため唯一 evaluateBestLanesForToken によるリアルタイム評価を許可する。
+        // 【アドホック召喚（号令call・狂気madness・反魂reanimate等）のリアルタイムシミュレーション評価】
+        // これらは手札プレイ前の事前計画ではなく実行時に発動するため、
+        // evaluateBestLanesForToken により現在の最新盤面を踏まえた最適レーンをリアルタイムに評価・決定する。
         selectedLanes = evaluateBestLanesForToken(
           availableAI,
           owner,
@@ -1158,6 +1178,7 @@ export async function waitPlayerDiscardSelection(
       'devilhunter_resurrect',
       'overdrive',
       'call',
+      'assemble',
       'salvage',
       'choice',
       'puppet',

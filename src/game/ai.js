@@ -6,8 +6,17 @@ import {
 } from '../utils/constants/config.js';
 import { shuffleArray, sleep } from '../utils/gameUtils.js';
 import { getEasyDecision } from './ai_easy.js';
-import { getNormalDecision, getNormalTokenLanes } from './ai_normal.js';
-import { discardCard, endTurnLogic, playCard } from './battle/index.js';
+import {
+  getNormalDecision,
+  getNormalTokenLanes,
+  evaluateTriggerSimulation,
+} from './ai_normal.js';
+import {
+  discardCard,
+  endTurnLogic,
+  playCard,
+  getValidSummonLanes,
+} from './battle/index.js';
 import { isGraveKeeperActive } from './engine.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 
@@ -251,4 +260,41 @@ export function evaluateBestLanesForToken(
       checkConstraints
     );
   }
+}
+
+/**
+ * 誘発（trigger）スキルの最適選択（難易度別ディスパッチャ）
+ * 相手のターン中に召喚された際、AIが手札から誘発カードを出すべきか、
+ * どのカードをどのレーンに出すかを評価・決定する。
+ *
+ * @param {Array<object>} validTriggerCards - 手札にある召喚可能な誘発スキル所持カード群
+ * @param {string} [owner='red'] - 誘発を行う陣営 ('red' | 'blue')
+ * @returns {{ cardIdx: number, laneIdx: number, score: number }|null} 最善手（パスまたは不可なら null）
+ */
+export function evaluateBestTriggerMove(validTriggerCards, owner = 'red') {
+  if (owner !== 'red' || !validTriggerCards || validTriggerCards.length === 0) {
+    return null;
+  }
+
+  // 初級AIの場合: 最初に見つかった空きレーン（なければ召喚可能レーン先頭）に即座に出す
+  if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
+    for (let i = 0; i < validTriggerCards.length; i++) {
+      const card = validTriggerCards[i];
+      const validLanes = getValidSummonLanes(owner, card);
+      if (validLanes && validLanes.length > 0) {
+        const emptyLane = validLanes.find(
+          (l) => GameState.enemyBoard[l] === null
+        );
+        const lane = emptyLane !== undefined ? emptyLane : validLanes[0];
+        const cardIdx = (GameState.enemyHand || []).indexOf(card);
+        if (cardIdx !== -1) {
+          return { cardIdx, laneIdx: lane, score: 0 };
+        }
+      }
+    }
+    return null;
+  }
+
+  // 通常・上級AI: 相手の攻撃フェーズから次の自分の攻撃後までシミュレートして最適手を決定
+  return evaluateTriggerSimulation(validTriggerCards, owner);
 }

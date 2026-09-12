@@ -2495,21 +2495,19 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'protection': {
-      // 【保護】自分以外の味方カード1体を選択し、次の自分のターン開始時まで「加護」を付与する。
-      // シミュレーション時は、自分以外の自陣の高パワーカード（加護未付与優先）を選択する
+      // 【保護】味方カード1体（自身含む）を選択し、次の自分のターン開始時まで「加護」を付与する。
+      // シミュレーション時は、自陣の高パワーカード（加護未付与優先）を選択する
       const myOccupiedLanes = b
         .map((bc, i) => (bc !== null ? i : -1))
         .filter((i) => i !== -1);
-      // 自分以外のレーンのみを対象とする
-      const otherLanes = myOccupiedLanes.filter((i) => i !== l);
-      if (otherLanes.length > 0) {
-        otherLanes.sort((i1, i2) => {
+      if (myOccupiedLanes.length > 0) {
+        myOccupiedLanes.sort((i1, i2) => {
           const g1 = Boolean(b[i1].valkyriaGuard);
           const g2 = Boolean(b[i2].valkyriaGuard);
           if (g1 !== g2) return g1 ? 1 : -1;
           return (b[i2].currentPower || 0) - (b[i1].currentPower || 0);
         });
-        const targetLane = otherLanes[0];
+        const targetLane = myOccupiedLanes[0];
         const targetCard = b[targetLane];
         if (targetCard) {
           targetCard.valkyriaGuard = true;

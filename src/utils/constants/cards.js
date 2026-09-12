@@ -3992,13 +3992,13 @@ export const CARD_MASTER = [
     flavor: '',
   },
   {
-    id: 'vidofnir',
+    id: 'maiden',
     obtain: [],
-    name: '煌めく鳥',
+    name: '炎の女祭司',
     rarity: 2,
-    power: 4,
+    power: 3,
     skills: [{ id: 'protection', value: 1 }],
-    voiceCategory: 'human_female_cute',
+    voiceCategory: 'human_female_sexy',
     flavor: '',
   },
   {

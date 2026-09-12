@@ -63,6 +63,7 @@ import {
   CHAR_FORTUNE_HANDICAPS,
   HANDICAP_TYPES,
 } from '../../utils/constants/fortuneHandicaps.js';
+import { evaluateBestTriggerMove } from '../ai.js';
 
 /**
  * 2枚のカードを合体させた新しいカードインスタンスを生成する共通ヘルパー関数。
@@ -160,28 +161,29 @@ function createCombatSnapshot() {
  *
  * @param {string} owner - 所有者 ('blue' | 'red')
  * @param {object} card - 召喚対象のカードオブジェクト
+ * @param {object} [state=null] - 任意のゲーム状態/シミュレーション状態（省略時はGameStateを使用）
  * @returns {number[]} 召喚可能なレーンインデックスの配列 (0〜2)
  */
-export function getValidSummonLanes(owner, card) {
+export function getValidSummonLanes(owner, card, state = null) {
   if (!card) return [];
-  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-  const oppBoard =
-    owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+  const s = state || GameState;
+  const board = owner === 'blue' ? s.playerBoard : s.enemyBoard;
+  const oppBoard = owner === 'blue' ? s.enemyBoard : s.playerBoard;
   const sealedLanes =
     owner === 'blue'
-      ? GameState.playerSealedLanes || [0, 0, 0]
-      : GameState.enemySealedLanes || [0, 0, 0];
+      ? s.playerSealedLanes || [0, 0, 0]
+      : s.enemySealedLanes || [0, 0, 0];
+  const turnCount =
+    s.turnCount !== undefined ? s.turnCount : GameState.turnCount;
+  const firstPlayer =
+    s.firstPlayer !== undefined ? s.firstPlayer : GameState.firstPlayer;
 
   return [0, 1, 2].filter((l) => {
     // 封印レーンは絶対召喚不可
     if (sealedLanes[l] > 0) return false;
 
     // 1ターン目先攻制約（中央レーンのみ）
-    if (
-      GameState.turnCount === 1 &&
-      GameState.firstPlayer === owner &&
-      l !== 1
-    ) {
+    if (turnCount === 1 && firstPlayer === owner && l !== 1) {
       return false;
     }
 
@@ -330,14 +332,34 @@ export async function triggerMadnessSkill(owner, card) {
   let successCall = false;
   let targetLane = -1;
 
+  if (
+    owner === 'red' &&
+    GameState.gameMode !== 'online' &&
+    GameState.gameMode !== 'pvp'
+  ) {
+    if (GameState.aiDecision && GameState.aiDecision.cardTokenLanes) {
+      delete GameState.aiDecision.cardTokenLanes;
+    }
+  }
+
   while (!successCall) {
     GameState.placementMessage = `狂気: 「${card.name}」を召喚するレーンを選んでください`;
+    // AI（通常・ソロ対戦）の場合は「号令(call)」と同様に、現在の最新盤面を踏まえたリアルタイムシミュレーション
+    // （evaluateBestLanesForToken）によって最善レーンを決定させるため、tokenLanes に null を渡す。
+    // プレイヤーの場合は合法レーンのみをハイライト・選択制限するため validLanes を渡す。
+    const targetTokenLanes =
+      owner === 'red' &&
+      GameState.gameMode !== 'online' &&
+      GameState.gameMode !== 'pvp'
+        ? null
+        : validLanes;
+
     const selectedLanes = await waitPlayerLaneSelection(
       1,
       owner,
       card,
       false, // isLeaderSkill
-      validLanes, // tokenLanes (制約を満たすレーンに限定)
+      targetTokenLanes,
       true, // checkConstraints (召喚ルール制約チェック有効)
       true, // canCancel (キャンセル可能)
       '召喚完了', // buttonText
@@ -492,14 +514,34 @@ export async function triggerReanimateSkill(owner, card) {
   let successCall = false;
   let targetLane = -1;
 
+  if (
+    owner === 'red' &&
+    GameState.gameMode !== 'online' &&
+    GameState.gameMode !== 'pvp'
+  ) {
+    if (GameState.aiDecision && GameState.aiDecision.cardTokenLanes) {
+      delete GameState.aiDecision.cardTokenLanes;
+    }
+  }
+
   while (!successCall) {
     GameState.placementMessage = `反魂: 「${card.name}」を召喚するレーンを選んでください`;
+    // AI（通常・ソロ対戦）の場合は「号令(call)」と同様に、現在の最新盤面を踏まえたリアルタイムシミュレーション
+    // （evaluateBestLanesForToken）によって最善レーンを決定させるため、tokenLanes に null を渡す。
+    // プレイヤーの場合は合法レーンのみをハイライト・選択制限するため validLanes を渡す。
+    const targetTokenLanes =
+      owner === 'red' &&
+      GameState.gameMode !== 'online' &&
+      GameState.gameMode !== 'pvp'
+        ? null
+        : validLanes;
+
     const selectedLanes = await waitPlayerLaneSelection(
       1,
       owner,
       card,
       false, // isLeaderSkill
-      validLanes, // tokenLanes (制約を満たすレーンに限定)
+      targetTokenLanes,
       true, // checkConstraints (召喚ルール制約チェック有効)
       true, // canCancel (キャンセル可能)
       '召喚完了', // buttonText
@@ -638,13 +680,13 @@ let isTriggeringCounter = false;
  *
  * @param {string} summonOwner - カードを召喚したプレイヤー ('blue' | 'red')
  * @param {object} summonedCard - 召喚されたカードオブジェクト
- * @param {number} summonedLane - 召喚されたレーン番号
+ * @param {number} [_summonedLane] - 召喚されたレーン番号（シミュレーション自律判定のため任意）
  * @returns {Promise<boolean>} 誘発による召喚が実行された場合は true
  */
 export async function checkAndTriggerCounter(
   summonOwner,
   summonedCard,
-  summonedLane
+  _summonedLane
 ) {
   if (!summonedCard || isTriggeringCounter) return false;
 
@@ -677,43 +719,13 @@ export async function checkAndTriggerCounter(
       GameState.gameMode !== 'pvp'
     ) {
       // 【敵AIの場合】
-      // 候補カードの中から、正面レーン（summonedLane）に出せるカードを最優先
-      let chosenIdx = -1;
-
-      // 1. 正面レーンに出せるカードを探す
-      for (let i = 0; i < triggerHand.length; i++) {
-        const c = triggerHand[i];
-        if (c && hasSkill(c, 'trigger')) {
-          const lanes = getValidSummonLanes(triggerOwner, c);
-          if (lanes.includes(summonedLane)) {
-            chosenIdx = i;
-            chosenLane = summonedLane;
-            break;
-          }
-        }
-      }
-
-      // 2. 正面レーンに出せるカードがなければ、召喚可能レーンがある最初のカード
-      if (chosenIdx === -1) {
-        for (let i = 0; i < triggerHand.length; i++) {
-          const c = triggerHand[i];
-          if (c && hasSkill(c, 'trigger')) {
-            const lanes = getValidSummonLanes(triggerOwner, c);
-            if (lanes.length > 0) {
-              chosenIdx = i;
-              const board = GameState.enemyBoard;
-              const emptyLane = lanes.find((l) => board[l] === null);
-              chosenLane = emptyLane !== undefined ? emptyLane : lanes[0];
-              break;
-            }
-          }
-        }
-      }
-
-      if (chosenIdx === -1 || chosenLane === -1) {
+      // 相手ターンの攻撃フェーズから次の自ターンの攻撃後までシミュレートし最善手（またはパス）を決定
+      const decision = evaluateBestTriggerMove(validTriggerCards, triggerOwner);
+      if (!decision || decision.cardIdx === -1 || decision.laneIdx === -1) {
         return false;
       }
-      selectedIdx = chosenIdx;
+      selectedIdx = decision.cardIdx;
+      chosenLane = decision.laneIdx;
       await sleep(300);
     } else {
       // 【プレイヤーの場合（オンライン/PVPのターンプレイヤー含む）】
