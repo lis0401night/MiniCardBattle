@@ -749,6 +749,8 @@ export function hasSkill(c, skillId) {
 
   // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
   if (skillId === 'defender' && c.stunTurns > 0) return true;
+  // ターン制限付き「無効」状態
+  if (skillId === 'immune' && c.immuneTurns > 0) return true;
   if (Array.isArray(c.skills)) {
     return c.skills.some((s) => s.id === skillId);
   }
@@ -1239,16 +1241,18 @@ export function renderSkillTag(
   // 3. バッジの生成
   let badges = [];
 
-  // 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブな場合に優先表示）
+  // 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブ、またはカード自身に加護が付与されている場合に優先表示）
   if (isBoard) {
     const isGuardActive =
-      valkyriaGuardActive !== null
+      Boolean(card?.valkyriaGuard) ||
+      (card?.valkyriaGuardTurns || 0) > 0 ||
+      (valkyriaGuardActive !== null
         ? valkyriaGuardActive
         : card.owner && typeof GameState !== 'undefined'
           ? card.owner === 'blue'
             ? (GameState.valkyriaGuardBlue || 0) > 0
             : (GameState.valkyriaGuardRed || 0) > 0
-          : false;
+          : false);
 
     if (isGuardActive) {
       badges.push(`<div class="card-skill badge-valkyria-guard">🛡️ 加護</div>`);
@@ -1274,6 +1278,14 @@ export function renderSkillTag(
   if (card.cantAttackTurns > 0) {
     badges.push(
       `<div class="card-skill" style="border-color: #ef4444; color: #fecdd3;">攻撃不能${card.cantAttackTurns}</div>`
+    );
+  }
+
+  // ターン制限付き「無効」状態バッジ
+  if (card.immuneTurns > 0) {
+    const im = SKILLS['immune'];
+    badges.push(
+      `<div class="card-skill" style="border-color: #3b82f6; color: #93c5fd;">${im ? im.icon : '🚫'} 無効${card.immuneTurns}</div>`
     );
   }
 

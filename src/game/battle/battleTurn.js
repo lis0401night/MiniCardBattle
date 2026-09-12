@@ -311,7 +311,7 @@ export async function handleMoveSkills(owner) {
 }
 
 /**
- * ターン開始時におけるユニットの状態異常（スタン・攻撃不能）カウントを減算する。
+ * ターン開始時におけるユニットの状態異常（スタン・攻撃不能・無効ターン）カウントを減算する。
  * @param {string} owner - プレイヤー種別 ('blue' | 'red')
  */
 function decrementStatusCounters(owner) {
@@ -323,6 +323,9 @@ function decrementStatusCounters(owner) {
     }
     if (c && c.cantAttackTurns > 0) {
       c.cantAttackTurns--;
+    }
+    if (c && c.immuneTurns > 0) {
+      c.immuneTurns--;
     }
   });
 }

@@ -1219,6 +1219,7 @@ export function processActionSequence(
       simState.playerBoard.forEach((c) => {
         if (c && c.stunTurns > 0) c.stunTurns--;
         if (c && c.cantAttackTurns > 0) c.cantAttackTurns--;
+        if (c && c.immuneTurns > 0) c.immuneTurns--;
       });
       simState.phaseBypassDamageTaken = 0;
       calculateCombatPhase(simState, 'blue');
@@ -5158,6 +5159,7 @@ export function simulateMove(
     simState.playerBoard.forEach((c) => {
       if (c && c.stunTurns > 0) c.stunTurns--;
       if (c && c.cantAttackTurns > 0) c.cantAttackTurns--;
+      if (c && c.immuneTurns > 0) c.immuneTurns--;
     });
     simState.phaseBypassDamageTaken = 0;
     calculateCombatPhase(simState, 'blue');

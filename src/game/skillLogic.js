@@ -74,6 +74,7 @@ import {
   getDamageBlockType,
   isLaneSealed,
   isValkyriaGuardActive,
+  VALKYRIA_GUARD_TURNS,
   BLOCK_TYPE_EVENT_MAP,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
@@ -428,6 +429,7 @@ export async function resolveActiveSkillEffect(
       supremacy: '覇道',
       unleash: '解放',
       assemble: '召集',
+      protection: '保護',
     };
     let popupLabel = labels[skillId] || 'スキル';
     const TARGET_RULE_SKILLS = [
@@ -3983,6 +3985,73 @@ export async function resolveActiveSkillEffect(
           );
           if (tEl) {
             createDamagePopup(tEl, `+${bVal}`, '#4ade80');
+          }
+
+          renderBoard();
+          if (window.updateCardVisualsReact) {
+            window.updateCardVisualsReact(targetLane, sidePrefix);
+          } else if (window.updateBattleUIHook) {
+            window.updateBattleUIHook();
+          }
+          await sleep(200);
+        }
+      }
+    }
+  } else if (skillId === 'protection') {
+    // 【「保護」スキル処理】
+    // 召喚時、自分以外の味方カード1体を選択し、次の自分のターン開始時まで「加護」を付与する。
+    const isBlue = o === 'blue';
+    const myBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
+
+    // 自陣の自分以外の配置済みレーンを収集
+    const otherLanes = myBoard
+      .map((bc, i) => (bc !== null && i !== l ? i : -1))
+      .filter((i) => i !== -1);
+
+    if (otherLanes.length === 0) {
+      // 自分以外の味方カードが存在しないため不発
+      if (cEl) createDamagePopup(cEl, '対象なし', '#94a3b8');
+      await sleep(300);
+    } else {
+      let selectedLanes = [];
+      if (
+        o === 'red' &&
+        GameState.gameMode !== 'online' &&
+        GameState.gameMode !== 'pvp'
+      ) {
+        // AIの場合：自分以外の味方で最もパワーの高いカード（加護未付与を優先）を選択
+        const sortedLanes = [...otherLanes].sort((a, b) => {
+          const gA = Boolean(myBoard[a].valkyriaGuard);
+          const gB = Boolean(myBoard[b].valkyriaGuard);
+          if (gA !== gB) return gA ? 1 : -1;
+          const diff =
+            (myBoard[b].currentPower || 0) - (myBoard[a].currentPower || 0);
+          if (diff !== 0) return diff;
+          return a - b;
+        });
+        selectedLanes = [sortedLanes[0]];
+        await sleep(AI_THINKING_DURATION);
+      } else {
+        // プレイヤーの場合：自分以外の味方カード1枚を選択させる（自身[l]は除外）
+        selectedLanes = await waitPlayerAlliedLaneSelection(1, o, false, [l]);
+      }
+
+      if (selectedLanes && selectedLanes.length > 0) {
+        const targetLane = selectedLanes[0];
+        const targetCard = myBoard[targetLane];
+        if (targetCard) {
+          targetCard.valkyriaGuard = true;
+          targetCard.valkyriaGuardTurns = VALKYRIA_GUARD_TURNS;
+
+          // 効果音を再生（アンジェのリーダースキルと同じSE: seClock）
+          playSound(SOUNDS.seClock);
+
+          const sidePrefix = isBlue ? 'player' : 'enemy';
+          const tEl = document.querySelector(
+            `#${sidePrefix}-lanes .cell[data-lane="${targetLane}"] .card`
+          );
+          if (tEl) {
+            createDamagePopup(tEl, '加護', VALKYRIA_GUARD_POPUP_COLOR);
           }
 
           renderBoard();

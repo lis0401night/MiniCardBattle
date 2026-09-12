@@ -447,4 +447,8 @@ export const SKILL_POINTS = {
     base: 1,
     multiplier: 0,
   },
+  protection: {
+    base: 1,
+    multiplier: 0,
+  },
 };

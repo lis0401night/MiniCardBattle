@@ -46,6 +46,16 @@ function getValkyriaGuardKey(side) {
 export function clearValkyriaGuard(state, side) {
   if (!state) return;
   state[getValkyriaGuardKey(side)] = 0;
+  // 該当陣営の盤面にあるカードの個別加護も解除
+  const board = side === 'blue' ? state.playerBoard : state.enemyBoard;
+  if (board) {
+    board.forEach((c) => {
+      if (c && (c.valkyriaGuard || c.valkyriaGuardTurns)) {
+        delete c.valkyriaGuard;
+        delete c.valkyriaGuardTurns;
+      }
+    });
+  }
 }
 
 /**
@@ -79,7 +89,7 @@ export function grantValkyriaGuard(state, owner, events) {
 
 /**
  * カードがスキル・能力によって破壊・除去可能かどうかを判定する
- * （無効(immune)スキル保持、または所有者に戦乙女の加護が有効な場合は破壊不可）
+ * （無効(immune)スキル保持、カード自身の加護、または所有者に戦乙女の加護が有効な場合は破壊不可）
  * @param {Object} state - バトル状態
  * @param {Object} card - 対象カード
  * @param {string} [side] - 対象カードの所有者 ('blue'|'red')。省略時は card.owner
@@ -88,6 +98,7 @@ export function grantValkyriaGuard(state, owner, events) {
 export function canCardBeDestroyed(state, card, side = null) {
   if (!card) return false;
   if (hasSkill(card, 'immune')) return false;
+  if (card.valkyriaGuard || (card.valkyriaGuardTurns || 0) > 0) return false;
   const owner = side || card.owner;
   if (owner && isValkyriaGuardActive(state, owner)) return false;
   return true;
@@ -164,7 +175,10 @@ export function getDamageBlockType(
 ) {
   if (!card) return null;
 
-  // 1. 戦乙女の加護（最優先ブロック）
+  // 1. 戦乙女の加護（個別カードの加護または陣営全体の加護、最優先ブロック）
+  if (card.valkyriaGuard || (card.valkyriaGuardTurns || 0) > 0) {
+    return 'valkyria_guard';
+  }
   const owner = side || card?.owner;
   if (owner && state && isValkyriaGuardActive(state, owner)) {
     return 'valkyria_guard';
@@ -378,7 +392,11 @@ export function damageCard(
   if (!card) return false;
 
   // 1. 戦乙女の加護: 全ダメージを無効化
-  if (isValkyriaGuardActive(state, side)) {
+  if (
+    card.valkyriaGuard ||
+    (card.valkyriaGuardTurns || 0) > 0 ||
+    isValkyriaGuardActive(state, side)
+  ) {
     events.push({
       type: 'valkyria_guard_block',
       side,
@@ -2472,6 +2490,37 @@ export function applyActiveSkillLogic(
               });
             }
           }
+        }
+      }
+      break;
+    }
+    case 'protection': {
+      // 【保護】自分以外の味方カード1体を選択し、次の自分のターン開始時まで「加護」を付与する。
+      // シミュレーション時は、自分以外の自陣の高パワーカード（加護未付与優先）を選択する
+      const myOccupiedLanes = b
+        .map((bc, i) => (bc !== null ? i : -1))
+        .filter((i) => i !== -1);
+      // 自分以外のレーンのみを対象とする
+      const otherLanes = myOccupiedLanes.filter((i) => i !== l);
+      if (otherLanes.length > 0) {
+        otherLanes.sort((i1, i2) => {
+          const g1 = Boolean(b[i1].valkyriaGuard);
+          const g2 = Boolean(b[i2].valkyriaGuard);
+          if (g1 !== g2) return g1 ? 1 : -1;
+          return (b[i2].currentPower || 0) - (b[i1].currentPower || 0);
+        });
+        const targetLane = otherLanes[0];
+        const targetCard = b[targetLane];
+        if (targetCard) {
+          targetCard.valkyriaGuard = true;
+          targetCard.valkyriaGuardTurns = VALKYRIA_GUARD_TURNS;
+          events.push({
+            type: 'add_status',
+            side: owner,
+            lane: targetLane,
+            status: 'valkyria_guard',
+            source: 'protection',
+          });
         }
       }
       break;

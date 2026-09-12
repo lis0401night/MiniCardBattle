@@ -745,7 +745,7 @@ export const SKILLS = {
      * @returns {string} スキル説明文
      */
     desc: () =>
-      '相手がカードを召喚したとき、このカードを召喚できる。そうした場合、手札に「虚空（パワー0）」を加える。',
+      '相手がカードを召喚したとき、手札から召喚できる。そうした場合、手札に「虚空（パワー0）」を加える。',
     /**
      * 「誘発」スキルのリッチテキストセグメントを生成する。
      * @returns {Array<object>} テキストセグメント配列
@@ -754,7 +754,7 @@ export const SKILLS = {
       {
         type: 'text',
         value:
-          '相手がカードを召喚したとき、このカードを召喚できる。そうした場合、手札に',
+          '相手がカードを召喚したとき、手札から召喚できる。そうした場合、手札に',
       },
       { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
       { type: 'text', value: 'を加える。' },
@@ -1296,6 +1296,12 @@ export const SKILLS = {
     icon: '🎭',
     desc: () => 'バトル中、すべてのカード名と同じとして扱う。',
   },
+  protection: {
+    name: '保護',
+    icon: '🫧',
+    desc: () =>
+      '召喚時、自分以外の味方カード1体を選択し、次の自分のターン開始時まで「加護」（全てのダメージを受けず、破壊されない）を付与する。',
+  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -1372,6 +1378,7 @@ export const ACTIVE_SKILLS = [
   'inspire',
   'supremacy',
   'unleash',
+  'protection',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
@@ -1449,7 +1456,16 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '召喚',
-        skills: ['summon', 'assemble', 'call', 'invite', 'forge'],
+        skills: [
+          'summon',
+          'assemble',
+          'call',
+          'invite',
+          'forge',
+          'trigger',
+          'madness',
+          'reanimate',
+        ],
       },
       {
         name: '配置',
@@ -1471,6 +1487,7 @@ export const SKILL_CATEGORIES = [
       {
         name: '自己強化',
         skills: [
+          'buff',
           'lone_wolf',
           'hero',
           'adversity',
@@ -1479,7 +1496,6 @@ export const SKILL_CATEGORIES = [
           'metamorph',
           'portent',
           'invade',
-          'buff',
           'supremacy',
         ],
       },
@@ -1492,6 +1508,7 @@ export const SKILL_CATEGORIES = [
           'grant_sturdy',
           'bless',
           'inspire',
+          'protection',
         ],
       },
       {
@@ -1539,16 +1556,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '戦闘時・破壊時',
-        skills: [
-          'soul_bind',
-          'absorb',
-          'extort',
-          'split',
-          'retaliate',
-          'madness',
-          'trigger',
-          'reanimate',
-        ],
+        skills: ['soul_bind', 'absorb', 'extort', 'split', 'retaliate'],
       },
       {
         name: 'ターン開始時',
