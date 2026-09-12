@@ -15,6 +15,15 @@ reviews:
     - '!package-lock.json'
     - '!public/assets/**'
     - '!**/public/assets/**'
+    - '!**/*.webp'
+    - '!**/*.png'
+    - '!**/*.jpg'
+    - '!**/*.jpeg'
+    - '!**/*.mp3'
+    - '!**/*.wav'
+    - '!tool/**'
+    - '!**/tool/**'
+    - '!scratch/**'
   path_instructions:
     - path: '**/*.{js,jsx,css}'
       instructions: |
@@ -71,3 +80,23 @@ reviews:
         - 「変身」 ＝ metamorph (絶対に morph や transform としないこと)
         - 「変化」 ＝ morph
         - 「号令」 ＝ call
+        - 「狂気」 ＝ madness
+        - 「忘却」 ＝ silence (正面のカードの全能力無効)
+        - 「沈黙」 ＝ oblivion (お互いの場の全カードの全能力無効)
+
+        ### 👤 日本語キャラクター名の英語ID変換（絶対厳守）
+        src/utils/constants/characters.js に基づいて厳密に一致させる。
+        - android ＝ 機動戦姫 アイギス
+        - dragon ＝ 焔竜姫 イグニス
+        - knight ＝ 聖騎士 セレスティア
+        - cthulhu ＝ 深淵の呼び声 ナイア
+        - elf ＝ 流浪の射手 リナ
+        - cleric ＝ 狂信の聖職者 エリシア
+        - devilhunter ＝ 悪魔狩り マリア
+        - witch ＝ 時駆けの魔女 クロエ
+        - oni ＝ 鬼血の陰陽師 カグラ
+        - priest ＝ 王墓の守護者 ネフティ
+        - automata ＝ 廃鉄の声 マキナ
+
+        ### 🛡️ 重要判定におけるホワイトリスト方式の徹底（絶対厳守）
+        - 報酬付与、カードドロップ、機能解放等の判定では、ブラックリスト方式（mode !== 'a' ...）を禁止し、許可対象のみを判定するホワイトリスト関数を用いる。
