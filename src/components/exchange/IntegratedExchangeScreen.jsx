@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ScreenLayout from '../common/ScreenLayout.jsx';
+import CompactScreenLayout from '../common/CompactScreenLayout.jsx';
 import ExchangeItemCard from '../common/ExchangeItemCard.jsx';
 import { useEasterEgg } from '../../hooks/useEasterEgg.js';
 import { useExchangeScreen } from '../../hooks/useExchangeScreen.js';
@@ -147,17 +147,7 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
     });
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: '100%',
-        flex: 1,
-        minHeight: 0,
-        overflow: 'hidden',
-      }}
-    >
+    <>
       <div
         id="exchange-points-display"
         style={{
@@ -165,7 +155,6 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
           marginBottom: '10px',
           color: '#cbd5e1',
           textAlign: 'center',
-          flexShrink: 0,
         }}
       >
         {tabConfig.pointLabel || 'ポイント'}：所持 {points.current} Pt / 総{' '}
@@ -178,6 +167,7 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
         style={{
           flex: 1,
           minHeight: 0,
+          maxHeight: '500px',
           overflowY: 'auto',
           position: 'relative',
         }}
@@ -226,7 +216,7 @@ function ExchangeTabContent({ tabConfig, onMountDebugGrant }) {
           })}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -313,7 +303,7 @@ export default function IntegratedExchangeScreen({
   };
 
   return (
-    <ScreenLayout
+    <CompactScreenLayout
       id={id}
       backgroundImage={currentTab.bg}
       title="交換所"
@@ -323,72 +313,60 @@ export default function IntegratedExchangeScreen({
       onBackClick={switchScreen ? handleBackClick : undefined}
       backTo={resolvedBackTo}
     >
+      {/* イベントタブ切り替えバー */}
       <div
+        className="exchange-tab-bar"
         style={{
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          width: '100%',
-          flex: 1,
-          minHeight: 0,
+          width: '95%',
+          maxWidth: '440px',
+          margin: '0 auto 10px auto',
+          borderRadius: '8px',
           overflow: 'hidden',
+          border: '1px solid rgba(148, 163, 184, 0.3)',
+          flexShrink: 0,
+          background: 'rgba(15, 23, 42, 0.85)',
         }}
       >
-        {/* イベントタブ切り替えバー */}
-        <div
-          className="exchange-tab-bar"
-          style={{
-            display: 'flex',
-            width: '95%',
-            maxWidth: '440px',
-            margin: '0 auto 10px auto',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            border: '1px solid rgba(148, 163, 184, 0.3)',
-            flexShrink: 0,
-            background: 'rgba(15, 23, 42, 0.85)',
-          }}
-        >
-          {EXCHANGE_TABS.map((tab) => {
-            const isActive = activeMode === tab.mode;
-            return (
-              <button
-                key={tab.mode}
-                type="button"
-                onClick={() => handleTabChange(tab.mode)}
-                style={{
-                  flex: 1,
-                  padding: '8px 2px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontSize: '0.75rem',
-                  transition: 'all 0.2s ease',
-                  background: isActive
-                    ? `linear-gradient(135deg, ${tab.color}dd, ${tab.color}88)`
-                    : 'transparent',
-                  color: isActive ? '#fff' : '#94a3b8',
-                  borderBottom: isActive
-                    ? `2px solid ${tab.color}`
-                    : '2px solid transparent',
-                  whiteSpace: 'nowrap',
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden',
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 選択中イベントのコンテンツ（keyによってタブ切り替え時にクリーンに再初期化） */}
-        <ExchangeTabContent
-          key={activeMode}
-          tabConfig={currentTab}
-          onMountDebugGrant={handleMountDebugGrant}
-        />
+        {EXCHANGE_TABS.map((tab) => {
+          const isActive = activeMode === tab.mode;
+          return (
+            <button
+              key={tab.mode}
+              type="button"
+              onClick={() => handleTabChange(tab.mode)}
+              style={{
+                flex: 1,
+                padding: '8px 2px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '0.75rem',
+                transition: 'all 0.2s ease',
+                background: isActive
+                  ? `linear-gradient(135deg, ${tab.color}dd, ${tab.color}88)`
+                  : 'transparent',
+                color: isActive ? '#fff' : '#94a3b8',
+                borderBottom: isActive
+                  ? `2px solid ${tab.color}`
+                  : '2px solid transparent',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
-    </ScreenLayout>
+
+      {/* 選択中イベントのコンテンツ（keyによってタブ切り替え時にクリーンに再初期化） */}
+      <ExchangeTabContent
+        key={activeMode}
+        tabConfig={currentTab}
+        onMountDebugGrant={handleMountDebugGrant}
+      />
+    </CompactScreenLayout>
   );
 }

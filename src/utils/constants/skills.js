@@ -1433,14 +1433,11 @@ export const SKILL_CATEGORIES = [
     groups: [
       {
         name: 'ダメージ',
-        skills: [
-          'snipe',
-          'snipe_void',
-          'spread',
-          'artillery',
-          'decree',
-          'fate',
-        ],
+        skills: ['snipe', 'snipe_void', 'spread'],
+      },
+      {
+        name: 'リーダーダメージ',
+        skills: ['artillery', 'decree', 'fate'],
       },
       {
         name: '状態付与',

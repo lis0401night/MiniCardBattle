@@ -3708,7 +3708,7 @@ export const CARD_MASTER = [
   {
     id: 'marimo',
     obtain: [],
-    name: '清澄の毬藻',
+    name: '光る毬藻',
     rarity: 2,
     power: 5,
     skills: [
@@ -3903,16 +3903,15 @@ export const CARD_MASTER = [
     obtain: [],
     name: '怨念の首塚',
     rarity: 2,
-    power: 6,
+    power: 7,
     skills: [{ id: 'defender' }, { id: 'seal', value: 2 }],
     voiceCategory: 'stone',
-    flavor:
-      '謀略に倒れた名高き侍の首を沈めた塚。遺された無念が生者の足を縛る。',
+    flavor: '死してなお忠義を貫く侍の霊が、今も主君の墓を守り続けている。',
   },
   {
     id: 'yasha',
     obtain: [],
-    name: '麗しの夜叉',
+    name: '黒夜叉',
     rarity: 3,
     power: 5,
     skills: [
@@ -4019,7 +4018,7 @@ export const CARD_MASTER = [
   {
     id: 'maiden',
     obtain: [],
-    name: '炎の女祭司',
+    name: '聖火の女祭司',
     rarity: 2,
     power: 3,
     skills: [{ id: 'protection', value: 1 }],
@@ -4054,6 +4053,16 @@ export const CARD_MASTER = [
       '炎の民が崇拝する神の一柱。天高く掲げられたその神槌は、創造の火花と破壊の轟音をもたらす。',
   },
   {
+    id: 'elementalburst',
+    obtain: [],
+    name: '精霊破',
+    rarity: 2,
+    power: 0,
+    skills: [{ id: 'assemble', targetKeyword: '精霊' }],
+    voiceCategory: 'magic',
+    flavor: '魔力を大地へ巡らせ、周囲に眠る精霊を召喚する。',
+  },
+  {
     id: 'mimic',
     obtain: [],
     name: 'ミミック',
@@ -4074,6 +4083,32 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_cute',
     flavor:
       '大地と風の声に耳を傾ける部族の少女。大いなる自然の力が彼女に呼応する。',
+  },
+  {
+    id: 'catastrophe',
+    obtain: [],
+    name: '大災厄',
+    rarity: 3,
+    power: 0,
+    skills: [
+      { id: 'legendary' },
+      { id: 'sacrifice', value: 4 },
+      { id: 'berserk', value: 6 },
+      { id: 'spread', value: 6 },
+    ],
+    voiceCategory: 'magic',
+    flavor: '大地は割れ、空は轟き、あらゆる時間と世界が統合した。',
+  },
+  {
+    id: 'elementalmaster',
+    obtain: [],
+    name: 'エレメンタル・マスター',
+    rarity: 4,
+    power: 4,
+    skills: [{ id: 'legendary' }, { id: 'summon', targetKeyword: '精霊' }],
+    voiceCategory: 'human_male_ikemen',
+    flavor:
+      '地水火風、すべての属性を統べる魔術師。絶対的な支配力をもって、高位の精霊たちを従属させる。',
   },
   {
     id: 'rwby',
@@ -4097,32 +4132,6 @@ export const CARD_MASTER = [
     voiceCategory: 'human_female_cool',
     flavor:
       '異なる意志、重なる信念。四人の絆が交錯する時、それぞれの技が美しく響き合う。',
-  },
-  {
-    id: 'elementalmaster',
-    obtain: [],
-    name: 'エレメンタル・マスター',
-    rarity: 4,
-    power: 4,
-    skills: [{ id: 'legendary' }, { id: 'summon', targetKeyword: '精霊' }],
-    voiceCategory: 'human_male_ikemen',
-    flavor:
-      '地水火風、すべての属性を統べる魔術師。絶対的な支配力をもって、高位の精霊たちを従属させる。',
-  },
-  {
-    id: 'catastrophe',
-    obtain: [],
-    name: '大災厄',
-    rarity: 4,
-    power: 0,
-    skills: [
-      { id: 'legendary' },
-      { id: 'sacrifice', value: 4 },
-      { id: 'berserk', value: 6 },
-      { id: 'spread', value: 6 },
-    ],
-    voiceCategory: 'magic',
-    flavor: '大地は割れ、空は轟き、あらゆる時間と世界が統合した。',
   },
   // トークンカード
   {
