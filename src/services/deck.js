@@ -360,8 +360,37 @@ export function isSpecialDeck(deck) {
 }
 
 /**
+ * 通常デッキ配列を安全にLocalStorageに保存し、バックアップ（DECKS_BACKUP_KEY）もアトミックに同時更新します。
+ * 特殊デッキ（isSpecialDeck）が混入している場合は自動的に完全に除外（フィルタリング）し、
+ * 特殊デッキのみで通常デッキが0個になってしまう場合は書き込みを完全に拒否して安全を守ります。
+ *
+ * @param {Array<Object>} decks - 保存対象の通常デッキ配列
+ * @returns {boolean} 正常に保存された場合は true、保存が拒否された場合は false
+ */
+export function saveSafeNormalDecks(decks) {
+  if (typeof localStorage === 'undefined') return false;
+  if (!Array.isArray(decks)) return false;
+
+  // 1. 特殊デッキ（dungeon_deck, defense_deck, tournament_deck等）を完全に除外
+  const cleanDecks = decks.filter((d) => d && !isSpecialDeck(d));
+
+  // 2. 特殊デッキしかなく通常デッキが0個になってしまう場合は、通常デッキ保存箱への書き込みを阻止
+  if (cleanDecks.length === 0) {
+    console.warn(
+      '[saveSafeNormalDecks] 特殊デッキのみで構成された配列のため、通常デッキ保存箱（DECKS_KEY）への書き込みを完全に拒否しました。'
+    );
+    return false;
+  }
+
+  // 3. 通常デッキとバックアップの両方をアトミックに同時更新
+  localStorage.setItem(DECKS_KEY, JSON.stringify(cleanDecks));
+  localStorage.setItem(DECKS_BACKUP_KEY, JSON.stringify(cleanDecks));
+  return true;
+}
+
+/**
  * LocalStorageから通常デッキ配列（DECKS_KEY）を安全に読み込みます。
- * 試練の宮殿デッキなどの特殊デッキによる誤上書きやデータ破損を自動検知し、
+ * 特殊デッキの混入やデータ破損を自動検知し、特殊デッキの除外、
  * バックアップからの復旧または初期デッキセットの再生成によって自己修復を行います。
  * @returns {Array<Object>} 健全な通常デッキ配列
  */
@@ -378,50 +407,61 @@ export function getSafeNormalDecks() {
     }
   }
 
-  // 汚染チェック: デッキが1個のみで、それが試練の宮殿デッキ・防衛デッキ・トーナメントデッキ等の特殊デッキである場合
-  const isContaminated =
-    Array.isArray(decks) && decks.length === 1 && isSpecialDeck(decks[0]);
+  if (!Array.isArray(decks)) {
+    decks = [];
+  }
 
-  if (isContaminated || !Array.isArray(decks) || decks.length === 0) {
-    // 1. バックアップからの自動復旧を試みる
-    const backupSaved = localStorage.getItem(DECKS_BACKUP_KEY);
-    if (backupSaved) {
-      try {
-        const backupDecks = JSON.parse(backupSaved);
-        const isBackupValid =
-          Array.isArray(backupDecks) &&
-          backupDecks.length > 0 &&
-          !(backupDecks.length === 1 && isSpecialDeck(backupDecks[0]));
-        if (isBackupValid) {
-          console.warn(
-            '通常デッキの汚染または消失を検知したため、バックアップから復旧しました。'
-          );
-          localStorage.setItem(DECKS_KEY, JSON.stringify(backupDecks));
-          return backupDecks;
-        }
-      } catch (e) {
-        console.error('バックアップデッキの復旧に失敗しました:', e);
-      }
-    }
+  // 特殊デッキ（isSpecialDeck）の混入有無をチェック
+  const hasSpecialDeck = decks.some((d) => isSpecialDeck(d));
+  // 健全な通常デッキのみを抽出
+  const cleanDecks = decks.filter((d) => d && !isSpecialDeck(d));
 
-    // 2. バックアップがない場合、初期リーダーデッキセットを生成して健全に自己修復
-    const defaultDecks = createDefaultLeaderDecks();
-    if (defaultDecks && defaultDecks.length > 0) {
+  // 健全な通常デッキが1つでも残っている場合、特殊デッキをパージして自動保存し返却
+  if (cleanDecks.length > 0) {
+    if (hasSpecialDeck) {
       console.warn(
-        '通常デッキを全リーダー初期デッキセットで自動修復しました。'
+        '[getSafeNormalDecks] 通常デッキ内に混入していた特殊デッキをパージしました。'
       );
-      localStorage.setItem(DECKS_KEY, JSON.stringify(defaultDecks));
-      localStorage.setItem(DECKS_BACKUP_KEY, JSON.stringify(defaultDecks));
-      return defaultDecks;
+      saveSafeNormalDecks(cleanDecks);
+    } else {
+      // 健全な通常デッキが存在する場合はバックアップを更新して安全を担保
+      localStorage.setItem(DECKS_BACKUP_KEY, JSON.stringify(cleanDecks));
+    }
+    return cleanDecks;
+  }
+
+  // 健全な通常デッキが0個の場合（特殊デッキしかなかった、または空・破損）
+  // 1. バックアップからの自動復旧を試みる
+  const backupSaved = localStorage.getItem(DECKS_BACKUP_KEY);
+  if (backupSaved) {
+    try {
+      const backupDecks = JSON.parse(backupSaved);
+      if (Array.isArray(backupDecks)) {
+        const cleanBackup = backupDecks.filter((d) => d && !isSpecialDeck(d));
+        if (cleanBackup.length > 0) {
+          console.warn(
+            '[getSafeNormalDecks] 通常デッキの汚染または消失を検知したため、バックアップから復旧しました。'
+          );
+          saveSafeNormalDecks(cleanBackup);
+          return cleanBackup;
+        }
+      }
+    } catch (e) {
+      console.error('バックアップデッキの復旧に失敗しました:', e);
     }
   }
 
-  // 健全な通常デッキが存在する場合はバックアップを更新して安全を担保
-  if (Array.isArray(decks) && decks.length > 0 && !isContaminated) {
-    localStorage.setItem(DECKS_BACKUP_KEY, JSON.stringify(decks));
+  // 2. バックアップすらない場合、初期リーダーデッキセットを生成して健全に自己修復
+  const defaultDecks = createDefaultLeaderDecks();
+  if (defaultDecks && defaultDecks.length > 0) {
+    console.warn(
+      '[getSafeNormalDecks] 通常デッキを全リーダー初期デッキセットで自動修復しました。'
+    );
+    saveSafeNormalDecks(defaultDecks);
+    return defaultDecks;
   }
 
-  return Array.isArray(decks) ? decks : [];
+  return [];
 }
 
 /**
@@ -969,9 +1009,7 @@ export function loadDeck() {
       // 新規プレイヤー向けまたは修復用：全キャラクター（リーダー）分の初期デッキを生成
       GameState.decks = createDefaultLeaderDecks();
       GameState.currentDeckIndex = 0;
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(DECKS_KEY, JSON.stringify(GameState.decks));
-      }
+      saveSafeNormalDecks(GameState.decks);
     }
   }
 
@@ -1102,7 +1140,7 @@ export function createNewDeck(leaderId) {
     GameState.gameMode !== 'defense_register' &&
     GameState.gameMode !== 'battle_dungeon'
   ) {
-    localStorage.setItem(DECKS_KEY, JSON.stringify(GameState.decks));
+    saveSafeNormalDecks(GameState.decks);
   }
   return GameState.decks.length - 1; // 生成したデッキのインデックスを返す
 }
@@ -1224,12 +1262,7 @@ export function saveCurrentEditDeck() {
         return;
       }
 
-      localStorage.setItem(DECKS_KEY, JSON.stringify(GameState.decks));
-
-      // 健全な通常デッキ配列をバックアップとして保存
-      if (Array.isArray(GameState.decks) && GameState.decks.length > 0) {
-        localStorage.setItem(DECKS_BACKUP_KEY, JSON.stringify(GameState.decks));
-      }
+      saveSafeNormalDecks(GameState.decks);
     }
   }
 

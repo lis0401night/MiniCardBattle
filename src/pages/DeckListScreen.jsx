@@ -4,6 +4,7 @@ import BackButton from '../components/BackButton.jsx';
 import {
   getSafeNormalDecks,
   loadDeck,
+  saveSafeNormalDecks,
   startBattleFlow,
 } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
@@ -202,10 +203,7 @@ export default function DeckListScreen({ switchScreen }) {
         ) {
           GameState.currentDeckIndex--;
         }
-        localStorage.setItem(
-          'mini_card_battle_decks',
-          JSON.stringify(GameState.decks)
-        );
+        saveSafeNormalDecks(GameState.decks);
         setRenderVersion((v) => v + 1);
       }
     );
@@ -422,10 +420,7 @@ export default function DeckListScreen({ switchScreen }) {
         }
 
         GameState.decks = newDecks;
-        localStorage.setItem(
-          'mini_card_battle_decks',
-          JSON.stringify(GameState.decks)
-        );
+        saveSafeNormalDecks(GameState.decks);
         setRenderVersion((v) => v + 1);
       }
 

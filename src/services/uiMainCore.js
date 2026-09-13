@@ -35,6 +35,7 @@ import {
   createNewDeck,
   loadDeck,
   renderDeckEdit,
+  saveSafeNormalDecks,
   startBattleFlow,
 } from './deck.js';
 
@@ -803,10 +804,7 @@ export function goBackFromDeckEdit(isCancel = false) {
         GameState.decks.length > index
       ) {
         GameState.decks.splice(index, 1);
-        localStorage.setItem(
-          'mini_card_battle_decks',
-          JSON.stringify(GameState.decks)
-        );
+        saveSafeNormalDecks(GameState.decks);
       }
       GameState.appState = 'create_deck_select_char';
       initSelectScreen(false);
@@ -1286,10 +1284,7 @@ export function confirmCharSelect() {
         if (!GameState.decks[deckIndex].playerSkins)
           GameState.decks[deckIndex].playerSkins = {};
         GameState.decks[deckIndex].playerSkins[charId] = chosenSkin;
-        localStorage.setItem(
-          'mini_card_battle_decks',
-          JSON.stringify(GameState.decks)
-        );
+        saveSafeNormalDecks(GameState.decks);
       }
       loadDeck();
       switchScreen('screen-deck-edit');
@@ -1409,10 +1404,7 @@ export function confirmCharSelect() {
             GameState.gameMode !== 'defense_register' &&
             GameState.gameMode !== 'battle_dungeon'
           ) {
-            localStorage.setItem(
-              'mini_card_battle_decks',
-              JSON.stringify(GameState.decks)
-            );
+            saveSafeNormalDecks(GameState.decks);
           }
         }
         setTimeout(() => {

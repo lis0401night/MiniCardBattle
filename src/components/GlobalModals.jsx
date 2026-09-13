@@ -5,6 +5,7 @@ import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
 import {
   renderDeckEdit,
   saveDeck,
+  saveSafeNormalDecks,
   submitDefenseDeck,
 } from '../services/deck.js';
 import {
@@ -38,7 +39,6 @@ import {
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import {
   appendVersionQuery,
-  DECKS_KEY,
   DEFAULT_PLAYER_ICON,
   DEFAULT_PLAYER_NAME,
   OWNED_PLAYMATS_KEY,
@@ -3012,10 +3012,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           } else if (GameState.gameMode === 'tournament') {
                             // トーナメントモードのスキン変更は通常デッキに波及させない
                           } else {
-                            localStorage.setItem(
-                              DECKS_KEY,
-                              JSON.stringify(GameState.decks)
-                            );
+                            saveSafeNormalDecks(GameState.decks);
                           }
 
                           // 画面再描画
@@ -3264,10 +3261,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           } else if (GameState.gameMode === 'tournament') {
                             // トーナメントモードのリーダー変更は通常デッキに波及させない
                           } else {
-                            localStorage.setItem(
-                              DECKS_KEY,
-                              JSON.stringify(GameState.decks)
-                            );
+                            saveSafeNormalDecks(GameState.decks);
                           }
 
                           // 現在アクティブなデッキの場合、playerConfigも同期する
