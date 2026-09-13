@@ -854,7 +854,8 @@ export function clearCardAbilities(targetCard) {
   if (!targetCard) return;
   targetCard.skills = [];
   targetCard.choices = [];
-  targetCard.choices2 = null;
+  targetCard.choices2 = [];
+  targetCard.supremacySkills = [];
   if ('summonId' in targetCard) delete targetCard.summonId;
   targetCard.stunTurns = 0;
   targetCard.stunAppliedThisTurn = false;
@@ -1133,6 +1134,34 @@ export function getSkillTargetLabel(sk) {
 }
 
 /**
+ * 対象指定に応じて表示名（ターゲットラベル）を動的に変化させる召喚・探索系スキルID一覧。
+ * @type {ReadonlyArray<string>}
+ */
+export const TARGET_RULE_SKILLS = Object.freeze([
+  'summon',
+  'call',
+  'explore',
+  'resurrect',
+  'assemble',
+]);
+
+/**
+ * スキル集約（同一スキルの count++ マージ）から除外すべきかを判定する共通関数。
+ * 「選択（choice）」「命令（force）」「覇道（supremacy）」、および
+ * ターゲットラベルが付与された特殊召喚スキル（summon, call, explore, resurrect, assemble）は
+ * 固有の分岐情報や対象情報を持つため、重複集約せず個別に表示します。
+ *
+ * @param {Object|string} sk - 判定対象のスキルオブジェクトまたはスキルID
+ * @returns {boolean} マージから除外すべき場合は true
+ */
+export function isSkillMergeExcluded(sk) {
+  if (!sk) return false;
+  const id = typeof sk === 'string' ? sk : sk.id;
+  if (id === 'choice' || id === 'force' || id === 'supremacy') return true;
+  return TARGET_RULE_SKILLS.includes(id) && Boolean(getSkillTargetLabel(sk));
+}
+
+/**
  * スキルオブジェクトから表示用の名前、値、アイコン、結合名を解決する共通ヘルパー関数
  * @param {object|string} sk - スキル定義オブジェクトまたはスキルID文字列
  * @returns {{ id: string, name: string, value: string|number, icon: string, fullName: string, targetId: string|null, targetIds: Array|null, targetKeyword: string|null }}
@@ -1178,13 +1207,6 @@ export function getSkillBadgeInfo(sk) {
   let displayVal = val;
 
   // 召喚(summon)、号令(call)、探索(explore)、復活(resurrect)、召集(assemble)のターゲット別共通表示処理
-  const TARGET_RULE_SKILLS = [
-    'summon',
-    'call',
-    'explore',
-    'resurrect',
-    'assemble',
-  ];
   if (TARGET_RULE_SKILLS.includes(id)) {
     const targetLabel = getSkillTargetLabel(sk);
     if (targetLabel) {
@@ -1255,12 +1277,7 @@ export function renderSkillTag(
   // 2. IDと値が一致するものを集計（「選択」「命令」「覇道」およびターゲット指定のある特殊スキルはマージせず個別に表示）
   let grouped = [];
   skillCandidates.forEach((c) => {
-    const isExcludedFromMerge =
-      c.id === 'choice' ||
-      c.id === 'force' ||
-      c.id === 'supremacy' ||
-      (['summon', 'call', 'explore', 'resurrect', 'assemble'].includes(c.id) &&
-        Boolean(getSkillTargetLabel(c)));
+    const isExcludedFromMerge = isSkillMergeExcluded(c);
     const existing = isExcludedFromMerge
       ? null
       : grouped.find(
@@ -2232,12 +2249,21 @@ export function matchesCardTarget(
   } = {}
 ) {
   if (!card) return false;
+  // トークン限定指定は絞り込み条件として扱い、他の対象条件も継続評価する
   if (targetToken || targetType === 'token') {
-    return Boolean(
+    const isTok = Boolean(
       card.isToken ||
       card.id?.startsWith('token_') ||
       card.baseId?.startsWith('token_')
     );
+    if (!isTok) return false;
+    const hasOtherCriteria =
+      Boolean(targetId) ||
+      (Array.isArray(targetIds) && targetIds.length > 0) ||
+      (typeof targetKeyword === 'string' && targetKeyword.trim() !== '') ||
+      Boolean(targetSkill) ||
+      Boolean(targetSkills);
+    if (!hasOtherCriteria) return true;
   }
   if (targetId && matchesCardId(card, targetId)) return true;
   if (

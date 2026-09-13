@@ -63,7 +63,7 @@ import {
   showConfirmModal,
   showPointAcquisitionModal,
 } from '../../services/uiModals.js';
-import { recordDailyMissionWin } from '../../utils/constants/dailyMissions.js';
+import { recordDailyMissionWin } from '../../services/dailyMissions.js';
 import { showDefenseBattleList } from '../../services/uiMainCore.js';
 import {
   DEFENSE_POINTS_KEY,

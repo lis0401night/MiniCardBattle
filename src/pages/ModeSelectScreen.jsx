@@ -18,8 +18,9 @@ import NewsBanner from '../components/common/NewsBanner.jsx';
 import { getScreenBackgroundStyle } from '../utils/constants/config.js';
 import { hasUnclaimedAchievements } from '../utils/constants/achievements.js';
 import { isProfileDefault } from '../state/gameState.js';
-import { hasClaimableDailyMissions } from '../utils/constants/dailyMissions.js';
+import { hasClaimableDailyMissions } from '../services/dailyMissions.js';
 import DailyMissionsModal from '../components/common/DailyMissionsModal.jsx';
+import NotificationBadge from '../components/common/NotificationBadge.jsx';
 
 /**
  * モード選択（メインメニュー）画面コンポーネント
@@ -36,7 +37,24 @@ export default function ModeSelectScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    setHasClaimableMissions(hasClaimableDailyMissions());
+
+    // 画面復帰時および初回マウント時に各種通知状態を最新化する
+    const refreshNotifications = () => {
+      if (!isMounted) return;
+      setHasClaimableMissions(hasClaimableDailyMissions());
+      checkHasPublicWaitingRooms()
+        .then((hasRooms) => {
+          if (isMounted) {
+            setHasWaitingPublicRooms(hasRooms);
+          }
+        })
+        .catch((e) => {
+          // 公開待機ルームの取得失敗時は通知バッジ非表示で縮退させる
+          console.warn('公開待機ルームの取得に失敗しました:', e);
+        });
+    };
+
+    // 初回実行（公開待機ルーム取得）
     checkHasPublicWaitingRooms()
       .then((hasRooms) => {
         if (isMounted) {
@@ -44,11 +62,33 @@ export default function ModeSelectScreen() {
         }
       })
       .catch((e) => {
-        // 公開待機ルームの取得失敗時は通知バッジ非表示で縮退させる
         console.warn('公開待機ルームの取得に失敗しました:', e);
       });
+
+    // 画面DOMはアンマウントされずclass切り替えで制御されるため、
+    // activeクラス付与（バトルや別画面からの復帰時）を検知して通知バッジを再評価する
+    const screen = document.getElementById('screen-mode-select');
+    let observer = null;
+    if (screen) {
+      observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (
+            mutation.attributeName === 'class' &&
+            screen.classList.contains('active')
+          ) {
+            refreshNotifications();
+          }
+        });
+      });
+      observer.observe(screen, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+    }
+
     return () => {
       isMounted = false;
+      observer?.disconnect();
     };
   }, []);
 
@@ -70,22 +110,7 @@ export default function ModeSelectScreen() {
           }}
         >
           📋
-          {hasClaimableMissions && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-2px',
-                width: '14px',
-                height: '14px',
-                background: '#ef4444',
-                border: '2px solid white',
-                borderRadius: '50%',
-                zIndex: 10,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              }}
-            />
-          )}
+          {hasClaimableMissions && <NotificationBadge />}
         </button>
 
         <button
@@ -97,22 +122,7 @@ export default function ModeSelectScreen() {
           }}
         >
           👤
-          {isProfileDefault() && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-2px',
-                width: '14px',
-                height: '14px',
-                background: '#ef4444',
-                border: '2px solid white',
-                borderRadius: '50%',
-                zIndex: 10,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              }}
-            />
-          )}
+          {isProfileDefault() && <NotificationBadge />}
         </button>
 
         <button

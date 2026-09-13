@@ -142,6 +142,17 @@ export default function PointConversionModal({
     setAmounts(next);
   }, [isProcessing]);
 
+  /**
+   * モーダル終了ハンドラ（SEクリック音を再生）
+   */
+  const handleClose = useCallback(() => {
+    if (isProcessing) return;
+    playSound(SOUNDS?.seClick);
+    if (typeof onClose === 'function') {
+      onClose();
+    }
+  }, [isProcessing, onClose]);
+
   // 合計変換ポイント数
   const totalConvertAmount = useMemo(() => {
     return Object.values(amounts).reduce((sum, val) => sum + (val || 0), 0);
@@ -323,7 +334,7 @@ export default function PointConversionModal({
         padding: '16px',
         boxSizing: 'border-box',
       }}
-      onClick={isProcessing ? undefined : onClose}
+      onClick={handleClose}
     >
       <div
         className="skill-modal-box modal-pop-animation"
@@ -736,7 +747,7 @@ export default function PointConversionModal({
               margin: 0,
               fontSize: '0.9rem',
             }}
-            onClick={onClose}
+            onClick={handleClose}
           >
             キャンセル
           </button>

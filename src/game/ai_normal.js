@@ -452,7 +452,6 @@ export function processActionSequence(
                   'summon',
                   'ambush',
                   'invite',
-                  'chant',
                   'clone',
                   'puppet',
                   'forge',
@@ -530,7 +529,6 @@ export function processActionSequence(
       // 連鎖召喚の子プレイ（またはスキップ）が始まったら、親カードの保護フラグを解除し、パワー0以下なら破壊する
       if (
         action.type === 'invite' ||
-        action.type === 'chant' ||
         action.type === 'forge' ||
         action.type === 'summon' ||
         action.type === 'assemble'
@@ -540,7 +538,6 @@ export function processActionSequence(
           if (c && c.isSkillResolving) {
             if (
               hasSkill(c, 'invite') ||
-              hasSkill(c, 'chant') ||
               hasSkill(c, 'forge') ||
               hasSkill(c, 'summon') ||
               hasSkill(c, 'assemble')
@@ -602,18 +599,16 @@ export function processActionSequence(
       if (
         action.type === 'play' ||
         action.type === 'invite' ||
-        action.type === 'chant' ||
         action.type === 'forge' ||
         action.type === 'play_adhoc' ||
         action.type === 'summon' ||
         action.type === 'assemble'
       ) {
-        // laneIdx=-1 は「このスキルをスキップ」のセンチネル値（chant/invite/forge/summon/assemble/play_adhoc用）
+        // laneIdx=-1 は「このスキルをスキップ」のセンチネル値（invite/forge/summon/assemble/play_adhoc用）
         // 実行時と同様に手札・デッキを消費せずスキップする
         if (
           lIdx === -1 &&
           (action.type === 'invite' ||
-            action.type === 'chant' ||
             action.type === 'forge' ||
             action.type === 'summon' ||
             action.type === 'assemble' ||
@@ -663,7 +658,7 @@ export function processActionSequence(
           }
           checkConstraints = true;
         } else {
-          // play, invite, chant, forge, summon は手札から
+          // play, invite, forge, summon は手札から
           playedCard = cloneCard(simState.enemyHand[tIdx]);
           if (action.type === 'forge') {
             const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
@@ -1118,7 +1113,7 @@ export function processActionSequence(
 
         if (triggerSkills && !activeCardForSkills.skillTriggered) {
           // 【連鎖スキルと即時スキルの実行順序制御】
-          // カードが連鎖スキル（forge/invite/chant）を持つ場合、
+          // カードが連鎖スキル（forge/invite/summon）を持つ場合、
           // 除外リスト外の即時スキル（quick/snipe等）は連鎖完了後に発動する必要がある。
           // （例: forge→装備合体→quickの順で処理しないと、装備前のパワーで速攻が発動してしまう）
           // battle.js の resolveOnPlaySkill と同じ実行順序を再現するため、
@@ -1127,7 +1122,6 @@ export function processActionSequence(
           const hasChainSkill =
             hasSkill(activeCardForSkills, 'forge') ||
             hasSkill(activeCardForSkills, 'invite') ||
-            hasSkill(activeCardForSkills, 'chant') ||
             hasSkill(activeCardForSkills, 'summon') ||
             hasSkill(activeCardForSkills, 'assemble');
 
@@ -1169,7 +1163,6 @@ export function processActionSequence(
             } else if (
               ![
                 'invite',
-                'chant',
                 'convert',
                 'draw',
                 'salvage',
@@ -1221,12 +1214,12 @@ export function processActionSequence(
         }
 
         // スキル解決が終わったため、保護フラグを解除する
-        // 【招来・詠唱・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
+        // 【招来・召喚・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
         // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
         if (activeCardForSkills) {
           const hasChainSummon =
             hasSkill(activeCardForSkills, 'invite') ||
-            hasSkill(activeCardForSkills, 'chant') ||
+            hasSkill(activeCardForSkills, 'summon') ||
             hasSkill(activeCardForSkills, 'forge');
           if (!hasChainSummon) {
             activeCardForSkills.isSkillResolving = false;
@@ -1244,12 +1237,12 @@ export function processActionSequence(
       }
 
       // 【連鎖スキル完了後の保留スキル発動】
-      // 連鎖スキル（forge/invite/chant）の子アクション処理（装備合体や追加カード配置）が完了した後に、
+      // 連鎖スキル（forge/invite/summon）の子アクション処理（装備合体や追加カード配置）が完了した後に、
       // 親カードに保留されていた即時スキル（quick/snipe等）を発動する。
       // これにより装備合体完了後の強化ステータスで速攻や砲撃が正しく実行される。
       if (
         action.type === 'invite' ||
-        action.type === 'chant' ||
+        action.type === 'summon' ||
         action.type === 'forge'
       ) {
         for (let i = 0; i < 3; i++) {
@@ -1259,7 +1252,7 @@ export function processActionSequence(
     }
 
     // 【保留スキルの最終回収】
-    // 連鎖スキル（forge/invite/chant）の子アクションがアクションキューに
+    // 連鎖スキル（forge/invite/summon）の子アクションがアクションキューに
     // 生成されなかった場合でも、保留された即時スキルを必ず発動させる。
     for (let i = 0; i < 3; i++) {
       flushPendingSimSkills(simState, simState.enemyBoard[i], i);
@@ -1343,7 +1336,6 @@ export function getBestSimulatedMove() {
     if (
       sourceType === 'play' ||
       sourceType === 'invite' ||
-      sourceType === 'chant' ||
       sourceType === 'summon' ||
       sourceType === 'assemble'
     ) {
@@ -1364,7 +1356,7 @@ export function getBestSimulatedMove() {
       }
       // 生贄・頂点: invite時は親カードが同レーンに配置済みだがmyBoardには未反映のため、
       // プリフィルタをスキップしprocessActionSequenceの正確なsimStateチェックに委ねる
-      if (sourceType !== 'invite' && sourceType !== 'chant') {
+      if (sourceType !== 'invite' && sourceType !== 'summon') {
         // 生贄: 既にカードが置かれているレーン、またはリーダースキルで配置される予定のレーン
         if (hasSkill(card, 'takeover')) {
           availableLanes = availableLanes.filter((l) => {
@@ -1525,7 +1517,6 @@ export function getBestSimulatedMove() {
               'play',
               'call',
               'invite',
-              'chant',
               'forge',
               'summon',
               'assemble',
@@ -1539,7 +1530,6 @@ export function getBestSimulatedMove() {
                   if (
                     [
                       'invite',
-                      'chant',
                       'resurrect',
                       'convert',
                       'draw',
@@ -1629,42 +1619,6 @@ export function getBestSimulatedMove() {
                     currentUsedDiscard,
                     currentDepth + 1,
                     lane,
-                    leaderSkillContext
-                  );
-                  for (let cNode of children) {
-                    let nextBranches = buildSkillBranch(
-                      remainingSkills,
-                      [...currentUsedHand, i],
-                      currentUsedDiscard,
-                      currentDepth,
-                      currentDiscarded,
-                      activeEnemyBoard,
-                      activePlayerBoard
-                    );
-                    for (let nb of nextBranches) {
-                      results.push([...cNode, ...nb]);
-                    }
-                  }
-                }
-              } else if (sk.id === 'chant') {
-                // 【詠唱】招来と違い全レーンが配置候補（forcedLaneなし）
-                const maxP = sk.value ?? 3;
-                for (let i = 0; i < originalHand.length; i++) {
-                  if (currentUsedHand.includes(i)) continue;
-                  let childCard = originalHand[i];
-                  // パワー制限チェック
-                  if ((childCard.power || 0) > maxP) continue;
-                  // 【詠唱】全レーンが候補のためforcedLaneは渡さない
-                  let children = buildCardPlayTree(
-                    childCard,
-                    i,
-                    'chant',
-                    originalHand,
-                    originalDiscard,
-                    [...currentUsedHand, i],
-                    currentUsedDiscard,
-                    currentDepth + 1,
-                    undefined,
                     leaderSkillContext
                   );
                   for (let cNode of children) {
@@ -2431,7 +2385,7 @@ export function getBestSimulatedMove() {
           let adjusted = { ...act };
           if (
             (adjusted.type === 'invite' ||
-              adjusted.type === 'chant' ||
+              adjusted.type === 'summon' ||
               adjusted.type === 'play' ||
               adjusted.type === 'discard') &&
             firstAction.type === 'play'
@@ -2691,7 +2645,6 @@ export function getBestSimulatedMove() {
           const hasActiveSkills = leaderCard.skills.some((s) =>
             [
               'invite',
-              'chant',
               'resurrect',
               'convert',
               'draw',
@@ -2897,7 +2850,7 @@ export function getBestSimulatedMove() {
                                     let adjusted = { ...act };
                                     if (
                                       (adjusted.type === 'invite' ||
-                                        adjusted.type === 'chant' ||
+                                        adjusted.type === 'summon' ||
                                         adjusted.type === 'play' ||
                                         adjusted.type === 'discard') &&
                                       fA.type === 'play'
@@ -2953,7 +2906,7 @@ export function getBestSimulatedMove() {
                                 let adjusted = { ...act };
                                 if (
                                   (adjusted.type === 'invite' ||
-                                    adjusted.type === 'chant' ||
+                                    adjusted.type === 'summon' ||
                                     adjusted.type === 'play' ||
                                     adjusted.type === 'discard') &&
                                   fA.type === 'play'
@@ -3949,42 +3902,6 @@ export function evaluateAdhocTokenLanes(
           }
         }
       }
-    } else if (sk.id === 'chant') {
-      const originalHand = GameState.enemyHand || [];
-      const originalDiscard = GameState.enemyDiscard || [];
-      const maxP = sk.value ?? 3;
-      for (let i = 0; i < originalHand.length; i++) {
-        if (currentUsedHand.includes(i)) continue;
-        let childCard = originalHand[i];
-        if ((childCard.power || 0) > maxP) continue;
-        // 【詠唱】全レーンが候補のためforcedLaneは指定しない
-        let children = buildCardPlayTreeAdhoc(
-          childCard,
-          i,
-          'chant',
-          originalHand,
-          originalDiscard,
-          [...currentUsedHand, i],
-          currentUsedDiscard,
-          currentDepth + 1
-        );
-        for (let cNode of children) {
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            [...currentUsedHand, i],
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            activeEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([...cNode, ...nb]);
-          }
-        }
-      }
     } else if (sk.id === 'summon') {
       const selfId = tokenCard ? tokenCard.baseId || tokenCard.id : null;
       const originalHand = GameState.enemyHand || [];
@@ -4743,7 +4660,6 @@ export function evaluateAdhocTokenLanes(
     if (
       sourceType === 'play' ||
       sourceType === 'invite' ||
-      sourceType === 'chant' ||
       sourceType === 'summon' ||
       sourceType === 'assemble'
     ) {
@@ -4759,7 +4675,7 @@ export function evaluateAdhocTokenLanes(
       if (hasSkill(card, 'legendary')) {
         availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
       }
-      if (sourceType !== 'invite' && sourceType !== 'chant') {
+      if (sourceType !== 'invite') {
         if (hasSkill(card, 'takeover')) {
           availableLanes = availableLanes.filter((l) => {
             if (l === -1) return true;
@@ -4845,7 +4761,6 @@ export function evaluateAdhocTokenLanes(
             'play',
             'call',
             'invite',
-            'chant',
             'forge',
             'summon',
             'assemble',
@@ -4856,7 +4771,6 @@ export function evaluateAdhocTokenLanes(
                 if (
                   [
                     'invite',
-                    'chant',
                     'resurrect',
                     'convert',
                     'draw',
@@ -5571,12 +5485,12 @@ export function simulateMove(
             activeCard.skillTriggered = true;
           }
           // スキル解決が終わったため、保護フラグを解除する
-          // 【招来・詠唱・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
+          // 【招来・召喚・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
           // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
           if (activeCard) {
             const hasChainSummon =
               hasSkill(activeCard, 'invite') ||
-              hasSkill(activeCard, 'chant') ||
+              hasSkill(activeCard, 'summon') ||
               hasSkill(activeCard, 'forge');
             if (!hasChainSummon) {
               activeCard.isSkillResolving = false;

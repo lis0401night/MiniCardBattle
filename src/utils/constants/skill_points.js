@@ -326,10 +326,6 @@ export const SKILL_POINTS = {
     base: 6,
     multiplier: 0,
   },
-  chant: {
-    base: 2,
-    multiplier: 1,
-  },
   arm_self: {
     base: 1,
     multiplier: 0,

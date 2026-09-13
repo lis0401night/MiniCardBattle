@@ -2,7 +2,7 @@ import { SKILLS } from '../utils/constants/skills.js';
 import {
   getDialogue,
   getSkillBadgeInfo,
-  getSkillTargetLabel,
+  isSkillMergeExcluded,
   playSound,
   resolveCardChoices,
   resolveCardSupremacySkills,
@@ -106,14 +106,7 @@ export function updateCardDetail(c) {
 
     let grouped = [];
     skillCandidates.forEach((cand) => {
-      const isExcludedFromMerge =
-        cand.id === 'choice' ||
-        cand.id === 'force' ||
-        cand.id === 'supremacy' ||
-        (['summon', 'call', 'explore', 'resurrect', 'assemble'].includes(
-          cand.id
-        ) &&
-          Boolean(getSkillTargetLabel(cand)));
+      const isExcludedFromMerge = isSkillMergeExcluded(cand);
       const existing = isExcludedFromMerge
         ? null
         : grouped.find(

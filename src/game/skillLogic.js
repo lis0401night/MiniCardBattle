@@ -291,18 +291,9 @@ export async function resolveActiveSkillEffect(
   skillValue,
   skObj = null
 ) {
-  // 詠唱（chant）は召喚（summon）に統合・一本化されたためエイリアスとして正規化
-  if (skillId === 'chant') {
-    skillId = 'summon';
-  }
-
   const currentSkill =
     skObj ||
-    (Array.isArray(c?.skills)
-      ? c.skills.find(
-          (s) => s.id === skillId || (skillId === 'summon' && s.id === 'chant')
-        )
-      : null);
+    (Array.isArray(c?.skills) ? c.skills.find((s) => s.id === skillId) : null);
   const cEl = document.querySelector(
     `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
   );
@@ -395,7 +386,6 @@ export async function resolveActiveSkillEffect(
       decay: '減衰',
       puppet: '傀儡',
       leap: '跳躍',
-      chant: '詠唱',
       forge: '鍛造',
       explore: '探索',
       cull: '選別',

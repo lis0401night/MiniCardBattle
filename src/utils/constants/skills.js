@@ -1160,11 +1160,6 @@ export const SKILLS = {
     desc: () =>
       '召喚時、追加のターンを1回行う。（ただし、追加ターン中はSPは溜まらず攻撃もできない）',
   },
-  chant: {
-    name: '召喚',
-    icon: '📢',
-    desc: (val, sk) => SKILLS.summon.desc(val, sk),
-  },
   arm_self: {
     name: '武装',
     icon: '🦾',
@@ -1364,7 +1359,6 @@ export const ACTIVE_SKILLS = [
   'decay',
   'puppet',
   'leap',
-  'chant',
   'burial',
   'recurse',
   'forge',

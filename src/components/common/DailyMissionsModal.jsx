@@ -7,15 +7,16 @@
  */
 
 import { useState, useCallback } from 'react';
+import { DAILY_MISSIONS } from '../../utils/constants/dailyMissions.js';
 import {
-  DAILY_MISSIONS,
   loadDailyMissionsProgress,
   claimDailyMissionReward,
   checkIsPackVol01Completed,
-} from '../../utils/constants/dailyMissions.js';
+} from '../../services/dailyMissions.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { showAlertModal } from '../../services/uiModals.js';
+import { DEFAULT_PACK_LOGO_URL } from '../../utils/constants/packs.js';
 import PackOpeningModal from '../exchange/PackOpeningModal.jsx';
 
 /**
@@ -75,7 +76,7 @@ export default function DailyMissionsModal({ onClose, onClaimSuccess }) {
       setPackOpeningData({
         cardIds: [result.cardId],
         coverCardId: result.packDef?.coverCardId || 'catastrophe',
-        logoUrl: result.packDef?.logoUrl || 'assets/ui/packvol01.png',
+        logoUrl: result.packDef?.logoUrl || DEFAULT_PACK_LOGO_URL,
       });
     },
     [onClaimSuccess]

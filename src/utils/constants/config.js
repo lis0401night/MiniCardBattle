@@ -84,6 +84,8 @@ export const DEFENSE_TOTAL_POINTS_KEY = 'mini_card_battle_defense_total_points';
 export const DEFENSE_WINS_KEY = 'mini_card_battle_defense_wins';
 export const DEFENSE_HISTORY_KEY = 'mini_card_battle_defense_history';
 export const DEFENSE_TARGETS_KEY = 'mini_card_battle_defense_targets';
+/** 試練の宮殿（ダンジョン）の中断セーブデータのLocalStorageキー */
+export const DUNGEON_SAVE_KEY = 'mini_card_battle_dungeon_save';
 
 /** prepareBattle の二重呼び出しロック強制解除タイムアウト（ミリ秒） */
 export const PREPARE_BATTLE_LOCK_TIMEOUT_MS = 30000;

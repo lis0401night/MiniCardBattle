@@ -50,7 +50,6 @@ import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { getLatestOwnership, syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { PACK_VOL01_CARD_IDS } from '../utils/constants/packs.js';
 import {
   BOSS_CHARACTER_IDS,
   canShowUnlockableCharacter,
@@ -1075,11 +1074,16 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           isPack: data.type === 'pack',
           coverCardId: data.coverCardId || 'catastrophe',
           logoUrl: data.logoUrl || data.packObj?.logoUrl,
+          packDescription:
+            data.packDescription ||
+            data.packObj?.description ||
+            data.displayFlavor,
           packCardIds: data.packCardIds || data.packObj?.cardIds || [],
           packCardCount:
             data.packCardCount ||
             data.packObj?.cardIds?.length ||
-            PACK_VOL01_CARD_IDS.length,
+            data.packCardIds?.length ||
+            0,
           rarityWeights: data.rarityWeights || data.packObj?.rarityWeights,
           flavorOverride: data.displayFlavor,
           showPreviewActions: false,
@@ -1799,6 +1803,18 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             </h2>
             <div className="card-list-container">
               <div className="card-list-grid-3col" style={{ padding: '10px' }}>
+                {cardListModalData.cards.length === 0 && (
+                  <div
+                    style={{
+                      gridColumn: '1 / -1',
+                      color: '#94a3b8',
+                      textAlign: 'center',
+                      padding: '20px',
+                    }}
+                  >
+                    該当するカードがありません
+                  </div>
+                )}
                 {cardListModalData.cards.map((c) => {
                   const displayCard = { ...c, owner: 'blue' };
                   const imgUrl = getCardImgUrl

@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
+import { resolvePackLogoUrl } from '../../utils/constants/packs.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
@@ -162,12 +163,7 @@ export default function PackOpeningModal({
     `assets/cards/card_${coverCardId}.webp`
   );
   // パックタイトルロゴ画像URL
-  const resolvedLogoUrl =
-    logoUrl !== undefined
-      ? logoUrl
-        ? appendVersionQuery(logoUrl)
-        : null
-      : appendVersionQuery('assets/ui/packvol01.png');
+  const resolvedLogoUrl = resolvePackLogoUrl(logoUrl);
 
   return (
     <div

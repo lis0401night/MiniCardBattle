@@ -6,6 +6,7 @@
  */
 
 import { appendVersionQuery } from '../../utils/constants/config.js';
+import { resolvePackLogoUrl } from '../../utils/constants/packs.js';
 
 /**
  * パックカバー画像描画コンポーネント。
@@ -13,7 +14,7 @@ import { appendVersionQuery } from '../../utils/constants/config.js';
  * @param {Object} props
  * @param {string} [props.coverCardId='catastrophe'] - パック表紙として合成するカードのID
  * @param {string} [props.coverImgUrl] - 表紙カード画像のURL（省略時はcoverCardIdから自動解決）
- * @param {string} [props.logoUrl] - パック表面に重ねるタイトルロゴ画像のURL（省略時はpackvol01.pngを自動解決）
+ * @param {string} [props.logoUrl] - パック表面に重ねるタイトルロゴ画像のURL（省略時は既定ロゴ画像を自動解決）
  * @param {Object} [props.style] - 外枠コンテナに追加適用するCSSスタイルオブジェクト
  * @param {string} [props.className=''] - 外枠コンテナに追加適用するCSSクラス名
  * @returns {JSX.Element} パック画像要素
@@ -30,12 +31,7 @@ export default function PackCoverImage({
     coverImgUrl || appendVersionQuery(`assets/cards/card_${coverCardId}.webp`);
   const packBgUrl = appendVersionQuery('assets/ui/packimg01.png');
   const packTextUrl = appendVersionQuery('assets/ui/packtextimg01.png');
-  const resolvedLogoUrl =
-    logoUrl !== undefined
-      ? logoUrl
-        ? appendVersionQuery(logoUrl)
-        : null
-      : appendVersionQuery('assets/ui/packvol01.png');
+  const resolvedLogoUrl = resolvePackLogoUrl(logoUrl);
 
   return (
     <div

@@ -4,7 +4,11 @@
  */
 
 import { CARD_MASTER } from './cards.js';
-import { MAX_CARD_COPIES, PACK_EXCHANGE_COST } from './config.js';
+import {
+  appendVersionQuery,
+  MAX_CARD_COPIES,
+  PACK_EXCHANGE_COST,
+} from './config.js';
 
 /**
  * 第1弾拡張パック（vol01:ビギニング）の封入カードID一覧（全45種類）
@@ -79,6 +83,27 @@ export const PACK_DEFAULT_RARITY_WEIGHTS = Object.freeze({
 });
 
 /**
+ * パック既定ロゴ画像パス
+ * @type {string}
+ */
+export const DEFAULT_PACK_LOGO_URL = 'assets/ui/packvol01.png';
+
+/**
+ * パックロゴURLを解決します。
+ * 未指定（undefined）の場合は既定ロゴ、空文字等のfalsy値はロゴ非表示（null）として扱い、
+ * 有効なURL文字列にはバージョンクエリを自動付与して返します。
+ *
+ * @param {string|undefined} logoUrl - 指定ロゴ画像URL（未指定時はデフォルト画像を採用）
+ * @returns {string|null} バージョンクエリ付与済みの解決後画像URL、または非表示を表すnull
+ */
+export function resolvePackLogoUrl(logoUrl) {
+  if (logoUrl === undefined) {
+    return appendVersionQuery(DEFAULT_PACK_LOGO_URL);
+  }
+  return logoUrl ? appendVersionQuery(logoUrl) : null;
+}
+
+/**
  * パックマスターデータ一覧
  * 各パックのID、名称、説明、必要ポイント、封入カードリスト、排出設定を保持します。
  * @type {ReadonlyArray<Readonly<{
@@ -106,7 +131,7 @@ export const PACK_MASTER = Object.freeze([
     pointsKey: 'common',
     cardsPerPack: 1,
     coverCardId: 'catastrophe',
-    logoUrl: 'assets/ui/packvol01.png',
+    logoUrl: DEFAULT_PACK_LOGO_URL,
     cardIds: PACK_VOL01_CARD_IDS,
     rarityWeights: PACK_DEFAULT_RARITY_WEIGHTS,
   }),

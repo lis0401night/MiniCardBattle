@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
-import {
-  PACK_DEFAULT_RARITY_WEIGHTS,
-  PACK_VOL01_CARD_IDS,
-} from '../../utils/constants/packs.js';
+import { PACK_DEFAULT_RARITY_WEIGHTS } from '../../utils/constants/packs.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import {
   getCardImgUrl,
@@ -484,7 +481,9 @@ function CardPreviewContent({
                   }}
                 >
                   {styleProps.flavorOverride ||
-                    'Ver 0.4.0で追加されたカードが封入された拡張パック。'}
+                    styleProps.packDescription ||
+                    card?.description ||
+                    ''}
                 </div>
 
                 {/* 確率表記 */}
@@ -576,7 +575,7 @@ function CardPreviewContent({
                     収録カード（
                     {styleProps.packCardCount ||
                       styleProps.packCardIds?.length ||
-                      PACK_VOL01_CARD_IDS.length}
+                      0}
                     種類）
                   </div>
                   <button
@@ -600,7 +599,11 @@ function CardPreviewContent({
                     onClick={(e) => {
                       e.stopPropagation();
                       playSound?.(SOUNDS?.seClick);
-                      if (window.showEnemyDeckModal && styleProps.packCardIds) {
+                      // 収録カードIDが1件以上ある場合のみ一覧モーダルを開く
+                      if (
+                        window.showEnemyDeckModal &&
+                        styleProps.packCardIds?.length > 0
+                      ) {
                         window.showEnemyDeckModal(
                           styleProps.packCardIds,
                           `${styleProps.titleName || card?.name || 'パック'} 収録カード`,

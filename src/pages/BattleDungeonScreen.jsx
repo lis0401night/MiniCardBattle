@@ -22,6 +22,7 @@ import { CHARACTERS, getIconFramePath } from '../utils/constants/characters.js';
 import {
   appendVersionQuery,
   DEFAULT_DUNGEON_AI_LEVEL,
+  DUNGEON_SAVE_KEY,
 } from '../utils/constants/config.js';
 import { getCardImgUrl, playSound, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
@@ -270,47 +271,54 @@ export default function BattleDungeonScreen() {
 }
 
 /**
+ * LocalStorageから試練の宮殿の中断セーブデータを読み込み、パース結果および破損フラグを返します。
+ *
+ * @returns {{ data: Object|null, corrupted: boolean }} 読み込まれたセーブデータオブジェクト（未保存・破損時はnull）と破損有無フラグ
+ */
+function readDungeonSave() {
+  const json = localStorage.getItem(DUNGEON_SAVE_KEY);
+  if (!json) {
+    return { data: null, corrupted: false };
+  }
+  try {
+    return { data: JSON.parse(json), corrupted: false };
+  } catch (e) {
+    console.error('ダンジョンセーブデータのパースに失敗しました:', e);
+    return { data: null, corrupted: true };
+  }
+}
+
+/**
  * 再開・やり直し選択画面
  */
 function ResumeSelect() {
-  const [saveData, setSaveData] = useState(() => {
-    try {
-      const json = localStorage.getItem('mini_card_battle_dungeon_save');
-      return json ? JSON.parse(json) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [saveResult] = useState(() => readDungeonSave());
+  const saveData = saveResult.data;
 
   useEffect(() => {
-    const json = localStorage.getItem('mini_card_battle_dungeon_save');
-    if (json) {
-      try {
-        setSaveData(JSON.parse(json));
-      } catch (e) {
-        console.error('ダンジョンセーブデータのパースに失敗しました:', e);
-        // 【データ整合性担保】破損セーブデータをクリアし、自動的に最初から開始する導線へ強制リセットする
-        localStorage.removeItem('mini_card_battle_dungeon_save');
+    // セーブデータが破損していた場合、破損データをクリアして初期状態へ安全にリセットする
+    if (saveResult.corrupted) {
+      // 【データ整合性担保】破損セーブデータをクリアし、自動的に最初から開始する導線へ強制リセットする
+      localStorage.removeItem(DUNGEON_SAVE_KEY);
 
-        GameState.dungeonState = 'select_rental_deck';
-        GameState.dungeonWinStreak = 0;
-        GameState.dungeonCards = [];
-        GameState.dungeonOpponents = [];
-        GameState.playerDeckSelection = null;
-        delete GameState.dungeonPlayerHP;
+      GameState.dungeonState = 'select_rental_deck';
+      GameState.dungeonWinStreak = 0;
+      GameState.dungeonCards = [];
+      GameState.dungeonOpponents = [];
+      GameState.playerDeckSelection = null;
+      delete GameState.dungeonPlayerHP;
 
-        if (window.renderBattleDungeonReact) {
-          window.renderBattleDungeonReact();
-        }
+      if (window.renderBattleDungeonReact) {
+        window.renderBattleDungeonReact();
+      }
 
-        if (showAlertModal) {
-          showAlertModal(
-            '中断セーブデータが破損していたため、消去して最初から開始します。'
-          );
-        }
+      if (showAlertModal) {
+        showAlertModal(
+          '中断セーブデータが破損していたため、消去して最初から開始します。'
+        );
       }
     }
-  }, []);
+  }, [saveResult.corrupted]);
   const pConf = useMemo(() => {
     if (!saveData) return null;
     const charId =

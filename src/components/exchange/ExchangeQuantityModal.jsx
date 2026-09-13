@@ -117,6 +117,16 @@ export default function ExchangeQuantityModal({
     }
   }, [onConfirm, item, count]);
 
+  /**
+   * キャンセルハンドラ（SEクリック音を再生）
+   */
+  const handleCancel = useCallback(() => {
+    playSound(SOUNDS?.seClick);
+    if (typeof onCancel === 'function') {
+      onCancel();
+    }
+  }, [onCancel]);
+
   if (!item) return null;
 
   // 合計必要ポイントと交換後残りポイントの算出
@@ -159,7 +169,7 @@ export default function ExchangeQuantityModal({
         padding: '16px',
         boxSizing: 'border-box',
       }}
-      onClick={onCancel}
+      onClick={handleCancel}
     >
       <div
         className="skill-modal-box modal-pop-animation"
@@ -452,7 +462,7 @@ export default function ExchangeQuantityModal({
               margin: 0,
               fontSize: '0.95rem',
             }}
-            onClick={onCancel}
+            onClick={handleCancel}
           >
             キャンセル
           </button>

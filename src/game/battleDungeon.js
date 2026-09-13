@@ -103,8 +103,8 @@ function syncDungeonDeckLeaderId(charId) {
         );
       }
     } else {
-      const deckCards = (GameState.playerDeckSelection || []).map(
-        (c) => (typeof c === 'string' ? c : c.id || c.baseId)
+      const deckCards = (GameState.playerDeckSelection || []).map((c) =>
+        typeof c === 'string' ? c : c.id || c.baseId
       );
       obj = {
         id: 'dungeon_deck',

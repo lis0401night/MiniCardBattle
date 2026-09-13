@@ -67,8 +67,8 @@ export function getObtainMethodsText(obtainIds, isToken = false) {
     if (packMatch) {
       const packId = parseInt(packMatch[1], 10);
       const pack = getPackById(packId);
-      const packName = pack?.name || 'パック';
-      return `パック（${packName}）`;
+      // 未登録のパックIDの場合は「パック（パック）」を避け、IDを表示する
+      return pack?.name ? `パック（${pack.name}）` : `パック（${id}）`;
     }
 
     return id;
