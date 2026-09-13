@@ -143,6 +143,8 @@ export function updateCardDetail(c) {
           const badgeInfo = getSkillBadgeInfo(sk);
           let skillName = isBind ? '拘束' : badgeInfo.name;
           let val = isBind ? '' : badgeInfo.value;
+          // アイコンも子スキル表示と同一の情報源（バッジ情報）に統一する
+          const skillIcon = badgeInfo.icon || s.icon;
 
           // 合体(union)など、第2引数にスキルオブジェクト自体（targetId/summonId等）を必要とするdescに対応
           const skillEffect = resolveDesc(
@@ -187,7 +189,7 @@ export function updateCardDetail(c) {
                             <details class="choice-accordion" style="margin-bottom: 4px; width: 100%;">
                                 <summary style="list-style: none; cursor: pointer; outline: none; width: 100%;">
                                     <div class="card-skill-tag" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 110px; position: relative; margin: 0 auto;">
-                                        <span>${s.icon} ${skillName}${val}${countSuffix}</span>
+                                        <span>${skillIcon} ${skillName}${val}${countSuffix}</span>
                                         <span class="accordion-icon" style="font-size: 0.7rem; position: absolute; right: 8px;">▼</span>
                                     </div>
                                     <div class="skill-desc" style="margin-top: 2px; margin-bottom: 4px; color: #f8fafc; text-align: center;">${skillEffect}</div>
@@ -200,7 +202,7 @@ export function updateCardDetail(c) {
           } else {
             html += `<div class="skill-header">
                             <div class="card-skill-tag" style="background:${isBind ? '#475569' : ''}; border-color:${isBind ? '#ef4444' : ''}; color:${isBind ? '#fca5a5' : ''};">
-                                ${s.icon} ${skillName}${val}${countSuffix}
+                                ${skillIcon} ${skillName}${val}${countSuffix}
                             </div>
                         </div>
                         <div class="skill-desc">${skillEffect}</div>`;

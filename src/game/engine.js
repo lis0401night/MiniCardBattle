@@ -31,6 +31,9 @@ const PORTENT_THRESHOLD_HP = 13;
 /** ラグナロクの全体カードダメージ量 */
 const RAGNAROK_CARD_DAMAGE_AMOUNT = 2;
 
+/** 覇道（supremacy）の発動条件となる、自身以外の味方カードの基本パワー下限 */
+export const SUPREMACY_REQUIRED_BASE_POWER = 6;
+
 /**
  * サイドに対応する戦乙女の加護カウンターのキー名を返す
  * @param {string} side - 対象サイド ('blue' または 'red')
@@ -1268,7 +1271,7 @@ export function applyActiveSkillLogic(
         if (!tc || laneIdx === l) return false;
         const master = CARD_MASTER.find((m) => m.id === (tc.baseId || tc.id));
         const origPower = master?.power ?? tc.power ?? 0;
-        return origPower >= 6;
+        return origPower >= SUPREMACY_REQUIRED_BASE_POWER;
       });
 
       if (hasOriginal6Plus) {

@@ -5,8 +5,8 @@ import {
   MAX_CARD_COPIES,
 } from '../../utils/constants/config.js';
 import {
+  DEFAULT_PACK_COVER_CARD_ID,
   getPackById,
-  PACK_VOL01_CARD_IDS,
 } from '../../utils/constants/packs.js';
 import {
   getPlaymatImgUrl,
@@ -53,15 +53,21 @@ export default function ExchangeItemCard({
 
   // アンロック/最大所持状態の判定（パックは全封入カードが上限カンストしている場合に最大到達）
   let isUnlocked = false;
+  const pack = isPack
+    ? getPackById(item.packObj || item.id || item.packId || item)
+    : null;
+  const resolvedPackCardIds = isPack
+    ? pack?.cardIds || item.packObj?.cardIds || item.cardIds || []
+    : [];
+
   if (isPack) {
-    const pack = getPackById(item.packObj || item.id || item.packId || item);
-    const cardIds = pack?.cardIds || item.cardIds || PACK_VOL01_CARD_IDS;
     let totalMissing = 0;
-    cardIds.forEach((cId) => {
+    resolvedPackCardIds.forEach((cId) => {
       const owned = Number(inventory[cId]) || 0;
       totalMissing += Math.max(0, MAX_CARD_COPIES - owned);
     });
-    isUnlocked = totalMissing <= 0;
+    // 収録カードが解決できない場合は最大所持と誤判定しない
+    isUnlocked = resolvedPackCardIds.length > 0 && totalMissing <= 0;
   } else if (isCard) {
     isUnlocked = (inventory[item.id] || 0) >= MAX_CARD_COPIES;
   } else if (isPremium) {
@@ -187,12 +193,11 @@ export default function ExchangeItemCard({
         titleName: displayName,
         displayType: displayTypeLabel,
         displayFlavor: displayDesc,
-        coverCardId: item.coverCardId || 'catastrophe',
-        logoUrl: item.logoUrl || item.packObj?.logoUrl,
-        packCardIds: item.packObj?.cardIds || item.cardIds || [],
-        packCardCount:
-          (item.packObj?.cardIds || item.cardIds || []).length ||
-          PACK_VOL01_CARD_IDS.length,
+        coverCardId:
+          item.coverCardId || pack?.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
+        logoUrl: item.logoUrl || item.packObj?.logoUrl || pack?.logoUrl,
+        packCardIds: resolvedPackCardIds,
+        packCardCount: resolvedPackCardIds.length,
         imgUrl: originalImgUrl,
         onConfirm: () => {
           onExchange?.({
@@ -225,8 +230,12 @@ export default function ExchangeItemCard({
       >
         {isPack ? (
           <PackCoverImage
-            coverCardId={item.coverCardId || 'catastrophe'}
-            logoUrl={item.logoUrl || item.packObj?.logoUrl}
+            coverCardId={
+              item.coverCardId ||
+              pack?.coverCardId ||
+              DEFAULT_PACK_COVER_CARD_ID
+            }
+            logoUrl={item.logoUrl || item.packObj?.logoUrl || pack?.logoUrl}
           />
         ) : (
           imgUrl && (

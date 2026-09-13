@@ -38,11 +38,13 @@ import {
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import {
   appendVersionQuery,
+  DECKS_KEY,
   DEFAULT_PLAYER_ICON,
   DEFAULT_PLAYER_NAME,
   OWNED_PLAYMATS_KEY,
   PROFILE_NAME_KEY,
 } from '../utils/constants/config.js';
+import { DEFAULT_PACK_COVER_CARD_ID } from '../utils/constants/packs.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
 import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
@@ -1072,7 +1074,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           isPlaymat: data.type === 'playmat',
           isIcon: data.type === 'icon',
           isPack: data.type === 'pack',
-          coverCardId: data.coverCardId || 'catastrophe',
+          coverCardId: data.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
           logoUrl: data.logoUrl || data.packObj?.logoUrl,
           packDescription:
             data.packDescription ||
@@ -3000,23 +3002,18 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                             );
                           } else if (
                             GameState.gameMode === 'battle_dungeon' ||
-                            targetDeck?.id === 'dungeon_deck' ||
-                            targetDeck?.name === '試練の宮殿デッキ'
+                            targetDeck?.id === 'dungeon_deck'
                           ) {
                             localStorage.setItem(
                               'mini_card_battle_dungeon_deck_obj',
                               JSON.stringify(targetDeck)
                             );
-                            if (
-                              typeof window.saveDungeonProgress === 'function'
-                            ) {
-                              window.saveDungeonProgress();
-                            }
+                            saveDungeonProgress();
                           } else if (GameState.gameMode === 'tournament') {
                             // トーナメントモードのスキン変更は通常デッキに波及させない
                           } else {
                             localStorage.setItem(
-                              'mini_card_battle_decks',
+                              DECKS_KEY,
                               JSON.stringify(GameState.decks)
                             );
                           }
@@ -3257,24 +3254,18 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           } else if (
                             GameState.gameMode === 'battle_dungeon' ||
                             GameState.decks[targetDeckIndex]?.id ===
-                              'dungeon_deck' ||
-                            GameState.decks[targetDeckIndex]?.name ===
-                              '試練の宮殿デッキ'
+                              'dungeon_deck'
                           ) {
                             localStorage.setItem(
                               'mini_card_battle_dungeon_deck_obj',
                               JSON.stringify(GameState.decks[targetDeckIndex])
                             );
-                            if (
-                              typeof window.saveDungeonProgress === 'function'
-                            ) {
-                              window.saveDungeonProgress();
-                            }
+                            saveDungeonProgress();
                           } else if (GameState.gameMode === 'tournament') {
                             // トーナメントモードのリーダー変更は通常デッキに波及させない
                           } else {
                             localStorage.setItem(
-                              'mini_card_battle_decks',
+                              DECKS_KEY,
                               JSON.stringify(GameState.decks)
                             );
                           }

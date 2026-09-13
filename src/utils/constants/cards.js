@@ -4017,7 +4017,7 @@ export const CARD_MASTER = [
   {
     id: 'fallenangel',
     obtain: ['pack_1'],
-    name: '戦の女神',
+    name: '黒翼の戦天使',
     rarity: 4,
     power: 4,
     skills: [
@@ -4028,7 +4028,7 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'human_female_cool',
     flavor:
-      '堕ちてなお気高き戦の女神。その黒き翼で戦場を舞い、絶望に抗う者たちへ勝利と癒やしをもたらす。',
+      '堕ちてなお気高き戦天使。その黒き翼で戦場を舞い、絶望に抗う者たちへ勝利と癒やしをもたらす。',
   },
   {
     id: 'elementalmaster',

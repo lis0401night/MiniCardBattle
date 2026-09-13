@@ -6,13 +6,16 @@
  */
 
 import { appendVersionQuery } from '../../utils/constants/config.js';
-import { resolvePackLogoUrl } from '../../utils/constants/packs.js';
+import {
+  DEFAULT_PACK_COVER_CARD_ID,
+  resolvePackLogoUrl,
+} from '../../utils/constants/packs.js';
 
 /**
  * パックカバー画像描画コンポーネント。
  *
  * @param {Object} props
- * @param {string} [props.coverCardId='catastrophe'] - パック表紙として合成するカードのID
+ * @param {string} [props.coverCardId=DEFAULT_PACK_COVER_CARD_ID] - パック表紙として合成するカードのID
  * @param {string} [props.coverImgUrl] - 表紙カード画像のURL（省略時はcoverCardIdから自動解決）
  * @param {string} [props.logoUrl] - パック表面に重ねるタイトルロゴ画像のURL（省略時は既定ロゴ画像を自動解決）
  * @param {Object} [props.style] - 外枠コンテナに追加適用するCSSスタイルオブジェクト
@@ -20,7 +23,7 @@ import { resolvePackLogoUrl } from '../../utils/constants/packs.js';
  * @returns {JSX.Element} パック画像要素
  */
 export default function PackCoverImage({
-  coverCardId = 'catastrophe',
+  coverCardId = DEFAULT_PACK_COVER_CARD_ID,
   coverImgUrl,
   logoUrl,
   style = {},

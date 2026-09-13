@@ -773,22 +773,22 @@ export const SKILLS = {
   silence: {
     name: '忘却',
     icon: '⚪',
+    /**
+     * 「忘却」スキルの説明テキストを生成する。
+     * 召喚時、正面のカードの全ての能力を無効化する。
+     * @returns {string} スキル説明文
+     */
     desc: () => '召喚時、正面のカードの全ての能力をなくす。',
   },
   trigger: {
     name: '誘発',
     icon: '⚡',
     /**
-     * 「誘発」スキルの説明テキストを生成する。
-     * @returns {string} スキル説明文
-     */
-    desc: () =>
-      '相手がカードを召喚したとき、手札から召喚できる。そうした場合、手札に「虚空（パワー0）」を加える。',
-    /**
-     * 「誘発」スキルのリッチテキストセグメントを生成する。
+     * 「誘発」スキルの説明セグメントを生成する。
+     * 相手がカードを召喚したとき手札から割り込んで召喚し、「虚空（パワー0）」を手札に加える。
      * @returns {Array<object>} テキストセグメント配列
      */
-    descSegments: () => [
+    desc: () => [
       {
         type: 'text',
         value:
@@ -1274,33 +1274,66 @@ export const SKILLS = {
   buff: {
     name: '強化',
     icon: '💪',
+    /**
+     * 「強化」スキルの説明テキストを生成する。
+     * 召喚時、自身のパワーを指定値上昇させる自己強化能力。
+     * @param {number} [val=1] - 上昇するパワー値
+     * @returns {string} スキル説明文
+     */
     desc: (val) => `召喚時、自身のパワーを+${val || 1}する。`,
   },
   inspire: {
     name: '鼓舞',
     icon: '🎺',
+    /**
+     * 「鼓舞」スキルの説明テキストを生成する。
+     * 召喚時、自分の場の自身以外の味方カード1体を選択してパワーを指定値上昇させるサポート能力。
+     * @param {number} [val=1] - 上昇するパワー値
+     * @returns {string} スキル説明文
+     */
     desc: (val) =>
       `召喚時、自分の場の自身以外のカード1体を選択し、そのパワーを+${val || 1}する。`,
   },
   supremacy: {
     name: '覇道',
     icon: '🐉',
+    /**
+     * 「覇道」スキルの説明テキストを生成する。
+     * 自分の場に自身以外の元々のパワー6以上のカードが存在する場合、
+     * カード定義の supremacySkills に列挙された能力を発動する条件スキル。
+     * @returns {string} スキル説明文
+     */
     desc: () =>
       '召喚時、自分の場に自身以外の元々のパワーが6以上のカードが存在する場合に以下の能力を発動する。',
   },
   unleash: {
     name: '解放',
     icon: '⛓',
+    /**
+     * 「解放」スキルの説明テキストを生成する。
+     * 召喚時、自身の防御をなくす。
+     * @returns {string} スキル説明文
+     */
     desc: () => '召喚時、自身の防御をなくす。',
   },
   all_forms: {
     name: '万相',
     icon: '🎭',
+    /**
+     * 「万相」スキルの説明テキストを生成する。
+     * バトル中、すべてのカード名と同じとして扱う常時パッシブ能力。
+     * @returns {string} スキル説明文
+     */
     desc: () => 'バトル中、すべてのカード名と同じとして扱う。',
   },
   protection: {
     name: '保護',
     icon: '🪽',
+    /**
+     * 「保護」スキルの説明テキストを生成する。
+     * 召喚時、自分の場のカード1体を選択し、次の自分のターン開始時まで「加護」（全てのダメージを受けず、破壊されない）を付与する。
+     * @returns {string} スキル説明文
+     */
     desc: () =>
       '召喚時、自分の場のカード1体を選択し、次の自分のターン開始時まで「加護」（全てのダメージを受けず、破壊されない）を付与する。',
   },
@@ -1454,16 +1487,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '召喚',
-        skills: [
-          'summon',
-          'assemble',
-          'call',
-          'invite',
-          'forge',
-          'trigger',
-          'madness',
-          'reanimate',
-        ],
+        skills: ['summon', 'assemble', 'call', 'invite', 'forge'],
       },
       {
         name: '配置',
@@ -1571,6 +1595,10 @@ export const SKILL_CATEGORIES = [
       {
         name: '肩代わり',
         skills: ['guardian', 'substitute', 'possession', 'reflect'],
+      },
+      {
+        name: '特殊召喚',
+        skills: ['trigger', 'madness', 'reanimate'],
       },
       {
         name: '耐性',

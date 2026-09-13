@@ -10,12 +10,14 @@ import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { checkIsHighDiffMode, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import {
+  AUTO_REVEAL_DELAY_MS,
+  FADE_OUT_DURATION_MS,
+  MANUAL_REVEAL_DELAY_MS,
+  TURNOVER_SE_DELAY_MS,
+} from '../../utils/constants/packs.js';
 
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
-
-const MANUAL_REVEAL_DELAY_MS = 800; // 手動タップ時の公開遅延(ms)
-const AUTO_REVEAL_DELAY_MS = 600; // 自動開封時の公開遅延(ms)
-const TURNOVER_SE_DELAY_MS = 150; // めくり効果音の遅延(ms)
 
 export default function RewardOverlay() {
   const [isVisible, setIsVisible] = useState(false);
@@ -132,11 +134,11 @@ export default function RewardOverlay() {
 
       clearAllTimers();
 
-      // フェードアウト時間300ms待ってから消去
+      // フェードアウト時間待機後に消去
       const timer3 = setTimeout(() => {
         setIsVisible(false);
         setIsFadingOut(false);
-      }, 300);
+      }, FADE_OUT_DURATION_MS);
       timersRef.current.push(timer3);
       return;
     }

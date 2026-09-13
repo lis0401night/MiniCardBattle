@@ -873,7 +873,12 @@ export function clearCardAbilities(targetCard) {
 export function isProtectedZeroPowerCard(card) {
   if (!card || !card.isSkillResolving) return false;
   if (card.hasTakenDamage) return false;
-  return (card.power || 0) === 0 || (card.basePower || 0) === 0;
+  // 元々のパワーを basePower から判定する。basePower が無いカードは power を元々のパワーとして扱う
+  const originalPower =
+    card.basePower !== undefined && card.basePower !== null
+      ? card.basePower
+      : card.power;
+  return (originalPower || 0) === 0;
 }
 
 /**
@@ -1275,6 +1280,8 @@ export function renderSkillTag(
   }
 
   // 2. IDと値が一致するものを集計（「選択」「命令」「覇道」およびターゲット指定のある特殊スキルはマージせず個別に表示）
+  // targetIds（配列）は順序を含めて文字列化し、比較キーとして扱う
+  const targetIdsKey = (ids) => (Array.isArray(ids) ? ids.join(',') : '');
   let grouped = [];
   skillCandidates.forEach((c) => {
     const isExcludedFromMerge = isSkillMergeExcluded(c);
@@ -1285,7 +1292,8 @@ export function renderSkillTag(
             g.id === c.id &&
             g.value === c.value &&
             g.targetId === c.targetId &&
-            g.targetKeyword === c.targetKeyword
+            g.targetKeyword === c.targetKeyword &&
+            targetIdsKey(g.targetIds) === targetIdsKey(c.targetIds)
         );
     if (existing) {
       existing.count++;

@@ -551,7 +551,9 @@ function resolveFortuneRewards() {
   const recon = reconcilePointsWithPurchases(
     rawCurrentPts,
     finalTotalPts,
-    EXCHANGE_LINEUPS_BY_MODE.fortune
+    EXCHANGE_LINEUPS_BY_MODE.fortune,
+    null,
+    'fortune'
   );
   const finalCurrentPts = recon.current;
 

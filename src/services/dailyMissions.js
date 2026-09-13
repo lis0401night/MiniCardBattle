@@ -165,13 +165,16 @@ export function recordDailyMissionWin(gameMode) {
   if (!targetMissionId) return false;
 
   const data = loadDailyMissionsProgress();
+  const missionDef = DAILY_MISSIONS.find((m) => m.id === targetMissionId);
   const missionState = data.missions[targetMissionId];
-  if (!missionState) return false;
+  if (!missionDef || !missionState) return false;
 
-  // 既に達成値に達している場合は余計な再保存を避ける
-  if (missionState.progress >= 1) return false;
+  const targetCount = Number(missionDef.targetCount) || 1;
 
-  missionState.progress = 1;
+  // 既に達成値（targetCount）に達している場合は余計な再保存を避ける
+  if (missionState.progress >= targetCount) return false;
+
+  missionState.progress = Math.min(missionState.progress + 1, targetCount);
   saveDailyMissionsProgress(data);
   return true;
 }

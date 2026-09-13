@@ -16,7 +16,10 @@ import {
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { showAlertModal } from '../../services/uiModals.js';
-import { DEFAULT_PACK_LOGO_URL } from '../../utils/constants/packs.js';
+import {
+  DEFAULT_PACK_COVER_CARD_ID,
+  DEFAULT_PACK_LOGO_URL,
+} from '../../utils/constants/packs.js';
 import PackOpeningModal from '../exchange/PackOpeningModal.jsx';
 
 /**
@@ -75,7 +78,7 @@ export default function DailyMissionsModal({ onClose, onClaimSuccess }) {
       // パック開封演出モーダルを起動
       setPackOpeningData({
         cardIds: [result.cardId],
-        coverCardId: result.packDef?.coverCardId || 'catastrophe',
+        coverCardId: result.packDef?.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
         logoUrl: result.packDef?.logoUrl || DEFAULT_PACK_LOGO_URL,
       });
     },

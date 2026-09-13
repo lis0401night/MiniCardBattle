@@ -10,7 +10,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
-import { resolvePackLogoUrl } from '../../utils/constants/packs.js';
+import {
+  AUTO_REVEAL_DELAY_MS,
+  DEFAULT_PACK_COVER_CARD_ID,
+  FADE_OUT_DURATION_MS,
+  MANUAL_REVEAL_DELAY_MS,
+  resolvePackLogoUrl,
+  TURNOVER_SE_DELAY_MS,
+} from '../../utils/constants/packs.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
@@ -23,7 +30,7 @@ import CardPreviewContent from '../common/CardPreviewContent.jsx';
  * @param {Object} props
  * @param {string} [props.cardId] - 排出されたカードのID（単一パック用）
  * @param {Array<string>} [props.cardIds] - 排出されたカードIDの配列（複数パック用）
- * @param {string} [props.coverCardId='catastrophe'] - パック表紙として合成するカードのID
+ * @param {string} [props.coverCardId=DEFAULT_PACK_COVER_CARD_ID] - パック表紙として合成するカードのID
  * @param {string} [props.logoUrl] - パック表面に重ねるタイトルロゴ画像のURL（省略時はpackvol01.pngを自動解決）
  * @param {Function} props.onClose - モーダル終了（OK押下時）のコールバック関数
  * @returns {JSX.Element|null} パック開封モーダル要素
@@ -31,7 +38,7 @@ import CardPreviewContent from '../common/CardPreviewContent.jsx';
 export default function PackOpeningModal({
   cardId,
   cardIds = [],
-  coverCardId = 'catastrophe',
+  coverCardId = DEFAULT_PACK_COVER_CARD_ID,
   logoUrl,
   onClose,
 }) {
@@ -41,7 +48,7 @@ export default function PackOpeningModal({
       ? cardIds
       : cardId
         ? [cardId]
-        : ['catastrophe'];
+        : [DEFAULT_PACK_COVER_CARD_ID];
 
   const [queue, setQueue] = useState(initialQueue);
   // フェーズ管理: 'pack'（パック待機） -> 'animating'（開封演出中） -> 'reveal'（カード公開）
@@ -53,7 +60,7 @@ export default function PackOpeningModal({
   const currentCardId = queue[0];
   const card =
     CARD_MASTER.find((m) => m.id === currentCardId) ||
-    CARD_MASTER.find((m) => m.id === 'catastrophe') ||
+    CARD_MASTER.find((m) => m.id === DEFAULT_PACK_COVER_CARD_ID) ||
     CARD_MASTER[0];
 
   /**
@@ -71,27 +78,35 @@ export default function PackOpeningModal({
   }, [clearAllTimers]);
 
   /**
+   * パック開封アニメーションシーケンスを開始します。
+   * めくり効果音の再生後、指定された遅延時間でカード公開フェーズへ移行します。
+   *
+   * @param {number} revealDelayMs - カード公開フェーズへ移行するまでの待機時間(ms)
+   */
+  const startOpeningAnimation = useCallback((revealDelayMs) => {
+    setPhase('animating');
+
+    const timer1 = setTimeout(() => {
+      playSound(SOUNDS?.seTurnover);
+    }, TURNOVER_SE_DELAY_MS);
+    timersRef.current.push(timer1);
+
+    const timer2 = setTimeout(() => {
+      setPhase('reveal');
+      playSound(SOUNDS?.seSkill || SOUNDS?.seClick);
+    }, revealDelayMs);
+    timersRef.current.push(timer2);
+  }, []);
+
+  /**
    * パッククリック/タップ時の開封アニメーション開始ハンドラ
    */
   const handlePackClick = useCallback(() => {
     if (phase !== 'pack') return;
 
     playSound(SOUNDS?.seClick);
-    setPhase('animating');
-
-    // 150ms後にカードめくりSEを再生
-    const timer1 = setTimeout(() => {
-      playSound(SOUNDS?.seTurnover);
-    }, 150);
-    timersRef.current.push(timer1);
-
-    // 800ms後にカード公開フェーズへ移行し、出現SEを再生
-    const timer2 = setTimeout(() => {
-      setPhase('reveal');
-      playSound(SOUNDS?.seSkill || SOUNDS?.seClick);
-    }, 800);
-    timersRef.current.push(timer2);
-  }, [phase]);
+    startOpeningAnimation(MANUAL_REVEAL_DELAY_MS);
+  }, [phase, startOpeningAnimation]);
 
   /**
    * カードプレビュー確認後の閉じる処理ハンドラ
@@ -101,12 +116,12 @@ export default function PackOpeningModal({
     setIsFadingOut(true);
     clearAllTimers();
 
-    // 300msのフェードアウト後にクローズコールバックを呼び出し
+    // フェードアウト演出時間待機後にクローズコールバックを呼び出し
     const timer = setTimeout(() => {
       if (typeof onClose === 'function') {
         onClose();
       }
-    }, 300);
+    }, FADE_OUT_DURATION_MS);
     timersRef.current.push(timer);
   }, [clearAllTimers, onClose]);
 
@@ -122,24 +137,11 @@ export default function PackOpeningModal({
       setQueue((prev) => prev.slice(1));
 
       // パックのタップは最初の1回のみ。2枚目以降は自動で開封アニメーションへ移行
-      setPhase('animating');
-
-      // 150ms後にカードめくりSEを再生
-      const timer1 = setTimeout(() => {
-        playSound(SOUNDS?.seTurnover);
-      }, 150);
-      timersRef.current.push(timer1);
-
-      // 600ms後にカード公開フェーズへ移行し、出現SEを再生
-      const timer2 = setTimeout(() => {
-        setPhase('reveal');
-        playSound(SOUNDS?.seSkill || SOUNDS?.seClick);
-      }, 600);
-      timersRef.current.push(timer2);
+      startOpeningAnimation(AUTO_REVEAL_DELAY_MS);
     } else {
       handleClose();
     }
-  }, [queue, handleClose, clearAllTimers]);
+  }, [queue, handleClose, clearAllTimers, startOpeningAnimation]);
 
   /**
    * スキルタグ描画ヘルパー関数
@@ -237,8 +239,9 @@ export default function PackOpeningModal({
           position: absolute;
           top: -15px;
           right: -25px;
-          width: 280px;
-          height: 380px;
+          /* 交換所の商品一覧画面（1 : 1.5 カード縦横比）とパック・ロゴの見た目比率を完全一致 */
+          width: 260px;
+          height: 390px;
           transform: scale(0.95);
           z-index: 0;
           filter: brightness(0.85);
@@ -247,8 +250,9 @@ export default function PackOpeningModal({
 
         .pack-wrapper {
           position: relative;
-          width: 280px;
-          height: 380px;
+          /* 交換所の商品一覧画面（1 : 1.5 カード縦横比）とパック・ロゴの見た目比率を完全一致 */
+          width: 260px;
+          height: 390px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -256,8 +260,9 @@ export default function PackOpeningModal({
 
         .pack-container {
           position: relative;
-          width: 280px;
-          height: 380px;
+          /* 交換所の商品一覧画面（1 : 1.5 カード縦横比）とパック・ロゴの見た目比率を完全一致 */
+          width: 260px;
+          height: 390px;
           cursor: pointer;
           user-select: none;
           transition: transform 0.2s ease;

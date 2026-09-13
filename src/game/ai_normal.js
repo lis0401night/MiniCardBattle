@@ -3509,6 +3509,7 @@ export function simulateCombatStep(simState, attackerSide) {
     }
   });
 
+  const bypassBefore = simState.phaseBypassDamageTaken || 0;
   simState.phaseBypassDamageTaken = 0;
   calculateCombatPhase(simState, attackerSide);
   processDestructionTriggers(simState, []);
@@ -3519,6 +3520,8 @@ export function simulateCombatStep(simState, attackerSide) {
   );
   if (isRed) {
     simState.playerCombatDamageTaken = damageTaken;
+    // AI(red)の攻撃で発生したすり抜け量は相手側の被弾分のため、AI視点の控除値は復元する
+    simState.phaseBypassDamageTaken = bypassBefore;
   } else {
     simState.combatDamageTaken = damageTaken;
   }
@@ -4007,6 +4010,14 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
   return { selectedIdx: bestIdx };
 }
 
+/**
+ * 号令・狂気・反魂などのアドホック召喚／配置において、最善レーンをシミュレーション評価する。
+ *
+ * @param {object} tokenCard - 配置または召喚するカードオブジェクト
+ * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）を適用するか
+ * @param {boolean} [canCancel=false] - 配置キャンセルを候補に含めるか
+ * @returns {number[]|null} 最善レーンの配列。キャンセルが最善の場合は null、候補なしの場合は空配列
+ */
 export function evaluateAdhocTokenLanes(
   tokenCard,
   checkConstraints = true,

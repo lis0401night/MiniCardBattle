@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
-import { PACK_DEFAULT_RARITY_WEIGHTS } from '../../utils/constants/packs.js';
+import {
+  DEFAULT_PACK_COVER_CARD_ID,
+  PACK_DEFAULT_RARITY_WEIGHTS,
+} from '../../utils/constants/packs.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import {
   getCardImgUrl,
@@ -14,6 +17,30 @@ import {
 import { SOUNDS } from '../../utils/sounds.js';
 import PackCoverImage from './PackCoverImage.jsx';
 
+/**
+ * カード・スキン・プレイマット・アイコン・パックの共通プレビュー表示コンポーネント。
+ * styleProps の種別フラグ（isPack, isSkin, isPlaymat, isIcon）や各種設定に応じて、
+ * カード画像/パックカバー表示、スキル一覧/アコーディオン、パック排出確率、交換アクション等を切り替えて描画します。
+ *
+ * @param {Object} props
+ * @param {Object} props.card - 表示対象のカードまたはアイテムデータオブジェクト
+ * @param {Object} [props.styleProps={}] - 表示制御プロパティオブジェクト（isPack, isSkin, isPlaymat, isIcon, coverCardId, logoUrl, packCardIds, packCardCount, rarityWeights, exchangeData, containerClass 等）
+ * @param {boolean} [props.showPremiumTag=false] - プレミアムカード獲得タグを表示するかどうか
+ * @param {boolean} [props.isRevealed=true] - カードを表面（公開状態）として表示するか（false時は裏面タップ待機）
+ * @param {JSX.Element|null} [props.customActionSlot=null] - プレビュー下部に描画するカスタムアクション領域
+ * @param {Function|null} [props.onRevealAreaClick=null] - 未公開エリアタップ時のコールバック関数
+ * @param {Function|null} [props.onImageZoom=null] - 画像タップによる拡大表示時のコールバック関数
+ * @param {Function|null} [props.onEquipClick=null] - スキン・称号などの装備/解除ボタンクリック時のコールバック関数
+ * @param {Function|null} [props.onLinkClick=null] - スキル説明文内のカードリンククリック時のコールバック関数 (targetId: string, segment: object) => void
+ * @param {Function|null} [props.onParentBack=null] - トークンや関連カードから親カード詳細へ戻るボタンクリック時のコールバック関数
+ * @param {Function|null} [props.onTogglePremium=null] - 通常/プレミアム表示切り替え時のコールバック関数
+ * @param {Function|null} [props.onClosePreview=null] - プレビューモーダルを閉じる際のコールバック関数
+ * @param {Function|null} [props.onAcquisitionOk=null] - 報酬獲得確認「OK」ボタンクリック時のコールバック関数
+ * @param {Function|null} [props.onExchangeConfirm=null] - 交換所アイテム交換確定ボタンクリック時のコールバック関数
+ * @param {Function|null} [props.onExchangeBack=null] - 交換所詳細モーダルから戻る際のコールバック関数
+ * @param {Function|null} [props.renderSkillTagReact=null] - スキルタグを描画する外部React関数（互換用）
+ * @returns {JSX.Element|null} プレビューモーダルコンテンツ要素、cardがnullの場合はnull
+ */
 function CardPreviewContent({
   card,
   styleProps = {},
@@ -99,6 +126,12 @@ function CardPreviewContent({
     }
   }
 
+  /**
+   * カードのスキルタグ要素を安全にレンダリングする。
+   *
+   * @param {Object} c - 対象カードオブジェクト
+   * @returns {JSX.Element|null} スキルタグ要素
+   */
   const safeRenderSkillTag = (c) => {
     if (renderSkillTagReact) return renderSkillTagReact(c);
     if (window.renderSkillTag)
@@ -118,6 +151,12 @@ function CardPreviewContent({
         ? { width: 155, height: 260 }
         : { width: 180, height: 240 };
 
+  /**
+   * スキル説明文（文字列またはリンクセグメント配列）をJSX要素に変換して描画する。
+   *
+   * @param {string|Array<Object>} descContent - 説明文またはセグメント配列
+   * @returns {React.ReactNode} レンダリングされた説明文要素
+   */
   const renderDescContent = (descContent) => {
     if (Array.isArray(descContent)) {
       return descContent.map((seg, i) => {
@@ -269,7 +308,9 @@ function CardPreviewContent({
                       }}
                     >
                       <PackCoverImage
-                        coverCardId={styleProps.coverCardId || 'catastrophe'}
+                        coverCardId={
+                          styleProps.coverCardId || DEFAULT_PACK_COVER_CARD_ID
+                        }
                         logoUrl={styleProps.logoUrl || card.logoUrl}
                       />
                     </div>
@@ -1032,7 +1073,9 @@ function CardPreviewContent({
               }}
             >
               <PackCoverImage
-                coverCardId={styleProps.coverCardId || 'catastrophe'}
+                coverCardId={
+                  styleProps.coverCardId || DEFAULT_PACK_COVER_CARD_ID
+                }
                 logoUrl={styleProps.logoUrl || card.logoUrl}
               />
             </div>

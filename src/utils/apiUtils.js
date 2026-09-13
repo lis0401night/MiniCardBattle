@@ -476,17 +476,7 @@ export function resolveModeFromLineup(lineup) {
   for (const [modeKey, mLineup] of Object.entries(EXCHANGE_LINEUPS_BY_MODE)) {
     if (mLineup === lineup) return modeKey;
   }
-  // アイテムIDの特徴からフォールバック判定
-  if (lineup.some((i) => i.id === 'gaston' || i.id === 'rosenberg'))
-    return 'high_difficulty';
-  if (lineup.some((i) => i.id === 'badwolf' || i.id === 'redhood'))
-    return 'defense';
-  if (lineup.some((i) => i.id === 'valkyria' || i.id === 'automata'))
-    return 'fortune';
-  if (lineup.some((i) => i.id === 'gungnir' || i.id === 'dwarf'))
-    return 'challenge';
-  if (lineup.some((i) => i.id === 'dreadnought' || i.id === 'mjolnir'))
-    return 'tournament';
+  // 参照一致で特定できない場合は推測による誤判定やポイント消失を防ぐためnullを返す
   return null;
 }
 

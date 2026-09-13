@@ -89,6 +89,12 @@ export const PACK_DEFAULT_RARITY_WEIGHTS = Object.freeze({
 export const DEFAULT_PACK_LOGO_URL = 'assets/ui/packvol01.png';
 
 /**
+ * パック既定表紙カードID（終末の光 カタストロフィ）
+ * @type {string}
+ */
+export const DEFAULT_PACK_COVER_CARD_ID = 'catastrophe';
+
+/**
  * パックロゴURLを解決します。
  * 未指定（undefined）の場合は既定ロゴ、空文字等のfalsy値はロゴ非表示（null）として扱い、
  * 有効なURL文字列にはバージョンクエリを自動付与して返します。
@@ -130,7 +136,7 @@ export const PACK_MASTER = Object.freeze([
     cost: PACK_EXCHANGE_COST,
     pointsKey: 'common',
     cardsPerPack: 1,
-    coverCardId: 'catastrophe',
+    coverCardId: DEFAULT_PACK_COVER_CARD_ID,
     logoUrl: DEFAULT_PACK_LOGO_URL,
     cardIds: PACK_VOL01_CARD_IDS,
     rarityWeights: PACK_DEFAULT_RARITY_WEIGHTS,
@@ -157,6 +163,12 @@ export function getPackById(packOrId) {
 }
 
 /**
+ * カードID→カード定義の参照マップ（マスターデータは不変のためモジュール初期化時に一度だけ構築）
+ * @type {Map<string, object>}
+ */
+const CARD_MASTER_MAP = new Map(CARD_MASTER.map((c) => [c.id, c]));
+
+/**
  * 指定されたカードIDリストから、指定レアリティのカードID一覧を抽出します。
  *
  * @param {Array<string>} cardIds - フィルタ対象のカードID配列
@@ -165,9 +177,8 @@ export function getPackById(packOrId) {
  */
 export function filterCardsByRarity(cardIds, targetRarity) {
   if (!Array.isArray(cardIds) || cardIds.length === 0) return [];
-  const cardMap = new Map(CARD_MASTER.map((c) => [c.id, c]));
   return cardIds.filter((id) => {
-    const card = cardMap.get(id);
+    const card = CARD_MASTER_MAP.get(id);
     return card && card.rarity === targetRarity;
   });
 }
@@ -236,7 +247,7 @@ export function drawCardFromPack(packOrId, playerInventory = {}) {
 
   // 当選レアリティの候補が空の場合（例: レジェンド2種が両方4枚所持済み等）
   if (targetPool.length === 0) {
-    // 他の未カンストレアリティから順にフォールバック（ゴールド -> シルバー -> 全体）
+    // 他の未カンストレアリティから順にフォールバック（ゴールド -> シルバー -> レジェンド）
     const fallbackPriority = [3, 2, 4];
     for (const rarity of fallbackPriority) {
       if (candidatesByRarity[rarity] && candidatesByRarity[rarity].length > 0) {
@@ -315,7 +326,9 @@ export function calculateExchangeMaxCount(
     // パックの場合: 封入されている全カードの未所持枠 (4 - 所持枚数) の合計
     const targetPack =
       packDef || getPackById(item.packObj || item.id || item.packId || item);
-    const cardIds = targetPack?.cardIds || item.cardIds || PACK_V040_CARD_IDS;
+    const cardIds = targetPack?.cardIds || item.cardIds;
+    // パック定義が解決できない場合は誤った上限提示を防ぐため交換不可（0）とする
+    if (!Array.isArray(cardIds) || cardIds.length === 0) return 0;
     let totalMissing = 0;
     cardIds.forEach((cId) => {
       const owned = Number(playerInventory[cId]) || 0;
@@ -347,3 +360,15 @@ export function calculateExchangeMaxCount(
 
   return Math.min(pointMax, 1);
 }
+
+/**
+ * パック開封演出に関する遅延時間・アニメーション時間定数 (ms)
+ */
+/** 手動タップ時のカード公開遅延 (ms) */
+export const MANUAL_REVEAL_DELAY_MS = 800;
+/** 複数開封・自動開封時のカード公開遅延 (ms) */
+export const AUTO_REVEAL_DELAY_MS = 600;
+/** パック開封めくり効果音の再生遅延 (ms) */
+export const TURNOVER_SE_DELAY_MS = 150;
+/** モーダル・オーバーレイのフェードアウト演出時間 (ms) */
+export const FADE_OUT_DURATION_MS = 300;

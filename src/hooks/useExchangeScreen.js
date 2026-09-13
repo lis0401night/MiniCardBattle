@@ -1,21 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { saveDeck } from '../services/deck.js';
-import { showAlertModal } from '../services/uiModals.js';
 import {
   showCardAcquisitionModal,
-  showSkinAcquisitionModal,
-  showPlaymatAcquisitionModal,
   showIconAcquisitionModal,
+  showPlaymatAcquisitionModal,
   showPremiumAcquisitionModal,
+  showSkinAcquisitionModal,
 } from '../services/uiGallery.js';
+import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
-  savePointsToServer,
-  fetchPlayerDecks,
-  reconcilePointsWithPurchases,
   calculateFortuneTotalPointsFromCleared,
+  fetchPlayerDecks,
   getLatestOwnership,
+  reconcilePointsWithPurchases,
+  savePointsToServer,
 } from '../utils/apiUtils.js';
+import {
+  CHALLENGE_POINTS_KEY,
+  CHALLENGE_TOTAL_POINTS_KEY,
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+  EXCHANGE_LINEUPS_BY_MODE,
+  FORTUNE_POINTS_KEY,
+  FORTUNE_TOTAL_POINTS_KEY,
+  HIGH_DIFFICULTY_POINTS_KEY,
+  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
+  INVENTORY_KEY,
+  MAX_CARD_COPIES,
+  OWNED_PLAYMATS_KEY,
+  TOURNAMENT_POINTS_KEY,
+  TOURNAMENT_TOTAL_POINTS_KEY,
+  UNLOCKED_ICONS_KEY,
+  UNLOCKED_PREMIUM_KEY,
+  UNLOCKED_SKINS_KEY,
+} from '../utils/constants/config.js';
 import { setOwnedPlaymats } from '../utils/constants/playmats.js';
 import {
   getOrCreateUUID,
@@ -23,25 +42,6 @@ import {
   safeParseArray,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
-import {
-  CHALLENGE_POINTS_KEY,
-  CHALLENGE_TOTAL_POINTS_KEY,
-  TOURNAMENT_POINTS_KEY,
-  TOURNAMENT_TOTAL_POINTS_KEY,
-  DEFENSE_POINTS_KEY,
-  DEFENSE_TOTAL_POINTS_KEY,
-  FORTUNE_POINTS_KEY,
-  FORTUNE_TOTAL_POINTS_KEY,
-  HIGH_DIFFICULTY_POINTS_KEY,
-  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
-  MAX_CARD_COPIES,
-  EXCHANGE_LINEUPS_BY_MODE,
-  INVENTORY_KEY,
-  UNLOCKED_SKINS_KEY,
-  OWNED_PLAYMATS_KEY,
-  UNLOCKED_ICONS_KEY,
-  UNLOCKED_PREMIUM_KEY,
-} from '../utils/constants/config.js';
 
 const KEY_MAPPING = {
   challenge: {
@@ -251,6 +251,7 @@ export function useExchangeScreen({
    *
    * @param {Object} item - 交換対象アイテム
    * @param {number} [count=1] - 交換個数
+   * @returns {Promise<void>} 交換処理の完了を示すPromise
    */
   const handleExchange = async (item, count = 1) => {
     if (isExchangingRef.current) return;

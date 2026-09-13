@@ -32,6 +32,7 @@ import {
   INVENTORY_KEY,
 } from '../../utils/constants/config.js';
 import {
+  DEFAULT_PACK_COVER_CARD_ID,
   PACK_MASTER,
   drawCardFromPack,
   getPackById,
@@ -322,7 +323,7 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
         // 4. パック開封画面（パックをタップして開封しカードを入手するモーダル）を表示
         setPackOpeningData({
           cardIds: drawnCardIds,
-          coverCardId: pack.coverCardId || 'catastrophe',
+          coverCardId: pack.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
           logoUrl: pack.logoUrl,
         });
       } catch (err) {
@@ -346,7 +347,7 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
         cost: pack.cost,
         name: pack.name,
         description: pack.description,
-        coverCardId: pack.coverCardId || 'catastrophe',
+        coverCardId: pack.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
         logoUrl: pack.logoUrl,
         packObj: pack,
       })),

@@ -78,6 +78,7 @@ import {
   isValkyriaGuardActive,
   VALKYRIA_GUARD_TURNS,
   BLOCK_TYPE_EVENT_MAP,
+  SUPREMACY_REQUIRED_BASE_POWER,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { scanMissionEvents } from './missionLogic.js';
@@ -3040,12 +3041,12 @@ export async function resolveActiveSkillEffect(
       }
 
       if (selectedCard) {
-        // デッキから対象カードを取り除く
-        const idx = deck.findIndex(
+        // デッキから対象カードを取り除く（キャンセル時の復元用にインデックスを保持）
+        const removedDeckIdx = deck.findIndex(
           (card) =>
             card.id === selectedCard.id || card.baseId === selectedCard.baseId
         );
-        if (idx !== -1) deck.splice(idx, 1);
+        if (removedDeckIdx !== -1) deck.splice(removedDeckIdx, 1);
 
         // カードのステータスを初期状態にリセット
         const masterData = CARD_MASTER.find(
@@ -3091,8 +3092,12 @@ export async function resolveActiveSkillEffect(
             }
 
             if (!selectedLanes || selectedLanes.length === 0) {
-              // レーン選択キャンセル時は、デッキに戻して終了
-              deck.push(selectedCard);
+              // レーン選択キャンセル時は、デッキの元の位置へ戻して終了（デッキ順序の改変を防止）
+              if (removedDeckIdx !== -1) {
+                deck.splice(removedDeckIdx, 0, selectedCard);
+              } else {
+                deck.push(selectedCard);
+              }
               updateDeckDisplay(o);
               return;
             }
@@ -3205,6 +3210,14 @@ export async function resolveActiveSkillEffect(
           shuffleArray(deck);
           updateDeckDisplay(o);
           await sleep(300);
+        } else {
+          // 万一レーン未選択のまま抜けた場合の安全復元（元の位置へ戻す）
+          if (removedDeckIdx !== -1) {
+            deck.splice(removedDeckIdx, 0, selectedCard);
+          } else {
+            deck.push(selectedCard);
+          }
+          updateDeckDisplay(o);
         }
       }
     } else {
@@ -4170,7 +4183,7 @@ export async function resolveActiveSkillEffect(
       if (!tc || laneIdx === l) return false;
       const master = CARD_MASTER.find((m) => m.id === (tc.baseId || tc.id));
       const origPower = master?.power ?? tc.power ?? 0;
-      return origPower >= 6;
+      return origPower >= SUPREMACY_REQUIRED_BASE_POWER;
     });
 
     if (hasOriginal6Plus) {
