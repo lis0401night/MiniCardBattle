@@ -2323,7 +2323,8 @@ export function applyActiveSkillLogic(
       const actualReinforceCount = Math.min(val || 1, h.length);
 
       if (actualReinforceCount > 0 && h.length > 0) {
-        const dropIndices = getAIDiscardIndices(h, actualReinforceCount);
+        // 増援はトークン獲得による強化が主目的のため、強制破棄ロジック（isExact = true）で最大枚数を破棄
+        const dropIndices = getAIDiscardIndices(h, actualReinforceCount, true);
         const sortedDropIndices = [...dropIndices].sort((a, b) => b - a);
         for (let i of sortedDropIndices) {
           h.splice(i, 1);

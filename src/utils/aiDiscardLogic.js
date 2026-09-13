@@ -1,4 +1,4 @@
-import { shuffleArray } from './gameUtils.js';
+import { hasSkill, shuffleArray } from './gameUtils.js';
 
 /**
  * 対象のカードが「生贄(takeover)」または「頂点(apex)」スキルを保持しているか判定します。
@@ -14,11 +14,12 @@ function isTakeoverOrApex(card) {
  * AIが手札からカードを捨てる（またはコストとして選ぶ）際の共通優先決定ロジック
  *
  * 【選定基準】
- * 1. 「虚空（token_void）」がある場合は最優先で選ぶ
- * 2. 「〇枚まで（任意: isExact=false）」の場合：
- *    - 虚空を優先的に破棄し、残る手札が「生贄」「頂点」のみで召喚不能事故が発生する場合に限り、生贄・頂点を追加破棄
+ * 1. 「狂気（madness）」がある場合は最優先で選ぶ（捨てられた時にノーコスト召喚できるため）
+ * 2. 「虚空（token_void）」がある場合は次点で選ぶ（パワー0の不要トークンを掃除）
+ * 3. 「〇枚まで（任意: isExact=false）」の場合：
+ *    - 狂気・虚空を優先的に破棄し、残る手札が「生贄」「頂点」のみで召喚不能事故が発生する場合に限り、生贄・頂点を追加破棄
  *    - それ以外は有用な通常カードを無駄に捨てずに1枚〜必要最小限の枚数で決定（それ以上捨てない）
- * 3. 「〇枚（強制: isExact=true）」の場合：
+ * 4. 「〇枚（強制: isExact=true）」の場合：
  *    - 指定枚数に達するまで「生贄/頂点」＞「通常カード」の優先順位で追加選定して必ずcount枚を確保する
  *
  * @param {Array} hand - 現在の手札配列
@@ -35,28 +36,44 @@ export function getAIDiscardIndices(hand, count, isExact = false) {
     .filter((x) => x.card !== null);
 
   // 1. 属性別に分類
+  const madnessCards = candidates.filter((x) => hasSkill(x.card, 'madness'));
   const voidCards = candidates.filter(
-    (x) => x.card.id === 'token_void' || x.card.baseId === 'token_void'
+    (x) =>
+      !madnessCards.includes(x) &&
+      (x.card.id === 'token_void' || x.card.baseId === 'token_void')
   );
   const takeoverApexCards = candidates.filter(
-    (x) => !voidCards.includes(x) && isTakeoverOrApex(x.card)
+    (x) =>
+      !madnessCards.includes(x) &&
+      !voidCards.includes(x) &&
+      isTakeoverOrApex(x.card)
   );
   const normalCards = candidates.filter(
-    (x) => !voidCards.includes(x) && !takeoverApexCards.includes(x)
+    (x) =>
+      !madnessCards.includes(x) &&
+      !voidCards.includes(x) &&
+      !takeoverApexCards.includes(x)
   );
 
   const selected = [];
 
-  // 【ステップ1】「虚空」を最優先で破棄対象に選定
+  // 【ステップ1】「狂気（madness）」を最優先で破棄対象に選定（捨てられた時に即時召喚できるため）
+  for (const item of shuffleArray(madnessCards)) {
+    if (selected.length < count) {
+      selected.push(item);
+    }
+  }
+
+  // 【ステップ2】「虚空（token_void）」を破棄対象に選定（パワー0の不要トークンを掃除）
   for (const item of shuffleArray(voidCards)) {
     if (selected.length < count) {
       selected.push(item);
     }
   }
 
-  // 【ステップ2】「〇枚まで（任意: isExact=false）」の場合の必要最小限判定
+  // 【ステップ3】「〇枚まで（任意: isExact=false）」の場合の必要最小限判定
   if (!isExact) {
-    // 虚空を破棄した後、残りの手札が「生贄」「頂点」のみで事故が起きるか確認
+    // 狂気・虚空を破棄した後、残りの手札が「生贄」「頂点」のみで事故が起きるか確認
     const selectedIndicesSet = new Set(selected.map((x) => x.idx));
     const remainingCandidates = candidates.filter(
       (x) => !selectedIndicesSet.has(x.idx)
@@ -88,7 +105,7 @@ export function getAIDiscardIndices(hand, count, isExact = false) {
     return selected.map((x) => x.idx);
   }
 
-  // 【ステップ3】「〇枚（強制: isExact=true）」の場合のみ、規定数(count)に達するまで追加破棄
+  // 【ステップ4】「〇枚（強制: isExact=true）」の場合のみ、規定数(count)に達するまで追加破棄
   // 3-A: 手札事故が起きやすい「生贄/頂点」を優先消化
   for (const item of shuffleArray(takeoverApexCards)) {
     if (selected.length < count && !selected.includes(item)) {

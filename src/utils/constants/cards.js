@@ -2130,7 +2130,7 @@ export const CARD_MASTER = [
     skills: [{ id: 'trigger' }, { id: 'choice', value: 1 }],
     choices: [
       { id: 'heal', value: 3 },
-      { id: 'protection', value: 1 },
+      { id: 'protection' },
     ],
     voiceCategory: 'magic',
     flavor:
@@ -2273,7 +2273,7 @@ export const CARD_MASTER = [
     name: '聖火の女祭司',
     rarity: 2,
     power: 3,
-    skills: [{ id: 'protection', value: 1 }],
+    skills: [{ id: 'protection' }],
     voiceCategory: 'human_female_sexy',
     flavor:
       '美しくも恐ろしい火の信仰の先導者。彼女の指先から放たれる神聖な炎は、外敵を阻む絶対の壁となる。',

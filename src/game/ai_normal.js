@@ -3766,6 +3766,245 @@ export function applyOpponentTriggerReaction(_simState) {
   return;
 }
 
+/**
+ * 復活（resurrect）および傀儡（puppet）のアドホック（解決時）シミュレーション評価。
+ * 相手の誘発（trigger）等で戦況が変化した場合や、事前計画キューが存在しない場合に、
+ * 墓地の候補カード群と現在の最新盤面をシミュレートし、最も盤面スコアが高くなる
+ * { selectedCard, laneIdx } を決定する。
+ * （配置しない方が良い場合は selectedCard: null を返し、自爆を防止する）
+ *
+ * @param {Array<object>} validCards - 墓地内の有効な復活・傀儡対象カード群
+ * @param {'red' | 'blue'} [owner='red'] - スキル発動者 ('red' | 'blue')
+ * @param {boolean} [isPuppet=false] - 傀儡（相手墓地からの配置）かどうか
+ * @returns {{ selectedCard: object|null, laneIdx: number|null }} 最善カードと配置レーン
+ */
+export function evaluateBestResurrectChoice(
+  validCards,
+  owner = 'red',
+  isPuppet = false
+) {
+  if (!validCards || validCards.length === 0) {
+    return { selectedCard: null, laneIdx: null };
+  }
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+
+  // 1. 「配置しない（パス）」基準スコアを算出
+  let bestScore;
+  {
+    const passSimState = structuredClone(initialSimState);
+    bestScore = evaluateTriggerTurnOutcome(passSimState, owner);
+  }
+  let bestChoice = { selectedCard: null, laneIdx: null };
+
+  const sealedLanes = isRed
+    ? initialSimState.enemySealedLanes || [0, 0, 0]
+    : initialSimState.playerSealedLanes || [0, 0, 0];
+
+  const boardArray = isRed
+    ? initialSimState.enemyBoard
+    : initialSimState.playerBoard;
+
+  // 封印されていない全レーン（0, 1, 2）
+  // ルール厳守: 「復活」「傀儡」は配置（Place）のため、制約チェック（legendary/takeover等）はなし
+  const candidateLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
+  if (candidateLanes.length === 0) {
+    return { selectedCard: null, laneIdx: null };
+  }
+
+  // 空きレーンを優先的に探索（空きレーンがあれば空きレーンのみ、無ければ上書きも探索）
+  const emptyLanes = candidateLanes.filter((l) => boardArray[l] === null);
+  const lanesToTest = emptyLanes.length > 0 ? emptyLanes : candidateLanes;
+
+  const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 }; // 左(1) > 右(2) > 中央(3)
+
+  // 候補カードの重複探索を排除（ID + power + skills が同一のものはスキップ）
+  const seenSignatures = new Set();
+
+  for (const card of validCards) {
+    if (!card) continue;
+    const sig = `${card.id || card.baseId}_${card.power || 0}_${(card.skills || []).map((s) => s.id).join(',')}`;
+    if (seenSignatures.has(sig)) continue;
+    seenSignatures.add(sig);
+
+    for (const lane of lanesToTest) {
+      const simState = structuredClone(initialSimState);
+      const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+      const targetDiscard = isRed
+        ? isPuppet
+          ? simState.playerDiscard
+          : simState.enemyDiscard
+        : isPuppet
+          ? simState.enemyDiscard
+          : simState.playerDiscard;
+
+      // 墓地からカードを取り除く
+      const dIdx = targetDiscard.findIndex(
+        (c) =>
+          c &&
+          (c.uid === card.uid ||
+            c.id === card.id ||
+            c.baseId === (card.baseId || card.id))
+      );
+      if (dIdx !== -1) {
+        targetDiscard.splice(dIdx, 1);
+      }
+
+      // カードを配置
+      const placedCard = cloneCard(card);
+      placedCard.owner = owner;
+      placedCard.skillTriggered = true; // 配置（Place）のため召喚時スキルは不発
+      placedCard.stunTurns = 0;
+
+      // パワーの正規化
+      if (
+        placedCard.currentPower === undefined ||
+        Number.isNaN(placedCard.currentPower) ||
+        (placedCard.currentPower <= 0 && (placedCard.power || 0) > 0)
+      ) {
+        placedCard.currentPower = placedCard.power || 0;
+        placedCard.basePower = placedCard.power || 0;
+      }
+
+      // 上書きされるカードがあれば墓地送り
+      const existing = targetBoard[lane];
+      if (existing && !existing.isToken) {
+        const myDiscard = isRed ? simState.enemyDiscard : simState.playerDiscard;
+        myDiscard.push(existing);
+      }
+
+      targetBoard[lane] = placedCard;
+
+      // 破壊クリーンアップ
+      processDestructionTriggers(simState, []);
+
+      // 評価スコア計算
+      let score = evaluateTriggerTurnOutcome(simState, owner);
+      // タイブレーク（左 > 右 > 中央）
+      score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[lane];
+
+      if (isRed) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestChoice = { selectedCard: card, laneIdx: lane };
+        }
+      } else {
+        if (score < bestScore) {
+          bestScore = score;
+          bestChoice = { selectedCard: card, laneIdx: lane };
+        }
+      }
+    }
+  }
+
+  return bestChoice;
+}
+
+/**
+ * 招来（invite）のアドホック（解決時）シミュレーション評価。
+ * 同一レーン（laneIdx）に手札から召喚する最善カードをシミュレートする。
+ * （召喚しない方が良い場合は selectedIdx: -1 を返す）
+ *
+ * @param {Array<object>} hand - 手札カード配列
+ * @param {number} laneIdx - 召喚先レーン番号
+ * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
+ * @returns {{ selectedIdx: number }} 最善手札インデックス（パスなら -1）
+ */
+export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
+  if (!hand || hand.length === 0 || laneIdx < 0 || laneIdx > 2) {
+    return { selectedIdx: -1 };
+  }
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+
+  // 1. パス基準スコア
+  let bestScore;
+  {
+    const passSimState = structuredClone(initialSimState);
+    bestScore = evaluateTriggerTurnOutcome(passSimState, owner);
+  }
+  let bestIdx = -1;
+
+  for (let i = 0; i < hand.length; i++) {
+    const card = hand[i];
+    if (!card) continue;
+
+    // 召喚制約チェック（召喚なので制約チェックあり）
+    const validLanes = getValidSummonLanes(owner, card, initialSimState);
+    if (!validLanes.includes(laneIdx)) continue;
+
+    const simState = structuredClone(initialSimState);
+    const targetHand = isRed ? simState.enemyHand : simState.playerHand;
+    const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+    const targetDiscard = isRed
+      ? simState.enemyDiscard
+      : simState.playerDiscard;
+
+    const consumedCard = targetHand.splice(i, 1)[0];
+    if (!consumedCard) continue;
+
+    const existing = targetBoard[laneIdx];
+    if (existing && !existing.isToken) {
+      targetDiscard.push(existing);
+    }
+
+    consumedCard.owner = owner;
+    consumedCard.skillTriggered = false;
+    if (
+      consumedCard.currentPower === undefined ||
+      Number.isNaN(consumedCard.currentPower) ||
+      (consumedCard.currentPower <= 0 && (consumedCard.power || 0) > 0)
+    ) {
+      consumedCard.currentPower = consumedCard.power || 0;
+      consumedCard.basePower = consumedCard.power || 0;
+    }
+
+    if (hasActiveSkill(consumedCard)) {
+      consumedCard.isSkillResolving = true;
+    }
+
+    targetBoard[laneIdx] = consumedCard;
+    simState.lastPlayedLane = laneIdx;
+
+    if (Array.isArray(consumedCard.skills)) {
+      consumedCard.skills.forEach((sk) => {
+        if (sk.id !== 'trigger' && sk.id !== 'invite') {
+          applyActiveSkillLogic(
+            simState,
+            owner,
+            laneIdx,
+            sk.id,
+            sk.value,
+            [],
+            null,
+            undefined
+          );
+        }
+      });
+      consumedCard.skillTriggered = true;
+    }
+    consumedCard.isSkillResolving = false;
+    processDestructionTriggers(simState, []);
+
+    let score = evaluateTriggerTurnOutcome(simState, owner);
+    if (isRed) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = i;
+      }
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestIdx = i;
+      }
+    }
+  }
+
+  return { selectedIdx: bestIdx };
+}
+
 export function evaluateAdhocTokenLanes(
   tokenCard,
   checkConstraints = true,

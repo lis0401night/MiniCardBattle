@@ -82,6 +82,12 @@ import {
 import { playEvents } from './eventRenderer.js';
 import { scanMissionEvents } from './missionLogic.js';
 import { hideMessage, showMessage } from './tutorialEngine.js';
+import { evaluateBestLanesForToken } from './ai.js';
+import {
+  evaluateBestResurrectChoice,
+  evaluateAdhocInviteMove,
+} from './ai_normal.js';
+
 
 /**
  * 既存カードの「起動(startup)」スキルによる配置消滅処理を実行する共通ヘルパー。
@@ -532,10 +538,15 @@ export async function resolveActiveSkillEffect(
         }
       } else {
         selectedIdx = -1;
-        console.log(
-          `[AI Invite] No action found. queue=`,
-          JSON.stringify(GameState.aiDecision?.actionQueue)
-        );
+      }
+      // アクションキューから取得できなかった、または手札に対象が存在しなかった場合：
+      // 最新の盤面・手札に基づきオンザフライで招来最善カードをシミュレーション評価
+      if (selectedIdx === -1 && GameState.aiLevel !== 1) {
+        const inviteMove = evaluateAdhocInviteMove(h, l, o);
+        selectedIdx = inviteMove ? inviteMove.selectedIdx : -1;
+        if (selectedIdx !== -1) {
+          selectedLane = l;
+        }
       }
     } else {
       // 【プレイヤーの場合】
@@ -1281,15 +1292,11 @@ export async function resolveActiveSkillEffect(
           if (Array.isArray(tpAction.lanes)) {
             summonPredefinedLanes = [...tpAction.lanes];
           }
-        } else {
-          // actionQueueにsummonがない場合 → キャンセル扱い
-          aiSummonCancelled = true;
         }
-      } else if (GameState.aiLevel !== 1) {
-        // actionQueueなし かつ Normal以上 → キャンセル扱い（フォールバック防止）
-        // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
-        aiSummonCancelled = true;
       }
+      // アクションキューにない場合（または誘発等で状況変化時）：
+      // キャンセル扱いとせず、summonPredefinedLanes = null のまま waitPlayerLaneSelection へ進める。
+      // waitPlayerLaneSelection 内部で evaluateBestLanesForToken が呼ばれ、最新盤面から最善レーンが動的に評価・配置される。
     }
 
     if (!aiSummonCancelled) {
@@ -1300,8 +1307,8 @@ export async function resolveActiveSkillEffect(
         simulatedToken,
         false,
         summonPredefinedLanes,
-        false,
-        false // ルール：スキルによる「召喚」は「配置(Place)」扱いのため、制約チェックは無視する
+        false, // ルール：スキルによる「使役/奇襲」は「配置(Place)」扱いのため、制約チェックは無視する
+        true // canCancel: 動的シミュレーションでパスが最善の場合は空配列を許容
       );
       if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
@@ -1441,14 +1448,31 @@ export async function resolveActiveSkillEffect(
           } else {
             clonePredefinedLanes = [];
           }
-        } else {
-          // actionQueueにcloneがない場合 → 配置しない（フォールバック防止）
-          clonePredefinedLanes = [];
         }
-      } else if (GameState.aiLevel !== 1) {
-        // actionQueueなし かつ Normal以上 → 配置しない（フォールバック防止）
-        // Easy AIはactionQueueを持たないため、フォールバック配置を許可する
-        clonePredefinedLanes = [];
+      }
+      // アクションキューにない場合（または誘発等で状況変化時）：
+      if (!clonePredefinedLanes) {
+        if (GameState.aiLevel === 1) {
+          // Easy AI: フォールバック配置を許可（clonePredefinedLanes = null のまま）
+        } else {
+          // Normal以上: 隣接レーン（l - 1, l + 1）から動的シミュレーション評価で最善レーンを選択
+          const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
+          const adjacentLanes = [l - 1, l + 1].filter(
+            (lane) => lane >= 0 && lane <= 2 && sealedLanes[lane] === 0
+          );
+          if (adjacentLanes.length > 0) {
+            clonePredefinedLanes = evaluateBestLanesForToken(
+              adjacentLanes,
+              o,
+              simulatedToken,
+              1,
+              true, // canCancel
+              false // checkConstraints: 分身は配置(Place)のためfalse
+            );
+          } else {
+            clonePredefinedLanes = [];
+          }
+        }
       }
     }
     if (
@@ -2340,7 +2364,8 @@ export async function resolveActiveSkillEffect(
               null;
           }
           if (aiAction.laneIdx !== undefined) tokenLanes = [aiAction.laneIdx];
-        } else {
+        }
+        if (!selectedCard) {
           if (GameState.aiLevel === 1) {
             // Easy AI: actionQueueがないため、最強カードをフォールバック選択（レーンもフォールバック配置）
             const sortedRes = [...validCards].sort(
@@ -2349,8 +2374,19 @@ export async function resolveActiveSkillEffect(
             selectedCard = sortedRes[0] || null;
             // tokenLanes = null のまま → evaluateBestLanesForToken で配置
           } else {
-            // Normal以上: actionQueueにresurrectがない場合 → 配置しない（フォールバック防止）
-            tokenLanes = [];
+            // Normal以上: 最新の盤面・墓地状況に基づき、最善のカードとレーンをオンザフライシミュレート
+            const bestChoice = evaluateBestResurrectChoice(validCards, o, false);
+            if (bestChoice && bestChoice.selectedCard) {
+              selectedCard = bestChoice.selectedCard;
+              if (
+                bestChoice.laneIdx !== null &&
+                bestChoice.laneIdx !== undefined
+              ) {
+                tokenLanes = [bestChoice.laneIdx];
+              }
+            } else {
+              tokenLanes = [];
+            }
           }
         }
         // AIの思考時間を演出
@@ -2540,8 +2576,8 @@ export async function resolveActiveSkillEffect(
               oppDiscard[aiAction.targetIdx] ||
               null;
           }
-          if (aiAction.laneIdx !== undefined) tokenLanes = [aiAction.laneIdx];
-        } else {
+        }
+        if (!selectedCard) {
           if (GameState.aiLevel === 1) {
             // Easy AI: 最強カードをフォールバック選択
             const sortedPuppet = [...validCards].sort(
@@ -2549,8 +2585,19 @@ export async function resolveActiveSkillEffect(
             );
             selectedCard = sortedPuppet[0] || null;
           } else {
-            // Normal以上: アクションがない場合は配置しない
-            tokenLanes = [];
+            // Normal以上: 相手墓地の最新状況からオンザフライシミュレート
+            const bestChoice = evaluateBestResurrectChoice(validCards, o, true);
+            if (bestChoice && bestChoice.selectedCard) {
+              selectedCard = bestChoice.selectedCard;
+              if (
+                bestChoice.laneIdx !== null &&
+                bestChoice.laneIdx !== undefined
+              ) {
+                tokenLanes = [bestChoice.laneIdx];
+              }
+            } else {
+              tokenLanes = [];
+            }
           }
         }
         // AIの思考時間を演出
@@ -3168,8 +3215,9 @@ export async function resolveActiveSkillEffect(
 
     const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
 
-    // AIはランダム、プレイヤーは手動選択のUIを待機
-    const selectedHandIndices = await waitPlayerHandSelection(count, o);
+    // AIは強制と同じロジック（最大枚数を破棄）、プレイヤーは任意選択のUIを待機（0〜count枚まで手動選択）
+    const forceExact = o === 'red';
+    const selectedHandIndices = await waitPlayerHandSelection(count, o, forceExact);
     if (o === 'red' && selectedHandIndices && selectedHandIndices.length > 0) {
       // AIの思考時間を演出
       await sleep(AI_THINKING_DURATION);
