@@ -15,7 +15,11 @@ import {
   MID_TIER_PICK_COUNT,
   PROFILE_NAME_KEY,
 } from './constants/config.js';
-import { ACTIVE_SKILLS, SKILLS } from './constants/skills.js';
+import {
+  ACTIVE_SKILLS,
+  BOARD_NEVER_SHOW_SKILL_IDS,
+  SKILLS,
+} from './constants/skills.js';
 import { setCurrentScreen } from './errorReporter.js';
 import {
   audioCtx,
@@ -1258,8 +1262,14 @@ export function renderSkillTag(
     const id = typeof sk === 'string' ? sk : sk.id;
     const s = SKILLS[id];
     if (s && id !== 'none' && s.name !== '通常') {
+      // 盤面配置時のバッジ表示制御:
+      // 1. トリガースキルおよび伝説を除く制約スキルは、盤面（isBoard）では最初から非表示
+      // 2. アクティブスキルは、召喚時効果の解決完了（skillTriggered）後に非表示
+      // 3. 伝説スキルおよびパッシブスキルは、盤面でも常に表示を継続
       const showBadge =
-        !isBoard || !card.skillTriggered || !ACTIVE_SKILLS.includes(id);
+        !isBoard ||
+        (!BOARD_NEVER_SHOW_SKILL_IDS.includes(id) &&
+          (!card.skillTriggered || !ACTIVE_SKILLS.includes(id)));
       if (showBadge) {
         const info = getSkillBadgeInfo(sk);
         skillCandidates.push({

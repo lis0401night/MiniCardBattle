@@ -311,6 +311,7 @@ async function executeDiscardTriggeredSummon(owner, card, targetLane, source) {
       await resolveOnPlaySkill(owner, targetLane, card);
     } else {
       card.isSkillResolving = false;
+      card.skillTriggered = true;
     }
     await cleanupDestroyedCards();
   }
@@ -1502,6 +1503,7 @@ export async function playCard(o, hI, l, depth = 0) {
     await resolveOnPlaySkill(o, l, c);
   } else {
     c.isSkillResolving = false;
+    c.skillTriggered = true;
   }
 
   // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認する。

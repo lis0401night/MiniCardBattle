@@ -1460,6 +1460,26 @@ export const PASSIVE_SKILLS = [
   'all_forms',
 ];
 
+/**
+ * トリガースキルID一覧定数（相手召喚時や手札・山札から墓地に送られた時などの特殊タイミングで発動）
+ */
+export const TRIGGER_SKILL_IDS = ['trigger', 'madness', 'reanimate'];
+
+/**
+ * 盤面配置制約スキルID一覧定数（配置完了後は役割を終えるスキル）
+ * ※「伝説 (legendary)」は盤面上の「反逆」や「頂点」の参照対象となるため除外（表示維持）します。
+ */
+export const CONSTRAINT_DISMISS_SKILL_IDS = ['takeover', 'challenge', 'apex'];
+
+/**
+ * 盤面配置時に最初からバッジを非表示にするスキルID一覧定数
+ * 盤面着地後は効果を持たないトリガースキルおよび伝説を除く制約スキルを含みます。
+ */
+export const BOARD_NEVER_SHOW_SKILL_IDS = [
+  ...TRIGGER_SKILL_IDS,
+  ...CONSTRAINT_DISMISS_SKILL_IDS,
+];
+
 export const SKILL_CATEGORIES = [
   {
     id: 'active',
@@ -1597,10 +1617,6 @@ export const SKILL_CATEGORIES = [
         skills: ['guardian', 'substitute', 'possession', 'reflect'],
       },
       {
-        name: '特殊召喚',
-        skills: ['trigger', 'madness', 'reanimate'],
-      },
-      {
         name: '耐性',
         skills: ['invincible', 'immune', 'dodge'],
       },
@@ -1620,6 +1636,16 @@ export const SKILL_CATEGORIES = [
       {
         name: 'デメリット',
         skills: ['defender', 'explode', 'brutal', 'contract'],
+      },
+    ],
+  },
+  {
+    id: 'trigger',
+    name: 'トリガースキル (特殊タイミング)',
+    groups: [
+      {
+        name: '召喚',
+        skills: ['trigger', 'madness', 'reanimate'],
       },
     ],
   },
