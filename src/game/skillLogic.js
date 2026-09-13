@@ -1138,7 +1138,7 @@ export async function resolveActiveSkillEffect(
         // もしパッシブスキル（機能が場に留まるスキル）を選んだ場合はカード自身に永続付与する
         if (PASSIVE_SKILLS.includes(choice.id)) {
           if (!Array.isArray(c.skills)) c.skills = [];
-          c.skills.push({ id: choice.id, value: choice.value });
+          c.skills.push({ ...choice });
           renderBoard(); // UI反映
         }
         // 選択されたスキルを順に実行
@@ -4164,7 +4164,7 @@ export async function resolveActiveSkillEffect(
           // パッシブスキルが含まれている場合はカード自身に永続付与
           if (PASSIVE_SKILLS.includes(subSk.id)) {
             if (!Array.isArray(c.skills)) c.skills = [];
-            c.skills.push({ id: subSk.id, value: subSk.value });
+            c.skills.push({ ...subSk });
             renderBoard();
           }
           // サブスキルを順次実行

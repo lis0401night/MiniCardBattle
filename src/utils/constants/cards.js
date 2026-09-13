@@ -2010,7 +2010,10 @@ export const CARD_MASTER = [
     power: 6,
     skills: [
       { id: 'spend', value: 1 },
-      { id: 'artillery', value: 1 },
+      { id: 'choice', value: 1 },
+    ],
+    choices: [
+      { id: 'servant', value: 1, summonId: 'token_drone' },
       { id: 'split', value: 1, summonId: 'token_drone' },
     ],
     voiceCategory: 'machine_new',

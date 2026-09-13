@@ -959,8 +959,7 @@ export function processActionSequence(
                 action.choices2.forEach((idx) => {
                   if (playedCard.choices2[idx]) {
                     newSkillsArr.push({
-                      id: playedCard.choices2[idx].id,
-                      value: playedCard.choices2[idx].value,
+                      ...playedCard.choices2[idx],
                     });
                   }
                 });
@@ -968,8 +967,7 @@ export function processActionSequence(
                 action.choices.forEach((idx) => {
                   if (playedCard.choices[idx]) {
                     newSkillsArr.push({
-                      id: playedCard.choices[idx].id,
-                      value: playedCard.choices[idx].value,
+                      ...playedCard.choices[idx],
                     });
                   }
                 });
@@ -1107,8 +1105,7 @@ export function processActionSequence(
                 action.choices2.forEach((idx) => {
                   if (activeCardForSkills.choices2[idx]) {
                     let chosenSk = {
-                      id: activeCardForSkills.choices2[idx].id,
-                      value: activeCardForSkills.choices2[idx].value,
+                      ...activeCardForSkills.choices2[idx],
                     };
                     skills.push(chosenSk);
                     newSkillsArr.push(chosenSk);
@@ -1118,8 +1115,7 @@ export function processActionSequence(
                 action.choices.forEach((idx) => {
                   if (activeCardForSkills.choices[idx]) {
                     let chosenSk = {
-                      id: activeCardForSkills.choices[idx].id,
-                      value: activeCardForSkills.choices[idx].value,
+                      ...activeCardForSkills.choices[idx],
                     };
                     skills.push(chosenSk);
                     newSkillsArr.push(chosenSk);
@@ -6266,8 +6262,7 @@ export function simulateMove(
                 if (cIdx !== undefined && cArr) {
                   let idxs = Array.isArray(cIdx) ? cIdx : [cIdx];
                   idxs.forEach((i) => {
-                    if (cArr[i])
-                      skills.push({ id: cArr[i].id, value: cArr[i].value });
+                    if (cArr[i]) skills.push({ ...cArr[i] });
                   });
                 }
               } else skills.push(sk);
