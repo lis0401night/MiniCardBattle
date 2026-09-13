@@ -2128,10 +2128,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 0,
     skills: [{ id: 'trigger' }, { id: 'choice', value: 1 }],
-    choices: [
-      { id: 'heal', value: 3 },
-      { id: 'protection' },
-    ],
+    choices: [{ id: 'heal', value: 3 }, { id: 'protection' }],
     voiceCategory: 'magic',
     flavor:
       '神聖な儀式に用いられる美しい黄金の杯。なみなみと注がれた清らかな水は、口にする者に神の恩寵をもたらす。',

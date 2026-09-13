@@ -2998,6 +2998,22 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                               'mini_card_battle_defense_deck_obj',
                               JSON.stringify(targetDeck)
                             );
+                          } else if (
+                            GameState.gameMode === 'battle_dungeon' ||
+                            targetDeck?.id === 'dungeon_deck' ||
+                            targetDeck?.name === '試練の宮殿デッキ'
+                          ) {
+                            localStorage.setItem(
+                              'mini_card_battle_dungeon_deck_obj',
+                              JSON.stringify(targetDeck)
+                            );
+                            if (
+                              typeof window.saveDungeonProgress === 'function'
+                            ) {
+                              window.saveDungeonProgress();
+                            }
+                          } else if (GameState.gameMode === 'tournament') {
+                            // トーナメントモードのスキン変更は通常デッキに波及させない
                           } else {
                             localStorage.setItem(
                               'mini_card_battle_decks',
@@ -3238,6 +3254,24 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                               'mini_card_battle_defense_deck_obj',
                               JSON.stringify(GameState.decks[targetDeckIndex])
                             );
+                          } else if (
+                            GameState.gameMode === 'battle_dungeon' ||
+                            GameState.decks[targetDeckIndex]?.id ===
+                              'dungeon_deck' ||
+                            GameState.decks[targetDeckIndex]?.name ===
+                              '試練の宮殿デッキ'
+                          ) {
+                            localStorage.setItem(
+                              'mini_card_battle_dungeon_deck_obj',
+                              JSON.stringify(GameState.decks[targetDeckIndex])
+                            );
+                            if (
+                              typeof window.saveDungeonProgress === 'function'
+                            ) {
+                              window.saveDungeonProgress();
+                            }
+                          } else if (GameState.gameMode === 'tournament') {
+                            // トーナメントモードのリーダー変更は通常デッキに波及させない
                           } else {
                             localStorage.setItem(
                               'mini_card_battle_decks',

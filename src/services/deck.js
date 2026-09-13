@@ -300,6 +300,131 @@ export function getInitialDeck() {
 }
 
 /**
+ * 全初期解放リーダーキャラクター分のデフォルトデッキ配列を生成します。
+ * 新規開始時やデータ破損からの復旧時に使用されます。
+ * @returns {Array<Object>} 生成されたデフォルトデッキ配列
+ */
+export function createDefaultLeaderDecks() {
+  const leaderIds = Object.keys(CHARACTERS).filter(
+    (id) =>
+      id !== 'player' &&
+      id !== 'unknown' &&
+      id !== 'npc' &&
+      id !== 'automata' && // マキナは初期解放キャラではないため除外
+      id !== 'valkyria' && // アンジェは初期解放キャラではないため除外
+      !BOSS_CHARACTER_IDS.includes(id)
+  );
+
+  const initialDecks = [];
+  const defaultCardIds = getInitialDeck().map((c) => c.id);
+
+  leaderIds.forEach((id, idx) => {
+    const char = CHARACTERS[id];
+    if (char && initialDecks.length < MAX_DECK_SLOTS) {
+      const shortName = char.name.split(' ').pop();
+      initialDecks.push({
+        id: `deck_${Date.now()}_${idx}`,
+        name: `${shortName}デッキ`.substring(0, 12),
+        leaderId: id,
+        playmatId: null,
+        playerSkins: {},
+        premiumCards: [],
+        cards: [...defaultCardIds],
+      });
+    }
+  });
+  return initialDecks;
+}
+
+/**
+ * LocalStorageから通常デッキ配列（mini_card_battle_decks）を安全に読み込みます。
+ * 試練の宮殿デッキなどの特殊デッキによる誤上書きやデータ破損を自動検知し、
+ * バックアップからの復旧または初期デッキセットの再生成によって自己修復を行います。
+ * @returns {Array<Object>} 健全な通常デッキ配列
+ */
+export function getSafeNormalDecks() {
+  if (typeof localStorage === 'undefined') return [];
+
+  const decksSaved = localStorage.getItem('mini_card_battle_decks');
+  let decks = [];
+  if (decksSaved) {
+    try {
+      decks = JSON.parse(decksSaved);
+    } catch {
+      decks = [];
+    }
+  }
+
+  // 汚染チェック: デッキが1個のみで、それが試練の宮殿デッキまたは防衛デッキ等の特殊デッキである場合
+  const isContaminated =
+    Array.isArray(decks) &&
+    decks.length === 1 &&
+    (decks[0]?.id === 'dungeon_deck' ||
+      decks[0]?.name === '試練の宮殿デッキ' ||
+      decks[0]?.id === 'defense_deck' ||
+      decks[0]?.name === '防衛デッキ');
+
+  if (isContaminated || !Array.isArray(decks) || decks.length === 0) {
+    // 1. バックアップからの自動復旧を試みる
+    const backupSaved = localStorage.getItem('mini_card_battle_decks_backup');
+    if (backupSaved) {
+      try {
+        const backupDecks = JSON.parse(backupSaved);
+        const isBackupValid =
+          Array.isArray(backupDecks) &&
+          backupDecks.length > 0 &&
+          !(
+            backupDecks.length === 1 &&
+            (backupDecks[0]?.id === 'dungeon_deck' ||
+              backupDecks[0]?.name === '試練の宮殿デッキ' ||
+              backupDecks[0]?.id === 'defense_deck' ||
+              backupDecks[0]?.name === '防衛デッキ')
+          );
+        if (isBackupValid) {
+          console.warn(
+            '通常デッキの汚染または消失を検知したため、バックアップから復旧しました。'
+          );
+          localStorage.setItem(
+            'mini_card_battle_decks',
+            JSON.stringify(backupDecks)
+          );
+          return backupDecks;
+        }
+      } catch (e) {
+        console.error('バックアップデッキの復旧に失敗しました:', e);
+      }
+    }
+
+    // 2. バックアップがない場合、初期リーダーデッキセットを生成して健全に自己修復
+    const defaultDecks = createDefaultLeaderDecks();
+    if (defaultDecks && defaultDecks.length > 0) {
+      console.warn(
+        '通常デッキを全リーダー初期デッキセットで自動修復しました。'
+      );
+      localStorage.setItem(
+        'mini_card_battle_decks',
+        JSON.stringify(defaultDecks)
+      );
+      localStorage.setItem(
+        'mini_card_battle_decks_backup',
+        JSON.stringify(defaultDecks)
+      );
+      return defaultDecks;
+    }
+  }
+
+  // 健全な通常デッキが存在する場合はバックアップを更新して安全を担保
+  if (Array.isArray(decks) && decks.length > 0 && !isContaminated) {
+    localStorage.setItem(
+      'mini_card_battle_decks_backup',
+      JSON.stringify(decks)
+    );
+  }
+
+  return Array.isArray(decks) ? decks : [];
+}
+
+/**
  * ローカルストレージおよび現在のGameState内のセーブデータを安全に新IDに移行します。
  */
 export function migrateAllSaveData() {
@@ -738,6 +863,10 @@ export function loadDeck() {
         if (deckObj && !deckObj.leaderId) {
           deckObj.leaderId = GameState.playerConfig?.id || 'android';
         }
+        if (deckObj) {
+          deckObj.id = 'dungeon_deck';
+          deckObj.name = deckObj.name || '試練の宮殿デッキ';
+        }
         GameState.decks = [deckObj];
       } catch {
         GameState.decks = [];
@@ -774,19 +903,10 @@ export function loadDeck() {
       }
     }
   } else if (GameState.gameMode === 'tournament') {
-    // トーナメントモードでも GameState.decks には常に通常デッキを読み込む。
+    // トーナメントモードでも GameState.decks には常に通常デッキを安全に読み込む。
     // スナップショットデッキは playerDeckSelection にのみ適用し、
     // デッキ一覧画面に表示されないようにする。
-    const decksSaved = localStorage.getItem('mini_card_battle_decks');
-    if (decksSaved) {
-      try {
-        GameState.decks = JSON.parse(decksSaved);
-      } catch {
-        GameState.decks = [];
-      }
-    } else {
-      GameState.decks = [];
-    }
+    GameState.decks = getSafeNormalDecks();
     if (
       GameState.currentDeckIndex >= GameState.decks.length ||
       GameState.currentDeckIndex < 0
@@ -815,17 +935,8 @@ export function loadDeck() {
       }
     }
   } else {
-    // 通常のデッキ（最大20個）
-    const decksSaved = localStorage.getItem('mini_card_battle_decks');
-    if (decksSaved) {
-      try {
-        GameState.decks = JSON.parse(decksSaved);
-      } catch {
-        GameState.decks = [];
-      }
-    } else {
-      GameState.decks = [];
-    }
+    // 通常のデッキ（最大20個）: 汚染を検知して自動復旧・自己修復可能な安全関数を使用
+    GameState.decks = getSafeNormalDecks();
 
     if (
       GameState.currentDeckIndex >= GameState.decks.length ||
@@ -842,40 +953,21 @@ export function loadDeck() {
       GameState.gameMode === 'tournament'
     ) {
       createNewDeck('knight');
-      if (GameState.gameMode === 'defense_register')
+      if (GameState.gameMode === 'defense_register') {
         GameState.decks[0].name = '防衛デッキ';
-      if (GameState.gameMode === 'battle_dungeon')
+        GameState.decks[0].id = 'defense_deck';
+      }
+      if (GameState.gameMode === 'battle_dungeon') {
         GameState.decks[0].name = '試練の宮殿デッキ';
-      if (GameState.gameMode === 'tournament')
+        GameState.decks[0].id = 'dungeon_deck';
+      }
+      if (GameState.gameMode === 'tournament') {
         GameState.decks[0].name = 'トーナメントデッキ';
+        GameState.decks[0].id = 'tournament_deck';
+      }
     } else {
-      // 新規プレイヤー向けの初期設定：全キャラクター（リーダー）分の初期デッキを生成
-      const leaderIds = Object.keys(CHARACTERS).filter(
-        (id) =>
-          id !== 'player' &&
-          id !== 'unknown' &&
-          id !== 'npc' &&
-          id !== 'automata' && // マキナは初期解放キャラではないため除外
-          id !== 'valkyria' && // アンジェは初期解放キャラではないため除外
-          !BOSS_CHARACTER_IDS.includes(id)
-      );
-      leaderIds.forEach((id) => {
-        const char = CHARACTERS[id];
-        if (
-          char &&
-          (!GameState.decks || GameState.decks.length < MAX_DECK_SLOTS)
-        ) {
-          const newIndex = createNewDeck(id);
-          if (newIndex !== false && GameState.decks[newIndex]) {
-            // 名前が長すぎないよう、シンプルにキャラ名+デッキにする
-            const shortName = char.name.split(' ').pop(); // 「機動戦姫 アイギス」なら「アイギス」
-            GameState.decks[newIndex].name = `${shortName}デッキ`.substring(
-              0,
-              12
-            );
-          }
-        }
-      });
+      // 新規プレイヤー向けまたは修復用：全キャラクター（リーダー）分の初期デッキを生成
+      GameState.decks = createDefaultLeaderDecks();
       GameState.currentDeckIndex = 0;
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(
@@ -1090,12 +1182,15 @@ export function saveCurrentEditDeck() {
       );
     } else if (
       GameState.gameMode === 'battle_dungeon' ||
-      (activeDeck && activeDeck.id === 'dungeon_deck')
+      activeDeck?.id === 'dungeon_deck' ||
+      activeDeck?.name === '試練の宮殿デッキ'
     ) {
       if (activeDeck) {
         const activeLeaderId =
           GameState.playerConfig?.id || activeDeck.leaderId;
         activeDeck.leaderId = activeLeaderId;
+        activeDeck.id = 'dungeon_deck';
+        activeDeck.name = '試練の宮殿デッキ';
 
         // ダンジョン用デッキの playerSkins をクリーンアップ
         if (
@@ -1120,10 +1215,38 @@ export function saveCurrentEditDeck() {
         window.saveDungeonProgress();
       }
     } else {
+      // 【絶対厳守ガード】通常デッキ保存箱への書き込み安全性チェック
+      // 万一アクティブデッキやGameState.decksに特殊デッキ（試練用・防衛用・トーナメント用）が含まれている場合は保存を拒否
+      const isContaminated =
+        activeDeck?.id === 'dungeon_deck' ||
+        activeDeck?.name === '試練の宮殿デッキ' ||
+        activeDeck?.id === 'defense_deck' ||
+        activeDeck?.name === '防衛デッキ' ||
+        activeDeck?.id === 'tournament_deck' ||
+        activeDeck?.name === 'トーナメントデッキ' ||
+        GameState.gameMode === 'battle_dungeon' ||
+        GameState.gameMode === 'tournament';
+
+      if (isContaminated) {
+        console.warn(
+          '特殊モードのデッキが検出されたため、mini_card_battle_decks への上書きを阻止しました:',
+          activeDeck
+        );
+        return;
+      }
+
       localStorage.setItem(
         'mini_card_battle_decks',
         JSON.stringify(GameState.decks)
       );
+
+      // 健全な通常デッキ配列をバックアップとして保存
+      if (Array.isArray(GameState.decks) && GameState.decks.length > 0) {
+        localStorage.setItem(
+          'mini_card_battle_decks_backup',
+          JSON.stringify(GameState.decks)
+        );
+      }
     }
   }
 

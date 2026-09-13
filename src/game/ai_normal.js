@@ -3870,7 +3870,9 @@ export function evaluateBestResurrectChoice(
       // 上書きされるカードがあれば墓地送り
       const existing = targetBoard[lane];
       if (existing && !existing.isToken) {
-        const myDiscard = isRed ? simState.enemyDiscard : simState.playerDiscard;
+        const myDiscard = isRed
+          ? simState.enemyDiscard
+          : simState.playerDiscard;
         myDiscard.push(existing);
       }
 

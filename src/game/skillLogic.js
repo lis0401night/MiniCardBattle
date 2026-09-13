@@ -88,7 +88,6 @@ import {
   evaluateAdhocInviteMove,
 } from './ai_normal.js';
 
-
 /**
  * 既存カードの「起動(startup)」スキルによる配置消滅処理を実行する共通ヘルパー。
  * 消滅するカード本体および保持している付属物（装備カード・合体素材等）を安全に墓地へ返却・初期化します。
@@ -2375,7 +2374,11 @@ export async function resolveActiveSkillEffect(
             // tokenLanes = null のまま → evaluateBestLanesForToken で配置
           } else {
             // Normal以上: 最新の盤面・墓地状況に基づき、最善のカードとレーンをオンザフライシミュレート
-            const bestChoice = evaluateBestResurrectChoice(validCards, o, false);
+            const bestChoice = evaluateBestResurrectChoice(
+              validCards,
+              o,
+              false
+            );
             if (bestChoice && bestChoice.selectedCard) {
               selectedCard = bestChoice.selectedCard;
               if (
@@ -3217,7 +3220,11 @@ export async function resolveActiveSkillEffect(
 
     // AIは強制と同じロジック（最大枚数を破棄）、プレイヤーは任意選択のUIを待機（0〜count枚まで手動選択）
     const forceExact = o === 'red';
-    const selectedHandIndices = await waitPlayerHandSelection(count, o, forceExact);
+    const selectedHandIndices = await waitPlayerHandSelection(
+      count,
+      o,
+      forceExact
+    );
     if (o === 'red' && selectedHandIndices && selectedHandIndices.length > 0) {
       // AIの思考時間を演出
       await sleep(AI_THINKING_DURATION);

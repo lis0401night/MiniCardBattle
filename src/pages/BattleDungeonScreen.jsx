@@ -9,6 +9,7 @@ import {
   startDungeonBattle,
   startDungeonLeaderTalk,
 } from '../game/battleDungeon.js';
+import { loadDeck } from '../services/deck.js';
 import { setupLongPress } from '../services/uiGallery.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
@@ -64,6 +65,7 @@ export default function BattleDungeonScreen() {
       // 最初の画面ではセーブデータを消さずに戻る
       playSound(SOUNDS.seClick);
       GameState.gameMode = null;
+      loadDeck(); // 通常デッキを正常に復元して汚染を防止
       if (window.showDungeonMenu) {
         window.showDungeonMenu();
       } else {
@@ -87,6 +89,7 @@ export default function BattleDungeonScreen() {
         playSound(SOUNDS.seClick);
         saveDungeonProgress();
         GameState.gameMode = null;
+        loadDeck(); // 通常デッキを正常に復元して汚染を防止
         switchScreen('screen-mode-select');
         playSound(AUDIO_INSTANCES.bgmTitle);
       }

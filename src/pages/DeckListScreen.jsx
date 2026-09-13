@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import { loadDeck, startBattleFlow } from '../services/deck.js';
+import {
+  getSafeNormalDecks,
+  loadDeck,
+  startBattleFlow,
+} from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
 import { confirmCharSelect, goBackFromSelect } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
@@ -125,14 +129,8 @@ export default function DeckListScreen({ switchScreen }) {
     window.forceUpdateDeckList = () => setRenderVersion((v) => v + 1);
 
     // デッキ一覧画面では常に通常デッキ（mini_card_battle_decks）のみを表示する。
-    // loadDeck() はgameModeに応じてGameState.decksを特殊モード用に差し替える可能性があるため、
-    // ここでは直接LocalStorageから通常デッキを読み込み、GameState.decksにセットする。
-    try {
-      const decksSaved = localStorage.getItem('mini_card_battle_decks');
-      GameState.decks = decksSaved ? JSON.parse(decksSaved) : [];
-    } catch {
-      GameState.decks = [];
-    }
+    // 特殊モードデッキによる誤上書き・汚染を検知し自己修復可能な安全関数を使用する。
+    GameState.decks = getSafeNormalDecks();
     if (
       GameState.currentDeckIndex >= GameState.decks.length ||
       GameState.currentDeckIndex < 0
