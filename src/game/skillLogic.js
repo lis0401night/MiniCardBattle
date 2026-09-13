@@ -87,6 +87,8 @@ import { evaluateBestLanesForToken } from './ai.js';
 import {
   evaluateBestResurrectChoice,
   evaluateAdhocInviteMove,
+  evaluateAdhocInspireChoice,
+  evaluateAdhocProtectionChoice,
 } from './ai_normal.js';
 
 /**
@@ -1281,6 +1283,7 @@ export async function resolveActiveSkillEffect(
       GameState.gameMode !== 'online' &&
       GameState.gameMode !== 'pvp'
     ) {
+      // 事前計画キューに残骸があれば消費（クリーンアップ）する
       if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
         const tpIdx = GameState.aiDecision.actionQueue.findIndex(
           (a) =>
@@ -1288,15 +1291,11 @@ export async function resolveActiveSkillEffect(
             (a.skillId === 'servant' || a.skillId === 'ambush')
         );
         if (tpIdx !== -1) {
-          const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-          if (Array.isArray(tpAction.lanes)) {
-            summonPredefinedLanes = [...tpAction.lanes];
-          }
+          GameState.aiDecision.actionQueue.splice(tpIdx, 1);
         }
       }
-      // アクションキューにない場合（または誘発等で状況変化時）：
-      // キャンセル扱いとせず、summonPredefinedLanes = null のまま waitPlayerLaneSelection へ進める。
-      // waitPlayerLaneSelection 内部で evaluateBestLanesForToken が呼ばれ、最新盤面から最善レーンが動的に評価・配置される。
+      // 事前計画の固定レーン再生を廃止し、summonPredefinedLanes = null のまま waitPlayerLaneSelection へ進める。
+      // waitPlayerLaneSelection 内部で最新盤面に基づいた直前シミュレーション（evaluateBestLanesForToken）が実行される。
     }
 
     if (!aiSummonCancelled) {
@@ -1437,41 +1436,35 @@ export async function resolveActiveSkillEffect(
       GameState.gameMode !== 'online' &&
       GameState.gameMode !== 'pvp'
     ) {
+      // 事前計画キューに残骸があれば消費（クリーンアップ）する
       if (GameState.aiDecision && GameState.aiDecision.actionQueue) {
         const tpIdx = GameState.aiDecision.actionQueue.findIndex(
           (a) => a.type === 'token_placement' && a.skillId === 'clone'
         );
         if (tpIdx !== -1) {
-          const tpAction = GameState.aiDecision.actionQueue.splice(tpIdx, 1)[0];
-          if (Array.isArray(tpAction.lanes)) {
-            clonePredefinedLanes = [...tpAction.lanes];
-          } else {
-            clonePredefinedLanes = [];
-          }
+          GameState.aiDecision.actionQueue.splice(tpIdx, 1);
         }
       }
-      // アクションキューにない場合（または誘発等で状況変化時）：
-      if (!clonePredefinedLanes) {
-        if (GameState.aiLevel === 1) {
-          // Easy AI: フォールバック配置を許可（clonePredefinedLanes = null のまま）
-        } else {
-          // Normal以上: 隣接レーン（l - 1, l + 1）から動的シミュレーション評価で最善レーンを選択
-          const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
-          const adjacentLanes = [l - 1, l + 1].filter(
-            (lane) => lane >= 0 && lane <= 2 && sealedLanes[lane] === 0
+      // 事前計画の固定キュー再生を廃止し、常に最新盤面に基づいた直前シミュレーションを実行する
+      if (GameState.aiLevel === 1) {
+        // Easy AI: フォールバック配置を許可（clonePredefinedLanes = null のまま）
+      } else {
+        // Normal以上: 隣接レーン（l - 1, l + 1）から動的シミュレーション評価で最善レーンを選択
+        const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
+        const adjacentLanes = [l - 1, l + 1].filter(
+          (lane) => lane >= 0 && lane <= 2 && sealedLanes[lane] === 0
+        );
+        if (adjacentLanes.length > 0) {
+          clonePredefinedLanes = evaluateBestLanesForToken(
+            adjacentLanes,
+            o,
+            simulatedToken,
+            1,
+            true, // canCancel
+            false // checkConstraints: 分身は配置(Place)のためfalse
           );
-          if (adjacentLanes.length > 0) {
-            clonePredefinedLanes = evaluateBestLanesForToken(
-              adjacentLanes,
-              o,
-              simulatedToken,
-              1,
-              true, // canCancel
-              false // checkConstraints: 分身は配置(Place)のためfalse
-            );
-          } else {
-            clonePredefinedLanes = [];
-          }
+        } else {
+          clonePredefinedLanes = [];
         }
       }
     }
@@ -2342,55 +2335,28 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        const aiAction = consumeAIAction('resurrect');
-        if (aiAction) {
-          // actionQueue取得失敗時のフォールバック防止用（後で上書きされる）
-          tokenLanes = [];
-          // targetUid が存在する場合はUID優先で照合（validCardsとのインデックスずれを防ぐ）
-          if (aiAction.targetUid) {
-            selectedCard =
-              validCards.find(
-                (c) =>
-                  c.uid === aiAction.targetUid ||
-                  c.id === aiAction.targetUid ||
-                  c.baseId === aiAction.targetUid
-              ) || null;
-          }
-          // フォールバック: targetIdx で直接参照（validCards が discard と一致している場合）
-          if (!selectedCard && aiAction.targetIdx !== undefined) {
-            selectedCard =
-              validCards[aiAction.targetIdx] ||
-              discard[aiAction.targetIdx] ||
-              null;
-          }
-          if (aiAction.laneIdx !== undefined) tokenLanes = [aiAction.laneIdx];
-        }
-        if (!selectedCard) {
-          if (GameState.aiLevel === 1) {
-            // Easy AI: actionQueueがないため、最強カードをフォールバック選択（レーンもフォールバック配置）
-            const sortedRes = [...validCards].sort(
-              (a, b) => (b.power || 0) - (a.power || 0)
-            );
-            selectedCard = sortedRes[0] || null;
-            // tokenLanes = null のまま → evaluateBestLanesForToken で配置
-          } else {
-            // Normal以上: 最新の盤面・墓地状況に基づき、最善のカードとレーンをオンザフライシミュレート
-            const bestChoice = evaluateBestResurrectChoice(
-              validCards,
-              o,
-              false
-            );
-            if (bestChoice && bestChoice.selectedCard) {
-              selectedCard = bestChoice.selectedCard;
-              if (
-                bestChoice.laneIdx !== null &&
-                bestChoice.laneIdx !== undefined
-              ) {
-                tokenLanes = [bestChoice.laneIdx];
-              }
-            } else {
-              tokenLanes = [];
+        // 事前計画キューに残骸があれば消費（クリーンアップ）する
+        consumeAIAction('resurrect');
+
+        if (GameState.aiLevel === 1) {
+          // Easy AI: 最強カードを選択（レーンはフォールバック配置）
+          const sortedRes = [...validCards].sort(
+            (a, b) => (b.power || 0) - (a.power || 0)
+          );
+          selectedCard = sortedRes[0] || null;
+        } else {
+          // Normal以上: 常に最新の盤面・墓地状況に基づき、直前シミュレーションで最善のカードと配置レーンを決定
+          const bestChoice = evaluateBestResurrectChoice(validCards, o, false);
+          if (bestChoice && bestChoice.selectedCard) {
+            selectedCard = bestChoice.selectedCard;
+            if (
+              bestChoice.laneIdx !== null &&
+              bestChoice.laneIdx !== undefined
+            ) {
+              tokenLanes = [bestChoice.laneIdx];
             }
+          } else {
+            tokenLanes = [];
           }
         }
         // AIの思考時間を演出
@@ -2561,47 +2527,28 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        // AIの場合：actionQueueのpuppetアクションから指定カードとレーンを取り出す
-        const aiAction = consumeAIAction('puppet');
-        if (aiAction) {
-          tokenLanes = [];
-          if (aiAction.targetUid) {
-            selectedCard =
-              validCards.find(
-                (c) =>
-                  c.uid === aiAction.targetUid ||
-                  c.id === aiAction.targetUid ||
-                  c.baseId === aiAction.targetUid
-              ) || null;
-          }
-          if (!selectedCard && aiAction.targetIdx !== undefined) {
-            selectedCard =
-              validCards[aiAction.targetIdx] ||
-              oppDiscard[aiAction.targetIdx] ||
-              null;
-          }
-        }
-        if (!selectedCard) {
-          if (GameState.aiLevel === 1) {
-            // Easy AI: 最強カードをフォールバック選択
-            const sortedPuppet = [...validCards].sort(
-              (a, b) => (b.power || 0) - (a.power || 0)
-            );
-            selectedCard = sortedPuppet[0] || null;
-          } else {
-            // Normal以上: 相手墓地の最新状況からオンザフライシミュレート
-            const bestChoice = evaluateBestResurrectChoice(validCards, o, true);
-            if (bestChoice && bestChoice.selectedCard) {
-              selectedCard = bestChoice.selectedCard;
-              if (
-                bestChoice.laneIdx !== null &&
-                bestChoice.laneIdx !== undefined
-              ) {
-                tokenLanes = [bestChoice.laneIdx];
-              }
-            } else {
-              tokenLanes = [];
+        // 事前計画キューに残骸があれば消費（クリーンアップ）する
+        consumeAIAction('puppet');
+
+        if (GameState.aiLevel === 1) {
+          // Easy AI: 最強カードをフォールバック選択
+          const sortedPuppet = [...validCards].sort(
+            (a, b) => (b.power || 0) - (a.power || 0)
+          );
+          selectedCard = sortedPuppet[0] || null;
+        } else {
+          // Normal以上: 常に最新盤面・相手墓地状況に基づき、直前シミュレーションで最善のカードと配置レーンを決定
+          const bestChoice = evaluateBestResurrectChoice(validCards, o, true);
+          if (bestChoice && bestChoice.selectedCard) {
+            selectedCard = bestChoice.selectedCard;
+            if (
+              bestChoice.laneIdx !== null &&
+              bestChoice.laneIdx !== undefined
+            ) {
+              tokenLanes = [bestChoice.laneIdx];
             }
+          } else {
+            tokenLanes = [];
           }
         }
         // AIの思考時間を演出
@@ -3132,6 +3079,8 @@ export async function resolveActiveSkillEffect(
               targetLane,
               restoredCard
             );
+            // 召喚行為の一環として相手の誘発スキルチェック
+            await checkAndTriggerCounter(o, restoredCard, targetLane);
           } else if (canEquipCard(restoredCard, board[targetLane])) {
             const targetCard = board[targetLane];
             const { equipSkills } = applyEquipment(targetCard, restoredCard);
@@ -3145,6 +3094,9 @@ export async function resolveActiveSkillEffect(
               source: 'equip',
             });
             await playEvents(callEvents);
+
+            // 召喚行為の一環として相手の誘発スキルチェック（アクティブスキル解決前）
+            await checkAndTriggerCounter(o, targetCard, targetLane);
 
             // 装備されたカードが持っていたアクティブスキルを即時発動させる
             for (const sk of equipSkills) {
@@ -3448,6 +3400,8 @@ export async function resolveActiveSkillEffect(
           const existingCard = board[targetLane];
           if (existingCard && hasSkill(existingCard, 'startup')) {
             await handleStartupDispelled(o, existingCard, targetLane, topCard);
+            // 召喚行為の一環として相手の誘発スキルチェック
+            await checkAndTriggerCounter(o, topCard, targetLane);
           } else if (canEquipCard(topCard, board[targetLane])) {
             const targetCard = board[targetLane];
             const { equipSkills } = applyEquipment(targetCard, topCard);
@@ -3461,6 +3415,9 @@ export async function resolveActiveSkillEffect(
               source: 'equip',
             });
             await playEvents(callEvents);
+
+            // 召喚行為の一環として相手の誘発スキルチェック（アクティブスキル解決前）
+            await checkAndTriggerCounter(o, targetCard, targetLane);
 
             // 装備されたカードが持っていたアクティブスキルを即時発動させる
             for (const sk of equipSkills) {
@@ -4066,14 +4023,22 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        // AIの場合：最もパワーの高い他カードを自動選択
-        const sortedLanes = [...otherOccupiedLanes].sort((a, b) => {
-          const diff =
-            (myBoard[b].currentPower || 0) - (myBoard[a].currentPower || 0);
-          if (diff !== 0) return diff;
-          return a - b;
-        });
-        selectedLanes = [sortedLanes[0]];
+        if (GameState.aiLevel <= 1) {
+          // Easy AI: 最もパワーの高い他カードを自動選択
+          const sortedLanes = [...otherOccupiedLanes].sort((a, b) => {
+            const diff =
+              (myBoard[b].currentPower || 0) - (myBoard[a].currentPower || 0);
+            if (diff !== 0) return diff;
+            return a - b;
+          });
+          selectedLanes = [sortedLanes[0]];
+        } else {
+          // Normal以上: 常に最新盤面に基づいた直前シミュレーションで最善対象を選択
+          const bestLane = evaluateAdhocInspireChoice(myBoard, l, bVal, o);
+          selectedLanes = [
+            bestLane !== null ? bestLane : otherOccupiedLanes[0],
+          ];
+        }
         await sleep(AI_THINKING_DURATION);
       } else {
         // プレイヤーの場合：自身を除外した自陣レーンから1体を選択させる
@@ -4127,17 +4092,23 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        // AIの場合：味方（自身含む）で最もパワーの高いカード（加護未付与を優先）を選択
-        const sortedLanes = [...occupiedLanes].sort((a, b) => {
-          const gA = Boolean(myBoard[a].valkyriaGuard);
-          const gB = Boolean(myBoard[b].valkyriaGuard);
-          if (gA !== gB) return gA ? 1 : -1;
-          const diff =
-            (myBoard[b].currentPower || 0) - (myBoard[a].currentPower || 0);
-          if (diff !== 0) return diff;
-          return a - b;
-        });
-        selectedLanes = [sortedLanes[0]];
+        if (GameState.aiLevel <= 1) {
+          // Easy AI: 味方（自身含む）で最もパワーの高いカード（加護未付与を優先）を選択
+          const sortedLanes = [...occupiedLanes].sort((a, b) => {
+            const gA = Boolean(myBoard[a].valkyriaGuard);
+            const gB = Boolean(myBoard[b].valkyriaGuard);
+            if (gA !== gB) return gA ? 1 : -1;
+            const diff =
+              (myBoard[b].currentPower || 0) - (myBoard[a].currentPower || 0);
+            if (diff !== 0) return diff;
+            return a - b;
+          });
+          selectedLanes = [sortedLanes[0]];
+        } else {
+          // Normal以上: 常に最新盤面に基づいた直前シミュレーションで最善対象を選択
+          const bestLane = evaluateAdhocProtectionChoice(myBoard, o);
+          selectedLanes = [bestLane !== null ? bestLane : occupiedLanes[0]];
+        }
         await sleep(AI_THINKING_DURATION);
       } else {
         // プレイヤーの場合：味方カード1枚を選択させる（自身[l]も対象に含めるため除外リストは空）

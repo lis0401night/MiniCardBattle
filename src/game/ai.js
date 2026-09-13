@@ -10,6 +10,10 @@ import {
   getNormalDecision,
   getNormalTokenLanes,
   evaluateTriggerSimulation,
+  evaluateAdhocInspireChoice,
+  evaluateAdhocProtectionChoice,
+  evaluateAdhocDominateChoice,
+  evaluateAdhocSkillChoice,
 } from './ai_normal.js';
 import {
   discardCard,
@@ -298,3 +302,10 @@ export function evaluateBestTriggerMove(validTriggerCards, owner = 'red') {
   // 通常・上級AI: 相手の攻撃フェーズから次の自分の攻撃後までシミュレートして最適手を決定
   return evaluateTriggerSimulation(validTriggerCards, owner);
 }
+
+export {
+  evaluateAdhocInspireChoice,
+  evaluateAdhocProtectionChoice,
+  evaluateAdhocDominateChoice,
+  evaluateAdhocSkillChoice,
+};

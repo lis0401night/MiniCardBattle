@@ -32,6 +32,7 @@ import {
   isValkyriaGuardActive,
   processDestructionTriggers,
   quietDiscardFromBoard,
+  VALKYRIA_GUARD_TURNS,
 } from './engine.js';
 
 // 判定補助: カードが何らかのアクティブスキルを持っているか（シミュレーション時の一時的な破壊を防ぐため）
@@ -587,6 +588,25 @@ export function processActionSequence(
         continue;
       }
 
+      if (action.type === 'inspire') {
+        const tgtLane = action.targetLane;
+        if (tgtLane !== undefined && simState.enemyBoard[tgtLane] !== null) {
+          const c = simState.enemyBoard[tgtLane];
+          c.currentPower = (c.currentPower || 0) + (action.value || 1);
+        }
+        continue;
+      }
+
+      if (action.type === 'protection') {
+        const tgtLane = action.targetLane;
+        if (tgtLane !== undefined && simState.enemyBoard[tgtLane] !== null) {
+          const c = simState.enemyBoard[tgtLane];
+          c.valkyriaGuard = true;
+          c.valkyriaGuardTurns = VALKYRIA_GUARD_TURNS;
+        }
+        continue;
+      }
+
       const tIdx = action.targetIdx;
       const lIdx = action.laneIdx;
       let playedCard = null;
@@ -1008,6 +1028,9 @@ export function processActionSequence(
                 'puppet',
                 'resurrect',
                 'execute',
+                'inspire',
+                'protection',
+                'dominate',
               ].includes(sk.id)
             ) {
               return;
@@ -1178,6 +1201,9 @@ export function processActionSequence(
                 'split',
                 'forge',
                 'execute',
+                'inspire',
+                'protection',
+                'dominate',
               ].includes(sk.id)
             ) {
               // 連鎖スキルを持つカードの場合は即時スキルを保留する
@@ -1543,6 +1569,9 @@ export function getBestSimulatedMove() {
                       'leap',
                       'forge',
                       'execute',
+                      'inspire',
+                      'protection',
+                      'dominate',
                     ].includes(s.id)
                   )
                     effectiveSkills.push(s);
@@ -1588,6 +1617,9 @@ export function getBestSimulatedMove() {
                 'puppet',
                 'resurrect',
                 'execute', // 処刑は強制配置系（破壊対象選択）のため、自動キャンセルの対象外とする
+                'inspire', // 鼓舞は対象が存在すれば対象選択、いなければスキップするため自律分岐
+                'protection', // 保護も対象が存在すれば対象選択、いなければスキップするため自律分岐
+                'dominate', // 支配は明示的なキャンセルノードを自前生成するため自動キャンセルの対象外とする
               ].includes(sk.id);
               if (!isPlacementSkill) {
                 results.push(
@@ -2217,6 +2249,163 @@ export function getBestSimulatedMove() {
                 for (let nb of cancelBranches) {
                   results.push([cancelNode, ...nb]);
                 }
+              } else if (sk.id === 'inspire') {
+                const bVal = sk.value || 1;
+                const otherOccupiedLanes = [0, 1, 2].filter(
+                  (j) => activeEnemyBoard[j] !== null && j !== lane
+                );
+                if (otherOccupiedLanes.length > 0 && bVal !== 0) {
+                  for (let tgtLane of otherOccupiedLanes) {
+                    let inspireNode = {
+                      type: 'inspire',
+                      targetLane: tgtLane,
+                      value: bVal,
+                    };
+                    const nextEnemyBoard = activeEnemyBoard.map((c) =>
+                      c ? { ...c } : null
+                    );
+                    if (nextEnemyBoard[tgtLane]) {
+                      nextEnemyBoard[tgtLane].currentPower =
+                        (nextEnemyBoard[tgtLane].currentPower || 0) + bVal;
+                    }
+                    let nextBranches = buildSkillBranch(
+                      remainingSkills,
+                      currentUsedHand,
+                      currentUsedDiscard,
+                      currentDepth,
+                      currentDiscarded,
+                      nextEnemyBoard,
+                      activePlayerBoard,
+                      currentUsedDeck
+                    );
+                    for (let nb of nextBranches) {
+                      results.push([inspireNode, ...nb]);
+                    }
+                  }
+                } else {
+                  return buildSkillBranch(
+                    remainingSkills,
+                    currentUsedHand,
+                    currentUsedDiscard,
+                    currentDepth,
+                    currentDiscarded,
+                    activeEnemyBoard,
+                    activePlayerBoard,
+                    currentUsedDeck
+                  );
+                }
+              } else if (sk.id === 'protection') {
+                const occupiedLanes = [0, 1, 2].filter(
+                  (j) => activeEnemyBoard[j] !== null
+                );
+                if (occupiedLanes.length > 0) {
+                  for (let tgtLane of occupiedLanes) {
+                    let protectNode = {
+                      type: 'protection',
+                      targetLane: tgtLane,
+                    };
+                    const nextEnemyBoard = activeEnemyBoard.map((c) =>
+                      c ? { ...c } : null
+                    );
+                    if (nextEnemyBoard[tgtLane]) {
+                      nextEnemyBoard[tgtLane].valkyriaGuard = true;
+                    }
+                    let nextBranches = buildSkillBranch(
+                      remainingSkills,
+                      currentUsedHand,
+                      currentUsedDiscard,
+                      currentDepth,
+                      currentDiscarded,
+                      nextEnemyBoard,
+                      activePlayerBoard,
+                      currentUsedDeck
+                    );
+                    for (let nb of nextBranches) {
+                      results.push([protectNode, ...nb]);
+                    }
+                  }
+                } else {
+                  return buildSkillBranch(
+                    remainingSkills,
+                    currentUsedHand,
+                    currentUsedDiscard,
+                    currentDepth,
+                    currentDiscarded,
+                    activeEnemyBoard,
+                    activePlayerBoard,
+                    currentUsedDeck
+                  );
+                }
+              } else if (sk.id === 'dominate') {
+                const maxP = sk.value || 0;
+                const oppBoard = activePlayerBoard;
+                let validOppLanes = [];
+                for (let j = 0; j < 3; j++) {
+                  if (
+                    oppBoard[j] &&
+                    (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <=
+                      maxP &&
+                    mySealedLanes[j] === 0
+                  ) {
+                    validOppLanes.push(j);
+                  }
+                }
+                for (let i of validOppLanes) {
+                  const myL = i;
+                  if (mySealedLanes[myL] > 0) continue;
+                  let domNode = {
+                    type: 'dominate',
+                    oppLaneIdx: i,
+                    myLaneIdx: myL,
+                    maxP: maxP,
+                  };
+                  const nextEnemyBoard = activeEnemyBoard.map((c) =>
+                    c ? { ...c } : null
+                  );
+                  const nextPlayerBoard = activePlayerBoard.map((c) =>
+                    c ? { ...c } : null
+                  );
+                  const stolenCard = nextPlayerBoard[i];
+                  if (stolenCard) {
+                    nextEnemyBoard[myL] = {
+                      ...stolenCard,
+                      owner: 'red',
+                    };
+                    nextPlayerBoard[i] = null;
+                  }
+                  let nextBranches = buildSkillBranch(
+                    remainingSkills,
+                    currentUsedHand,
+                    currentUsedDiscard,
+                    currentDepth,
+                    currentDiscarded,
+                    nextEnemyBoard,
+                    nextPlayerBoard,
+                    currentUsedDeck
+                  );
+                  for (let nb of nextBranches) {
+                    results.push([domNode, ...nb]);
+                  }
+                }
+                let cancelNode = {
+                  type: 'dominate',
+                  oppLaneIdx: -1,
+                  myLaneIdx: -1,
+                  maxP: maxP,
+                };
+                let cancelBranches = buildSkillBranch(
+                  remainingSkills,
+                  currentUsedHand,
+                  currentUsedDiscard,
+                  currentDepth,
+                  currentDiscarded,
+                  activeEnemyBoard,
+                  activePlayerBoard,
+                  currentUsedDeck
+                );
+                for (let nb of cancelBranches) {
+                  results.push([cancelNode, ...nb]);
+                }
               } else if (sk.id === 'choice') {
                 const cc = sk.value || 1;
                 const cArr =
@@ -2659,6 +2848,9 @@ export function getBestSimulatedMove() {
               'execute',
               'choice',
               'force',
+              'inspire',
+              'protection',
+              'dominate',
             ].includes(s.id)
           );
           if (hasActiveSkills) {
@@ -4011,6 +4203,299 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
 }
 
 /**
+ * 鼓舞（inspire）スキルの直前シミュレーション評価。
+ * スキル解決の直前に最新盤面（GameState）に基づいて全候補レーンをシミュレートし、
+ * 最も有利・安全な対象レーンを決定する。
+ *
+ * @param {Array<object|null>} myBoard - 味方盤面カード配列
+ * @param {number} currentLane - 鼓舞スキルを発動したカードのレーン番号
+ * @param {number} bVal - パワー上昇量
+ * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
+ * @returns {number|null} 最善対象レーン番号（対象なしの場合は null）
+ */
+export function evaluateAdhocInspireChoice(
+  myBoard,
+  currentLane,
+  bVal,
+  owner = 'red'
+) {
+  if (!myBoard || bVal === 0) return null;
+
+  // 自身以外の配置済みレーンを抽出
+  const candidateLanes = [0, 1, 2].filter(
+    (j) => myBoard[j] !== null && j !== currentLane
+  );
+  if (candidateLanes.length === 0) return null;
+  if (candidateLanes.length === 1) return candidateLanes[0];
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+  const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 }; // 左(1) > 右(2) > 中央(3)
+
+  let bestScore = isRed ? -Infinity : Infinity;
+  let bestLane = candidateLanes[0];
+
+  for (const candLane of candidateLanes) {
+    const simState = structuredClone(initialSimState);
+    const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+
+    if (targetBoard[candLane]) {
+      targetBoard[candLane].currentPower =
+        (targetBoard[candLane].currentPower || 0) + bVal;
+    }
+
+    processDestructionTriggers(simState, []);
+    let score = evaluateTriggerTurnOutcome(simState, owner);
+    // タイブレーク微調整（左 > 右 > 中央）
+    score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[candLane];
+
+    if (isRed) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestLane = candLane;
+      }
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestLane = candLane;
+      }
+    }
+  }
+
+  return bestLane;
+}
+
+/**
+ * 保護（protection）スキルの直前シミュレーション評価。
+ * スキル解決の直前に最新盤面（GameState）に基づいて全味方カード（自身含む）をシミュレートし、
+ * 加護（valkyriaGuard）を付与することで最も生存率や盤面アドバンテージが高まる最善対象レーンを決定する。
+ *
+ * @param {Array<object|null>} myBoard - 味方盤面カード配列
+ * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
+ * @returns {number|null} 最善対象レーン番号（対象なしの場合は null）
+ */
+export function evaluateAdhocProtectionChoice(myBoard, owner = 'red') {
+  if (!myBoard) return null;
+
+  // 自陣の配置済みレーン（自身含む）を抽出
+  const candidateLanes = [0, 1, 2].filter((j) => myBoard[j] !== null);
+  if (candidateLanes.length === 0) return null;
+  if (candidateLanes.length === 1) return candidateLanes[0];
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+  const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
+
+  let bestScore = isRed ? -Infinity : Infinity;
+  let bestLane = candidateLanes[0];
+
+  for (const candLane of candidateLanes) {
+    const simState = structuredClone(initialSimState);
+    const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+
+    if (targetBoard[candLane]) {
+      targetBoard[candLane].valkyriaGuard = true;
+      targetBoard[candLane].valkyriaGuardTurns = VALKYRIA_GUARD_TURNS;
+    }
+
+    processDestructionTriggers(simState, []);
+    let score = evaluateTriggerTurnOutcome(simState, owner);
+    score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[candLane];
+
+    if (isRed) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestLane = candLane;
+      }
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestLane = candLane;
+      }
+    }
+  }
+
+  return bestLane;
+}
+
+/**
+ * 支配（dominate）スキルの直前シミュレーション評価。
+ * スキル解決の直前に相手の対象レーン（および奪わないキャンセル手）を全通りシミュレートし、
+ * 最も盤面スコアが高くなる選択肢を決定する。
+ *
+ * @param {number[]} validOppLanes - 奪うことが可能な相手レーン番号配列
+ * @param {number} maxPower - 支配可能なカードのパワー上限
+ * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
+ * @returns {number} 奪う対象の相手レーン番号（キャンセルが最善の場合は -1）
+ */
+export function evaluateAdhocDominateChoice(
+  validOppLanes,
+  maxPower,
+  owner = 'red'
+) {
+  if (!validOppLanes || validOppLanes.length === 0) return -1;
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+  const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
+
+  // 1. 「奪わない（キャンセル）」基準スコアを算出
+  let bestScore;
+  {
+    const passSimState = structuredClone(initialSimState);
+    bestScore = evaluateTriggerTurnOutcome(passSimState, owner);
+  }
+  let bestLane = -1;
+
+  for (const oppLane of validOppLanes) {
+    const myLane = oppLane; // 奪ったカードは正面の同一レーンに配置
+    const simState = structuredClone(initialSimState);
+    const simOppBoard = isRed ? simState.playerBoard : simState.enemyBoard;
+    const simMyBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+
+    const stolenCard = simOppBoard[oppLane];
+    if (!stolenCard) continue;
+
+    simOppBoard[oppLane] = null;
+    stolenCard.puppetOriginalOwner =
+      stolenCard.puppetOriginalOwner ||
+      stolenCard.owner ||
+      (isRed ? 'blue' : 'red');
+
+    // 既存カードがある場合は装備可能なら装備、不可なら上書き配置
+    if (simMyBoard[myLane] && canEquipCard(stolenCard, simMyBoard[myLane])) {
+      applyEquipment(simMyBoard[myLane], stolenCard);
+    } else {
+      simMyBoard[myLane] = {
+        ...stolenCard,
+        owner: owner,
+        skillTriggered: true,
+        stunTurns: stolenCard.stunTurns || 0,
+        stunAppliedThisTurn: stolenCard.stunAppliedThisTurn || false,
+      };
+    }
+
+    processDestructionTriggers(simState, []);
+    let score = evaluateTriggerTurnOutcome(simState, owner);
+    score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[oppLane];
+
+    if (isRed) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestLane = oppLane;
+      }
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestLane = oppLane;
+      }
+    }
+  }
+
+  return bestLane;
+}
+
+/**
+ * 選択（choice）スキルの直前シミュレーション評価。
+ * waitSkillChoice 呼び出し時に、最新盤面において各選択肢スキルを仮想適用し、
+ * 最も安全かつ有利になる最善の選択肢を決定する。
+ *
+ * @param {object} card - 選択スキルを発動したカードオブジェクト
+ * @param {Array<object>} choices - 選択肢オブジェクト配列
+ * @param {number} [maxChoices=1] - 選択可能な個数
+ * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
+ * @returns {Array<object>} 最善の選択肢配列
+ */
+export function evaluateAdhocSkillChoice(
+  card,
+  choices,
+  maxChoices = 1,
+  owner = 'red'
+) {
+  if (!choices || choices.length === 0) return [];
+  if (choices.length <= maxChoices) return [...choices];
+
+  const idxs = choices.map((_, i) => i);
+  const combinations = getCombinations(idxs, Math.min(idxs.length, maxChoices));
+  if (combinations.length === 0) return choices.slice(0, maxChoices);
+  if (combinations.length === 1) return combinations[0].map((i) => choices[i]);
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+  const targetBoard = isRed
+    ? initialSimState.enemyBoard
+    : initialSimState.playerBoard;
+  const realBoard = isRed ? GameState.enemyBoard : GameState.playerBoard;
+
+  // 発動カードが盤面のどのレーンに存在するか特定（実盤面の参照一致やUIDを最優先）
+  let lane = -1;
+  if (card) {
+    const realLane = realBoard.findIndex(
+      (c) => c && (c === card || (card.uid && c.uid === card.uid))
+    );
+    if (realLane !== -1) {
+      lane = realLane;
+    } else {
+      lane = targetBoard.findIndex(
+        (c) =>
+          c &&
+          ((card.uid && c.uid === card.uid) ||
+            c.id === card.id ||
+            c.baseId === (card.baseId || card.id))
+      );
+    }
+  }
+  if (lane === -1) lane = 0; // 見つからない場合のフォールバック
+
+  let bestCombo = combinations[0];
+  let bestScore = isRed ? -Infinity : Infinity;
+
+  for (const combo of combinations) {
+    const simState = structuredClone(initialSimState);
+    const targetSimBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+    const simCard = targetSimBoard[lane];
+
+    for (const idx of combo) {
+      const choiceSkill = choices[idx];
+      if (choiceSkill) {
+        // 使役など召喚IDを持つスキルの場合、シミュレーションカードに召喚IDを一時付与して正確に解決
+        if (simCard && choiceSkill.summonId) {
+          if (!simCard.skills) simCard.skills = [];
+          simCard.skills.push({ ...choiceSkill });
+        }
+        applyActiveSkillLogic(
+          simState,
+          owner,
+          lane,
+          choiceSkill.id,
+          choiceSkill.value,
+          [],
+          null,
+          undefined
+        );
+      }
+    }
+
+    processDestructionTriggers(simState, []);
+    const score = evaluateTriggerTurnOutcome(simState, owner);
+
+    if (isRed) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestCombo = combo;
+      }
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestCombo = combo;
+      }
+    }
+  }
+
+  return bestCombo.map((i) => choices[i]);
+}
+
+/**
  * 号令・狂気・反魂などのアドホック召喚／配置において、最善レーンをシミュレーション評価する。
  *
  * @param {object} tokenCard - 配置または召喚するカードオブジェクト
@@ -4101,6 +4586,9 @@ export function evaluateAdhocTokenLanes(
       'puppet',
       'resurrect',
       'execute', // 処刑を追加
+      'inspire',
+      'protection',
+      'dominate',
     ].includes(sk.id);
     if (!isPlacementSkill) {
       // 配置系スキル以外は常に「このスキルをキャンセル/スキップする」選択肢を考慮する
@@ -4663,6 +5151,97 @@ export function evaluateAdhocTokenLanes(
       for (let nb of cancelBranches) {
         results.push([cancelNode, ...nb]);
       }
+    } else if (sk.id === 'inspire') {
+      const bVal = sk.value || 1;
+      const otherOccupiedLanes = [0, 1, 2].filter(
+        (j) => activeEnemyBoard[j] !== null && j !== laneIdx
+      );
+      if (otherOccupiedLanes.length > 0 && bVal !== 0) {
+        for (let tgtLane of otherOccupiedLanes) {
+          let inspireNode = {
+            type: 'inspire',
+            targetLane: tgtLane,
+            value: bVal,
+          };
+          const nextEnemyBoard = activeEnemyBoard.map((c) =>
+            c ? { ...c } : null
+          );
+          if (nextEnemyBoard[tgtLane]) {
+            nextEnemyBoard[tgtLane].currentPower =
+              (nextEnemyBoard[tgtLane].currentPower || 0) + bVal;
+          }
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            currentUsedHand,
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscard,
+            laneIdx,
+            nextEnemyBoard,
+            activePlayerBoard,
+            leaderSkillContext
+          );
+          for (let nb of nextBranches) {
+            results.push([inspireNode, ...nb]);
+          }
+        }
+      } else {
+        return buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          leaderSkillContext
+        );
+      }
+    } else if (sk.id === 'protection') {
+      const occupiedLanes = [0, 1, 2].filter(
+        (j) => activeEnemyBoard[j] !== null
+      );
+      if (occupiedLanes.length > 0) {
+        for (let tgtLane of occupiedLanes) {
+          let protectNode = {
+            type: 'protection',
+            targetLane: tgtLane,
+          };
+          const nextEnemyBoard = activeEnemyBoard.map((c) =>
+            c ? { ...c } : null
+          );
+          if (nextEnemyBoard[tgtLane]) {
+            nextEnemyBoard[tgtLane].valkyriaGuard = true;
+          }
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            currentUsedHand,
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscard,
+            laneIdx,
+            nextEnemyBoard,
+            activePlayerBoard,
+            leaderSkillContext
+          );
+          for (let nb of nextBranches) {
+            results.push([protectNode, ...nb]);
+          }
+        }
+      } else {
+        return buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          leaderSkillContext
+        );
+      }
     } else if (
       sk.id === 'convert' ||
       sk.id === 'draw' ||
@@ -5035,6 +5614,9 @@ export function evaluateAdhocTokenLanes(
                     'puppet',
                     'leap',
                     'forge',
+                    'inspire',
+                    'protection',
+                    'dominate',
                   ].includes(s.id)
                 )
                   effectiveSkills.push(s);
@@ -5620,6 +6202,9 @@ export function simulateMove(
                 'puppet',
                 'resurrect',
                 'execute',
+                'inspire',
+                'protection',
+                'dominate',
               ].includes(sk.id)
             ) {
               return;
@@ -5721,6 +6306,9 @@ export function simulateMove(
                   'puppet',
                   'resurrect',
                   'execute',
+                  'inspire',
+                  'protection',
+                  'dominate',
                 ].includes(sk.id)
               ) {
                 applyActiveSkillLogic(

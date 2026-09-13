@@ -235,6 +235,8 @@ async function executeDiscardTriggeredSummon(owner, card, targetLane, source) {
   const existingCard = board[targetLane];
   if (existingCard && hasSkill(existingCard, 'startup')) {
     await handleStartupDispelled(owner, existingCard, targetLane, card);
+    // 召喚行為の一環として相手の誘発スキルチェック
+    await checkAndTriggerCounter(owner, card, targetLane);
   } else if (canEquipCard(card, board[targetLane])) {
     const targetCard = board[targetLane];
     const { equipSkills } = applyEquipment(targetCard, card);
@@ -249,6 +251,9 @@ async function executeDiscardTriggeredSummon(owner, card, targetLane, source) {
       },
     ];
     await playEvents(events);
+
+    // 召喚行為の一環として相手の誘発スキルチェック（アクティブスキル解決前）
+    await checkAndTriggerCounter(owner, targetCard, targetLane);
 
     // 装備されたカードのアクティブスキル即時発動
     for (const sk of equipSkills) {
@@ -1350,6 +1355,9 @@ export async function playCard(o, hI, l, depth = 0) {
       renderHand();
       renderBoard();
 
+      // 相手の手札の「誘発（trigger）」スキルチェック
+      await checkAndTriggerCounter(o, consumedCard, l, depth);
+
       await sleep(PLACE_ANIMATION_DURATION);
       await cleanupDestroyedCards();
       return true; // 起動処理完了
@@ -1392,6 +1400,9 @@ export async function playCard(o, hI, l, depth = 0) {
       renderHand();
       renderBoard();
 
+      // 相手の手札の「誘発（trigger）」スキルチェック
+      await checkAndTriggerCounter(o, unionCard, l, depth);
+
       await resolveOnPlaySkill(o, l, unionCard);
       await cleanupDestroyedCards();
 
@@ -1418,6 +1429,9 @@ export async function playCard(o, hI, l, depth = 0) {
       }
       renderHand();
       renderBoard();
+
+      // 相手の手札の「誘発（trigger）」スキルチェック
+      await checkAndTriggerCounter(o, targetCard, l, depth);
 
       // 装備カードが持っていたアクティブスキルを即時発動させる
       for (const sk of equipSkills) {

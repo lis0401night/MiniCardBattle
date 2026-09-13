@@ -7,15 +7,17 @@
  * 選択完了を非同期で待機し、結果を返す関数の集まりです。
  * ===========================================
  */
-import { evaluateBestLanesForToken } from '../ai.js';
+import {
+  evaluateBestLanesForToken,
+  evaluateAdhocDominateChoice,
+  evaluateAdhocSkillChoice,
+} from '../ai.js';
 import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
 import { applyActiveSkillLogic, calculateCombatPhase } from '../engine.js';
 import { isTutorialMode, filterPlacementLaneClick } from '../tutorialEngine.js';
 import { GameState } from '../../state/gameState.js';
 import {
   hasSkill,
-  getCurrentRNG,
-  setCurrentRNG,
   getSeededRandom,
   shuffleArray,
   sleep,
@@ -192,22 +194,19 @@ export async function waitPlayerLaneSelection(
         delete GameState.aiDecision.cardTokenLanes;
       }
     } else {
-      // まず現在のアクション自体に紐づく指示があるか確認
-      // 【重要】deleteではなくspliceで消費する。summonスキルを複数持つカード（例：慈悲なき提督）では
-      // waitPlayerLaneSelectionが複数回呼ばれるため、全部消してしまうと2回目以降がランダムになる。
+      // 事前計画キューに残骸があれば消費（クリーンアップ）する
       if (
         typeof GameState.aiDecision !== 'undefined' &&
         GameState.aiDecision &&
         GameState.aiDecision.cardTokenLanes &&
         GameState.aiDecision.cardTokenLanes.length > 0
       ) {
-        selectedLanes = GameState.aiDecision.cardTokenLanes.splice(0, count);
+        GameState.aiDecision.cardTokenLanes.splice(0, count);
         if (GameState.aiDecision.cardTokenLanes.length === 0) {
           delete GameState.aiDecision.cardTokenLanes;
         }
       } else {
-        // なければ後続のアクションキューから取得
-        const aiAction = consumeAIAction([
+        consumeAIAction([
           'devilhunter_resurrect',
           'servant',
           'call',
@@ -219,41 +218,17 @@ export async function waitPlayerLaneSelection(
           'token_placement',
           'puppet',
         ]);
-        if (aiAction) {
-          if (Array.isArray(aiAction.lanes)) {
-            selectedLanes = [...aiAction.lanes];
-          } else if (
-            aiAction.laneIdx !== undefined ||
-            aiAction.myLane !== undefined ||
-            aiAction.targetLane !== undefined
-          ) {
-            const lane =
-              aiAction.laneIdx !== undefined
-                ? aiAction.laneIdx
-                : aiAction.myLane !== undefined
-                  ? aiAction.myLane
-                  : aiAction.targetLane;
-            if (lane !== undefined && lane !== -1) {
-              selectedLanes = [lane];
-            }
-          }
-          // actionQueueからアクションを取得できたがレーン情報がない場合 → 空として扱う（フォールバック防止）
-          if (!selectedLanes) selectedLanes = [];
-        }
       }
-      if (!selectedLanes) {
-        // 【アドホック召喚（号令call・狂気madness・反魂reanimate等）のリアルタイムシミュレーション評価】
-        // これらは手札プレイ前の事前計画ではなく実行時に発動するため、
-        // evaluateBestLanesForToken により現在の最新盤面を踏まえた最適レーンをリアルタイムに評価・決定する。
-        selectedLanes = evaluateBestLanesForToken(
-          availableAI,
-          owner,
-          tokenCard,
-          count,
-          canCancel,
-          checkConstraints
-        );
-      }
+
+      // 事前計画の固定レーン再生ではなく、常に最新盤面に基づいた直前シミュレーションを実行して最善レーンを決定する
+      selectedLanes = evaluateBestLanesForToken(
+        availableAI,
+        owner,
+        tokenCard,
+        count,
+        canCancel,
+        checkConstraints
+      );
     }
 
     // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
@@ -686,25 +661,36 @@ export async function waitPlayerEnemyLaneSelection(
     return resultLanes.slice(0, count);
   }
 
-  // AIの場合：判定済みのシミュレーション結果があれば優先する
+  // AIの場合：常に最新盤面に基づいた直前全通りシミュレーションで最善レーンを選択する
   if (owner === 'red') {
     if (GameState.aiDecision?.cardTokenLanes?.length > 0) {
-      const decidedLanes = GameState.aiDecision.cardTokenLanes.splice(0, count);
-      if (GameState.aiDecision.cardTokenLanes.length === 0) {
-        delete GameState.aiDecision.cardTokenLanes;
-      }
-      return decidedLanes;
+      delete GameState.aiDecision.cardTokenLanes;
     }
 
-    // シミュレーション結果が無い場合はパワーが高いカードを優先して狙う
-    const sortedLanes = [...validLanes].sort((a, b) => {
-      const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
-      const pB = targetBoard[b] ? targetBoard[b].currentPower : -1;
-      const diff = pB - pA;
-      if (diff !== 0) return diff;
-      return a - b; // インデックスが小さい方（左）を優先
-    });
-    return sortedLanes.slice(0, count);
+    if (GameState.aiLevel <= 1) {
+      // Easy AI: パワーが高いカードを優先して狙う
+      const sortedLanes = [...validLanes].sort((a, b) => {
+        const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
+        const pB = targetBoard[b] ? targetBoard[b].currentPower : -1;
+        const diff = pB - pA;
+        if (diff !== 0) return diff;
+        return a - b; // インデックスが小さい方（左）を優先
+      });
+      return sortedLanes.slice(0, count);
+    } else {
+      // Normal以上: 常に最新盤面に基づいた直前シミュレーションで最善レーン（またはキャンセル）を決定
+      const bestLane = evaluateAdhocDominateChoice(
+        validLanes,
+        maxPower !== null ? maxPower : 999,
+        owner
+      );
+      if (bestLane !== null && bestLane >= 0) {
+        return [bestLane];
+      } else {
+        // キャンセル（奪わない）が最善の場合は空配列を返却
+        return [];
+      }
+    }
   }
 
   return new Promise((resolve) => {
@@ -1571,123 +1557,23 @@ export async function waitSkillChoice(
         .map((x) => x.choice);
     }
 
-    /** インデックス配列を有効な選択肢配列へ変換する（範囲外は除外） */
-    const mapIndicesToChoices = (indices) =>
-      indices
-        .map((i) => choices[i])
-        .filter((c) => {
-          if (!c) {
-            console.warn(
-              '[waitSkillChoice] AIが範囲外の選択肢インデックスを返しました。',
-              { indices, choicesLength: choices.length }
-            );
-          }
-          return Boolean(c);
-        });
-
-    // 先にアクションキューの指示があるか確認（連鎖スキルの途中にあるchoice/forceノード）
-    const aiAction = consumeAIAction(['choice', 'force']);
-    if (aiAction && aiAction.choices !== undefined) {
-      if (GameState.gameMode !== 'online') await sleep(AI_THINKING_DURATION); // AIの思考時間を演出
-      const rawIndices = Array.isArray(aiAction.choices)
-        ? aiAction.choices
-        : [aiAction.choices];
-      const mapped = mapIndicesToChoices(rawIndices);
-      if (mapped.length > 0) return mapped.slice(0, maxChoices);
+    // 古い事前計画キューが残っていればクリーンアップ（消費・破棄）
+    consumeAIAction(['choice', 'force']);
+    if (GameState.aiDecision?.choiceIndexQueue) {
+      delete GameState.aiDecision.choiceIndexQueue;
+    }
+    if (GameState.aiDecision?.choiceIndex !== undefined) {
+      delete GameState.aiDecision.choiceIndex;
     }
 
-    // 1. すでに意思決定時に選択が決定している場合（Normal/Hardのシミュレーション後 - 親ノード側）
-    if (
-      typeof GameState.aiDecision !== 'undefined' &&
-      GameState.aiDecision &&
-      GameState.aiDecision.choiceIndexQueue !== undefined
-    ) {
-      const idx = GameState.aiDecision.choiceIndexQueue.shift();
-      if (idx !== undefined) {
-        const indices = Array.isArray(idx) ? idx : [idx];
-        const mapped = mapIndicesToChoices(indices);
-        if (mapped.length > 0) return mapped.slice(0, maxChoices);
-      }
-    } else if (
-      typeof GameState.aiDecision !== 'undefined' &&
-      GameState.aiDecision &&
-      GameState.aiDecision.choiceIndex !== undefined
-    ) {
-      // 互換性フェーズ
-      const idx = GameState.aiDecision.choiceIndex;
-      delete GameState.aiDecision.choiceIndex; // 使い終わったら消去
-      const indices = Array.isArray(idx) ? idx : [idx];
-      const mapped = mapIndicesToChoices(indices);
-      if (mapped.length > 0) return mapped.slice(0, maxChoices);
-    }
-
-    // 2. 意思決定時に決定していない場合（Easy or フォールバック）
     if (GameState.aiLevel <= 1) {
-      // Easy: ランダム
+      // Easy AI: ランダム
       const shuffled = shuffleArray([...choices]);
       return shuffled.slice(0, Math.min(maxChoices, choices.length));
     } else {
-      // Normal/Hard: ここで簡易的にシミュレーション
-      // 本来は意思決定時に行われるべきだが、フォールバックとして実装
-      console.log('AI performing on-the-fly skill choice simulation');
-      const savedRNG = getCurrentRNG();
-      try {
-        const scoredChoices = [];
-        const originalBoard = GameState.enemyBoard.map((c) =>
-          c ? JSON.parse(JSON.stringify(c)) : null
-        );
-        const originalPlayerBoard = GameState.playerBoard.map((c) =>
-          c ? JSON.parse(JSON.stringify(c)) : null
-        );
-
-        for (let i = 0; i < choices.length; i++) {
-          setCurrentRNG(savedRNG);
-          const cloneCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
-          const simState = {
-            playerBoard: originalPlayerBoard.map(cloneCard),
-            enemyBoard: originalBoard.map(cloneCard),
-            playerHand: GameState.playerHand.map(cloneCard),
-            enemyHand: GameState.enemyHand.map(cloneCard),
-            playerDeck: GameState.playerDeck.map(cloneCard),
-            enemyDeck: GameState.enemyDeck.map(cloneCard),
-            playerDiscard: GameState.playerDiscard.map(cloneCard),
-            enemyDiscard: GameState.enemyDiscard.map(cloneCard),
-            playerHP: GameState.playerHP,
-            enemyHP: GameState.enemyHP,
-            playerSP: GameState.playerSP,
-            enemySP: GameState.enemySP,
-            playerMaxHP: GameState.playerMaxHP,
-            enemyMaxHP: GameState.enemyMaxHP,
-            extraTurnCount: GameState.extraTurnCount,
-            attackSkipCount: GameState.attackSkipCount,
-            valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
-            valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
-          };
-          // 簡易シミュレーション
-          const lane = GameState.enemyBoard.indexOf(card);
-          let score = -Infinity;
-          if (lane !== -1) {
-            applyActiveSkillLogic(
-              simState,
-              'red',
-              lane,
-              choices[i].id,
-              choices[i].value
-            );
-            calculateCombatPhase(simState, 'blue');
-            // スコア計算
-            score = simState.enemyHP - simState.playerHP;
-            for (let b of simState.enemyBoard) if (b) score += b.currentPower;
-          }
-          scoredChoices.push({ choice: choices[i], score });
-        }
-        scoredChoices.sort((a, b) => b.score - a.score);
-        return scoredChoices
-          .slice(0, Math.min(maxChoices, choices.length))
-          .map((x) => x.choice);
-      } finally {
-        setCurrentRNG(savedRNG);
-      }
+      // Normal以上: 常に最新盤面に基づいた直前全通りシミュレーションで最善の選択肢を決定
+      if (GameState.gameMode !== 'online') await sleep(AI_THINKING_DURATION);
+      return evaluateAdhocSkillChoice(card, choices, maxChoices, 'red');
     }
   }
 
