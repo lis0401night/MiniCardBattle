@@ -233,7 +233,20 @@ export async function executeEnemyAI() {
 }
 
 /**
- * トークン配置レーンの選択（難易度別ディスパッチャ）
+ * トークンおよびスキル召喚カードの配置レーン選択（難易度別ディスパッチャ）。
+ *
+ * 【直前シミュレーション原則】
+ * 通常AI（aiLevel >= 2）では、事前計画の固定レーンを再生するのではなく、
+ * 最新盤面に基づいた直前シミュレーション（evaluateAdhocTokenLanes）を実行して
+ * 最善の配置レーン（空き枠または有意義な被弾カード上書き）を決定する。
+ *
+ * @param {Array<number>} allLanes - 選択候補レーンの配列 (例: [0, 1, 2])
+ * @param {'red' | 'blue'} owner - 配置を行うプレイヤー陣営
+ * @param {object|null} tokenCard - 配置対象のカード/トークンオブジェクト
+ * @param {number} count - 配置を決定するレーン数
+ * @param {boolean} [canCancel=false] - 配置キャンセル（スキップ）を許可するかどうか
+ * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点等）を検証するかどうか
+ * @returns {Array<number>} 決定された配置レーンインデックス配列
  */
 export function evaluateBestLanesForToken(
   allLanes,

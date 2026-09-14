@@ -35,6 +35,77 @@ import {
   VALKYRIA_GUARD_TURNS,
 } from './engine.js';
 
+/**
+ * =========================================================================================
+ * 【Mini Card Battle - AI思考ロジック設計原則（Architecture Principles）】
+ * =========================================================================================
+ *
+ * 本AIシステムは、大局的な計画性と戦況変化への即応性を両立させるため、
+ * 「事前シミュレーション」と「直前シミュレーション」の二重構造を採用し、
+ * かつ計算量の爆発を防ぐための「重複排除（枝刈り）」と「合理的な上書き判定」を徹底している。
+ *
+ * -----------------------------------------------------------------------------------------
+ * ■ 原則 1: 事前シミュレーション（Lookahead Pre-simulation）の役割と方針
+ * -----------------------------------------------------------------------------------------
+ * 1. 目的:
+ *    - ターン開始時や手札プレイ決定時（getBestSimulatedMove）において、手札からどのカードを
+ *      どのレーンに出すべきか、リーダースキルを使うべきかの「大局方針」を決定する。
+ * 2. 探索深度（Depth 4）:
+ *    - 手札の通常召喚から派生する多段連鎖（例: 手札ジャッカル① → 召集ジャッカル② →
+ *      召集ジャッカル③ → 召集ミミック④）を最大4手先まで再帰的にツリー展開し、
+ *      連鎖が最後まで完遂した盤面の合計パワーや戦闘結果を完全予測する。
+ * 3. アクションキュー（ActionQueue）の策定:
+ *    - 連鎖スキルで選ぶべきカードや配置レーンを事前計画キューとして生成する。
+ *
+ * -----------------------------------------------------------------------------------------
+ * ■ 原則 2: 直前シミュレーション（Ad-hoc Just-in-Time Simulation）の役割と方針
+ * -----------------------------------------------------------------------------------------
+ * 1. 目的:
+ *    - 実際の対局中、カードが場に出てスキルが発動する「まさにその瞬間（skillLogic.js）」に、
+ *      最新の盤面状況・相手のリアクション・最新デッキ残数に基づき、最善の選択をアドホックに再計算する。
+ * 2. 事前計画キューの消費と動的補正:
+ *    - スキル発動時に事前計画（consumeAIAction）をクリーンアップし、常にその場の実盤面で
+ *      直前シミュレーション関数（evaluateAdhocAssembleMove / evaluateBestLanesForToken 等）を実行する。
+ * 3. 相手の妨害（雷撃被弾・バフ・デバフ等）への柔軟な適応:
+ *    - 例えば、事前シミュレーション段階では「無傷で3体横並び」を想定していても、
+ *      手札から出した1体目が相手の「雷撃」でパワー1に被弾した場合、直前シミュレーションが
+ *      「中央にパワー1の弱体化カードが存在する」という最新の事実を即座に認識する。
+ *    - これにより、満杯になった盤面において被弾したパワー1の味方を的確に上書きして
+ *      戦況を更新するなど、戦況のズレに自動適応した最善手を打つことができる。
+ *
+ * -----------------------------------------------------------------------------------------
+ * ■ 原則 3: 重複排除（Deduplication / Pruning）の原則
+ * -----------------------------------------------------------------------------------------
+ * 1. カードシグネチャ（ID・パワー・所持スキル構成）に基づく重複探索排除:
+ *    - 単なる「同一カードID（同名カード）」か否かだけで判断するのではなく、カードID・現在のパワー・
+ *      所持スキル構成（値や選択グループ含む）までを完全に含むカードシグネチャ（getCardSignature）を用いて
+ *      完全一致する等価なカードのみ重複シミュレーションを排除する。
+ *    - バフや弱体化、スキルの有無などによってステータスや能力が異なるカードは、同名であっても別カードとして
+ *      正当に探索・評価される。
+ *    - 完全等価なユニークカード候補（uniqueCards）のみを評価することで、同名・同能力のカードが複数あっても
+ *      探索の重複を防ぎ、常に超高速で最善手を判定できる。
+ * 2. 状態の等価性評価:
+ *    - レーン配置やカード選択において、結果として同一の盤面状態（Board State）を生み出す枝は
+ *      早期に刈り取り、探索効率を極大化する。
+ *
+ * -----------------------------------------------------------------------------------------
+ * ■ 原則 4: 全合法レーンの網羅検証と自然な盤面評価
+ * -----------------------------------------------------------------------------------------
+ * 1. レーン網羅検証の徹底:
+ *    - 「空き枠判定」やパワー比較による恣意的なスキップ・除外は一切行わず、全合法レーンを平等に評価する。
+ * 2. 必要に応じた上書き（戦況改善）の自然な評価:
+ *    - 相手の攻撃や呪文で弱体化した味方（例: パワー1）をより強いカード（パワー3や4）で上書きして
+ *      そのレーンの戦力を改善する場合や、盤面が満杯の時により高打点のカードで盤面パワーを更新する場合など、
+ *      有意義な手はシミュレーション評価（evaluateTurnOutcome）によって正当に高評価される。
+ * 3. 意味のない上書きの自然な劣後・排除:
+ *    - 既存の味方のパワーと同等以下のカードを重ねるような「戦力改善が一切見込めない上書き」や、
+ *      空き枠があるにもかかわらず健全な味方を無駄に破壊するような愚手は、
+ *      事前のハードコードで除外するのではなく、全レーンを等しくシミュレートした結果として
+ *      盤面戦力・生存数などの総合スコアにより自然に最善手から劣後・排除される。
+ *    - 健全な味方を無駄に破壊する上書きに対して、安易に連鎖ボーナスを与えて過大評価することを厳禁とする。
+ * =========================================================================================
+ */
+
 // 判定補助: カードが何らかのアクティブスキルを持っているか（シミュレーション時の一時的な破壊を防ぐため）
 function hasActiveSkill(c) {
   if (!c) return false;
@@ -1382,7 +1453,7 @@ export function getBestSimulatedMove() {
     leaderSkillContext = undefined,
     usedDeck = []
   ) {
-    if (depth >= 2) return [[]];
+    if (depth >= 4) return [[]];
 
     let availableLanes = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
 
@@ -2524,7 +2595,7 @@ export function getBestSimulatedMove() {
               return results;
             };
 
-            if (depth < 2 && effectiveSkills.length > 0) {
+            if (depth < 4 && effectiveSkills.length > 0) {
               // 上書き配置されるカード（通常カードのみ）があれば、一時墓地バッファの初期値として渡す
               let initialDiscarded = [];
               if (
@@ -3000,27 +3071,6 @@ export function getBestSimulatedMove() {
               for (let actionQ of qs) {
                 if (actionQ.length === 0) continue;
                 const fA = actionQ[0];
-
-                // 配置レーンが重複している場合は避ける（他に空きがある場合）
-                let overlapLanes = [];
-                if (Array.isArray(tokenLanes)) overlapLanes = tokenLanes;
-                else if (tokenLanes && tokenLanes.allied)
-                  overlapLanes = tokenLanes.allied;
-
-                const isOverlap =
-                  overlapLanes &&
-                  overlapLanes.length > 0 &&
-                  overlapLanes.includes(fA.laneIdx);
-                if (isOverlap) {
-                  // リーダースキル(before)でトークン配置後の盤面で空きレーンを判定する
-                  const currentEmpty = myBoard.filter((l) => l === null).length;
-                  const tokensFillingEmpty = overlapLanes.filter(
-                    (l) => myBoard[l] === null
-                  ).length;
-                  const effectiveEmptyCount = currentEmpty - tokensFillingEmpty;
-                  // 重複しているが他に空きがあるなら、わざわざトークンを上書きする必要はないのでスキップ
-                  if (effectiveEmptyCount >= 1) continue;
-                }
 
                 if (
                   action === 'devilhunter_resurrect' ||
@@ -4115,10 +4165,6 @@ export function evaluateBestResurrectChoice(
     ? initialSimState.enemySealedLanes || [0, 0, 0]
     : initialSimState.playerSealedLanes || [0, 0, 0];
 
-  const boardArray = isRed
-    ? initialSimState.enemyBoard
-    : initialSimState.playerBoard;
-
   // 封印されていない全レーン（0, 1, 2）
   // ルール厳守: 「復活」「傀儡」は配置（Place）のため、制約チェック（legendary/takeover等）はなし
   const candidateLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
@@ -4126,9 +4172,8 @@ export function evaluateBestResurrectChoice(
     return { selectedCard: null, laneIdx: null };
   }
 
-  // 空きレーンを優先的に探索（空きレーンがあれば空きレーンのみ、無ければ上書きも探索）
-  const emptyLanes = candidateLanes.filter((l) => boardArray[l] === null);
-  const lanesToTest = emptyLanes.length > 0 ? emptyLanes : candidateLanes;
+  // 封印されていない全候補レーン（空き枠・上書き配置問わず）を平等にシミュレーション
+  const lanesToTest = candidateLanes;
 
   const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 }; // 左(1) > 右(2) > 中央(3)
 
@@ -4769,7 +4814,19 @@ export function evaluateAdhocSummonMove(
 
 /**
  * 召集（assemble）のアドホック（発動直前）シミュレーション評価。
- * 最新の盤面・デッキに基づき、デッキから条件を満たす最善カードを決定する。
+ *
+ * 【直前シミュレーション原則】
+ * 実際の対局中、カードが場に出て「召集」が発動する瞬間に最新の盤面・相手の妨害（雷撃被弾等）・
+ * 最新デッキ残数に基づき、最善の召集カードをリアルタイムに決定する。
+ *
+ * 【重複排除（枝刈り）原則】
+ * 手札探索や選択スキルと同様に、カードシグネチャ（ID・パワー・スキル構成）に基づく重複シミュレーションを
+ * 排除し、実質的に同一ステータス・同一能力の重複候補を枝刈りすることで探索コストを極小化する。
+ * 同名カードであってもパワーや能力が異なる場合は正当に別候補として評価される。
+ *
+ * 【全合法レーン網羅検証原則】
+ * 恣意的なレーン除外を行わず、空き枠・上書き配置を問わずすべての合法レーンを網羅的にシミュレートし、
+ * evaluateTurnOutcome による総合スコア評価（盤面戦力、生存数、与ダメージ等）によって客観的に最善手を決定する。
  *
  * @param {Array<object>} deck - デッキ配列
  * @param {object} skObj - スキル定義オブジェクト
@@ -4814,66 +4871,143 @@ export function evaluateAdhocAssembleMove(
   if (validCards.length === 0) return null;
   if (validCards.length === 1) return validCards[0];
 
+  // カードシグネチャ（ID・パワー・スキル構成）に基づく重複シミュレーションの排除
+  const seenCards = new Set();
+  const uniqueCards = [];
+  for (const card of validCards) {
+    const k = getCardSignature(card);
+    if (!seenCards.has(k)) {
+      seenCards.add(k);
+      uniqueCards.push(card);
+    }
+  }
+  if (uniqueCards.length === 1) return uniqueCards[0];
+
   const initialSimState = buildInitialSimState();
   const isRed = owner === 'red';
+  const sealed = isRed
+    ? initialSimState.enemySealedLanes
+    : initialSimState.playerSealedLanes;
+
+  // 封印されていないレーン
+  const unsealedLanes = [0, 1, 2].filter((l) => !sealed || sealed[l] === 0);
 
   let bestScore = isRed ? -Infinity : Infinity;
-  let bestCard = validCards[0];
+  let bestCard = uniqueCards[0];
 
-  for (const card of validCards) {
-    const simState = structuredClone(initialSimState);
-    const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
-    const targetDiscard = isRed
-      ? simState.enemyDiscard
-      : simState.playerDiscard;
+  for (const card of uniqueCards) {
+    // 召喚制約のチェック（伝説、挑戦、生贄、頂点等）
+    const validSummonLanes = getValidSummonLanes(owner, card, initialSimState);
+    let candidateLanes = unsealedLanes.filter((l) =>
+      validSummonLanes.includes(l)
+    );
 
-    const existing = targetBoard[defaultLane];
-    if (existing && !existing.isToken) {
-      targetDiscard.push(existing);
+    if (candidateLanes.length === 0) {
+      // 合法配置レーンがない場合はデフォルトレーンをフォールバック候補とする
+      candidateLanes = [defaultLane];
     }
 
-    const assembleCard = cloneCard(card);
-    assembleCard.owner = owner;
-    assembleCard.skillTriggered = false;
-    assembleCard.currentPower = assembleCard.power || 0;
-    assembleCard.basePower = assembleCard.power || 0;
+    // 各候補レーン（空き枠・上書き配置問わず全合法レーン）に配置した盤面をシミュレート
+    for (const targetLane of candidateLanes) {
+      const simState = structuredClone(initialSimState);
+      const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+      const targetDiscard = isRed
+        ? simState.enemyDiscard
+        : simState.playerDiscard;
 
-    if (hasActiveSkill(assembleCard)) {
-      assembleCard.isSkillResolving = true;
-    }
+      const existing = targetBoard[targetLane];
 
-    targetBoard[defaultLane] = assembleCard;
-    simState.lastPlayedLane = defaultLane;
-
-    if (Array.isArray(assembleCard.skills)) {
-      assembleCard.skills.forEach((sk) => {
-        if (sk.id !== 'trigger' && sk.id !== 'assemble') {
-          applyActiveSkillLogic(
-            simState,
-            owner,
-            defaultLane,
-            sk.id,
-            sk.value,
-            [],
-            null,
-            undefined
-          );
-        }
-      });
-    }
-
-    processDestructionTriggers(simState, []);
-    const score = evaluateTurnOutcome(simState, owner);
-
-    if (isRed) {
-      if (score > bestScore) {
-        bestScore = score;
-        bestCard = card;
+      if (existing && !existing.isToken) {
+        targetDiscard.push(existing);
       }
-    } else {
-      if (score < bestScore) {
-        bestScore = score;
-        bestCard = card;
+
+      const assembleCard = cloneCard(card);
+      assembleCard.owner = owner;
+      assembleCard.skillTriggered = false;
+      assembleCard.currentPower = assembleCard.power || 0;
+      assembleCard.basePower = assembleCard.power || 0;
+
+      if (hasActiveSkill(assembleCard)) {
+        assembleCard.isSkillResolving = true;
+      }
+
+      targetBoard[targetLane] = assembleCard;
+      simState.lastPlayedLane = targetLane;
+
+      if (Array.isArray(assembleCard.skills)) {
+        assembleCard.skills.forEach((sk) => {
+          if (sk.id !== 'trigger' && sk.id !== 'assemble') {
+            applyActiveSkillLogic(
+              simState,
+              owner,
+              targetLane,
+              sk.id,
+              sk.value,
+              [],
+              null,
+              undefined
+            );
+          }
+        });
+      }
+
+      processDestructionTriggers(simState, []);
+      let score = evaluateTurnOutcome(simState, owner);
+
+      // 【召集連鎖の評価】
+      // 候補カード自身が「召集（assemble）」スキルを持ち、デッキにさらに対象カードが存在し、
+      // かつ次のカードを展開して盤面をさらに改善できる余地（空き枠または弱体化味方の戦力向上）がある場合、連鎖価値を加算
+      const assembleSk = assembleCard.skills?.find((s) => s.id === 'assemble');
+      if (assembleSk) {
+        const childSelfId = assembleCard.baseId || assembleCard.id;
+        const isChildSelf = Boolean(assembleSk.self || assembleSk.targetSelf);
+        const nextTargets = deck.filter((dc) => {
+          if (dc.id === card.id || dc.baseId === card.baseId) {
+            const countInDeck = deck.filter(
+              (c) => (c.baseId || c.id) === (card.baseId || card.id)
+            ).length;
+            if (countInDeck <= 1 && !hasSkill(dc, 'all_forms')) return false;
+          }
+          if (isChildSelf && childSelfId) {
+            return matchesCardId(dc, childSelfId);
+          }
+          return false;
+        });
+
+        if (nextTargets.length > 0) {
+          const maxNextPower = Math.max(
+            ...nextTargets.map((t) => t.power || 0)
+          );
+          // targetLane 配置後の盤面において、別の空きレーンがあるか、
+          // または被弾・デバフ等で弱体化（currentPower < basePower）しており戦力向上が見込める味方がいるか判定
+          const hasRoomForImprovement = unsealedLanes.some((l) => {
+            if (l === targetLane) return false;
+            const occupant = targetBoard[l];
+            if (occupant === null) return true; // 空きレーンあり
+            const isWeakened =
+              (occupant.currentPower || 0) <
+              (occupant.basePower || occupant.power || 0);
+            return isWeakened && (occupant.currentPower || 0) < maxNextPower; // 弱体化味方の戦力改善
+          });
+
+          if (hasRoomForImprovement) {
+            const bonus = 1500;
+            if (isRed) score += bonus;
+            else score -= bonus;
+          }
+        }
+      }
+
+      if (isRed) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestCard = card;
+        }
+      } else {
+        if (score < bestScore) {
+          bestScore = score;
+          bestCard = card;
+        }
       }
     }
   }
@@ -5041,12 +5175,14 @@ export function evaluateAdhocSkillChoice(
  * @param {object} tokenCard - 配置または召喚するカードオブジェクト
  * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）を適用するか
  * @param {boolean} [canCancel=false] - 配置キャンセルを候補に含めるか
+ * @param {number[]|null} [candidateLanes=null] - 配置候補レーンの配列（分身の隣接レーン制限など）
  * @returns {number[]|null} 最善レーンの配列。キャンセルが最善の場合は null、候補なしの場合は空配列
  */
 export function evaluateAdhocTokenLanes(
   tokenCard,
   checkConstraints = true,
-  canCancel = false
+  canCancel = false,
+  candidateLanes = null
 ) {
   /*
   console.log(`[AI CALL Debug] evaluateAdhocTokenLanes start.
@@ -5059,7 +5195,10 @@ export function evaluateAdhocTokenLanes(
   const initialSimState = buildInitialSimState();
 
   const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
-  const allLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
+  const unsealedLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
+  const allLanes = Array.isArray(candidateLanes)
+    ? candidateLanes.filter((l) => unsealedLanes.includes(l))
+    : unsealedLanes;
 
   // 配置可能なレーンを抽出（召喚制約のチェック）
   let validLanes = allLanes.filter((l) => {
@@ -6017,7 +6156,7 @@ export function evaluateAdhocTokenLanes(
     forcedLane = undefined,
     leaderSkillContext = undefined
   ) {
-    if (depth >= 2) return [[]];
+    if (depth >= 4) return [[]];
 
     let availableLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
 
@@ -6174,7 +6313,7 @@ export function evaluateAdhocTokenLanes(
               });
           }
 
-          if (depth < 2 && effectiveSkills.length > 0) {
+          if (depth < 4 && effectiveSkills.length > 0) {
             // 上書き配置されるカード（通常カードのみ）があれば、一時墓地バッファの初期値として渡す
             let initialDiscarded = [];
             if (
@@ -6476,7 +6615,8 @@ export function getNormalTokenLanes(
     const results = evaluateAdhocTokenLanes(
       tokenCard,
       checkConstraints,
-      canCancel
+      canCancel,
+      allLanes
     );
     if (results === null) return []; // キャンセル判定
     if (results.length > 0) return results.slice(0, count);
