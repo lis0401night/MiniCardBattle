@@ -1673,3 +1673,9 @@ export const DAMAGE_PLAYER_SKILL_IDS = ['artillery', 'decree', 'fate'];
  * AIは思考シミュレーション時に常に最高の結果を想定して盤面・打点を評価する。
  */
 export const FATE_ESTIMATED_DAMAGE = 3;
+
+/**
+ * 変身（metamorph）スキルのAI思考シミュレーション用推定パワー定数
+ * 変身スキルは全カードの中からランダムに選ばれるため、AIシミュレーションでは平均的な期待値パワー（5）として評価する。
+ */
+export const METAMORPH_ESTIMATED_POWER = 5;

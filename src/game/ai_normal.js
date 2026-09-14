@@ -248,6 +248,68 @@ const getCombinations = (arr, k) => {
 };
 
 /**
+ * スキル選択肢（choices）から指定個数を選ぶインデックスの組み合わせを生成し、
+ * 実質的に同一の効果となる組み合わせ（同名スキル・同一値・同一召喚ID）をユニーク化（重複排除）して返却する。
+ *
+ * 例: シスターズ（buff×6, ambush×6）から6個選ぶ場合、
+ * 数学的な全組み合わせ 924通り から、実質的に効果が異なる 7パターン の代表インデックス配列に圧縮する。
+ *
+ * @param {Array<object>} choicesArray - 選択肢オブジェクトの配列
+ * @param {number} count - 選択する個数
+ * @returns {Array<number[]>} ユニーク化された選択インデックス配列のリスト
+ */
+export const getUniqueChoiceCombinations = (choicesArray, count) => {
+  if (!choicesArray || choicesArray.length === 0 || count <= 0) {
+    return [];
+  }
+  const maxK = Math.min(choicesArray.length, count);
+  const idxs = choicesArray.map((_, i) => i);
+  const rawCombinations = getCombinations(idxs, maxK);
+  if (rawCombinations.length <= 1) {
+    return rawCombinations;
+  }
+
+  const seenSignatures = new Set();
+  const uniqueCombinations = [];
+
+  for (const combo of rawCombinations) {
+    // 組み合わせに含まれる各スキルのシグネチャをソートして結合
+    const sig = combo
+      .map((i) => {
+        const sk = choicesArray[i];
+        if (!sk) return 'null';
+        return `${sk.id}_${sk.value || 0}_${sk.summonId || ''}_${sk.choiceGroup || ''}`;
+      })
+      .sort()
+      .join('|');
+
+    if (!seenSignatures.has(sig)) {
+      seenSignatures.add(sig);
+      uniqueCombinations.push(combo);
+    }
+  }
+
+  return uniqueCombinations;
+};
+
+/**
+ * 手札カードの同一性を判定するためのシグネチャ（文字列）を生成する。
+ * 手札内の同名・同ステータス・同スキルの完全同一カードを重複探索しないために使用する。
+ *
+ * @param {object} card - カードオブジェクト
+ * @returns {string} カードシグネチャ文字列
+ */
+export function getCardSignature(card) {
+  if (!card) return 'null';
+  const skillsStr = Array.isArray(card.skills)
+    ? card.skills
+        .map((s) => `${s.id}_${s.value || 0}_${s.choiceGroup || ''}`)
+        .join(',')
+    : '';
+  return `${card.id || card.baseId}_${card.power ?? card.basePower ?? 0}_${skillsStr}`;
+}
+
+/**
  * 【AI設計の絶対原則 - グローバルルール】
  * ノーマル以上のAIは、実行可能な全ての選択肢（手札、配置レーン、スキルによる対象選択、分岐）を
  * 網羅的に検証しなければならない。
@@ -1280,27 +1342,8 @@ export function processActionSequence(
       flushPendingSimSkills(simState, simState.enemyBoard[i], i);
     }
 
-    // アクションキュー全解決後、敵の攻撃（プレイヤーのダイレクトアタック）をシミュレートする前に
-    // 全カードのスキル解決保護フラグ（isSkillResolving）を強制解除し、パワー0以下のカードを盤面から完全に除去（null化）する
-    [simState.playerBoard, simState.enemyBoard].forEach((b) => {
-      if (Array.isArray(b)) {
-        b.forEach((c) => {
-          if (c) c.isSkillResolving = false;
-        });
-      }
-    });
-    processDestructionTriggers(simState, []);
-
-    // 【修正】相手手札の非公開情報（誘発スキル）はAIの事前シミュレーションには含めない（フェアネス維持）
-
-    if (!(simState.extraTurnCount > 0)) {
-      // 【絶対厳守】相手（blue）の戦闘フェーズのみをシミュレート（AIの返しの攻撃は次ターンなので範囲外）
-      simulateCombatStep(simState, 'blue');
-    } else {
-      simState.extraTurnCount--;
-      simState.combatDamageTaken = 0;
-      simState.phaseBypassDamageTaken = 0;
-    }
+    // アクションキュー全解決後、客観的なターン進行ルールに従って戦闘フェーズを実行
+    advanceCombatPhase(simState);
 
     return simState;
   } finally {
@@ -1426,8 +1469,7 @@ export function getBestSimulatedMove() {
           if (c) cc = c.value || 1;
         }
         cc = Math.min(cc, card.choices.length);
-        const idxs = card.choices.map((_, i) => i);
-        choiceCombinations = getCombinations(idxs, Math.min(idxs.length, cc));
+        choiceCombinations = getUniqueChoiceCombinations(card.choices, cc);
       }
       if (Array.isArray(card.choices2)) {
         let cc2 = 1;
@@ -1436,11 +1478,7 @@ export function getBestSimulatedMove() {
           : null;
         if (c2) cc2 = c2.value || 1;
         cc2 = Math.min(cc2, card.choices2.length);
-        const idxs2 = card.choices2.map((_, i) => i);
-        choice2Combinations = getCombinations(
-          idxs2,
-          Math.min(idxs2.length, cc2)
-        );
+        choice2Combinations = getUniqueChoiceCombinations(card.choices2, cc2);
       }
     }
 
@@ -2407,10 +2445,9 @@ export function getBestSimulatedMove() {
                 const cArr =
                   sk.choiceGroup === 2 ? card.choices2 : card.choices;
                 if (cArr) {
-                  const idxs = cArr.map((_, i) => i);
-                  let combinations = getCombinations(
-                    idxs,
-                    Math.min(idxs.length, cc)
+                  let combinations = getUniqueChoiceCombinations(
+                    cArr,
+                    Math.min(cArr.length, cc)
                   );
                   for (let combo of combinations) {
                     // 選択したスキルをスキルリストの先頭に追加して再帰（連鎖をシミュレート）
@@ -2442,10 +2479,9 @@ export function getBestSimulatedMove() {
                 const fArr =
                   sk.choiceGroup === 2 ? card.choices2 : card.choices;
                 if (fArr) {
-                  const idxs = fArr.map((_, i) => i);
-                  let combinations = getCombinations(
-                    idxs,
-                    Math.min(idxs.length, fc)
+                  let combinations = getUniqueChoiceCombinations(
+                    fArr,
+                    Math.min(fArr.length, fc)
                   );
                   for (let combo of combinations) {
                     const chosenSkills = combo
@@ -2554,8 +2590,15 @@ export function getBestSimulatedMove() {
       passSimState
     );
 
+  // 手札内の同一カードの重複探索を排除（先頭の1枚のみを探索して計算量を削減）
+  const seenHandCards = new Set();
   for (let i = 0; i < hand.length; i++) {
     let card = hand[i];
+    if (!card) continue;
+    const cardSig = getCardSignature(card);
+    if (seenHandCards.has(cardSig)) continue;
+    seenHandCards.add(cardSig);
+
     let queues = buildCardPlayTree(card, i, 'play', hand, discard, [i], [], 0);
 
     for (let actionQ of queues) {
@@ -2762,8 +2805,14 @@ export function getBestSimulatedMove() {
       tokenLanePatterns = avail.length > 0 ? avail.map((l) => [l]) : [null];
     }
 
+    // リーダースキル併用時も手札内の同一カードの重複探索を排除（先頭の1枚のみ探索）
+    const seenSkillHandCards = new Set();
     for (let i = 0; i < hand.length; i++) {
       let card = hand[i];
+      if (!card) continue;
+      const cardSig = getCardSignature(card);
+      if (seenSkillHandCards.has(cardSig)) continue;
+      seenSkillHandCards.add(cardSig);
       for (let tokenLanes of tokenLanePatterns) {
         const config = GameState.enemyConfig;
         const leaderCard =
@@ -3560,7 +3609,8 @@ export function evaluateSimState(state) {
     // ② プレイヤー側のカード：パワー集計 ＋ ユーティリティ価値（マイナス評価：相手の強力スキルを残さない）
     if (state.playerBoard[i]) {
       const opC = state.playerBoard[i];
-      opPower += Number(opC.currentPower ?? opC.power ?? 0);
+      const opCurrentP = Number(opC.currentPower ?? opC.power ?? 0);
+      opPower += opCurrentP;
 
       if (Array.isArray(opC.skills)) {
         opC.skills.forEach((sk) => {
@@ -3579,6 +3629,15 @@ export function evaluateSimState(state) {
             opUtilityScore += getSkillUtilityVal(sk.id, false);
           }
         });
+      }
+
+      // 相手カードが防御・拘束・凍結状態（stunTurns > 0）の場合、
+      // 次ターン以降も攻撃不能であり続ける（無力化される）価値をAIの妨害ユーティリティとして加点
+      // 【相手パワー連動型】残存ターン数 × min(相手パワー, 10) × 1.5pt（パワー0でも最低1保証）
+      if (opC.stunTurns > 0) {
+        const opPowerClamped = Math.min(Math.max(0, opCurrentP), 10);
+        const effectivePower = Math.max(1, opPowerClamped);
+        myUtilityScore += opC.stunTurns * effectivePower * 1.5;
       }
     }
   }
@@ -3648,12 +3707,12 @@ export function evaluateSimState(state) {
   let s8 = 8 - myCount - opCount;
 
   // スロット9: 封印ボーナス (空のレーンを封印した際の優先度：中央 > 左 > 右)
-  // パワー差等で同点になった場合のタイブレークとして微小なスコアを加算
+  // パワー差等で同点になった場合のタイブレークとして封印ターン数に応じた微小スコアを加算
   let s9 = 0;
   if (state.playerSealedLanes) {
-    if (state.playerSealedLanes[1] > 0) s9 += 0.03; // 中央
-    if (state.playerSealedLanes[0] > 0) s9 += 0.02; // 左
-    if (state.playerSealedLanes[2] > 0) s9 += 0.01; // 右
+    if (state.playerSealedLanes[1] > 0) s9 += 0.03 * state.playerSealedLanes[1]; // 中央
+    if (state.playerSealedLanes[0] > 0) s9 += 0.02 * state.playerSealedLanes[0]; // 左
+    if (state.playerSealedLanes[2] > 0) s9 += 0.01 * state.playerSealedLanes[2]; // 右
   }
 
   // スロット10: 被ダメージペナルティ
@@ -3672,7 +3731,9 @@ export function evaluateSimState(state) {
 }
 
 /**
- * 指定陣営の戦闘フェーズ（無敵減衰・パッシブスキル・状態異常減衰・戦闘ダメージ計算・破壊処理）をシミュレートする共通関数。
+ * 指定陣営の戦闘フェーズ（パッシブスキル・状態異常減衰・戦闘ダメージ計算・破壊処理）をシミュレートする共通関数。
+ * ※実戦では無敵（invincible）の減衰はターン開始時（triggerStartTurnPassive）に行われるため、
+ * 戦闘直前の減衰は行わず、カードの無敵防御能力を正常に機能させる。
  *
  * @param {object} simState - シミュレーション盤面状態
  * @param {'red' | 'blue'} attackerSide - 攻撃側陣営 ('blue' = プレイヤー, 'red' = 敵AI)
@@ -3681,9 +3742,6 @@ export function simulateCombatStep(simState, attackerSide) {
   const isRed = attackerSide === 'red';
   const board = isRed ? simState.enemyBoard : simState.playerBoard;
   const hpBeforeCombat = isRed ? simState.playerHP : simState.enemyHP;
-
-  // 攻撃側カードの無敵スキル持続ターンを減退・解除
-  decayInvincibleSkills(board);
 
   // パッシブスキルの適用
   applyPassiveSkillLogic(simState, attackerSide);
@@ -3716,41 +3774,105 @@ export function simulateCombatStep(simState, attackerSide) {
 }
 
 /**
- * 誘発発動後の盤面を、現在のターン状況（自ターンか相手ターンか）に応じて進行させ、
- * 総合盤面スコアを評価する共通シミュレーション関数。
+ * シミュレーション盤面に対し、客観的なターン進行ルールに従って次の戦闘フェーズを実行する共通関数。
  *
- * @param {object} simState - シミュレーション盤面状態
- * @param {'red' | 'blue'} [triggerOwner='red'] - 誘発を行う陣営
- * @returns {number} 評価スコア（AI(red)視点のスコア）
+ * 【本ゲームの絶対的ターン進行ルール】
+ * カードプレイ、召喚時スキル発動、誘発（trigger）スキル等のメインアクションは、
+ * 自ターン・相手ターンを問わずすべて「戦闘フェーズ（COMBAT）終了後」に行われる。
+ * したがって、現在進行中ターンの戦闘フェーズは既に終了している（全行動共通の絶対的前提）。
+ *
+ * 【ターン交代後の戦闘進行】
+ * 現在進行中ターンが終了し、客観的なゲームルールに従って次のターンのターンプレイヤーへ移行する：
+ * 1. 現在が自陣（Red/AI）のターンの場合:
+ *    - 自ターンの手札プレイ、召喚時スキル、自ターン中の召喚に対する誘発など。
+ *    - ターン交代により次の相手（Blue）のターンとなり、相手の戦闘フェーズ（simulateCombatStep(simState, 'blue')）を実行。
+ *    - ※追加ターン（extraTurnCount > 0）がある場合は相手の戦闘フェーズをスキップし、カウントを減算。
+ * 2. 現在が相手（Blue/プレイヤー）のターンの場合:
+ *    - 相手の召喚に対する誘発など。
+ *    - 相手ターンが終了して次の自陣（Red）のターンとなり、自陣の戦闘フェーズ（simulateCombatStep(simState, 'red')）を実行。
+ *    - その後、両者のHPが残っていれば自陣ターン終了後に相手の反撃フェーズ（simulateCombatStep(simState, 'blue')）を実行。
+ *    - ※ターン交代に伴い無敵スキル（invincible）等の持続時間を正しく減衰（decayInvincibleSkills）させる。
+ *
+ * @param {object} simState - アクション適用後のシミュレーション盤面状態
+ * @returns {object} 戦闘フェーズ解決後のシミュレーション盤面状態
  */
-export function evaluateTriggerTurnOutcome(simState, triggerOwner = 'red') {
+export function advanceCombatPhase(simState) {
+  // アクションキュー全解決後、戦闘をシミュレートする前に
+  // 全カードのスキル解決保護フラグ（isSkillResolving）を強制解除し、パワー0以下のカードを盤面から完全に除去（null化）する
+  [simState.playerBoard, simState.enemyBoard].forEach((b) => {
+    if (Array.isArray(b)) {
+      b.forEach((c) => {
+        if (c) c.isSkillResolving = false;
+      });
+    }
+  });
+  processDestructionTriggers(simState, []);
+
   const currentTurn = GameState.currentTurn; // 現在のターンプレイヤー ('player' | 'enemy')
-  const isMyTurn =
-    (triggerOwner === 'red' && currentTurn === 'enemy') ||
-    (triggerOwner === 'blue' && currentTurn === 'player');
-  const opponent = triggerOwner === 'red' ? 'blue' : 'red';
+  const isRedTurn = currentTurn === 'enemy';
 
-  if (isMyTurn) {
-    // 【自ターン中の誘発】
-    // ① 今の自分の攻撃フェーズ（誘発カードも攻撃に参加）
-    simulateCombatStep(simState, triggerOwner);
-
-    // ② 次の相手ターンの攻撃後
-    if (simState.enemyHP > 0 && simState.playerHP > 0) {
-      simulateCombatStep(simState, opponent);
+  if (isRedTurn) {
+    // 【Red（AI）のターン中】
+    // 手札プレイ、自ターンの召喚時スキル（choice/invite/resurrect等）、自ターン中の誘発など
+    // Redの戦闘フェーズは既に終了しているため、次の相手（Blue）の戦闘フェーズをシミュレート
+    if (!(simState.extraTurnCount > 0)) {
+      simulateCombatStep(simState, 'blue');
+    } else {
+      simState.extraTurnCount--;
+      simState.combatDamageTaken = 0;
+      simState.phaseBypassDamageTaken = 0;
     }
   } else {
-    // 【相手ターン中の誘発】
-    // ① 今の相手の攻撃フェーズ（相手の攻撃を受ける・ブロック）
-    simulateCombatStep(simState, opponent);
+    // 【Blue（プレイヤー）のターン中】
+    // 相手の召喚に対する誘発など
+    // Blueの戦闘フェーズは既に終了しているため、Blueターン終了後の次のターンへ移行：
+    // ① 次のRed（自陣）のターンの戦闘フェーズ（自陣の攻撃）
+    simulateCombatStep(simState, 'red');
 
-    // ② 次の自分のターンの攻撃後
+    // ② Red攻撃後、両者が生存していれば、Redターン終了後の次のBlueターンの攻撃（相手の反撃）
     if (simState.enemyHP > 0 && simState.playerHP > 0) {
-      simulateCombatStep(simState, triggerOwner);
+      decayInvincibleSkills(simState.enemyBoard);
+      if (!(simState.extraTurnCount > 0)) {
+        simulateCombatStep(simState, 'blue');
+      } else {
+        simState.extraTurnCount--;
+        simState.combatDamageTaken = 0;
+        simState.phaseBypassDamageTaken = 0;
+      }
     }
   }
 
+  return simState;
+}
+
+/**
+ * アクション適用後の盤面において、客観的なゲームルールのターン進行に従って戦闘フェーズを進行させ、
+ * 総合盤面スコア（AI(red)視点）を評価・返却する統一シミュレーション関数。
+ * 自ターンの手札行動決定、各種直前スキル選択、誘発スキルの評価で共通利用する。
+ *
+ * @param {object} simState - アクション適用後のシミュレーション盤面状態
+ * @param {'red' | 'blue'} [_actionOwner='red'] - アクションを行った陣営（互換性パラメータ）
+ * @returns {number} 評価スコア（AI(red)視点のスコア）
+ */
+export function evaluateTurnOutcome(simState, _actionOwner = 'red') {
+  advanceCombatPhase(simState);
   return evaluateSimState(simState);
+}
+
+/**
+ * 互換性のためのエイリアス。旧 evaluateTriggerTurnOutcome 呼び出しを evaluateTurnOutcome に委譲する。
+ * @param {object} simState - シミュレーション盤面状態
+ * @param {'red' | 'blue'} [triggerOwner='red'] - スキル発動または誘発を行う陣営
+ * @param {boolean} [_isPostCombat=true] - 互換用フラグ（メインアクションは常に戦闘終了後）
+ * @returns {number} 評価スコア
+ * @deprecated evaluateTurnOutcome を使用してください。
+ */
+export function evaluateTriggerTurnOutcome(
+  simState,
+  triggerOwner = 'red',
+  _isPostCombat = true
+) {
+  return evaluateTurnOutcome(simState, triggerOwner);
 }
 
 /**
@@ -3833,7 +3955,7 @@ export function evaluateTriggerSimulation(
   // 1. 「誘発しない（パス）」候補のシミュレーション
   {
     const simState = structuredClone(initialSimState);
-    const passScore = evaluateTriggerTurnOutcome(simState, owner);
+    const passScore = evaluateTurnOutcome(simState, owner);
     bestScore = passScore;
     bestMove = { cardIdx: -1, laneIdx: -1, score: passScore };
   }
@@ -3918,7 +4040,7 @@ export function evaluateTriggerSimulation(
       processDestructionTriggers(simState, []);
 
       // ターン状況（自ターン/相手ターン）に応じた戦闘シミュレーションと評価
-      let score = evaluateTriggerTurnOutcome(simState, owner);
+      let score = evaluateTurnOutcome(simState, owner);
       // タイブレーク微調整（左 > 右 > 中央）
       score += (isRed ? 0.01 : -0.01) / lanePriorityOrder[lane];
 
@@ -3985,7 +4107,7 @@ export function evaluateBestResurrectChoice(
   let bestScore;
   {
     const passSimState = structuredClone(initialSimState);
-    bestScore = evaluateTriggerTurnOutcome(passSimState, owner);
+    bestScore = evaluateTurnOutcome(passSimState, owner);
   }
   let bestChoice = { selectedCard: null, laneIdx: null };
 
@@ -4073,7 +4195,7 @@ export function evaluateBestResurrectChoice(
       processDestructionTriggers(simState, []);
 
       // 評価スコア計算
-      let score = evaluateTriggerTurnOutcome(simState, owner);
+      let score = evaluateTurnOutcome(simState, owner);
       // タイブレーク（左 > 右 > 中央）
       score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[lane];
 
@@ -4116,7 +4238,7 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
   let bestScore;
   {
     const passSimState = structuredClone(initialSimState);
-    bestScore = evaluateTriggerTurnOutcome(passSimState, owner);
+    bestScore = evaluateTurnOutcome(passSimState, owner);
   }
   let bestIdx = -1;
 
@@ -4181,7 +4303,7 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
     consumedCard.isSkillResolving = false;
     processDestructionTriggers(simState, []);
 
-    let score = evaluateTriggerTurnOutcome(simState, owner);
+    let score = evaluateTurnOutcome(simState, owner);
     if (isRed) {
       if (score > bestScore) {
         bestScore = score;
@@ -4241,7 +4363,7 @@ export function evaluateAdhocInspireChoice(
     }
 
     processDestructionTriggers(simState, []);
-    let score = evaluateTriggerTurnOutcome(simState, owner);
+    let score = evaluateTurnOutcome(simState, owner);
     // タイブレーク微調整（左 > 右 > 中央）
     score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[candLane];
 
@@ -4295,7 +4417,7 @@ export function evaluateAdhocProtectionChoice(myBoard, owner = 'red') {
     }
 
     processDestructionTriggers(simState, []);
-    let score = evaluateTriggerTurnOutcome(simState, owner);
+    let score = evaluateTurnOutcome(simState, owner);
     score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[candLane];
 
     if (isRed) {
@@ -4339,7 +4461,7 @@ export function evaluateAdhocDominateChoice(
   let bestScore;
   {
     const passSimState = structuredClone(initialSimState);
-    bestScore = evaluateTriggerTurnOutcome(passSimState, owner);
+    bestScore = evaluateTurnOutcome(passSimState, owner);
   }
   let bestLane = -1;
 
@@ -4372,7 +4494,7 @@ export function evaluateAdhocDominateChoice(
     }
 
     processDestructionTriggers(simState, []);
-    let score = evaluateTriggerTurnOutcome(simState, owner);
+    let score = evaluateTurnOutcome(simState, owner);
     score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[oppLane];
 
     if (isRed) {
@@ -4411,8 +4533,10 @@ export function evaluateAdhocSkillChoice(
   if (!choices || choices.length === 0) return [];
   if (choices.length <= maxChoices) return [...choices];
 
-  const idxs = choices.map((_, i) => i);
-  const combinations = getCombinations(idxs, Math.min(idxs.length, maxChoices));
+  const combinations = getUniqueChoiceCombinations(
+    choices,
+    Math.min(choices.length, maxChoices)
+  );
   if (combinations.length === 0) return choices.slice(0, maxChoices);
   if (combinations.length === 1) return combinations[0].map((i) => choices[i]);
 
@@ -4454,26 +4578,78 @@ export function evaluateAdhocSkillChoice(
     for (const idx of combo) {
       const choiceSkill = choices[idx];
       if (choiceSkill) {
-        // 使役など召喚IDを持つスキルの場合、シミュレーションカードに召喚IDを一時付与して正確に解決
-        if (simCard && choiceSkill.summonId) {
+        // 選択されたスキル（パッシブ・アクティブ問わず）をカードに付与して戦闘フェーズ等で正確に解決
+        if (simCard) {
           if (!simCard.skills) simCard.skills = [];
           simCard.skills.push({ ...choiceSkill });
         }
-        applyActiveSkillLogic(
-          simState,
-          owner,
-          lane,
-          choiceSkill.id,
-          choiceSkill.value,
-          [],
-          null,
-          undefined
-        );
+
+        if (choiceSkill.id === 'ambush' || choiceSkill.id === 'servant') {
+          // 奇襲や使役などの配置を伴うスキルの場合、各レーンへの配置をシミュレートして最適レーンを選択
+          const sealed =
+            owner === 'blue'
+              ? simState.playerSealedLanes
+              : simState.enemySealedLanes;
+          const candidateLanes = [0, 1, 2].filter(
+            (l) => !sealed || sealed[l] === 0
+          );
+          let bestPlacementLane = candidateLanes[0] ?? 0;
+          let bestSubScore = isRed ? -Infinity : Infinity;
+
+          for (const candLane of candidateLanes) {
+            const testState = structuredClone(simState);
+            applyActiveSkillLogic(
+              testState,
+              owner,
+              lane,
+              choiceSkill.id,
+              choiceSkill.value,
+              [],
+              null,
+              candLane
+            );
+            processDestructionTriggers(testState, []);
+            const subScore = evaluateTurnOutcome(testState, owner);
+            if (isRed) {
+              if (subScore > bestSubScore) {
+                bestSubScore = subScore;
+                bestPlacementLane = candLane;
+              }
+            } else {
+              if (subScore < bestSubScore) {
+                bestSubScore = subScore;
+                bestPlacementLane = candLane;
+              }
+            }
+          }
+
+          applyActiveSkillLogic(
+            simState,
+            owner,
+            lane,
+            choiceSkill.id,
+            choiceSkill.value,
+            [],
+            null,
+            bestPlacementLane
+          );
+        } else {
+          applyActiveSkillLogic(
+            simState,
+            owner,
+            lane,
+            choiceSkill.id,
+            choiceSkill.value,
+            [],
+            null,
+            undefined
+          );
+        }
       }
     }
 
     processDestructionTriggers(simState, []);
-    const score = evaluateTriggerTurnOutcome(simState, owner);
+    const score = evaluateTurnOutcome(simState, owner);
 
     if (isRed) {
       if (score > bestScore) {

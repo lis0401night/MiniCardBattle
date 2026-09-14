@@ -3,6 +3,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   ACTIVE_SKILLS,
   FATE_ESTIMATED_DAMAGE,
+  METAMORPH_ESTIMATED_POWER,
 } from '../utils/constants/skills.js';
 import {
   applyEquipment,
@@ -785,12 +786,18 @@ export function applyActiveSkillLogic(
     'unleash',
     'awake',
     'awake_legendary',
+    'metamorph',
+    'assemble',
+    'summon',
+    'invite',
+    'forge',
   ];
   if (!c && requiresCard.includes(sid)) return events;
 
   switch (sid) {
     case 'choice':
-      // 選択スキル自体は純粋ロジックでは解決できない（上位のシミュレーション層で展開済みのため）
+    case 'force':
+      // 選択・命令スキル自体は純粋ロジックでは解決できない（上位のシミュレーション層で展開済みのため）
       break;
     case 'oblivion': {
       const myBoard = state.playerBoard;
@@ -871,11 +878,20 @@ export function applyActiveSkillLogic(
     }
     case 'seal': {
       // 召喚時、正面のレーンをvalターン封印する
+      // 既存の封印ターン数と比較し、大きい方の値を維持・適用する
       const sealTurns = val || 1;
       if (owner === 'blue') {
-        if (state.enemySealedLanes) state.enemySealedLanes[l] = sealTurns;
+        if (state.enemySealedLanes)
+          state.enemySealedLanes[l] = Math.max(
+            state.enemySealedLanes[l] || 0,
+            sealTurns
+          );
       } else {
-        if (state.playerSealedLanes) state.playerSealedLanes[l] = sealTurns;
+        if (state.playerSealedLanes)
+          state.playerSealedLanes[l] = Math.max(
+            state.playerSealedLanes[l] || 0,
+            sealTurns
+          );
       }
       events.push({
         type: 'leader_skill',
@@ -1501,15 +1517,19 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'bind':
-      if (eB[l]) eB[l].stunTurns = (val || 1) + 1;
+      // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する
+      if (eB[l])
+        eB[l].stunTurns = Math.max(eB[l].stunTurns || 0, (val || 1) + 1);
       break;
     case 'standby':
-      c.stunTurns = val || 1;
+      // 既存の防御・拘束ターン数と比較し、大きい方の値を維持・適用する
+      c.stunTurns = Math.max(c.stunTurns || 0, val || 1);
       break;
     case 'freeze':
+      // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する
       [l - 1, l, l + 1].forEach((j) => {
         if (j >= 0 && j < 3 && eB[j]) {
-          eB[j].stunTurns = (val || 1) + 1;
+          eB[j].stunTurns = Math.max(eB[j].stunTurns || 0, (val || 1) + 1);
         }
       });
       break;
@@ -1843,8 +1863,9 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'servant': {
-      // 【重要仕様】「使役 X」において X (val) はトークンのパワーを指す。
+    case 'servant':
+    case 'ambush': {
+      // 【重要仕様】「使役 X」「奇襲 X」において X (val) はトークンのパワーを指す。
       // 個数は常に 1体 であるため、ループは 1回 固定。
       const summonTargetPower = val || 1;
       let tIdEngine = null;
@@ -1854,6 +1875,7 @@ export function applyActiveSkillLogic(
       const skillForSummonId = c?.skills?.find(
         (s) =>
           (s.id === 'servant' ||
+            s.id === 'ambush' ||
             s.id === 'awake' ||
             s.id === 'awake_legendary' ||
             s.id === 'split') &&
@@ -1929,9 +1951,16 @@ export function applyActiveSkillLogic(
             owner,
             targetLane,
             newToken,
-            'servant',
+            sid,
             events
           );
+
+          // 奇襲（ambush）の場合、配置したレーンでただちに戦闘を行い、戦闘破壊を即座にクリーンアップ
+          if (sid === 'ambush' && b[targetLane]) {
+            b[targetLane].isSkillResolving = false;
+            applySingleCombat(state, owner, targetLane, events);
+            processDestructionTriggers(state, events);
+          }
         }
       }
       break;
@@ -2653,6 +2682,199 @@ export function applyActiveSkillLogic(
       }
       break;
     }
+    case 'draw': {
+      // 【入替(draw)スキル処理】
+      // 召喚時、手札をval枚まで捨て、同数引く
+      const myDeck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const drawCount = val || 1;
+      if (myDeck && myHand && myDeck.length > 0 && myHand.length > 0) {
+        const actualDraw = Math.min(drawCount, myDeck.length, myHand.length);
+        const dropIndices = getAIDiscardIndices(myHand, actualDraw);
+        const sorted = [...dropIndices].sort((a, b) => b - a);
+        for (const idx of sorted) {
+          myHand.splice(idx, 1);
+        }
+        for (let i = 0; i < actualDraw; i++) {
+          if (myDeck.length > 0) {
+            myHand.push(myDeck.pop());
+          }
+        }
+        events.push({ type: 'draw', side: owner, source: 'draw' });
+      }
+      state.actionUtilityBonus =
+        (state.actionUtilityBonus || 0) + drawCount * 3000;
+      break;
+    }
+    case 'salvage': {
+      // 【回収(salvage)スキル処理】
+      // 召喚時、手札をval枚まで捨て、同数自分の墓地からカードを手札に加える
+      if (isGraveKeeperActive(state)) break;
+      const discard =
+        owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
+      const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const validDiscard = discard
+        ? discard.filter((card) => card && !card.isToken)
+        : [];
+      if (validDiscard.length > 0 && hand && hand.length > 0) {
+        const salvageCount = Math.min(
+          val || 1,
+          validDiscard.length,
+          hand.length
+        );
+        const dropIndices = getAIDiscardIndices(hand, salvageCount);
+        const sorted = [...dropIndices].sort((a, b) => b - a);
+        for (const idx of sorted) {
+          hand.splice(idx, 1);
+        }
+        validDiscard.sort((a, b) => (b.power || 0) - (a.power || 0));
+        for (let i = 0; i < salvageCount; i++) {
+          const recovered = validDiscard[i];
+          const dIdx = discard.indexOf(recovered);
+          if (dIdx !== -1) discard.splice(dIdx, 1);
+          hand.push(recovered);
+        }
+        events.push({ type: 'salvage', side: owner, source: 'salvage' });
+      }
+      state.actionUtilityBonus =
+        (state.actionUtilityBonus || 0) + (val || 1) * 3500;
+      break;
+    }
+    case 'shuffle': {
+      // 【攪乱(shuffle)スキル処理】
+      // 召喚時、お互いの手札を全て捨て、墓地をリセットし、お互いにカードを3枚引く
+      state.actionUtilityBonus = (state.actionUtilityBonus || 0) + 4000;
+      events.push({ type: 'shuffle', side: owner, source: 'shuffle' });
+      break;
+    }
+    case 'leap': {
+      // 【跳躍(leap)スキル処理】
+      // 召喚時、追加ターンを1回付与（SP増加なし・攻撃なし）
+      state.extraTurnCount = (state.extraTurnCount || 0) + 1;
+      state.attackSkipCount = (state.attackSkipCount || 0) + 1;
+      events.push({ type: 'leap', side: owner, source: 'leap' });
+      break;
+    }
+    case 'recurse': {
+      // 【再帰(recurse)スキル処理】
+      // 召喚時、お互いの墓地のカードをval枚まで選択してデッキに戻す
+      if (isGraveKeeperActive(state)) break;
+      state.actionUtilityBonus =
+        (state.actionUtilityBonus || 0) + (val || 1) * 1500;
+      events.push({ type: 'recurse', side: owner, source: 'recurse' });
+      break;
+    }
+    case 'metamorph': {
+      // 【変身(metamorph)スキル処理】
+      // 召喚時、全カードの中からランダムに1枚に変身する。シミュレーションでは期待値パワーを設定
+      const metaPower = METAMORPH_ESTIMATED_POWER;
+      c.currentPower = metaPower;
+      c.power = metaPower;
+      c.basePower = metaPower;
+      events.push({
+        type: 'power_change',
+        side: owner,
+        lane: l,
+        amount: metaPower,
+        source: 'metamorph',
+      });
+      break;
+    }
+    case 'assemble': {
+      // 【召集(assemble)スキル処理】
+      // 召喚時、デッキから条件に合うカード1枚を自分のレーンに召喚する
+      const assembleBonus = val || 3;
+      c.currentPower += assembleBonus;
+      events.push({
+        type: 'power_change',
+        side: owner,
+        lane: l,
+        amount: assembleBonus,
+        source: 'assemble',
+      });
+      break;
+    }
+    case 'summon': {
+      // 【召喚(summon)スキル処理】
+      // 召喚時、手札から条件に合うカード1枚を召喚し、「虚空（パワー0）」を手札に加える
+      const summonBonus = val || 3;
+      c.currentPower += summonBonus;
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      if (myHand) {
+        const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+          name: '虚空',
+          power: 0,
+        };
+        myHand.push({
+          ...voidTpl,
+          isToken: true,
+          baseId: 'token_void',
+          uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
+        });
+      }
+      events.push({
+        type: 'power_change',
+        side: owner,
+        lane: l,
+        amount: summonBonus,
+        source: 'summon',
+      });
+      break;
+    }
+    case 'invite': {
+      // 【招来(invite)スキル処理】
+      // 召喚時、同じレーンに手札から1枚カードを召喚し、「虚空（パワー0）」を手札に加える
+      const inviteBonus = 3;
+      c.currentPower += inviteBonus;
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      if (myHand) {
+        const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+          name: '虚空',
+          power: 0,
+        };
+        myHand.push({
+          ...voidTpl,
+          isToken: true,
+          baseId: 'token_void',
+          uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
+        });
+      }
+      events.push({
+        type: 'power_change',
+        side: owner,
+        lane: l,
+        amount: inviteBonus,
+        source: 'invite',
+      });
+      break;
+    }
+    case 'forge': {
+      // 【鍛造(forge)スキル処理】
+      // 召喚時、カードが配置されているレーンに手札から「装備」を持つカードを召喚し、「虚空」を手札に加える
+      const forgeBonus = 3;
+      c.currentPower += forgeBonus;
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      if (myHand) {
+        const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+          name: '虚空',
+          power: 0,
+        };
+        myHand.push({
+          ...voidTpl,
+          isToken: true,
+          baseId: 'token_void',
+          uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
+        });
+      }
+      events.push({
+        type: 'power_change',
+        side: owner,
+        lane: l,
+        amount: forgeBonus,
+        source: 'forge',
+      });
+      break;
+    }
   }
 
   processDestructionTriggers(state, events);
@@ -3065,11 +3287,19 @@ export function applyLeaderSkillLogic(
     }
 
     for (const lane of targets) {
-      // Apply Seal
+      // Apply Seal (高い方の値を維持・適用)
       if (isBlue) {
-        if (state.enemySealedLanes) state.enemySealedLanes[lane] = 1;
+        if (state.enemySealedLanes)
+          state.enemySealedLanes[lane] = Math.max(
+            state.enemySealedLanes[lane] || 0,
+            1
+          );
       } else {
-        if (state.playerSealedLanes) state.playerSealedLanes[lane] = 1;
+        if (state.playerSealedLanes)
+          state.playerSealedLanes[lane] = Math.max(
+            state.playerSealedLanes[lane] || 0,
+            1
+          );
       }
 
       // Damage card if exists
@@ -3101,11 +3331,19 @@ export function applyLeaderSkillLogic(
     }
 
     for (const lane of enemyTargets) {
-      // Apply Seal
+      // Apply Seal (高い方の値を維持・適用)
       if (isBlue) {
-        if (state.enemySealedLanes) state.enemySealedLanes[lane] = 1;
+        if (state.enemySealedLanes)
+          state.enemySealedLanes[lane] = Math.max(
+            state.enemySealedLanes[lane] || 0,
+            1
+          );
       } else {
-        if (state.playerSealedLanes) state.playerSealedLanes[lane] = 1;
+        if (state.playerSealedLanes)
+          state.playerSealedLanes[lane] = Math.max(
+            state.playerSealedLanes[lane] || 0,
+            1
+          );
       }
 
       // Damage card if exists

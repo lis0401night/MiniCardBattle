@@ -2037,8 +2037,9 @@ export async function resolveActiveSkillEffect(
     if (eB[l]) {
       // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正。
       // val=1 で「このターンは動けない」→ターン終了時に1減って stunTurns=1 → 次ターン防御 → 終了時に0、で計1ターン拘束。
+      // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する
       const turns = (skillValue || 1) + 1;
-      eB[l].stunTurns = turns;
+      eB[l].stunTurns = Math.max(eB[l].stunTurns || 0, turns);
 
       const tgtSide = o === 'blue' ? 'enemy' : 'player';
 
@@ -2062,8 +2063,9 @@ export async function resolveActiveSkillEffect(
       o === 'blue' ? GameState.enemySealedLanes : GameState.playerSealedLanes;
 
     if (targetSealedLanes) {
+      // 既存の封印ターン数と比較し、大きい方の値を維持・適用する
       const turns = skillValue || 1;
-      targetSealedLanes[l] = turns;
+      targetSealedLanes[l] = Math.max(targetSealedLanes[l] || 0, turns);
 
       const tEl = document.querySelector(
         `#${targetSide}-lanes .cell[data-lane="${l}"]`
@@ -2096,9 +2098,10 @@ export async function resolveActiveSkillEffect(
 
     if (targets.length > 0) {
       // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正（bindと同じロジック）。
+      // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する
       const turns = (skillValue || 1) + 1;
       for (const tL of targets) {
-        eB[tL].stunTurns = turns;
+        eB[tL].stunTurns = Math.max(eB[tL].stunTurns || 0, turns);
       }
 
       // VFX演出の再生（すべての対象レーンで同時に並列再生）
@@ -2283,8 +2286,9 @@ export async function resolveActiveSkillEffect(
     // 【仕様】自分のカードに適用するため、+1 補正は不要。
     // bind/freeze は相手カードに適用し、「発動したターンも防御状態にする」ため +1 しているが、
     // standby は自分が召喚したこのターンから待機するため、val そのままで正しい挙動になる。
+    // 既存の防御・拘束ターン数と比較し、大きい方の値を維持・適用する
     const turns = skillValue || 1;
-    c.stunTurns = turns;
+    c.stunTurns = Math.max(c.stunTurns || 0, turns);
     renderBoard();
     await sleep(400);
   } else if (skillId === 'decay') {
