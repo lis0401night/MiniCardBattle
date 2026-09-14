@@ -1003,20 +1003,12 @@ export async function waitPlayerHandSelection(
     return resultIndices.slice(0, count);
   }
 
-  // AIの場合：判定済みのシミュレーション結果があれば優先
+  // AIの場合：事前計画キューの残骸をクリーンアップし、常に最新手札から最適カードを決定
   if (owner === 'red') {
-    const results = [];
     for (let i = 0; i < count; i++) {
-      const aiAction = consumeAIAction('discard');
-      if (aiAction && aiAction.targetIdx !== undefined) {
-        results.push(aiAction.targetIdx);
-      } else {
-        break;
-      }
+      consumeAIAction('discard');
     }
-    if (results.length > 0) return results;
-
-    // フォールバック: 共通のAI破棄選択ロジックを利用する（forceExact を伝達）
+    // 常に最新手札に基づき、共通のAI破棄選択ロジックで最適インデックスを決定
     return getAIDiscardIndices(hand, count, forceExact);
   }
 

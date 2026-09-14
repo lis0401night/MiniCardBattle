@@ -4514,6 +4514,374 @@ export function evaluateAdhocDominateChoice(
 }
 
 /**
+ * 自軍カード破壊（処刑 execute / 選別 cull 等）のアドホック（発動直前）シミュレーション評価共通関数。
+ * 最新の盤面状況に基づき、自軍カードのうちどれを破壊するのが最も損失が少ない（または有利・リーサルか）をシミュレートする。
+ * ターン進行・戦闘評価には共通関数 evaluateTurnOutcome を使用し、直後および次ターンの戦闘展開を総合評価する。
+ *
+ * @param {Array<object|null>} myBoard - 破壊対象を選ぶ側の盤面配列
+ * @param {number} [selectCount=1] - 破壊対象とするカード枚数
+ * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
+ * @returns {Array<number>} 破壊対象とする最善レーン番号の配列
+ */
+export function evaluateAdhocCardDestructionChoice(
+  myBoard,
+  selectCount = 1,
+  owner = 'red'
+) {
+  if (!myBoard) return [];
+  const occupiedLanes = myBoard
+    .map((c, i) => (c !== null ? i : -1))
+    .filter((i) => i !== -1);
+  if (occupiedLanes.length === 0) return [];
+  if (occupiedLanes.length <= selectCount) return occupiedLanes;
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+
+  // 1. 破壊不能（「無効」や「戦乙女の加護」）のカードがあれば、実質損失ゼロのため最優先
+  const undestroyableLanes = [];
+  const destroyableLanes = [];
+  for (const l of occupiedLanes) {
+    const card = myBoard[l];
+    if (card && !canCardBeDestroyed(initialSimState, card, owner)) {
+      undestroyableLanes.push(l);
+    } else {
+      destroyableLanes.push(l);
+    }
+  }
+
+  // 破壊不能カードだけで要求枚数を満たせるなら即座にそれを返す
+  if (undestroyableLanes.length >= selectCount) {
+    return undestroyableLanes.slice(0, selectCount);
+  }
+
+  // 2. 組み合わせ（コンビネーション）を生成して evaluateTurnOutcome で最善レーンを選択
+  const neededFromDestroyable = selectCount - undestroyableLanes.length;
+  const combinations = getCombinations(destroyableLanes, neededFromDestroyable);
+
+  let bestScore = isRed ? -Infinity : Infinity;
+  let bestLanes = [
+    ...undestroyableLanes,
+    ...destroyableLanes.slice(0, neededFromDestroyable),
+  ];
+
+  for (const combo of combinations) {
+    const candidateLanes = [...undestroyableLanes, ...combo];
+    const simState = structuredClone(initialSimState);
+    const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+    const targetDiscard = isRed
+      ? simState.enemyDiscard
+      : simState.playerDiscard;
+
+    for (const l of candidateLanes) {
+      const cardToDestroy = targetBoard[l];
+      if (cardToDestroy) {
+        if (!canCardBeDestroyed(simState, cardToDestroy, owner)) {
+          continue;
+        }
+        if (hasSkill(cardToDestroy, 'split')) {
+          targetBoard[l] = createSplitSimToken(cardToDestroy, l, owner);
+        } else {
+          targetBoard[l] = null;
+          if (!cardToDestroy.isToken) {
+            targetDiscard.push(cardToDestroy);
+          }
+        }
+      }
+    }
+
+    processDestructionTriggers(simState, []);
+    const score = evaluateTurnOutcome(simState, owner);
+
+    if (isRed) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestLanes = candidateLanes;
+      }
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestLanes = candidateLanes;
+      }
+    }
+  }
+
+  return bestLanes;
+}
+
+/**
+ * 処刑（execute）のアドホック（発動直前）シミュレーション評価。
+ * 共通関数 evaluateAdhocCardDestructionChoice に委譲して1枚の破壊対象レーン番号を返す。
+ *
+ * @param {Array<object|null>} myBoard - 自軍の盤面配列
+ * @param {'red' | 'blue'} [owner='red'] - 発動側プレイヤー種別
+ * @returns {number} 破壊対象とする最善レーン番号（0〜2）。対象なしなら -1
+ */
+export function evaluateAdhocExecuteChoice(myBoard, owner = 'red') {
+  const lanes = evaluateAdhocCardDestructionChoice(myBoard, 1, owner);
+  return lanes.length > 0 ? lanes[0] : -1;
+}
+
+/**
+ * 選別（cull）のアドホック（発動直前）シミュレーション評価。
+ * 共通関数 evaluateAdhocCardDestructionChoice に委譲して指定枚数の破壊対象レーン配列を返す。
+ *
+ * @param {Array<object|null>} myBoard - 選別を受けた側の盤面配列（自軍）
+ * @param {number} [selectCount=1] - 破壊対象とするカード枚数
+ * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
+ * @returns {Array<number>} 破壊対象とする最善レーン番号の配列
+ */
+export function evaluateAdhocCullChoice(
+  myBoard,
+  selectCount = 1,
+  owner = 'red'
+) {
+  return evaluateAdhocCardDestructionChoice(myBoard, selectCount, owner);
+}
+
+/**
+ * 召喚（summon）のアドホック（発動直前）シミュレーション評価。
+ * 最新の盤面・手札に基づき、手札から召喚条件を満たす最善カードと配置レーンを決定する。
+ *
+ * @param {Array<object>} hand - 手札配列
+ * @param {object} skObj - スキル定義オブジェクト
+ * @param {string|null} selfId - 発動元カードID
+ * @param {Array<string>} presentBoardIds - 盤面に既に存在するカードID群
+ * @param {number} defaultLane - フォールバック先レーン
+ * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
+ * @returns {{ selectedIdx: number, laneIdx: number }} 最善手札インデックスと配置レーン（パスなら selectedIdx: -1）
+ */
+export function evaluateAdhocSummonMove(
+  hand,
+  skObj,
+  selfId,
+  presentBoardIds,
+  defaultLane,
+  owner = 'red'
+) {
+  if (!hand || hand.length === 0) {
+    return { selectedIdx: -1, laneIdx: defaultLane };
+  }
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+  const sealed = isRed
+    ? initialSimState.enemySealedLanes
+    : initialSimState.playerSealedLanes;
+  const availableLanes = [0, 1, 2].filter((l) => !sealed || sealed[l] === 0);
+
+  if (availableLanes.length === 0) {
+    return { selectedIdx: -1, laneIdx: defaultLane };
+  }
+
+  // 1. パス基準スコア
+  let bestScore;
+  {
+    const passSimState = structuredClone(initialSimState);
+    bestScore = evaluateTurnOutcome(passSimState, owner);
+  }
+  let bestIdx = -1;
+  let bestLane = availableLanes[0];
+
+  for (let i = 0; i < hand.length; i++) {
+    const card = hand[i];
+    if (!card) continue;
+    if (!matchesSummonTarget(card, skObj, { selfId, presentBoardIds }))
+      continue;
+
+    // 召喚制約チェック
+    const validLanes = getValidSummonLanes(owner, card, initialSimState);
+    const candidateLanes = availableLanes.filter((l) => validLanes.includes(l));
+    if (candidateLanes.length === 0) continue;
+
+    for (const laneIdx of candidateLanes) {
+      const simState = structuredClone(initialSimState);
+      const targetHand = isRed ? simState.enemyHand : simState.playerHand;
+      const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+      const targetDiscard = isRed
+        ? simState.enemyDiscard
+        : simState.playerDiscard;
+
+      const consumedCard = targetHand.splice(i, 1)[0];
+      if (!consumedCard) continue;
+
+      const existing = targetBoard[laneIdx];
+      if (existing && !existing.isToken) {
+        targetDiscard.push(existing);
+      }
+
+      consumedCard.owner = owner;
+      consumedCard.skillTriggered = false;
+      if (
+        consumedCard.currentPower === undefined ||
+        Number.isNaN(consumedCard.currentPower) ||
+        (consumedCard.currentPower <= 0 && (consumedCard.power || 0) > 0)
+      ) {
+        consumedCard.currentPower = consumedCard.power || 0;
+        consumedCard.basePower = consumedCard.power || 0;
+      }
+
+      if (hasActiveSkill(consumedCard)) {
+        consumedCard.isSkillResolving = true;
+      }
+
+      targetBoard[laneIdx] = consumedCard;
+      simState.lastPlayedLane = laneIdx;
+
+      if (Array.isArray(consumedCard.skills)) {
+        consumedCard.skills.forEach((sk) => {
+          if (sk.id !== 'trigger' && sk.id !== 'summon') {
+            applyActiveSkillLogic(
+              simState,
+              owner,
+              laneIdx,
+              sk.id,
+              sk.value,
+              [],
+              null,
+              undefined
+            );
+          }
+        });
+      }
+
+      processDestructionTriggers(simState, []);
+      const score = evaluateTurnOutcome(simState, owner);
+
+      if (isRed) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestIdx = i;
+          bestLane = laneIdx;
+        }
+      } else {
+        if (score < bestScore) {
+          bestScore = score;
+          bestIdx = i;
+          bestLane = laneIdx;
+        }
+      }
+    }
+  }
+
+  return { selectedIdx: bestIdx, laneIdx: bestLane };
+}
+
+/**
+ * 召集（assemble）のアドホック（発動直前）シミュレーション評価。
+ * 最新の盤面・デッキに基づき、デッキから条件を満たす最善カードを決定する。
+ *
+ * @param {Array<object>} deck - デッキ配列
+ * @param {object} skObj - スキル定義オブジェクト
+ * @param {string|null} selfId - 発動元カードID
+ * @param {number} defaultLane - 召喚先レーン番号
+ * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
+ * @returns {object|null} 最善カードオブジェクト（パスなら null）
+ */
+export function evaluateAdhocAssembleMove(
+  deck,
+  skObj,
+  selfId,
+  defaultLane,
+  owner = 'red'
+) {
+  if (!deck || deck.length === 0 || defaultLane < 0 || defaultLane > 2) {
+    return null;
+  }
+
+  const isSelf = Boolean(skObj?.self || skObj?.targetSelf);
+  const targetIds = Array.isArray(skObj?.targetIds)
+    ? skObj.targetIds
+    : skObj?.targetId
+      ? [skObj.targetId]
+      : [];
+  const targetKeyword = skObj?.targetKeyword;
+  const skillValue = skObj?.value;
+
+  let validCards = [...deck];
+  if (isSelf && selfId) {
+    validCards = validCards.filter((card) => matchesCardId(card, selfId));
+  } else if (targetIds.length > 0) {
+    validCards = validCards.filter((card) => matchesCardIds(card, targetIds));
+  } else if (typeof targetKeyword === 'string' && targetKeyword) {
+    validCards = validCards.filter((card) =>
+      matchesCardKeyword(card, targetKeyword)
+    );
+  } else if (skillValue !== undefined && skillValue !== null) {
+    validCards = validCards.filter((card) => (card.power || 0) <= skillValue);
+  }
+
+  if (validCards.length === 0) return null;
+  if (validCards.length === 1) return validCards[0];
+
+  const initialSimState = buildInitialSimState();
+  const isRed = owner === 'red';
+
+  let bestScore = isRed ? -Infinity : Infinity;
+  let bestCard = validCards[0];
+
+  for (const card of validCards) {
+    const simState = structuredClone(initialSimState);
+    const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+    const targetDiscard = isRed
+      ? simState.enemyDiscard
+      : simState.playerDiscard;
+
+    const existing = targetBoard[defaultLane];
+    if (existing && !existing.isToken) {
+      targetDiscard.push(existing);
+    }
+
+    const assembleCard = cloneCard(card);
+    assembleCard.owner = owner;
+    assembleCard.skillTriggered = false;
+    assembleCard.currentPower = assembleCard.power || 0;
+    assembleCard.basePower = assembleCard.power || 0;
+
+    if (hasActiveSkill(assembleCard)) {
+      assembleCard.isSkillResolving = true;
+    }
+
+    targetBoard[defaultLane] = assembleCard;
+    simState.lastPlayedLane = defaultLane;
+
+    if (Array.isArray(assembleCard.skills)) {
+      assembleCard.skills.forEach((sk) => {
+        if (sk.id !== 'trigger' && sk.id !== 'assemble') {
+          applyActiveSkillLogic(
+            simState,
+            owner,
+            defaultLane,
+            sk.id,
+            sk.value,
+            [],
+            null,
+            undefined
+          );
+        }
+      });
+    }
+
+    processDestructionTriggers(simState, []);
+    const score = evaluateTurnOutcome(simState, owner);
+
+    if (isRed) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestCard = card;
+      }
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestCard = card;
+      }
+    }
+  }
+
+  return bestCard;
+}
+
+/**
  * 選択（choice）スキルの直前シミュレーション評価。
  * waitSkillChoice 呼び出し時に、最新盤面において各選択肢スキルを仮想適用し、
  * 最も安全かつ有利になる最善の選択肢を決定する。

@@ -14,6 +14,9 @@ import {
   evaluateAdhocProtectionChoice,
   evaluateAdhocDominateChoice,
   evaluateAdhocSkillChoice,
+  evaluateAdhocExecuteChoice,
+  evaluateAdhocCullChoice,
+  evaluateAdhocCardDestructionChoice,
   advanceCombatPhase,
   evaluateTurnOutcome,
 } from './ai_normal.js';
@@ -310,6 +313,9 @@ export {
   evaluateAdhocProtectionChoice,
   evaluateAdhocDominateChoice,
   evaluateAdhocSkillChoice,
+  evaluateAdhocExecuteChoice,
+  evaluateAdhocCullChoice,
+  evaluateAdhocCardDestructionChoice,
   advanceCombatPhase,
   evaluateTurnOutcome,
 };
