@@ -311,8 +311,9 @@ export async function waitPlayerLaneSelection(
       }
     }
 
-    // 最終的に十分なレーンが確保できず、キャンセル可能なら中止する
-    if (selectedLanes.length < count && canCancel) {
+    // 最終的に配置先レーンが1つも確保できず、キャンセル可能なら中止する
+    // （分身等で隣接レーンが1枠しかない場合など、一部のみ確保できた場合は選ばれたレーンへの配置を続行する）
+    if (selectedLanes.length === 0 && canCancel) {
       return [];
     }
 
@@ -1379,13 +1380,21 @@ export async function waitPlayerDualDiscardSelection(
 
 /**
  * 召喚時スキル「選択」の選択を待機する
+ * @param {Array<object>} choices - 選択可能なスキル定義配列
+ * @param {'blue' | 'red'} owner - 選択を行う側のプレイヤー
+ * @param {object} card - 発動元カードオブジェクト
+ * @param {number} [maxChoices=1] - 選択可能な最大数
+ * @param {boolean} [isForce=false] - 「命令 (force)」スキルによる強制選択か否か
+ * @param {number} [sourceLane=-1] - 発動元カードが召喚された元のレーン番号（破壊後の参照用）
+ * @returns {Promise<Array<object> | object | null>} 選択されたスキルまたはスキル配列
  */
 export async function waitSkillChoice(
   choices,
   owner,
   card,
   maxChoices = 1,
-  isForce = false
+  isForce = false,
+  sourceLane = -1
 ) {
   if (!choices || choices.length === 0) return null;
 
@@ -1475,7 +1484,10 @@ export async function waitSkillChoice(
       // Normal/Hard AI: シミュレーションで最もAIに有利な選択肢を選ぶ
       // 命令スキルでは「相手が選ぶ」ため、AIは自分に有利な結果を選ぶ
       const cardOwner = 'blue'; // forceの場合、AIが選択者＝カードオーナーはプレイヤー
-      const lane = GameState.playerBoard.indexOf(card);
+      const lane =
+        sourceLane >= 0 && sourceLane <= 2
+          ? sourceLane
+          : GameState.playerBoard.indexOf(card);
 
       if (lane === -1) {
         // レーンが見つからない場合はランダムフォールバック
@@ -1565,7 +1577,13 @@ export async function waitSkillChoice(
     } else {
       // Normal以上: 常に最新盤面に基づいた直前全通りシミュレーションで最善の選択肢を決定
       if (GameState.gameMode !== 'online') await sleep(AI_THINKING_DURATION);
-      return evaluateAdhocSkillChoice(card, choices, maxChoices, 'red');
+      return evaluateAdhocSkillChoice(
+        card,
+        choices,
+        maxChoices,
+        'red',
+        sourceLane
+      );
     }
   }
 

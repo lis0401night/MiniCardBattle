@@ -2702,8 +2702,6 @@ export function applyActiveSkillLogic(
         }
         events.push({ type: 'draw', side: owner, source: 'draw' });
       }
-      state.actionUtilityBonus =
-        (state.actionUtilityBonus || 0) + drawCount * 3000;
       break;
     }
     case 'salvage': {
@@ -2736,14 +2734,11 @@ export function applyActiveSkillLogic(
         }
         events.push({ type: 'salvage', side: owner, source: 'salvage' });
       }
-      state.actionUtilityBonus =
-        (state.actionUtilityBonus || 0) + (val || 1) * 3500;
       break;
     }
     case 'shuffle': {
       // 【攪乱(shuffle)スキル処理】
       // 召喚時、お互いの手札を全て捨て、墓地をリセットし、お互いにカードを3枚引く
-      state.actionUtilityBonus = (state.actionUtilityBonus || 0) + 4000;
       events.push({ type: 'shuffle', side: owner, source: 'shuffle' });
       break;
     }
@@ -2759,8 +2754,6 @@ export function applyActiveSkillLogic(
       // 【再帰(recurse)スキル処理】
       // 召喚時、お互いの墓地のカードをval枚まで選択してデッキに戻す
       if (isGraveKeeperActive(state)) break;
-      state.actionUtilityBonus =
-        (state.actionUtilityBonus || 0) + (val || 1) * 1500;
       events.push({ type: 'recurse', side: owner, source: 'recurse' });
       break;
     }

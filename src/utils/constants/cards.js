@@ -3237,7 +3237,7 @@ export const CARD_MASTER = [
     name: '徴兵されたドラゴン',
     rarity: 3,
     power: 6,
-    skills: [{ id: 'defender' }, { id: 'supremacy' }, { id: 'quick' }],
+    skills: [{ id: 'standby', value: 2 }, { id: 'supremacy' }, { id: 'quick' }],
     supremacySkills: [{ id: 'unleash' }],
     voiceCategory: 'dragon',
     flavor:

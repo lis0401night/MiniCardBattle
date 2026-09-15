@@ -1029,10 +1029,18 @@ export async function resolveActiveSkillEffect(
         oppOwner,
         c,
         adjustedValue,
-        true
+        true,
+        l
       );
     } else {
-      choiceArray = await waitSkillChoice(choices, o, c, adjustedValue, false);
+      choiceArray = await waitSkillChoice(
+        choices,
+        o,
+        c,
+        adjustedValue,
+        false,
+        l
+      );
     }
     if (choiceArray) {
       const arr = Array.isArray(choiceArray) ? choiceArray : [choiceArray];
@@ -1404,11 +1412,12 @@ export async function resolveActiveSkillEffect(
           (lane) => lane >= 0 && lane <= 2 && sealedLanes[lane] === 0
         );
         if (adjacentLanes.length > 0) {
+          // 分身スキル値（count）に応じたレーン数を動的シミュレーションで評価・決定する（1体固定のハードコードを解消）
           clonePredefinedLanes = evaluateBestLanesForToken(
             adjacentLanes,
             o,
             simulatedToken,
-            1,
+            count,
             true, // canCancel
             false // checkConstraints: 分身は配置(Place)のためfalse
           );

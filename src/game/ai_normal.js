@@ -465,6 +465,8 @@ export function processActionSequence(
         enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
         playerHP: GameState.playerHP,
         enemyHP: GameState.enemyHP,
+        initialPlayerHP: GameState.playerHP,
+        initialEnemyHP: GameState.enemyHP,
         playerMaxHP: GameState.playerMaxHP || 25,
         enemyMaxHP: GameState.enemyMaxHP || 25,
         playerSP: GameState.playerSP || 0,
@@ -3596,6 +3598,7 @@ export function getBestSimulatedMove() {
  * 1. 勝利判定 (相手HPを0以下にできるなら最優先で選ぶ)
  * 2. 生存ティア (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
  * 2.5. 追加ターンボーナス (次ターンにカードを追加で出せる + 敵の攻撃を受けない)
+ * 2.6. ライフレース優位ボーナス (与ダメージ > 戦闘被ダメージ時の相手リーダー削り優先)
  * 3. 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
  * 4. ユーティリティ価値 (ドローや回復スキルの期待値)
  * 5. タイブレーク (生存枚数、封印レーン優先順位、被ダメージ軽減)
@@ -3692,7 +3695,7 @@ export function evaluateSimState(state) {
     }
   }
 
-  // 2. 生存ティアの判定 (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
+  // 2. 生存ティアおよびライフレース優位の判定 (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
   // ※位相の相互すり抜けによる被ダメージはクロックレース（打点勝負）とみなし、
   // パニック（Tier 2:危険状態）判定から除外する
   const netCombatDamageTaken = Math.max(
@@ -3700,11 +3703,29 @@ export function evaluateSimState(state) {
     (state.combatDamageTaken || 0) - (state.phaseBypassDamageTaken || 0)
   );
 
+  // 相手リーダーへの与ダメージ総量（戦闘ダメージ、砲撃、速攻、位相、バーン等の総和）
+  const initialPlayerHP =
+    state.initialPlayerHP ??
+    (typeof GameState !== 'undefined' ? GameState.playerHP : 25) ??
+    25;
+  const damageDealt = Math.max(0, initialPlayerHP - (state.playerHP ?? 0));
+
+  // ライフレース優位判定:
+  // 相手リーダーに与えるダメージが、次の相手の攻撃で自分が受ける純粋な戦闘被ダメージよりも大きい（打点レースで勝っている）
+  // ※HP回復で被ダメを相殺したり、代償(自傷)が戦闘被ダメと誤認されるのを防ぐため、純粋な netCombatDamageTaken と比較
+  const isLifeRaceAdvantage =
+    damageDealt > 0 && damageDealt > netCombatDamageTaken && state.enemyHP > 0;
+
   let tier = 1;
   if (state.enemyHP <= 0) {
     tier = 3;
   } else if (netCombatDamageTaken >= 4) {
-    tier = 2;
+    // ライフレースで勝っており、かつ自リーダーの残りHPに十分な余裕がある場合（即死圏外）はパニック（Tier 2）に落とさない
+    if (isLifeRaceAdvantage && state.enemyHP > netCombatDamageTaken + 2) {
+      tier = 1;
+    } else {
+      tier = 2;
+    }
   }
 
   // 3. 【AI思考の核】に基づいた絶対優先順位スコアの構築
@@ -3722,6 +3743,16 @@ export function evaluateSimState(state) {
   // 「次ターンにカードを1枚追加で出せる」アドバンテージは評価されていないため加算する。
   const extraTurnBonus = (state.extraTurnCount || 0) > 0 ? 1 : 0;
   let s3 = extraTurnBonus * 1000000;
+
+  // スロット3.5: ライフレース優位ボーナス
+  // 次の相手の攻撃の結果、自分が受けるダメージが相手が受けるダメージよりも低い（ライフレースで勝っている）場合、
+  // 盤面制圧（相手カード破壊・スロット4）よりも相手リーダーを削る手を優先するボーナスを付与する。
+  // 基礎ボーナス(2,000点) + ダメージ差分(1点あたり2,000点)
+  let sLifeRace = 0;
+  if (isLifeRaceAdvantage && tier !== 3) {
+    const diff = damageDealt - netCombatDamageTaken;
+    sLifeRace = 2000 + diff * 2000;
+  }
 
   // スロット4: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
   // -150〜150の範囲を想定し+200して正の値にする
@@ -3777,7 +3808,7 @@ export function evaluateSimState(state) {
     s10 = -damageTaken * 0.1;
   }
 
-  return s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10;
+  return s1 + s2 + s3 + sLifeRace + s4 + s5 + s6 + s7 + s8 + s9 + s10;
 }
 
 /**
@@ -3945,6 +3976,8 @@ export function buildInitialSimState() {
     enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
     playerHP: GameState.playerHP,
     enemyHP: GameState.enemyHP,
+    initialPlayerHP: GameState.playerHP,
+    initialEnemyHP: GameState.enemyHP,
     playerMaxHP: GameState.playerMaxHP || 25,
     enemyMaxHP: GameState.enemyMaxHP || 25,
     playerSP: GameState.playerSP || 0,
@@ -5024,13 +5057,15 @@ export function evaluateAdhocAssembleMove(
  * @param {Array<object>} choices - 選択肢オブジェクト配列
  * @param {number} [maxChoices=1] - 選択可能な個数
  * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
+ * @param {number} [sourceLane=-1] - 発動元カードが召喚された元のレーン番号（破壊後の参照用）
  * @returns {Array<object>} 最善の選択肢配列
  */
 export function evaluateAdhocSkillChoice(
   card,
   choices,
   maxChoices = 1,
-  owner = 'red'
+  owner = 'red',
+  sourceLane = -1
 ) {
   if (!choices || choices.length === 0) return [];
   if (choices.length <= maxChoices) return [...choices];
@@ -5049,9 +5084,10 @@ export function evaluateAdhocSkillChoice(
     : initialSimState.playerBoard;
   const realBoard = isRed ? GameState.enemyBoard : GameState.playerBoard;
 
-  // 発動カードが盤面のどのレーンに存在するか特定（実盤面の参照一致やUIDを最優先）
-  let lane = -1;
-  if (card) {
+  // 発動カードが盤面のどのレーンに存在するか特定
+  // 渡された sourceLane が有効な場合はそれを最優先し、未指定または無効な場合は盤面から検索
+  let lane = sourceLane >= 0 && sourceLane <= 2 ? sourceLane : -1;
+  if (lane === -1 && card) {
     const realLane = realBoard.findIndex(
       (c) => c && (c === card || (card.uid && c.uid === card.uid))
     );
@@ -5146,6 +5182,19 @@ export function evaluateAdhocSkillChoice(
             null,
             undefined
           );
+        }
+
+        // 手札補充・リソース系スキルのユーティリティ評価を一元的に反映（AI_SKILL_UTILITY準拠: 7〜10pt程度）
+        const utilityVal = AI_SKILL_UTILITY[choiceSkill.id];
+        if (typeof utilityVal === 'number') {
+          if (choiceSkill.id !== 'heal' || !isMiasmaActive(simState)) {
+            simState.actionUtilityBonus =
+              (simState.actionUtilityBonus || 0) + utilityVal;
+          }
+        } else if (typeof utilityVal === 'function') {
+          simState.actionUtilityBonus =
+            (simState.actionUtilityBonus || 0) +
+            utilityVal(simState, GameState);
         }
       }
     }
@@ -6602,6 +6651,19 @@ export function evaluateAdhocTokenLanes(
   return [bestLane];
 }
 
+/**
+ * Normal/Hard AI 用のトークン/アドホック配置レーン決定関数
+ * 最新盤面シミュレーション（evaluateAdhocTokenLanes）で最善レーンを選定し、
+ * count > 1（分身等）の場合は残りの候補レーンから空きレーンを優先して最大count個まで選択する。
+ *
+ * @param {Array<number>} allLanes - 選択可能な候補レーン配列
+ * @param {'red' | 'blue'} owner - 配置プレイヤー
+ * @param {object|null} tokenCard - 配置対象のカード/トークン
+ * @param {number} count - 配置要求数
+ * @param {boolean} [canCancel=false] - 配置キャンセル可能フラグ
+ * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）の適用フラグ
+ * @returns {Array<number>} 決定された配置レーン配列
+ */
 export function getNormalTokenLanes(
   allLanes,
   owner,
@@ -6619,7 +6681,66 @@ export function getNormalTokenLanes(
       allLanes
     );
     if (results === null) return []; // キャンセル判定
-    if (results.length > 0) return results.slice(0, count);
+    if (results.length > 0) {
+      if (results.length >= count) return results.slice(0, count);
+
+      // count > 1（分身等）の場合：残りの候補レーンから空き枠を優先して追加選択する
+      const remainingLanes = allLanes.filter((l) => !results.includes(l));
+      const validRemaining = remainingLanes.filter((l) => {
+        if (checkConstraints && tokenCard) {
+          if (hasSkill(tokenCard, 'legendary') && l !== 1) return false;
+          if (
+            hasSkill(tokenCard, 'takeover') &&
+            GameState.enemyBoard[l] === null
+          )
+            return false;
+          if (
+            hasSkill(tokenCard, 'challenge') &&
+            GameState.playerBoard[l] === null
+          )
+            return false;
+          if (
+            hasSkill(tokenCard, 'apex') &&
+            !(
+              GameState.enemyBoard[l] &&
+              hasSkill(GameState.enemyBoard[l], 'legendary')
+            )
+          )
+            return false;
+        }
+        const sealedLanes = GameState.enemySealedLanes || [0, 0, 0];
+        return sealedLanes[l] === 0;
+      });
+
+      // 1. 空きレーンを最優先で追加
+      const emptyLanes = validRemaining.filter(
+        (l) => GameState.enemyBoard[l] === null
+      );
+      for (const el of emptyLanes) {
+        if (results.length < count) {
+          results.push(el);
+        }
+      }
+
+      // 2. キャンセル不可（!canCancel）で枠が不足している場合のみ、味方上書きも許容して補充
+      if (!canCancel && results.length < count) {
+        const occupiedLanes = validRemaining.filter(
+          (l) => GameState.enemyBoard[l] !== null
+        );
+        occupiedLanes.sort(
+          (a, b) =>
+            (GameState.enemyBoard[a]?.currentPower || 0) -
+            (GameState.enemyBoard[b]?.currentPower || 0)
+        );
+        for (const ol of occupiedLanes) {
+          if (results.length < count) {
+            results.push(ol);
+          }
+        }
+      }
+
+      return results.slice(0, count);
+    }
   }
 
   // プレイヤー用または最終フォールバック
@@ -6787,6 +6908,8 @@ export function simulateMove(
     enemyBoard: currentMyBoard.map(cloneCard),
     playerHP: GameState.playerHP,
     enemyHP: currentMyHP,
+    initialPlayerHP: GameState.playerHP,
+    initialEnemyHP: currentMyHP,
     playerMaxHP: GameState.playerMaxHP,
     enemyMaxHP: GameState.enemyMaxHP,
     playerSP: GameState.playerSP,
