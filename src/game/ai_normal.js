@@ -3594,17 +3594,29 @@ export function getBestSimulatedMove() {
 /**
  * 【AI思考の核】盤面の状態をティア（生存階層）とスコアで厳密に評価する
  *
- * 優先順位（上にあるほど絶対的）:
- * 1. 勝利判定 (相手HPを0以下にできるなら最優先で選ぶ)
- * 2. 生存ティア (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
- * 2.5. 追加ターンボーナス (次ターンにカードを追加で出せる + 敵の攻撃を受けない)
- * 2.6. ライフレース優位ボーナス (与ダメージ > 戦闘被ダメージ時の相手リーダー削り優先)
- * 3. 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
- * 4. ユーティリティ価値 (ドローや回復スキルの期待値)
- * 5. タイブレーク (生存枚数、封印レーン優先順位、被ダメージ軽減)
+ * 【評価処理の全体フロー】
+ * 1. 各種数値の集計 (パワーおよびユーティリティ価値の事前計算)
+ * 2. 生存ティアおよびライフレース優位の判定 (安全・危険・敗北および打点勝負の判定)
+ * 3. 絶対優先順位スコアの構築 (スロット1〜11の桁別加算)
+ *
+ * 【スコアの絶対優先順位（スロット構成）】
+ * ・スロット1: 勝利判定 (相手HPを0以下にできるなら最優先で選ぶ)
+ * ・スロット2: 生存ティア (Tier 1:安全 > Tier 2:危険 > Tier 3:敗北)
+ * ・スロット3: 追加ターンボーナス (次ターンにカードを追加で出せる + 敵の攻撃を受けない)
+ * ・スロット4: ライフレース優位ボーナス (与ダメージ > 戦闘被ダメージ時の相手リーダー削り優先)
+ * ・スロット5: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
+ * ・スロット6: 相手リーダーへのダメージ評価 (砲撃等によるリーダーHP削り)
+ * ・スロット7: 自分リーダーHPの評価 (回復・吸収等による自リーダーHP維持)
+ * ・スロット8: ユーティリティ価値 (ドローや回復スキルの期待値)
+ * ・スロット9: タイブレーク (生存枚数)
+ * ・スロット10: 封印ボーナス (空のレーン封印時の位置優先順位)
+ * ・スロット11: 被ダメージペナルティ (危険状態での被弾抑止・微小タイブレーク)
  *
  * ※重要: 「代償(sacrifice)」スキルによる自傷ダメージは、ティア判定（4ダメージ以上の警戒）からは除外する。
  * これは代償が「戦略的なコスト」であり、敵の攻撃による「戦術的な脅威」とは別物であるため。
+ *
+ * @param {object} state - 評価対象の盤面状態
+ * @returns {number} 総合評価スコア
  */
 export function evaluateSimState(state) {
   let myPower = 0;
@@ -3744,35 +3756,35 @@ export function evaluateSimState(state) {
   const extraTurnBonus = (state.extraTurnCount || 0) > 0 ? 1 : 0;
   let s3 = extraTurnBonus * 1000000;
 
-  // スロット3.5: ライフレース優位ボーナス
+  // スロット4: ライフレース優位ボーナス
   // 次の相手の攻撃の結果、自分が受けるダメージが相手が受けるダメージよりも低い（ライフレースで勝っている）場合、
-  // 盤面制圧（相手カード破壊・スロット4）よりも相手リーダーを削る手を優先するボーナスを付与する。
+  // 盤面制圧（相手カード破壊・スロット5）よりも相手リーダーを削る手を優先するボーナスを付与する。
   // 基礎ボーナス(2,000点) + ダメージ差分(1点あたり2,000点)
-  let sLifeRace = 0;
+  let s4 = 0;
   if (isLifeRaceAdvantage && tier !== 3) {
     const diff = damageDealt - netCombatDamageTaken;
-    sLifeRace = 2000 + diff * 2000;
+    s4 = 2000 + diff * 2000;
   }
 
-  // スロット4: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
+  // スロット5: 盤面パワー合計差 (自分の生存パワー総和 - 相手の生存パワー総和)
   // -150〜150の範囲を想定し+200して正の値にする
-  let s4 = (myPower - opPower + 200) * 1000;
+  let s5 = (myPower - opPower + 200) * 1000;
 
-  // スロット5: 相手リーダーへのダメージ評価
+  // スロット6: 相手リーダーへのダメージ評価
   // 砲撃(artillery)等によるリーダーダメージを評価し、
   // 盤面が同等の場合にリーダーHPを削る手を優先する
-  let s5 = -state.playerHP * 100;
+  let s6 = -state.playerHP * 100;
 
-  // スロット6: 自分リーダーHPの評価
+  // スロット7: 自分リーダーHPの評価
   // 回復(heal)や吸収(absorb)等による自リーダーHP維持を評価する
   // 自分のHPが高いほど高評価
-  let s6 = state.enemyHP * 100;
+  let s7 = state.enemyHP * 100;
 
-  // スロット7: ユーティリティ価値（自分のスキル付加価値 - 相手のスキル脅威度）
-  let s7 =
+  // スロット8: ユーティリティ価値（自分のスキル付加価値 - 相手のスキル脅威度）
+  let s8 =
     (myUtilityScore - opUtilityScore + (state.actionUtilityBonus || 0)) * 10;
 
-  // スロット8: タイブレーク (生存枚数)
+  // スロット9: タイブレーク (生存枚数)
   // 自分の枚数が少ないほど高評価（装備一点集中・生贄の高打点を評価）
   // 相手の枚数が少ないほど高評価（盤面制圧を評価）
   const myCount = state.enemyBoard.filter(
@@ -3785,30 +3797,33 @@ export function evaluateSimState(state) {
       c &&
       (c.currentPower !== undefined ? c.currentPower > 0 : (c.power || 0) > 0)
   ).length;
-  let s8 = 8 - myCount - opCount;
+  let s9 = 8 - myCount - opCount;
 
-  // スロット9: 封印ボーナス (空のレーンを封印した際の優先度：中央 > 左 > 右)
+  // スロット10: 封印ボーナス (空のレーンを封印した際の優先度：中央 > 左 > 右)
   // パワー差等で同点になった場合のタイブレークとして封印ターン数に応じた微小スコアを加算
-  let s9 = 0;
+  let s10 = 0;
   if (state.playerSealedLanes) {
-    if (state.playerSealedLanes[1] > 0) s9 += 0.03 * state.playerSealedLanes[1]; // 中央
-    if (state.playerSealedLanes[0] > 0) s9 += 0.02 * state.playerSealedLanes[0]; // 左
-    if (state.playerSealedLanes[2] > 0) s9 += 0.01 * state.playerSealedLanes[2]; // 右
+    if (state.playerSealedLanes[1] > 0)
+      s10 += 0.03 * state.playerSealedLanes[1]; // 中央
+    if (state.playerSealedLanes[0] > 0)
+      s10 += 0.02 * state.playerSealedLanes[0]; // 左
+    if (state.playerSealedLanes[2] > 0)
+      s10 += 0.01 * state.playerSealedLanes[2]; // 右
   }
 
-  // スロット10: 被ダメージペナルティ
+  // スロット11: 被ダメージペナルティ
   // 【重要】危険状態（tier === 2、被ダメ4以上）の時は、少しでも被ダメージを抑えるプレイ（ブロック）を
-  // 盤面パワー差（スロット4：1あたり1000点）よりも絶対優先するため、大きなペナルティ（1ダメージにつき -100,000点）を適用する。
+  // 盤面パワー差（スロット5：1あたり1000点）よりも絶対優先するため、大きなペナルティ（1ダメージにつき -100,000点）を適用する。
   // 安全状態（tier === 1、被ダメ4未満）の時は、従来通りの微小なタイブレークペナルティ（-0.1）で評価する。
   const damageTaken = netCombatDamageTaken;
-  let s10 = 0;
+  let s11 = 0;
   if (tier === 2) {
-    s10 = -damageTaken * 100000;
+    s11 = -damageTaken * 100000;
   } else {
-    s10 = -damageTaken * 0.1;
+    s11 = -damageTaken * 0.1;
   }
 
-  return s1 + s2 + s3 + sLifeRace + s4 + s5 + s6 + s7 + s8 + s9 + s10;
+  return s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10 + s11;
 }
 
 /**
