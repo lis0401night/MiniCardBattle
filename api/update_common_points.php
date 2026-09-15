@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
-if (!$data || !isset($data['uuid'])) {
+if (!$data || !isset($data['uuid']) || !array_key_exists('points', $data) || !is_numeric($data['points'])) {
     echo json_encode(['success' => false, 'error' => 'Missing required data']);
     exit;
 }

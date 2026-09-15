@@ -74,6 +74,15 @@ if ($playerData) {
     if ($max_streak > 0 || !isset($playerData['challenge_max_streak']) || $max_streak > $playerData['challenge_max_streak']) {
         $playerData['challenge_max_streak'] = $max_streak;
     }
+
+    $converted_points = isset($data['challenge_converted_points'])
+        ? intval($data['challenge_converted_points'])
+        : (isset($data['converted_points']) ? intval($data['converted_points']) : null);
+    if ($converted_points !== null && $converted_points >= 0) {
+        $currentConv = isset($playerData['challenge_converted_points']) ? intval($playerData['challenge_converted_points']) : 0;
+        $playerData['challenge_converted_points'] = max($currentConv, $converted_points);
+    }
+
     $playerData['timestamp'] = time();
 
     $data_json = json_encode($playerData);
@@ -96,7 +105,8 @@ EOT;
             'success' => true,
             'challenge_points' => $playerData['challenge_points'],
             'challenge_total_points' => $playerData['challenge_total_points'],
-            'challenge_max_streak' => $playerData['challenge_max_streak'] ?? 0
+            'challenge_max_streak' => $playerData['challenge_max_streak'] ?? 0,
+            'challenge_converted_points' => $playerData['challenge_converted_points'] ?? 0
         ]);
         exit;
     } else {

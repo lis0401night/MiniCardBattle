@@ -13,6 +13,7 @@ import {
   calculateFortuneTotalPointsFromCleared,
   fetchPlayerDecks,
   getLatestOwnership,
+  getPointConversionModeConfig,
   reconcilePointsWithPurchases,
   savePointsToServer,
 } from '../utils/apiUtils.js';
@@ -170,6 +171,39 @@ export function useExchangeScreen({
             const serverTotalPts =
               myData[responseTotalPointsField] || serverPts || 0;
 
+            // 共通ポイント変換対象モードの場合、サーバーとローカルの変換累計ポイントをマージ・復元
+            const convConfig = getPointConversionModeConfig(pointsKey);
+            let shouldSyncConverted = false;
+            let convExtraData = {};
+            if (convConfig) {
+              const localConverted =
+                parseInt(localStorage.getItem(convConfig.convertedKey), 10) ||
+                0;
+              const serverConverted =
+                (convConfig.serverConvertedKey
+                  ? myData[convConfig.serverConvertedKey]
+                  : null) ??
+                myData.converted_points ??
+                0;
+              const mergedConverted = Math.max(localConverted, serverConverted);
+
+              if (mergedConverted > localConverted) {
+                localStorage.setItem(
+                  convConfig.convertedKey,
+                  String(mergedConverted)
+                );
+              }
+
+              convExtraData.converted_points = mergedConverted;
+              if (convConfig.serverConvertedKey) {
+                convExtraData[convConfig.serverConvertedKey] = mergedConverted;
+              }
+
+              if (localConverted > serverConverted) {
+                shouldSyncConverted = true;
+              }
+            }
+
             const mergedTotal =
               pointsKey === 'fortune'
                 ? calculateFortuneTotalPointsFromCleared()
@@ -200,12 +234,30 @@ export function useExchangeScreen({
               totalPts !== finalTotalPts ||
               serverPts !== finalPts ||
               serverTotalPts !== finalTotalPts ||
-              recon.reconciled
+              recon.reconciled ||
+              shouldSyncConverted
             ) {
-              savePointsToServer(apiEndpoint, finalPts, finalTotalPts);
+              savePointsToServer(
+                apiEndpoint,
+                finalPts,
+                finalTotalPts,
+                convExtraData
+              );
             }
           } else {
             // サーバーにプレイヤーデータがない場合でも自己修復を実施
+            const convConfig = getPointConversionModeConfig(pointsKey);
+            let convExtraData = {};
+            if (convConfig) {
+              const localConverted =
+                parseInt(localStorage.getItem(convConfig.convertedKey), 10) ||
+                0;
+              convExtraData.converted_points = localConverted;
+              if (convConfig.serverConvertedKey) {
+                convExtraData[convConfig.serverConvertedKey] = localConverted;
+              }
+            }
+
             const recon = reconcilePointsWithPurchases(
               currentPts,
               totalPts,
@@ -218,7 +270,12 @@ export function useExchangeScreen({
               setPoints({ current: recon.current, total: recon.total });
               localStorage.setItem(pointsLocalKey, String(recon.current));
               localStorage.setItem(pointsTotalLocalKey, String(recon.total));
-              savePointsToServer(apiEndpoint, recon.current, recon.total);
+              savePointsToServer(
+                apiEndpoint,
+                recon.current,
+                recon.total,
+                convExtraData
+              );
             }
           }
         }

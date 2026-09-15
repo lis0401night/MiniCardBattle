@@ -237,7 +237,7 @@ export default function PointConversionModal({
         localStorage.setItem(mode.pointsKey, String(newSourcePoints));
 
         // 整合性チェック（reconcile）用の変換累計消費ポイントを加算保存
-        addConvertedPointsByMode(mode.id, convertAmt);
+        const nextConverted = addConvertedPointsByMode(mode.id, convertAmt);
 
         // サーバー同期パラメータを保留リストに記録
         if (mode.apiEndpoint) {
@@ -245,6 +245,12 @@ export default function PointConversionModal({
             mode.apiEndpoint,
             newSourcePoints,
             totalPts,
+            {
+              converted_points: nextConverted,
+              ...(mode.serverConvertedKey
+                ? { [mode.serverConvertedKey]: nextConverted }
+                : {}),
+            },
           ]);
         }
 
@@ -256,11 +262,14 @@ export default function PointConversionModal({
       }
 
       // 2. 共通ポイントの加算と永続化
-      const curCommon =
-        parseInt(localStorage.getItem(COMMON_POINTS_KEY), 10) || commonPoints;
-      const totCommon =
-        parseInt(localStorage.getItem(COMMON_TOTAL_POINTS_KEY), 10) ||
-        curCommon;
+      // ※ parseIntの結果が0の場合に `||` だとfalsy判定で誤フォールバックするため、Number.isNaNで厳密に判定
+      const rawCommon = parseInt(localStorage.getItem(COMMON_POINTS_KEY), 10);
+      const curCommon = Number.isNaN(rawCommon) ? commonPoints : rawCommon;
+      const rawTotal = parseInt(
+        localStorage.getItem(COMMON_TOTAL_POINTS_KEY),
+        10
+      );
+      const totCommon = Number.isNaN(rawTotal) ? curCommon : rawTotal;
       const newCommonCurrent = curCommon + totalConvertAmount;
       const newCommonTotal = totCommon + totalConvertAmount;
 
@@ -279,8 +288,10 @@ export default function PointConversionModal({
       ]);
 
       // 3. ローカルのデータ整合性が完全に確定した後にのみ、サーバー同期を一括発行する
-      pendingServerSyncs.forEach(([endpoint, cur, tot]) => {
-        Promise.resolve(savePointsToServer(endpoint, cur, tot)).catch((e) => {
+      pendingServerSyncs.forEach(([endpoint, cur, tot, extra]) => {
+        Promise.resolve(
+          savePointsToServer(endpoint, cur, tot, extra || {})
+        ).catch((e) => {
           console.error('[PointConversion] サーバー同期に失敗しました:', e);
         });
       });

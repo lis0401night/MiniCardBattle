@@ -116,6 +116,15 @@ if ($playerData) {
             $playerData['defense_wins'] = $defense_wins;
         }
     }
+
+    $converted_points = isset($data['defense_converted_points'])
+        ? intval($data['defense_converted_points'])
+        : (isset($data['converted_points']) ? intval($data['converted_points']) : null);
+    if ($converted_points !== null && $converted_points >= 0) {
+        $currentConv = isset($playerData['defense_converted_points']) ? intval($playerData['defense_converted_points']) : 0;
+        $playerData['defense_converted_points'] = max($currentConv, $converted_points);
+    }
+
     $playerData['timestamp'] = time();
 
     $data_json = json_encode($playerData);
@@ -138,7 +147,8 @@ EOT;
             'success' => true,
             'points' => $playerData['points'],
             'total_points' => $playerData['total_points'] ?? $playerData['points'] ?? 0,
-            'defense_wins' => $playerData['defense_wins'] ?? 0
+            'defense_wins' => $playerData['defense_wins'] ?? 0,
+            'defense_converted_points' => $playerData['defense_converted_points'] ?? 0
         ]);
         exit;
     } else {

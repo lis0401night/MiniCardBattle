@@ -948,7 +948,7 @@ export async function executeLeaderSkillAction(
             dc++;
           }
         }
-        for (let i = 0; i < dc; i++) drawCard(owner);
+        for (let i = 0; i < dc; i++) await drawCard(owner);
         await discardCardsFromHand(owner, droppedCards);
       }
     }
@@ -995,7 +995,7 @@ export async function executeLeaderSkillAction(
             dc++;
           }
         }
-        for (let i = 0; i < dc; i++) drawCard(owner);
+        for (let i = 0; i < dc; i++) await drawCard(owner);
         await discardCardsFromHand(owner, droppedCards);
       }
     } else {

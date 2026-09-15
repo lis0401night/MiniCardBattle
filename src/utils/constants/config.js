@@ -135,6 +135,7 @@ export const POINT_CONVERSION_MODES = Object.freeze([
     pointsKey: HIGH_DIFFICULTY_POINTS_KEY,
     totalPointsKey: HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
     convertedKey: HIGH_DIFFICULTY_CONVERTED_POINTS_KEY,
+    serverConvertedKey: 'high_difficulty_converted_points',
     apiEndpoint: 'update_high_difficulty_points.php',
   }),
   Object.freeze({
@@ -145,6 +146,7 @@ export const POINT_CONVERSION_MODES = Object.freeze([
     pointsKey: DEFENSE_POINTS_KEY,
     totalPointsKey: DEFENSE_TOTAL_POINTS_KEY,
     convertedKey: DEFENSE_CONVERTED_POINTS_KEY,
+    serverConvertedKey: 'defense_converted_points',
     apiEndpoint: 'update_defense_points.php',
   }),
   Object.freeze({
@@ -155,6 +157,7 @@ export const POINT_CONVERSION_MODES = Object.freeze([
     pointsKey: TOURNAMENT_POINTS_KEY,
     totalPointsKey: TOURNAMENT_TOTAL_POINTS_KEY,
     convertedKey: TOURNAMENT_CONVERTED_POINTS_KEY,
+    serverConvertedKey: 'tournament_converted_points',
     apiEndpoint: 'update_tournament_points.php',
   }),
   Object.freeze({
@@ -165,6 +168,7 @@ export const POINT_CONVERSION_MODES = Object.freeze([
     pointsKey: CHALLENGE_POINTS_KEY,
     totalPointsKey: CHALLENGE_TOTAL_POINTS_KEY,
     convertedKey: CHALLENGE_CONVERTED_POINTS_KEY,
+    serverConvertedKey: 'challenge_converted_points',
     apiEndpoint: 'update_challenge_points.php',
   }),
 ]);

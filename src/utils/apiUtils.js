@@ -680,6 +680,38 @@ export async function syncModePoints(mode, serverPlayerData = null) {
       return null;
     }
 
+    // 共通ポイント変換対象モードの場合、サーバーとローカルの変換累計ポイントをマージ
+    const convConfig = getPointConversionModeConfig(mode);
+    let shouldSyncConverted = false;
+    if (convConfig) {
+      const localConverted =
+        parseInt(localStorage.getItem(convConfig.convertedKey), 10) || 0;
+      const serverConverted = serverPlayerData
+        ? ((convConfig.serverConvertedKey
+            ? serverPlayerData[convConfig.serverConvertedKey]
+            : null) ??
+          serverPlayerData.converted_points ??
+          0)
+        : 0;
+      const mergedConverted = Math.max(localConverted, serverConverted);
+
+      // キャッシュ消去等でローカル値がサーバー値を下回っていれば復元（自己修復時の二重復元を防止）
+      if (mergedConverted > localConverted) {
+        localStorage.setItem(convConfig.convertedKey, String(mergedConverted));
+      }
+
+      // サーバー同期用データに最新の累計変換ポイントを含める
+      extraData.converted_points = mergedConverted;
+      if (convConfig.serverConvertedKey) {
+        extraData[convConfig.serverConvertedKey] = mergedConverted;
+      }
+
+      // サーバー側の値よりローカル値が進んでいれば同期対象とする
+      if (serverPlayerData && localConverted > serverConverted) {
+        shouldSyncConverted = true;
+      }
+    }
+
     // サーバーデータが存在する場合
     if (serverPlayerData) {
       const serverAutomataMaxCost =
@@ -761,6 +793,7 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         finalTotal !== sTotal ||
         finalPts !== sPts ||
         recon.reconciled ||
+        shouldSyncConverted ||
         shouldSyncFortuneProgress ||
         shouldSyncHighDifficultyProgress
       ) {
@@ -802,7 +835,17 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         mode === 'high_difficulty' &&
         Object.keys(loadHighDifficultyClearedData()).length > 0;
 
-      if (finalTotal > 0 || hasFortuneProgress || hasHighDiffProgress) {
+      const hasConvertedProgress = Boolean(
+        convConfig &&
+        (parseInt(localStorage.getItem(convConfig.convertedKey), 10) || 0) > 0
+      );
+
+      if (
+        finalTotal > 0 ||
+        hasConvertedProgress ||
+        hasFortuneProgress ||
+        hasHighDiffProgress
+      ) {
         const saved = await savePointsToServer(
           endpoint,
           finalPts,

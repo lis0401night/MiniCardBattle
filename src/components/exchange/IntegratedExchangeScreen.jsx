@@ -183,20 +183,18 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
    * @param {number} [amount=100] - 付与するポイント量
    */
   const grantDebugPoints = useCallback((amount = 100) => {
-    let nextCurrent = 0;
-    let nextTotal = 0;
-    setCurrentPoints((prev) => {
-      const next = prev + amount;
-      localStorage.setItem(COMMON_POINTS_KEY, String(next));
-      nextCurrent = next;
-      return next;
-    });
-    setTotalPoints((prev) => {
-      const next = prev + amount;
-      localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(next));
-      nextTotal = next;
-      return next;
-    });
+    // 永続化済みの値を基準に次値を同期算出する（updater内で副作用を実行しない）
+    const curBase = parseInt(localStorage.getItem(COMMON_POINTS_KEY), 10) || 0;
+    const totBase =
+      parseInt(localStorage.getItem(COMMON_TOTAL_POINTS_KEY), 10) || 0;
+    const nextCurrent = curBase + amount;
+    const nextTotal = totBase + amount;
+
+    localStorage.setItem(COMMON_POINTS_KEY, String(nextCurrent));
+    localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(nextTotal));
+    setCurrentPoints(nextCurrent);
+    setTotalPoints(nextTotal);
+
     // サーバーへ共通ポイントを同期保存
     savePointsToServer('update_common_points.php', nextCurrent, nextTotal);
   }, []);
@@ -285,14 +283,7 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
       try {
         playSound?.(SOUNDS?.seCardPlace);
 
-        // 1. 共通ポイントを減算してLocalStorageに保存
-        const newCurrent = currentPoints - totalCost;
-        setCurrentPoints(newCurrent);
-        localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
-        // サーバーへ共通ポイントを同期保存
-        savePointsToServer('update_common_points.php', newCurrent, totalPoints);
-
-        // 2. 最新の所持状況を取得してパックからカードを抽選（4枚所持カードは除外）
+        // 1. 最新の所持状況を取得してパックからカードを抽選（4枚所持カードは除外）
         const latestOwnership = getLatestOwnership();
         const currentInventory = { ...(latestOwnership?.inventory || {}) };
         const drawnCardIds = [];
@@ -306,13 +297,24 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
             (currentInventory[drawnCardId] || 0) + 1;
         }
 
+        // 2. 抽選が0件の場合はポイントを消費せずに中断する
         if (drawnCardIds.length === 0) {
-          showAlertModal('カードの抽選に失敗しました。');
+          showAlertModal(
+            'カードの抽選に失敗しました。対象パックのカードをすべて上限（4枚）まで所持している可能性があります。'
+          );
           setIsOpening(false);
           return;
         }
 
-        // 3. インベントリを更新・保存
+        // 3. 実際に取得できた枚数分のみポイントを減算して保存する
+        const chargedCost = singleCost * drawnCardIds.length;
+        const newCurrent = Math.max(0, currentPoints - chargedCost);
+        setCurrentPoints(newCurrent);
+        localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
+        // サーバーへ共通ポイントを同期保存
+        savePointsToServer('update_common_points.php', newCurrent, totalPoints);
+
+        // 4. インベントリを更新・保存
         Object.assign(GameState, { playerInventory: currentInventory });
         localStorage.setItem(INVENTORY_KEY, JSON.stringify(currentInventory));
         setInventory({ ...currentInventory });
@@ -320,7 +322,7 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
           saveDeck();
         }
 
-        // 4. パック開封画面（パックをタップして開封しカードを入手するモーダル）を表示
+        // 5. パック開封画面（パックをタップして開封しカードを入手するモーダル）を表示
         setPackOpeningData({
           cardIds: drawnCardIds,
           coverCardId: pack.coverCardId || DEFAULT_PACK_COVER_CARD_ID,

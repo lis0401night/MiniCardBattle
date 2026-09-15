@@ -91,6 +91,14 @@ if ($playerData) {
         $playerData['high_difficulty_cleared'] = json_encode($mergedCleared);
     }
 
+    $converted_points = isset($data['high_difficulty_converted_points'])
+        ? intval($data['high_difficulty_converted_points'])
+        : (isset($data['converted_points']) ? intval($data['converted_points']) : null);
+    if ($converted_points !== null && $converted_points >= 0) {
+        $currentConv = isset($playerData['high_difficulty_converted_points']) ? intval($playerData['high_difficulty_converted_points']) : 0;
+        $playerData['high_difficulty_converted_points'] = max($currentConv, $converted_points);
+    }
+
     $playerData['timestamp'] = time();
 
     $data_json = json_encode($playerData);
@@ -113,7 +121,8 @@ EOT;
             'success' => true,
             'high_difficulty_points' => $playerData['high_difficulty_points'],
             'high_difficulty_total_points' => $playerData['high_difficulty_total_points'],
-            'high_difficulty_cleared' => $playerData['high_difficulty_cleared'] ?? '{}'
+            'high_difficulty_cleared' => $playerData['high_difficulty_cleared'] ?? '{}',
+            'high_difficulty_converted_points' => $playerData['high_difficulty_converted_points'] ?? 0
         ]);
         exit;
     } else {

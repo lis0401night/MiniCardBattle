@@ -151,6 +151,8 @@ function CardPreviewContent({
         ? { width: 155, height: 260 }
         : { width: 180, height: 240 };
 
+  const hasPackCards = Boolean(styleProps?.packCardIds?.length > 0);
+
   /**
    * スキル説明文（文字列またはリンクセグメント配列）をJSX要素に変換して描画する。
    *
@@ -622,12 +624,14 @@ function CardPreviewContent({
                   <button
                     type="button"
                     aria-label="収録カード一覧を確認"
+                    disabled={!hasPackCards}
                     style={{
                       background: 'rgba(56, 189, 248, 0.15)',
                       border: '1px solid #38bdf8',
                       borderRadius: '6px',
                       color: '#38bdf8',
-                      cursor: 'pointer',
+                      cursor: hasPackCards ? 'pointer' : 'not-allowed',
+                      opacity: hasPackCards ? 1 : 0.4,
                       padding: '4px 10px',
                       display: 'flex',
                       alignItems: 'center',
@@ -639,6 +643,7 @@ function CardPreviewContent({
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!hasPackCards) return;
                       playSound?.(SOUNDS?.seClick);
                       // 収録カードIDが1件以上ある場合のみ一覧モーダルを開く
                       if (

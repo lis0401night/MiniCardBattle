@@ -1368,7 +1368,13 @@ export function applyActiveSkillLogic(
           const bestCard =
             bestCards[Math.floor(getSeededRandom() * bestCards.length)];
           const idx = myDeckSim.findIndex(
-            (card) => card.id === bestCard.id || card.baseId === bestCard.baseId
+            (card) =>
+              (bestCard.uid && card.uid === bestCard.uid) ||
+              card === bestCard ||
+              card.id === bestCard.id ||
+              (Boolean(bestCard.baseId) &&
+                (card.baseId === bestCard.baseId ||
+                  card.id === bestCard.baseId))
           );
           if (idx !== -1) myDeckSim.splice(idx, 1);
 

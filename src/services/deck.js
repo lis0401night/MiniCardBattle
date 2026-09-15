@@ -338,15 +338,28 @@ export function createDefaultLeaderDecks() {
   return initialDecks;
 }
 
+/** 試練の宮殿専用デッキの固定ID */
+export const DUNGEON_DECK_ID = 'dungeon_deck';
+/** 試練の宮殿専用デッキの既定名称 */
+export const DUNGEON_DECK_NAME = '試練の宮殿デッキ';
+/** 防衛戦専用デッキの固定ID */
+export const DEFENSE_DECK_ID = 'defense_deck';
+/** 防衛戦専用デッキの既定名称 */
+export const DEFENSE_DECK_NAME = '防衛デッキ';
+/** トーナメント専用デッキの固定ID */
+export const TOURNAMENT_DECK_ID = 'tournament_deck';
+/** トーナメント専用デッキの既定名称 */
+export const TOURNAMENT_DECK_NAME = 'トーナメントデッキ';
+
 /**
  * 特殊モード専用デッキの識別用ID一覧。
  * 名称（name）はユーザーが自由に編集可能なため、誤上書き・汚染の判定には使用しません。
  * @type {ReadonlyArray<string>}
  */
 export const SPECIAL_DECK_IDS = Object.freeze([
-  'dungeon_deck',
-  'defense_deck',
-  'tournament_deck',
+  DUNGEON_DECK_ID,
+  DEFENSE_DECK_ID,
+  TOURNAMENT_DECK_ID,
 ]);
 
 /**
@@ -360,12 +373,13 @@ export function isSpecialDeck(deck) {
 }
 
 /**
- * 通常デッキ配列を安全にLocalStorageに保存し、バックアップ（DECKS_BACKUP_KEY）もアトミックに同時更新します。
+ * 通常デッキ配列を安全にLocalStorageに保存し、バックアップ（DECKS_BACKUP_KEY）も更新します。
+ * 書き込みはバックアップを先行して更新するため、途中で容量超過等の障害が発生しても復旧元データは常に有効な状態を保ちます。
  * 特殊デッキ（isSpecialDeck）が混入している場合は自動的に完全に除外（フィルタリング）し、
  * 特殊デッキのみで通常デッキが0個になってしまう場合は書き込みを完全に拒否して安全を守ります。
  *
  * @param {Array<Object>} decks - 保存対象の通常デッキ配列
- * @returns {boolean} 正常に保存された場合は true、保存が拒否された場合は false
+ * @returns {boolean} 正常に保存された場合は true、保存が拒否または失敗した場合は false
  */
 export function saveSafeNormalDecks(decks) {
   if (typeof localStorage === 'undefined') return false;
@@ -382,10 +396,16 @@ export function saveSafeNormalDecks(decks) {
     return false;
   }
 
-  // 3. 通常デッキとバックアップの両方をアトミックに同時更新
-  localStorage.setItem(DECKS_KEY, JSON.stringify(cleanDecks));
-  localStorage.setItem(DECKS_BACKUP_KEY, JSON.stringify(cleanDecks));
-  return true;
+  // 3. バックアップを先行更新し、続けて通常デッキ保存箱を更新（容量超過等の例外を捕捉）
+  try {
+    const serialized = JSON.stringify(cleanDecks);
+    localStorage.setItem(DECKS_BACKUP_KEY, serialized);
+    localStorage.setItem(DECKS_KEY, serialized);
+    return true;
+  } catch (e) {
+    console.error('[saveSafeNormalDecks] 通常デッキの保存に失敗しました:', e);
+    return false;
+  }
 }
 
 /**
@@ -904,8 +924,8 @@ export function loadDeck() {
           deckObj.leaderId = GameState.playerConfig?.id || 'android';
         }
         if (deckObj) {
-          deckObj.id = 'dungeon_deck';
-          deckObj.name = deckObj.name || '試練の宮殿デッキ';
+          deckObj.id = DUNGEON_DECK_ID;
+          deckObj.name = deckObj.name || DUNGEON_DECK_NAME;
         }
         GameState.decks = [deckObj];
       } catch {
@@ -921,8 +941,8 @@ export function loadDeck() {
             data.deck || (data.cards ? data.cards.slice(0, 20) : []);
           GameState.decks = [
             {
-              id: 'dungeon_deck',
-              name: '試練の宮殿デッキ',
+              id: DUNGEON_DECK_ID,
+              name: DUNGEON_DECK_NAME,
               leaderId:
                 data.charId ||
                 data.playerConfig?.id ||
@@ -994,16 +1014,16 @@ export function loadDeck() {
     ) {
       createNewDeck('knight');
       if (GameState.gameMode === 'defense_register') {
-        GameState.decks[0].name = '防衛デッキ';
-        GameState.decks[0].id = 'defense_deck';
+        GameState.decks[0].name = DEFENSE_DECK_NAME;
+        GameState.decks[0].id = DEFENSE_DECK_ID;
       }
       if (GameState.gameMode === 'battle_dungeon') {
-        GameState.decks[0].name = '試練の宮殿デッキ';
-        GameState.decks[0].id = 'dungeon_deck';
+        GameState.decks[0].name = DUNGEON_DECK_NAME;
+        GameState.decks[0].id = DUNGEON_DECK_ID;
       }
       if (GameState.gameMode === 'tournament') {
-        GameState.decks[0].name = 'トーナメントデッキ';
-        GameState.decks[0].id = 'tournament_deck';
+        GameState.decks[0].name = TOURNAMENT_DECK_NAME;
+        GameState.decks[0].id = TOURNAMENT_DECK_ID;
       }
     } else {
       // 新規プレイヤー向けまたは修復用：全キャラクター（リーダー）分の初期デッキを生成
@@ -1214,15 +1234,14 @@ export function saveCurrentEditDeck() {
       );
     } else if (
       GameState.gameMode === 'battle_dungeon' ||
-      activeDeck?.id === 'dungeon_deck' ||
-      activeDeck?.name === '試練の宮殿デッキ'
+      activeDeck?.id === DUNGEON_DECK_ID
     ) {
       if (activeDeck) {
         const activeLeaderId =
           GameState.playerConfig?.id || activeDeck.leaderId;
         activeDeck.leaderId = activeLeaderId;
-        activeDeck.id = 'dungeon_deck';
-        activeDeck.name = '試練の宮殿デッキ';
+        activeDeck.id = DUNGEON_DECK_ID;
+        activeDeck.name = activeDeck.name || DUNGEON_DECK_NAME;
 
         // ダンジョン用デッキの playerSkins をクリーンアップ
         if (
@@ -1248,13 +1267,9 @@ export function saveCurrentEditDeck() {
       }
     } else {
       // 【絶対厳守ガード】通常デッキ保存箱への書き込み安全性チェック
-      // 万一アクティブデッキやGameState.decksに特殊デッキ（試練用・防衛用・トーナメント用）が含まれている場合は保存を拒否
-      const isContaminated =
-        isSpecialDeck(activeDeck) ||
-        GameState.gameMode === 'battle_dungeon' ||
-        GameState.gameMode === 'tournament';
-
-      if (isContaminated) {
+      // 先行分岐で tournament / battle_dungeon / defense_register は処理済みのため、
+      // 万一通常モード中に特殊デッキオブジェクトが混入している場合をID基準で検査・防御する
+      if (isSpecialDeck(activeDeck)) {
         console.warn(
           '特殊モードのデッキが検出されたため、通常デッキ保存箱（DECKS_KEY）への上書きを阻止しました:',
           activeDeck

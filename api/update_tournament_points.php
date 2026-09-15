@@ -69,6 +69,15 @@ if ($fileSize === 0) {
 if ($playerData) {
     $playerData['tournament_points'] = $points;
     $playerData['tournament_total_points'] = $total_points;
+
+    $converted_points = isset($data['tournament_converted_points'])
+        ? intval($data['tournament_converted_points'])
+        : (isset($data['converted_points']) ? intval($data['converted_points']) : null);
+    if ($converted_points !== null && $converted_points >= 0) {
+        $currentConv = isset($playerData['tournament_converted_points']) ? intval($playerData['tournament_converted_points']) : 0;
+        $playerData['tournament_converted_points'] = max($currentConv, $converted_points);
+    }
+
     $playerData['timestamp'] = time();
 
     $data_json = json_encode($playerData);
@@ -90,7 +99,8 @@ EOT;
         echo json_encode([
             'success' => true,
             'tournament_points' => $playerData['tournament_points'],
-            'tournament_total_points' => $playerData['tournament_total_points']
+            'tournament_total_points' => $playerData['tournament_total_points'],
+            'tournament_converted_points' => $playerData['tournament_converted_points'] ?? 0
         ]);
         exit;
     } else {

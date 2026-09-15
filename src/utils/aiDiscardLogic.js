@@ -106,13 +106,13 @@ export function getAIDiscardIndices(hand, count, isExact = false) {
   }
 
   // 【ステップ4】「〇枚（強制: isExact=true）」の場合のみ、規定数(count)に達するまで追加破棄
-  // 3-A: 手札事故が起きやすい「生贄/頂点」を優先消化
+  // 4-A: 手札事故が起きやすい「生贄/頂点」を優先消化
   for (const item of shuffleArray(takeoverApexCards)) {
     if (selected.length < count && !selected.includes(item)) {
       selected.push(item);
     }
   }
-  // 3-B: それでも規定枚数に足りなければ通常カードを選定
+  // 4-B: それでも規定枚数に足りなければ通常カードを選定
   for (const item of shuffleArray(normalCards)) {
     if (selected.length < count && !selected.includes(item)) {
       selected.push(item);

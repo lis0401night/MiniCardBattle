@@ -103,15 +103,20 @@ function syncDungeonDeckLeaderId(charId) {
         );
       }
     } else {
-      const deckCards = (GameState.playerDeckSelection || []).map((c) =>
-        typeof c === 'string' ? c : c.id || c.baseId
-      );
+      const deckCards = (GameState.playerDeckSelection || [])
+        .map((c) => (typeof c === 'string' ? c : c?.id || c?.baseId))
+        .filter(Boolean);
+      // 現在選択中のスキン設定を引き継ぎ、キャラクター画像の不整合を防止する
+      const sanitizedSkins = {};
+      if (GameState.playerSkins?.[charId]) {
+        sanitizedSkins[charId] = GameState.playerSkins[charId];
+      }
       obj = {
         id: 'dungeon_deck',
         name: '試練の宮殿デッキ',
         leaderId: charId,
         playmatId: GameState.selectedPlaymatId || null,
-        playerSkins: {},
+        playerSkins: sanitizedSkins,
         premiumCards: [...(GameState.premiumCards || [])],
         cards: deckCards,
       };

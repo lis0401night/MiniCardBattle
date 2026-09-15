@@ -2792,7 +2792,12 @@ export async function resolveActiveSkillEffect(
         // デッキから対象カードを取り除く
         const idx = deck.findIndex(
           (card) =>
-            card.id === selectedCard.id || card.baseId === selectedCard.baseId
+            (selectedCard.uid && card.uid === selectedCard.uid) ||
+            card === selectedCard ||
+            card.id === selectedCard.id ||
+            (Boolean(selectedCard.baseId) &&
+              (card.baseId === selectedCard.baseId ||
+                card.id === selectedCard.baseId))
         );
         if (idx !== -1) deck.splice(idx, 1);
 
@@ -2907,7 +2912,6 @@ export async function resolveActiveSkillEffect(
           // Normal以上: 常に最新の盤面・デッキ状況に基づき、直前シミュレーションで最善のカードを評価決定
           selectedCard = evaluateAdhocAssembleMove(deck, skObj, selfId, l, o);
         }
-        await sleep(AI_THINKING_DURATION);
       } else {
         selectedCard = await waitPlayerDiscardSelection(
           validCards,
@@ -2930,7 +2934,12 @@ export async function resolveActiveSkillEffect(
         // デッキから対象カードを取り除く（キャンセル時の復元用にインデックスを保持）
         const removedDeckIdx = deck.findIndex(
           (card) =>
-            card.id === selectedCard.id || card.baseId === selectedCard.baseId
+            (selectedCard.uid && card.uid === selectedCard.uid) ||
+            card === selectedCard ||
+            card.id === selectedCard.id ||
+            (Boolean(selectedCard.baseId) &&
+              (card.baseId === selectedCard.baseId ||
+                card.id === selectedCard.baseId))
         );
         if (removedDeckIdx !== -1) deck.splice(removedDeckIdx, 1);
 

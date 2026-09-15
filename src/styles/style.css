@@ -530,11 +530,8 @@ h2 {
   font-size: 1.5rem !important;
 }
 
-.btn-profile-menu {
-  position: relative !important;
-  font-size: 1.5rem !important;
-}
-
+/* 通知バッジを内包する円形アイコンボタン（プロフィール設定・デイリーミッション） */
+.btn-profile-menu,
 .btn-daily-missions {
   position: relative !important;
   font-size: 1.5rem !important;

@@ -1371,12 +1371,13 @@ export function processActionSequence(
         }
 
         // スキル解決が終わったため、保護フラグを解除する
-        // 【招来・召喚・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
+        // 【招来・召喚・召集・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
         // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
         if (activeCardForSkills) {
           const hasChainSummon =
             hasSkill(activeCardForSkills, 'invite') ||
             hasSkill(activeCardForSkills, 'summon') ||
+            hasSkill(activeCardForSkills, 'assemble') ||
             hasSkill(activeCardForSkills, 'forge');
           if (!hasChainSummon) {
             activeCardForSkills.isSkillResolving = false;
@@ -1394,12 +1395,13 @@ export function processActionSequence(
       }
 
       // 【連鎖スキル完了後の保留スキル発動】
-      // 連鎖スキル（forge/invite/summon）の子アクション処理（装備合体や追加カード配置）が完了した後に、
+      // 連鎖スキル（forge/invite/summon/assemble）の子アクション処理（装備合体や追加カード配置）が完了した後に、
       // 親カードに保留されていた即時スキル（quick/snipe等）を発動する。
       // これにより装備合体完了後の強化ステータスで速攻や砲撃が正しく実行される。
       if (
         action.type === 'invite' ||
         action.type === 'summon' ||
+        action.type === 'assemble' ||
         action.type === 'forge'
       ) {
         for (let i = 0; i < 3; i++) {
@@ -1492,9 +1494,13 @@ export function getBestSimulatedMove() {
       if (hasSkill(card, 'legendary')) {
         availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
       }
-      // 生贄・頂点: invite時は親カードが同レーンに配置済みだがmyBoardには未反映のため、
+      // 生贄・頂点: invite/summon/assemble時は親カードが配置済みだがmyBoardには未反映のため、
       // プリフィルタをスキップしprocessActionSequenceの正確なsimStateチェックに委ねる
-      if (sourceType !== 'invite' && sourceType !== 'summon') {
+      if (
+        sourceType !== 'invite' &&
+        sourceType !== 'summon' &&
+        sourceType !== 'assemble'
+      ) {
         // 生贄: 既にカードが置かれているレーン、またはリーダースキルで配置される予定のレーン
         if (hasSkill(card, 'takeover')) {
           availableLanes = availableLanes.filter((l) => {
@@ -5010,7 +5016,10 @@ export function evaluateAdhocAssembleMove(
         const childSelfId = assembleCard.baseId || assembleCard.id;
         const isChildSelf = Boolean(assembleSk.self || assembleSk.targetSelf);
         const nextTargets = deck.filter((dc) => {
-          if (dc.id === card.id || dc.baseId === card.baseId) {
+          if (
+            dc.id === card.id ||
+            (Boolean(card.baseId) && dc.baseId === card.baseId)
+          ) {
             const countInDeck = deck.filter(
               (c) => (c.baseId || c.id) === (card.baseId || card.id)
             ).length;
