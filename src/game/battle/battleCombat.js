@@ -871,6 +871,13 @@ export async function discardCard(
   card.skillTriggered = false;
   card.stunTurns = 0;
   card.stunAppliedThisTurn = false;
+  if (Array.isArray(card.skills)) {
+    card.skills.forEach((sk) => {
+      if (sk && typeof sk === 'object') {
+        delete sk.triggered;
+      }
+    });
+  }
 
   // 一時的なスキルの除去（無敵など）
   if (Array.isArray(card.skills)) {
@@ -1451,6 +1458,15 @@ export async function playCard(o, hI, l, depth = 0) {
             sk.value,
             enhancedSk
           );
+          // 装備由来のアクティブスキルを解決済みとしてフラグを立て、即座にバッジを消去・集約更新
+          const targetSk = targetCard.skills?.find(
+            (s) => s.id === sk.id && !s.triggered
+          );
+          if (targetSk) {
+            targetSk.triggered = true;
+          }
+          await sleep(50);
+          renderBoard();
         }
       }
 
@@ -1465,6 +1481,13 @@ export async function playCard(o, hI, l, depth = 0) {
 
   b[l] = h.splice(hI, 1)[0];
   const c = b[l];
+
+  // 同一オブジェクト参照の共有を防ぐためスキルを独立化し、発動フラグを初期化
+  if (Array.isArray(c.skills)) {
+    c.skills = c.skills.map((sk) =>
+      typeof sk === 'object' && sk !== null ? { ...sk, triggered: false } : sk
+    );
+  }
 
   // 出現時スキルを持つ場合は即座に保護フラグを立てる（描画待ちの破壊を防ぐ）
   if (hasActiveSkill(c)) {
@@ -1533,6 +1556,13 @@ export async function resolveOnPlaySkill(o, l, c) {
   c.isSkillResolving = true;
 
   try {
+    // 同一オブジェクト参照の共有を防ぐためスキルオブジェクトを独立化
+    if (Array.isArray(c.skills)) {
+      c.skills = c.skills.map((sk) =>
+        typeof sk === 'object' && sk !== null ? { ...sk } : sk
+      );
+    }
+
     // 発動対象スキルのリストを作成
     let skillsToResolve = Array.isArray(c.skills) ? [...c.skills] : [];
 
@@ -1547,6 +1577,13 @@ export async function resolveOnPlaySkill(o, l, c) {
     for (const sk of skillsToResolve) {
       if (ACTIVE_SKILLS.includes(sk.id)) {
         await resolveActiveSkillEffect(o, l, c, sk.id, sk.value, sk);
+
+        // 1つのスキル解決完了時に当該スキルを発動済みとし、盤面バッジ（集約カウント含む）を即座に更新
+        if (typeof sk === 'object' && sk !== null) {
+          sk.triggered = true;
+        }
+        await sleep(50);
+        renderBoard();
       }
     }
 

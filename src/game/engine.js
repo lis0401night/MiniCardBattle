@@ -195,9 +195,9 @@ export function getDamageBlockType(
     return 'immune';
   }
 
-  // 3. 回避
+  // 3. 回避（スタンが付与されている場合は無効）
   const resVal = getSkillValue(card, 'dodge');
-  if (resVal > 0 && amount >= resVal && !hasSkill(card, 'defender')) {
+  if (resVal > 0 && amount >= resVal && (card.stunTurns || 0) === 0) {
     return 'dodge';
   }
 
@@ -5787,7 +5787,6 @@ export function applyPassiveSkillLogic(
     if (
       hasSkill(c, 'teleport') &&
       (c.stunTurns || 0) === 0 &&
-      !hasSkill(c, 'defender') &&
       !teleportMovedIds.has(c.uid || c.id)
     ) {
       const sealedLanes =

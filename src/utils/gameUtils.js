@@ -1264,12 +1264,13 @@ export function renderSkillTag(
     if (s && id !== 'none' && s.name !== '通常') {
       // 盤面配置時のバッジ表示制御:
       // 1. トリガースキルおよび伝説を除く制約スキルは、盤面（isBoard）では最初から非表示
-      // 2. アクティブスキルは、召喚時効果の解決完了（skillTriggered）後に非表示
+      // 2. アクティブスキルは、召喚時効果の解決完了（カード全体のskillTriggeredまたは個別スキルのtriggered）後に非表示
       // 3. 伝説スキルおよびパッシブスキルは、盤面でも常に表示を継続
+      const isResolved = card.skillTriggered || Boolean(sk && sk.triggered);
       const showBadge =
         !isBoard ||
         (!BOARD_NEVER_SHOW_SKILL_IDS.includes(id) &&
-          (!card.skillTriggered || !ACTIVE_SKILLS.includes(id)));
+          (!isResolved || !ACTIVE_SKILLS.includes(id)));
       if (showBadge) {
         const info = getSkillBadgeInfo(sk);
         skillCandidates.push({
@@ -1340,11 +1341,10 @@ export function renderSkillTag(
     );
   });
 
-  // 拘束（スタン）状態による「防御」バッジ（集約対象外）
+  // 拘束・待機・凍結（スタン）状態バッジ（集約対象外）
   if (card.stunTurns > 0) {
-    const def = SKILLS['defender'];
     badges.push(
-      `<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">${def.icon} 防御${card.stunTurns}</div>`
+      `<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">💫 スタン${card.stunTurns}</div>`
     );
   }
 

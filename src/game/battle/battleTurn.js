@@ -174,7 +174,6 @@ export async function handleMoveSkills(owner) {
       typeof hasSkill === 'function' &&
       hasSkill(c, 'teleport') &&
       (c.stunTurns || 0) === 0 &&
-      !hasSkill(c, 'defender') &&
       !teleportMovedIds.has(c.uid || c.id)
     ) {
       const emptyLanes = [];

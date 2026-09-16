@@ -196,7 +196,8 @@ export const SKILLS = {
   bind: {
     name: '拘束',
     icon: '🕸️',
-    desc: (val) => `召喚時、正面のカードに${val}ターンの間「防御」を付与する。`,
+    desc: (val) =>
+      `召喚時、正面のカードに${val}ターンの間「スタン」（攻撃せず、敵カードや敵リーダーにダメージを与えられない）を付与する。`,
   },
   growth: {
     name: '成長',
@@ -575,7 +576,8 @@ export const SKILLS = {
   standby: {
     name: '待機',
     icon: '⏳',
-    desc: (val) => `召喚時、自身に${val}ターン防御を付与する。`,
+    desc: (val) =>
+      `召喚時、自身に${val}ターン「スタン」（攻撃せず、敵カードや敵リーダーにダメージを与えられない）を付与する。`,
   },
   artillery: {
     name: '砲撃',
@@ -661,7 +663,7 @@ export const SKILLS = {
     name: '回避',
     icon: '💠',
     desc: (val) =>
-      `${val}以上のダメージを無効化する。（防御が付与されている場合は無効）`,
+      `${val}以上のダメージを無効化する。（スタンが付与されている場合は無効）`,
   },
   fate: {
     name: '運命',
@@ -747,7 +749,7 @@ export const SKILLS = {
     name: '位相',
     icon: '🌫️',
     desc: () =>
-      '「位相」か「防御」を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。（防御が付与されている場合は無効）',
+      '「位相」か「防御」を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。（スタン・防御が付与されている場合は無効）',
   },
   petrify: {
     name: '石化',
@@ -859,13 +861,13 @@ export const SKILLS = {
     name: '移動',
     icon: '🏃',
     desc: () =>
-      '自分のターン開始時、隣のレーンに移動できる。（防御が付与されている場合は無効）',
+      '自分のターン開始時、隣のレーンに移動できる。（スタンが付与されている場合は無効）',
   },
   freeze: {
     name: '凍結',
     icon: '❄️',
     desc: (val) =>
-      `召喚時、正面とその隣のカードに${val}ターンの間「防御」を付与する。`,
+      `召喚時、正面とその隣のカードに${val}ターンの間「スタン」（攻撃せず、敵カードや敵リーダーにダメージを与えられない）を付与する。`,
   },
   loss: {
     name: '喪失',
@@ -876,7 +878,7 @@ export const SKILLS = {
     name: '神出',
     icon: '🚪',
     desc: () =>
-      '自分のターン開始時、ランダムな自分の空きレーンに移動する。（防御が付与されている場合は無効）',
+      '自分のターン開始時、ランダムな自分の空きレーンに移動する。（スタンが付与されている場合は無効）',
   },
   brutal: {
     name: '暴虐',
@@ -983,7 +985,8 @@ export const SKILLS = {
   crush: {
     name: '粉砕',
     icon: '🔨',
-    desc: () => `召喚時、お互いの場の「防御」を持つカードを全て破壊する。`,
+    desc: () =>
+      `召喚時、お互いの場の「防御」や「スタン」を持つカードを全て破壊する。`,
   },
   treason: {
     name: '反逆',
@@ -1311,10 +1314,10 @@ export const SKILLS = {
     icon: '⛓',
     /**
      * 「解放」スキルの説明テキストを生成する。
-     * 召喚時、自身の防御をなくす。
+     * 召喚時、自身のスタンと防御をなくす。
      * @returns {string} スキル説明文
      */
-    desc: () => '召喚時、自身の防御をなくす。',
+    desc: () => '召喚時、自身のスタンと防御をなくす。',
   },
   all_forms: {
     name: '万相',
@@ -1494,16 +1497,12 @@ export const SKILL_CATEGORIES = [
         skills: ['artillery', 'decree', 'fate'],
       },
       {
-        name: '状態付与',
-        skills: [
-          'bind',
-          'freeze',
-          'toxic',
-          'seal',
-          'petrify',
-          'oblivion',
-          'silence',
-        ],
+        name: '回復',
+        skills: ['heal', 'heal_void'],
+      },
+      {
+        name: 'SP',
+        skills: ['charge', 'hack'],
       },
       {
         name: '召喚',
@@ -1512,6 +1511,44 @@ export const SKILL_CATEGORIES = [
       {
         name: '配置',
         skills: ['servant', 'ambush', 'clone', 'resurrect', 'puppet'],
+      },
+      {
+        name: '強化：自身',
+        skills: [
+          'buff',
+          'lone_wolf',
+          'hero',
+          'adversity',
+          'sublimation',
+          'double_power',
+          'replicate',
+          'portent',
+          'invade',
+        ],
+      },
+      {
+        name: '強化：味方',
+        skills: ['support', 'support_void', 'inspire'],
+      },
+      {
+        name: '強化：手札',
+        skills: ['bless'],
+      },
+      {
+        name: '能力付与：自身',
+        skills: ['stealth', 'unleash'],
+      },
+      {
+        name: '能力付与：味方',
+        skills: ['protection', 'grant_deadly', 'grant_sturdy'],
+      },
+      {
+        name: '能力付与：敵',
+        skills: ['bind', 'freeze', 'toxic', 'seal', 'petrify', 'silence'],
+      },
+      {
+        name: '能力付与：全体',
+        skills: ['oblivion'],
       },
       {
         name: '手札・山札操作',
@@ -1527,52 +1564,14 @@ export const SKILL_CATEGORIES = [
         ],
       },
       {
-        name: '自己強化',
-        skills: [
-          'buff',
-          'lone_wolf',
-          'hero',
-          'adversity',
-          'sublimation',
-          'double_power',
-          'metamorph',
-          'portent',
-          'invade',
-          'supremacy',
-        ],
-      },
-      {
-        name: '味方強化',
-        skills: [
-          'support',
-          'support_void',
-          'grant_deadly',
-          'grant_sturdy',
-          'bless',
-          'inspire',
-          'protection',
-        ],
-      },
-      {
         name: '行動変化・特殊',
-        skills: [
-          'quick',
-          'stealth',
-          'leap',
-          'dominate',
-          'replicate',
-          'unleash',
-        ],
-      },
-      {
-        name: '回復・SP',
-        skills: ['heal', 'heal_void', 'charge', 'hack'],
+        skills: ['quick', 'leap', 'dominate', 'metamorph'],
       },
       {
         name: '破壊',
         skills: ['cull', 'crush', 'treason', 'dispel'],
       },
-      { name: '選択・命令', skills: ['choice', 'force'] },
+      { name: '選択・命令・覇道', skills: ['choice', 'force', 'supremacy'] },
       {
         name: 'デメリット',
         skills: [
@@ -1598,7 +1597,11 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '戦闘時・破壊時',
-        skills: ['soul_bind', 'absorb', 'extort', 'split', 'retaliate'],
+        skills: ['soul_bind', 'absorb', 'extort'],
+      },
+      {
+        name: '破壊時',
+        skills: ['split', 'retaliate'],
       },
       {
         name: 'ターン開始時',
@@ -1618,20 +1621,15 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '耐性',
-        skills: ['invincible', 'immune', 'dodge'],
+        skills: ['immune', 'dodge'],
       },
       {
-        name: '盤面影響・その他',
-        skills: [
-          'phase',
-          'equip',
-          'arm_self',
-          'startup',
-          'union',
-          'grave_keeper',
-          'miasma',
-          'all_forms',
-        ],
+        name: '盤面影響',
+        skills: ['phase', 'grave_keeper', 'miasma'],
+      },
+      {
+        name: 'その他',
+        skills: ['equip', 'arm_self', 'startup', 'union', 'all_forms'],
       },
       {
         name: 'デメリット',

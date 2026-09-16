@@ -765,7 +765,7 @@ const TUTORIAL_LEADER_WITCH = [
   {
     id: 'post_golem_intro',
     type: 'message',
-    text: '「待機」スキルを持つカードは、召喚されてから指定されたターン数だけ「防御」状態になり、攻撃ができないよ',
+    text: '「待機」スキルを持つカードは、召喚されてから指定されたターン数だけ「スタン」状態になり、攻撃ができないよ',
   },
   {
     id: 'post_golem_1',
