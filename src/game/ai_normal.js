@@ -1466,6 +1466,14 @@ export function getCandidateActionCount(candidate) {
   return count;
 }
 
+/**
+ * 通常AIの最適な行動候補をシミュレーションして選択する。
+ * 手札・盤面・リーダースキル・召喚時スキル・後続アクションを全探索・シミュレーションし、
+ * スコア、リーダースキル温存、最短アクション手数（不要なプレイ・自壊プレイの防止）、
+ * レーン配置優先順位の多段評価により、最も有利な着手（またはパス）を決定する。
+ *
+ * @returns {{ index: number, lane: number, useSkill: boolean, isOverwrite?: boolean, actionQueue?: Array<Object>, leaderCardSkillActions?: Array<Object>, score?: number }} 選択したAI行動候補
+ */
 export function getBestSimulatedMove() {
   const hand = GameState.enemyHand.map(cloneCard);
   const discard = GameState.enemyDiscard.map(cloneCard);
@@ -4260,11 +4268,12 @@ export function evaluateBestResurrectChoice(
   const isRed = owner === 'red';
 
   // 1. 「配置しない（パス）」基準スコアを算出
-  let bestScore;
+  let passScore;
   {
     const passSimState = structuredClone(initialSimState);
-    bestScore = evaluateTurnOutcome(passSimState, owner);
+    passScore = evaluateTurnOutcome(passSimState, owner);
   }
+  let bestScore = passScore;
   let bestChoice = { selectedCard: null, laneIdx: null };
 
   const sealedLanes = isRed
@@ -4350,7 +4359,7 @@ export function evaluateBestResurrectChoice(
 
       // 【手が少ないもの（パス）を選ぶ原則】
       // 基礎スコアがパス（配置しない）と同等以下であれば、タイブレークによってパスを逆転しないよう除外
-      if (isRed ? rawScore <= bestScore : rawScore >= bestScore) {
+      if (isRed ? rawScore <= passScore : rawScore >= passScore) {
         continue;
       }
 
@@ -4616,11 +4625,12 @@ export function evaluateAdhocDominateChoice(
   const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
 
   // 1. 「奪わない（キャンセル）」基準スコアを算出
-  let bestScore;
+  let passScore;
   {
     const passSimState = structuredClone(initialSimState);
-    bestScore = evaluateTurnOutcome(passSimState, owner);
+    passScore = evaluateTurnOutcome(passSimState, owner);
   }
+  let bestScore = passScore;
   let bestLane = -1;
 
   for (const oppLane of validOppLanes) {
@@ -4656,7 +4666,7 @@ export function evaluateAdhocDominateChoice(
 
     // 【手が少ないもの（奪わない・キャンセル）を選ぶ原則】
     // 基礎スコアが奪わない基準と同等以下であれば、タイブレークによってキャンセルを逆転しないよう除外
-    if (isRed ? rawScore <= bestScore : rawScore >= bestScore) {
+    if (isRed ? rawScore <= passScore : rawScore >= passScore) {
       continue;
     }
 
