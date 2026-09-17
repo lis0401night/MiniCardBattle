@@ -9,10 +9,9 @@ reviews:
   auto_review:
     enabled: true
   path_filters:
-    - '!**/node_modules/**'
-    - '!node_modules/**'
-    - '!dist/**'
-    - '!package-lock.json'
+    - 'src/**/*.{js,jsx,css}'
+    - 'api/**/*.{php,json}'
+    - 'scripts/**/*.js'
     - '!public/assets/**'
     - '!**/public/assets/**'
     - '!**/*.webp'
@@ -21,6 +20,10 @@ reviews:
     - '!**/*.jpeg'
     - '!**/*.mp3'
     - '!**/*.wav'
+    - '!**/node_modules/**'
+    - '!node_modules/**'
+    - '!dist/**'
+    - '!package-lock.json'
     - '!tool/**'
     - '!**/tool/**'
     - '!scratch/**'

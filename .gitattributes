@@ -1,0 +1,20 @@
+﻿# ==============================================================================
+# Git Attributes configuration for Mini Card Battle
+# ==============================================================================
+
+# Treat images and audio as binary files (prevent diff generation and token consumption)
+*.webp binary -diff
+*.png binary -diff
+*.jpg binary -diff
+*.jpeg binary -diff
+*.gif binary -diff
+*.ico binary -diff
+*.mp3 binary -diff
+*.wav binary -diff
+*.ogg binary -diff
+*.psd binary -diff
+
+# Mark generated assets and build directories as linguist-generated
+# This collapses them in GitHub PR diff views and informs AI review tools
+public/assets/** -diff linguist-generated=true
+dist/** -diff linguist-generated=true
