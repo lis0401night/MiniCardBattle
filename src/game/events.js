@@ -187,51 +187,56 @@ export function setupEventConfrontation() {
 
 /**
  * 他プレイヤーのデッキデータを取得・解決します。
- * 高速な JSON 形式（api/decks/players/{uuid}.json）を優先取得し、
- * 未移行の場合は旧 JS 形式（api/decks/players/{uuid}.js）へのフォールバックを行います。
+ * 高速な静的 JSON 形式（api/decks/players/{uuid}.json）を優先取得し、
+ * 未移行または未生成の場合は API（api/get_player_deck.php）へのフォールバックを行います。
+ * DOM操作（<script>タグ生成等）は行わず、すべて非同期API通信により解決します。
  *
  * @param {string} uuid - 読み込み対象プレイヤーのUUID
- * @returns {Promise<{ id: string, name: string, character: string, deck: Array<any> }>} 敵デッキ定義データ
+ * @return {Promise<Object>} 敵デッキ定義データ（保存済み属性をすべて保持）
  */
 export async function loadPlayerDeck(uuid) {
   let data = null;
 
-  // 1. JSON 形式の直接取得（優先・高速パース）
+  // 1. 静的 JSON 形式の直接取得（最速・キャッシュ効率最大）
   try {
     const jsonData = await asyncGet(`decks/players/${uuid}.json`, {
       t: Date.now(),
     });
-    if (jsonData && typeof jsonData === 'object') {
+    // JSONの構造を厳密に検証（空オブジェクトや不完全なレスポンスを弾き、旧形式へフォールバック可能にする）
+    if (
+      jsonData &&
+      typeof jsonData === 'object' &&
+      !Array.isArray(jsonData) &&
+      Array.isArray(jsonData.deck) &&
+      jsonData.deck.length > 0 &&
+      typeof jsonData.name === 'string'
+    ) {
       data = jsonData;
     }
   } catch {
-    // 未移行や取得失敗時は旧JS形式へフォールバック
+    // 404（未移行）等の場合はフォールバックAPIへ
   }
 
-  // 2. 旧 JS 形式のフォールバック読み込み
+  // 2. フォールバック: サーバー側デュアルリードAPI経由での安全取得（DOM操作廃止）
   if (!data) {
-    data = await new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = `api/decks/players/${uuid}.js?t=${Date.now()}`;
-      script.onload = () => {
-        if (
-          typeof window.PLAYER_DECKS !== 'undefined' &&
-          window.PLAYER_DECKS[uuid]
-        ) {
-          const loadedData = window.PLAYER_DECKS[uuid];
-          if (script.parentNode) script.parentNode.removeChild(script);
-          resolve(loadedData);
-        } else {
-          if (script.parentNode) script.parentNode.removeChild(script);
-          reject(new Error('Player deck data not found in script'));
-        }
-      };
-      script.onerror = () => {
-        if (script.parentNode) script.parentNode.removeChild(script);
-        reject(new Error('Failed to load player deck script'));
-      };
-      document.body.appendChild(script);
-    });
+    try {
+      const res = await asyncGet('get_player_deck.php', {
+        uuid,
+        t: Date.now(),
+      });
+      if (
+        res &&
+        res.success &&
+        res.player &&
+        typeof res.player === 'object' &&
+        Array.isArray(res.player.deck) &&
+        res.player.deck.length > 0
+      ) {
+        data = res.player;
+      }
+    } catch (apiErr) {
+      console.error('Failed to load player deck via fallback API:', apiErr);
+    }
   }
 
   if (!data) {
@@ -243,8 +248,9 @@ export async function loadPlayerDeck(uuid) {
     ? data.deck.map((item) => migrateCardId(item))
     : [];
 
-  // 敵デッキデータとして整形
+  // 敵デッキデータとして整形（保存済みの全メタ属性を保持した上で上書き補正）
   const enemyDeckData = {
+    ...data,
     id: 'player_defense',
     name: data.name,
     character: data.character,

@@ -50,6 +50,12 @@ if ($clearedDecoded === null && $fortune_cleared !== '{}') {
 }
 
 $dir = getPlayersDirectory();
+$lock = acquirePlayerLock($uuid, $dir);
+if (!$lock) {
+    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
+    exit;
+}
+
 $playerData = loadPlayerData($uuid, $dir);
 
 if (!$playerData) {
@@ -96,26 +102,36 @@ if ($playerData) {
             }
         }
     } else {
-        foreach ($newCleared as $key => $val) {
-            $mergedAutomata[$key] = ($mergedAutomata[$key] ?? false) || (bool)$val;
-            $mergedValkyria[$key] = ($mergedValkyria[$key] ?? false) || (bool)$val;
+        // 新リクエストがフラット形式の場合は両方にマージ（互換性）
+        foreach ($newCleared as $k => $v) {
+            $mergedAutomata[$k] = ($mergedAutomata[$k] ?? false) || (bool)$v;
+            $mergedValkyria[$k] = ($mergedValkyria[$k] ?? false) || (bool)$v;
         }
     }
 
     $playerData['fortune_cleared'] = json_encode([
         'automata' => $mergedAutomata,
-        'valkyria' => $mergedValkyria,
+        'valkyria' => $mergedValkyria
     ]);
 
-    // マキナ用合計目標値の更新（常に既存記録との最大値を保持）
-    $existingMaxCostAutomata = isset($playerData['fortune_max_total_cost_automata'])
-        ? intval($playerData['fortune_max_total_cost_automata'])
-        : 0;
-    $playerData['fortune_max_total_cost_automata'] = max($existingMaxCostAutomata, $fortune_max_total_cost_automata);
+    // キャラクター別目標コスト（個別レコードを保持）
+    if (!isset($playerData['fortune_max_total_cost_automata'])) {
+        $playerData['fortune_max_total_cost_automata'] = 0;
+    }
+    if (!isset($playerData['fortune_max_total_cost_valkyria'])) {
+        $playerData['fortune_max_total_cost_valkyria'] = 0;
+    }
 
-    // アンジェ用合計目標値の更新（常に既存記録との最大値を保持）
-    $existingMaxCostValkyria = isset($playerData['fortune_max_total_cost_valkyria']) ? intval($playerData['fortune_max_total_cost_valkyria']) : 0;
-    $playerData['fortune_max_total_cost_valkyria'] = max($existingMaxCostValkyria, $fortune_max_total_cost_valkyria);
+    if ($character === 'valkyria') {
+        if ($fortune_max_total_cost > intval($playerData['fortune_max_total_cost_valkyria'])) {
+            $playerData['fortune_max_total_cost_valkyria'] = $fortune_max_total_cost;
+        }
+    } else {
+        // デフォルトまたはマキナ
+        if ($fortune_max_total_cost > intval($playerData['fortune_max_total_cost_automata'])) {
+            $playerData['fortune_max_total_cost_automata'] = $fortune_max_total_cost;
+        }
+    }
 
     // 総合合計目標値（キャラクター別記録のうち最大値を保持）
     $autoCost = intval($playerData['fortune_max_total_cost_automata']);
@@ -126,6 +142,7 @@ if ($playerData) {
     $playerData['timestamp'] = time();
 
     $saved = savePlayerData($uuid, $playerData, $dir);
+    releasePlayerLock($lock);
 
     if ($saved) {
         echo json_encode([
@@ -142,6 +159,7 @@ if ($playerData) {
         exit;
     }
 } else {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'Failed to load or initialize player data']);
     exit;
 }

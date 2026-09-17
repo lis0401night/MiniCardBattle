@@ -64,9 +64,16 @@ if (!in_array($result, ['win', 'lose', 'draw'], true)) {
 $defense_result = $result === 'win' ? 'lose' : ($result === 'lose' ? 'win' : 'draw');
 
 $dir = getPlayersDirectory();
+$lock = acquirePlayerLock($target_uuid, $dir);
+if (!$lock) {
+    echo json_encode(['success' => false, 'error' => 'Failed to acquire target player lock']);
+    exit;
+}
+
 $playerData = loadPlayerData($target_uuid, $dir);
 
 if (!$playerData) {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'Target player file not found']);
     exit;
 }
@@ -115,6 +122,7 @@ if ($playerData) {
     $playerData['timestamp'] = time();
 
     $saved = savePlayerData($target_uuid, $playerData, $dir);
+    releasePlayerLock($lock);
 
     if (!$saved) {
         echo json_encode(['success' => false, 'error' => 'Failed to save updated file completely']);
@@ -163,8 +171,7 @@ if ($playerData) {
     echo json_encode(['success' => true, 'history' => $history]);
     exit;
 } else {
-    flock($fp, LOCK_UN);
-    fclose($fp);
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'Failed to parse target player data']);
     exit;
 }

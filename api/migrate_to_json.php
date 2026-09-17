@@ -11,7 +11,33 @@
 
 require_once __DIR__ . '/helpers.php';
 
-header('Content-Type: application/json');
+// CLI実行以外の場合は JSON ヘッダーを送信し、アクセス認証を検証
+$isCli = (php_sapi_name() === 'cli');
+if (!$isCli) {
+    header('Content-Type: application/json');
+
+    // 1. 環境変数による管理者トークン検証
+    $envToken = getenv('MCB_MIGRATION_TOKEN');
+    if ($envToken !== false && $envToken !== '') {
+        $requestToken = $_GET['token'] ?? ($_POST['token'] ?? '');
+        if (!hash_equals((string)$envToken, (string)$requestToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Forbidden: Invalid migration token']);
+            exit;
+        }
+    } else {
+        // 2. トークン環境変数未設定時の誤実行防止チェック（?confirm=1 を要求）
+        $confirm = $_GET['confirm'] ?? ($_POST['confirm'] ?? '');
+        if ($confirm !== '1') {
+            http_response_code(403);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Confirmation required. To execute migration, append ?confirm=1 to the URL.',
+            ]);
+            exit;
+        }
+    }
+}
 
 $dir = getPlayersDirectory();
 
@@ -51,43 +77,38 @@ foreach ($jsFiles as $file) {
 
     $jsonPath = "{$dir}/{$cleanUuid}.json";
 
-    // 既に正常な .json が存在する場合は、旧 .js を削除してスキップ
+    // 既に .json が存在し、かつ有効なデータ構造としてデコードできる場合は旧 .js を削除してスキップ
     if (file_exists($jsonPath) && filesize($jsonPath) > 0) {
-        @unlink($file);
-        $skipped++;
-        continue;
+        $existingContent = @file_get_contents($jsonPath);
+        $existingData = json_decode((string)$existingContent, true);
+        if (is_array($existingData) && !empty($existingData['uuid'])) {
+            @unlink($file);
+            $skipped++;
+            continue;
+        }
     }
 
-    $content = @file_get_contents($file);
-    if ($content === false || $content === '') {
-        $failed++;
-        $errors[] = "Failed to read file: {$filename}";
-        continue;
-    }
+    // loadPlayerData を使用して旧 .js から安全にパース（DRY原則）
+    $data = loadPlayerData($cleanUuid, $dir);
 
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-        $data = json_decode($matches[2], true);
-        if (is_array($data)) {
-            $jsonString = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            if ($jsonString !== false && @file_put_contents($jsonPath, $jsonString, LOCK_EX)) {
-                // .json 保存成功後、旧 .js ファイルを完全に削除
-                @unlink($file);
-                $converted++;
-            } else {
-                $failed++;
-                $errors[] = "Failed to save json for: {$cleanUuid}";
-            }
+    if (is_array($data) && !empty($data)) {
+        // savePlayerData のアトミック保存（一時ファイル+リネーム）を使用し、.js の再生成は抑止（$writeLegacyJs = false）
+        $saved = savePlayerData($cleanUuid, $data, $dir, false);
+        if ($saved) {
+            // .json 保存成功を100%確認した後にのみ旧 .js を削除
+            @unlink($file);
+            $converted++;
         } else {
             $failed++;
-            $errors[] = "JSON decode failed for: {$filename}";
+            $errors[] = "Failed to save json atomically for: {$cleanUuid}";
         }
     } else {
         $failed++;
-        $errors[] = "Pattern match failed for: {$filename}";
+        $errors[] = "Failed to parse legacy player data for: {$filename}";
     }
 }
 
-echo json_encode([
+$response = [
     'success' => true,
     'message' => "Migration finished. {$converted} converted, {$skipped} skipped, {$failed} failed.",
     'total' => $total,
@@ -95,4 +116,10 @@ echo json_encode([
     'skipped' => $skipped,
     'failed' => $failed,
     'errors' => $errors,
-]);
+];
+
+if ($isCli) {
+    echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
+} else {
+    echo json_encode($response);
+}

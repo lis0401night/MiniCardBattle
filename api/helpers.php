@@ -441,9 +441,10 @@ function loadPlayerData(string $uuid, ?string $dir = null): ?array {
  * @param string $uuid プレイヤーのUUID
  * @param array $playerData 保存するプレイヤーデータ配列
  * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
+ * @param bool $writeLegacyJs 旧形式（.js）を同時に書き出すか（デフォルト: true）
  * @return bool 保存に成功したかどうか
  */
-function savePlayerData(string $uuid, array $playerData, ?string $dir = null): bool {
+function savePlayerData(string $uuid, array $playerData, ?string $dir = null, bool $writeLegacyJs = true): bool {
     $cleanUuid = preg_replace('/[^a-zA-Z0-9_\-]/', '', $uuid);
     if ($cleanUuid === '' || empty($playerData)) {
         return false;
@@ -488,7 +489,7 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null): b
 
     // 2. 古いクライアント互換用：旧 JS 形式（.js）も同時に書き出し（デュアルライト）
     // 古いクライアントが防衛戦で <script src="api/decks/players/{uuid}.js"> を読み込む際の404エラーを防止
-    if ($saved) {
+    if ($saved && $writeLegacyJs) {
         $jsPath = "{$targetDir}/{$cleanUuid}.js";
         $jsContent = "if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }\n" .
                      "PLAYER_DECKS['{$cleanUuid}'] = {$jsonString};\n";
@@ -498,5 +499,125 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null): b
     return $saved;
 }
 
+/**
+ * 指定プレイヤーの更新用排他ロックを取得します。
+ * read-modify-write（読み込み・更新・保存）のトランザクション全体を直列化し、
+ * 並行リクエストによるロストアップデート（ポイント・インベントリ等の消失）を防止します。
+ * 
+ * @param string $uuid プレイヤーのUUID
+ * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
+ * @return resource|null ロック済みファイルハンドル、失敗時はnull
+ */
+function acquirePlayerLock(string $uuid, ?string $dir = null) {
+    $cleanUuid = preg_replace('/[^a-zA-Z0-9_\-]/', '', $uuid);
+    if ($cleanUuid === '') {
+        return null;
+    }
+    $targetDir = $dir ?? getPlayersDirectory();
+    $lockFile = "{$targetDir}/{$cleanUuid}.lock";
+    $fp = @fopen($lockFile, 'c');
+    if (!$fp) {
+        return null;
+    }
+    if (!flock($fp, LOCK_EX)) {
+        fclose($fp);
+        return null;
+    }
+    return $fp;
+}
 
+/**
+ * プレイヤー更新用ロックを解放します。
+ * 
+ * @param resource|null $fp acquirePlayerLock() が返したファイルハンドル
+ * @return void
+ */
+function releasePlayerLock($fp): void {
+    if ($fp && is_resource($fp)) {
+        @flock($fp, LOCK_UN);
+        @fclose($fp);
+    }
+}
+
+/** 防衛デッキとして必要なカード枚数 */
+const DEFENSE_DECK_SIZE = 20;
+
+/**
+ * 登録済み全プレイヤーのデータを読み込みます（JSON優先・旧JSフォールバック）。
+ * 
+ * JSONファイルと旧JSファイルの両方を走査し、最新のプレイヤーデータ配列のリストを返します。
+ * UUID がデータ内に欠落している場合はファイル名から自動補完し、一覧からの脱落を防止します。
+ * 
+ * @param bool $includeDeck デッキ配列（deck）を含めるかどうか（falseの場合は一覧軽量化のため除外）
+ * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
+ * @return array<array> プレイヤーデータ配列のリスト（タイムスタンプ降順）
+ */
+function loadAllPlayers(bool $includeDeck, ?string $dir = null): array {
+    $targetDir = $dir ?? getPlayersDirectory();
+    $players = [];
+    $processedUuids = [];
+
+    if (!is_dir($targetDir)) {
+        return $players;
+    }
+
+    // 1. 高速な JSON 形式のファイルを直接デコード（正規表現なし）
+    $jsonFiles = glob("{$targetDir}/*.json");
+    if ($jsonFiles) {
+        foreach ($jsonFiles as $file) {
+            $content = @file_get_contents($file);
+            if ($content !== false && $content !== '') {
+                $data = json_decode($content, true);
+                if (is_array($data) && !empty($data)) {
+                    // uuid が欠落している旧データはファイル名から安全に補完
+                    if (empty($data['uuid'])) {
+                        $data['uuid'] = basename($file, '.json');
+                    }
+                    $uuid = $data['uuid'];
+                    $processedUuids[$uuid] = true;
+                    // 防衛デッキが正しく登録されている（規定枚数）かどうかを判定するフラグを付与
+                    $data['has_defense_deck'] = (isset($data['deck']) && is_array($data['deck']) && count($data['deck']) === DEFENSE_DECK_SIZE);
+                    if (!$includeDeck) {
+                        unset($data['deck']);
+                    }
+                    $players[] = $data;
+                }
+            }
+        }
+    }
+
+    // 2. 移行過渡期用：未移行の旧 JS ファイルが存在すればフォールバック読込
+    $jsFiles = glob("{$targetDir}/*.js");
+    if ($jsFiles) {
+        foreach ($jsFiles as $file) {
+            $content = @file_get_contents($file);
+            if ($content !== false && $content !== '') {
+                if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
+                    $uuid = $matches[1];
+                    if (!isset($processedUuids[$uuid])) {
+                        $data = json_decode($matches[2], true);
+                        if (is_array($data)) {
+                            if (empty($data['uuid'])) {
+                                $data['uuid'] = $uuid;
+                            }
+                            $processedUuids[$uuid] = true;
+                            $data['has_defense_deck'] = (isset($data['deck']) && is_array($data['deck']) && count($data['deck']) === DEFENSE_DECK_SIZE);
+                            if (!$includeDeck) {
+                                unset($data['deck']);
+                            }
+                            $players[] = $data;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // タイムスタンプの降順（新しい順）でソート
+    usort($players, function($a, $b) {
+        return strcmp($b['timestamp'] ?? '', $a['timestamp'] ?? '');
+    });
+
+    return $players;
+}
 

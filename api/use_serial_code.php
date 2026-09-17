@@ -12,6 +12,7 @@
  */
 
 header('Content-Type: application/json');
+require_once __DIR__ . '/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Invalid request method']);
@@ -34,8 +35,13 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-
 $dir = getPlayersDirectory();
+$lock = acquirePlayerLock($uuid, $dir);
+if (!$lock) {
+    echo json_encode(['success' => false, 'error' => 'failed_to_acquire_lock']);
+    exit;
+}
+
 $jsonPath = "{$dir}/{$uuid}.json";
 $jsPath = "{$dir}/{$uuid}.js";
 $fileExists = file_exists($jsonPath) || file_exists($jsPath);
@@ -43,6 +49,7 @@ $fileExists = file_exists($jsonPath) || file_exists($jsPath);
 $player_data = loadPlayerData($uuid, $dir);
 
 if ($fileExists && $player_data === null) {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'player_data_corrupt']);
     exit;
 }
@@ -70,12 +77,14 @@ if (!isset($player_data['icon'])) {
 // 定数ファイル（serials.json）からシリアルコード一覧をロード
 $json_path = __DIR__ . '/serials.json';
 if (!file_exists($json_path)) {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'config_missing']);
     exit;
 }
 
 $serials_config = json_decode(file_get_contents($json_path), true);
 if (!$serials_config) {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'config_corrupt']);
     exit;
 }
@@ -88,8 +97,7 @@ if (isset($serials_config[$code])) {
 
     // すでに使用済みかチェック（巻き戻しバグ救済のための自己修復ロジック）
     if (in_array($code, $player_data['used_serials'])) {
-        flock($fp, LOCK_UN);
-        fclose($fp);
+        releasePlayerLock($lock);
         echo json_encode([
             'success' => true,
             'reward' => $rewardValue,
@@ -140,6 +148,7 @@ if (isset($serials_config[$code])) {
     $player_data['timestamp'] = time();
 
     $saved = savePlayerData($uuid, $player_data, $dir);
+    releasePlayerLock($lock);
 
     if ($saved) {
         echo json_encode([
@@ -152,6 +161,7 @@ if (isset($serials_config[$code])) {
         echo json_encode(['success' => false, 'error' => 'failed_to_save']);
     }
 } else {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'invalid_code']);
 }
 

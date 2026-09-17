@@ -39,6 +39,12 @@ if (strlen($uuid) < 10) {
 }
 
 $dir = getPlayersDirectory();
+$lock = acquirePlayerLock($uuid, $dir);
+if (!$lock) {
+    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
+    exit;
+}
+
 $jsonPath = "{$dir}/{$uuid}.json";
 $jsPath = "{$dir}/{$uuid}.js";
 $fileExists = file_exists($jsonPath) || file_exists($jsPath);
@@ -46,6 +52,7 @@ $fileExists = file_exists($jsonPath) || file_exists($jsPath);
 $player_data = loadPlayerData($uuid, $dir);
 
 if ($fileExists && $player_data === null) {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
     exit;
 }
@@ -76,6 +83,7 @@ if (array_key_exists('favoriteCard', $data)) {
 $player_data['timestamp'] = $timestamp;
 
 $saved = savePlayerData($uuid, $player_data, $dir);
+releasePlayerLock($lock);
 
 if ($saved) {
     echo json_encode(['success' => true]);

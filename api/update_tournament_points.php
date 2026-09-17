@@ -37,6 +37,12 @@ if (strlen($uuid) < 10) {
 }
 
 $dir = getPlayersDirectory();
+$lock = acquirePlayerLock($uuid, $dir);
+if (!$lock) {
+    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
+    exit;
+}
+
 $playerData = loadPlayerData($uuid, $dir);
 
 if (!$playerData) {
@@ -59,6 +65,7 @@ if ($playerData) {
     $playerData['timestamp'] = time();
 
     $saved = savePlayerData($uuid, $playerData, $dir);
+    releasePlayerLock($lock);
 
     if ($saved) {
         echo json_encode([
@@ -73,6 +80,7 @@ if ($playerData) {
         exit;
     }
 } else {
+    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'Failed to load or initialize player data']);
     exit;
 }

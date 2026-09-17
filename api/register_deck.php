@@ -69,6 +69,12 @@ if (strlen($uuid) < 10 || count($deck) !== 20) {
 }
 
 $dir = getPlayersDirectory();
+$lock = acquirePlayerLock($uuid, $dir);
+if (!$lock) {
+    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
+    exit;
+}
+
 $player_data = loadPlayerData($uuid, $dir);
 
 if (empty($player_data)) {
@@ -87,6 +93,7 @@ $player_data['timestamp'] = $timestamp;
 $player_data['lastAccessAt'] = $timestamp;
 
 $saved = savePlayerData($uuid, $player_data, $dir);
+releasePlayerLock($lock);
 
 if ($saved) {
     echo json_encode(['success' => true]);

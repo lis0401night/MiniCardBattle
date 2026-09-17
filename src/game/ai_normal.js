@@ -118,7 +118,7 @@ function hasActiveSkill(c) {
  * @param {object} execCard - 分裂スキルを持つカード
  * @param {number} tgtLane - 対象レーンインデックス (0~2)
  * @param {string} [owner='red'] - 所有者 ('blue' | 'red')
- * @returns {object} 生成されたシミュレーション用トークンカードオブジェクト
+ * @return {object} 生成されたシミュレーション用トークンカードオブジェクト
  */
 function createSplitSimToken(execCard, tgtLane, owner = 'red') {
   const tokenId =
@@ -174,7 +174,7 @@ const METAMORPH_ESTIMATED_POWER = 5;
  * キーワード指定（targetKeyword）や通常指定の場合は sk.value または規定フォールバック値（4）で近似する。
  *
  * @param {object|null|undefined} sk - 号令または召集のスキル定義オブジェクト
- * @returns {number} 近似されるパワーボーナス値
+ * @return {number} 近似されるパワーボーナス値
  */
 function estimateCallAssembleBonus(sk) {
   if (!sk || typeof sk !== 'object') return 4;
@@ -227,7 +227,7 @@ const cloneCard = (c) => (c ? structuredClone(c) : null);
 
 /**
  * canCardBeDestroyed が参照する加護カウンターのみを持つ軽量ステートオブジェクトを生成します。
- * @returns {Object} { valkyriaGuardBlue: number, valkyriaGuardRed: number }
+ * @return {Object} { valkyriaGuardBlue: number, valkyriaGuardRed: number }
  */
 function createGuardProjectedState() {
   return {
@@ -327,7 +327,7 @@ const getCombinations = (arr, k) => {
  *
  * @param {Array<object>} choicesArray - 選択肢オブジェクトの配列
  * @param {number} count - 選択する個数
- * @returns {Array<number[]>} ユニーク化された選択インデックス配列のリスト
+ * @return {Array<number[]>} ユニーク化された選択インデックス配列のリスト
  */
 export const getUniqueChoiceCombinations = (choicesArray, count) => {
   if (!choicesArray || choicesArray.length === 0 || count <= 0) {
@@ -368,7 +368,7 @@ export const getUniqueChoiceCombinations = (choicesArray, count) => {
  * 手札内の同名・同ステータス・同スキルの完全同一カードを重複探索しないために使用する。
  *
  * @param {object} card - カードオブジェクト
- * @returns {string} カードシグネチャ文字列
+ * @return {string} カードシグネチャ文字列
  */
 export function getCardSignature(card) {
   if (!card) return 'null';
@@ -398,7 +398,7 @@ export function getCardSignature(card) {
  * @param {Object} simState - シミュレーション状態オブジェクト
  * @param {Object|null} card - 保留スキルを持つカードオブジェクト
  * @param {number} lane - カードが配置されているレーンインデックス
- * @returns {void}
+ * @return {void}
  */
 function flushPendingSimSkills(simState, card, lane) {
   if (!card || !Array.isArray(card._pendingSimSkills)) return;
@@ -1440,7 +1440,7 @@ export function processActionSequence(
  * 手数0の「パス」よりもタイブレーク加算によって不当に優先されるバグを根絶する。
  *
  * @param {Object} candidate - 評価対象の候補手オブジェクト
- * @returns {number} 候補手が消費する総アクション数（手数）
+ * @return {number} 候補手が消費する総アクション数（手数）
  */
 export function getCandidateActionCount(candidate) {
   if (!candidate) return 0;
@@ -1472,7 +1472,7 @@ export function getCandidateActionCount(candidate) {
  * スコア、リーダースキル温存、最短アクション手数（不要なプレイ・自壊プレイの防止）、
  * レーン配置優先順位の多段評価により、最も有利な着手（またはパス）を決定する。
  *
- * @returns {{ index: number, lane: number, useSkill: boolean, isOverwrite?: boolean, actionQueue?: Array<Object>, leaderCardSkillActions?: Array<Object>, score?: number }} 選択したAI行動候補
+ * @return {{ index: number, lane: number, useSkill: boolean, isOverwrite?: boolean, actionQueue?: Array<Object>, leaderCardSkillActions?: Array<Object>, score?: number }} 選択したAI行動候補
  */
 export function getBestSimulatedMove() {
   const hand = GameState.enemyHand.map(cloneCard);
@@ -3672,7 +3672,7 @@ export function getBestSimulatedMove() {
  * これは代償が「戦略的なコスト」であり、敵の攻撃による「戦術的な脅威」とは別物であるため。
  *
  * @param {object} state - 評価対象の盤面状態
- * @returns {number} 総合評価スコア
+ * @return {number} 総合評価スコア
  */
 export function evaluateSimState(state) {
   let myPower = 0;
@@ -3946,7 +3946,7 @@ export function simulateCombatStep(simState, attackerSide) {
  *    - ※ターン交代に伴い無敵スキル（invincible）等の持続時間を正しく減衰（decayInvincibleSkills）させる。
  *
  * @param {object} simState - アクション適用後のシミュレーション盤面状態
- * @returns {object} 戦闘フェーズ解決後のシミュレーション盤面状態
+ * @return {object} 戦闘フェーズ解決後のシミュレーション盤面状態
  */
 export function advanceCombatPhase(simState) {
   // アクションキュー全解決後、戦闘をシミュレートする前に
@@ -4004,7 +4004,7 @@ export function advanceCombatPhase(simState) {
  *
  * @param {object} simState - アクション適用後のシミュレーション盤面状態
  * @param {'red' | 'blue'} [_actionOwner='red'] - アクションを行った陣営（互換性パラメータ）
- * @returns {number} 評価スコア（AI(red)視点のスコア）
+ * @return {number} 評価スコア（AI(red)視点のスコア）
  */
 export function evaluateTurnOutcome(simState, _actionOwner = 'red') {
   advanceCombatPhase(simState);
@@ -4016,7 +4016,7 @@ export function evaluateTurnOutcome(simState, _actionOwner = 'red') {
  * @param {object} simState - シミュレーション盤面状態
  * @param {'red' | 'blue'} [triggerOwner='red'] - スキル発動または誘発を行う陣営
  * @param {boolean} [_isPostCombat=true] - 互換用フラグ（メインアクションは常に戦闘終了後）
- * @returns {number} 評価スコア
+ * @return {number} 評価スコア
  * @deprecated evaluateTurnOutcome を使用してください。
  */
 export function evaluateTriggerTurnOutcome(
@@ -4031,7 +4031,7 @@ export function evaluateTriggerTurnOutcome(
  * シミュレーション用の初期ゲーム状態（ディープコピー）を構築する共通ヘルパー関数。
  * 号令・狂気・反魂および誘発シミュレーションで共通利用する。
  *
- * @returns {object} シミュレーション用初期状態オブジェクト
+ * @return {object} シミュレーション用初期状態オブジェクト
  */
 export function buildInitialSimState() {
   return {
@@ -4084,7 +4084,7 @@ export function buildInitialSimState() {
  * @param {Array<object>} validTriggerCards - 手札にある召喚可能な誘発スキル所持カード群
  * @param {'red' | 'blue'} [owner='red'] - 誘発を行う陣営 ('red' | 'blue')
  * @param {object} [customSimState=null] - 外部から渡すシミュレーション盤面（省略時はGameStateから構築）
- * @returns {{ cardIdx: number, laneIdx: number, score: number }|null} 最善手（パスなら null）
+ * @return {{ cardIdx: number, laneIdx: number, score: number }|null} 最善手（パスなら null）
  */
 export function evaluateTriggerSimulation(
   validTriggerCards,
@@ -4253,7 +4253,7 @@ export function applyOpponentTriggerReaction(_simState) {
  * @param {Array<object>} validCards - 墓地内の有効な復活・傀儡対象カード群
  * @param {'red' | 'blue'} [owner='red'] - スキル発動者 ('red' | 'blue')
  * @param {boolean} [isPuppet=false] - 傀儡（相手墓地からの配置）かどうか
- * @returns {{ selectedCard: object|null, laneIdx: number|null }} 最善カードと配置レーン
+ * @return {{ selectedCard: object|null, laneIdx: number|null }} 最善カードと配置レーン
  */
 export function evaluateBestResurrectChoice(
   validCards,
@@ -4391,7 +4391,7 @@ export function evaluateBestResurrectChoice(
  * @param {Array<object>} hand - 手札カード配列
  * @param {number} laneIdx - 召喚先レーン番号
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
- * @returns {{ selectedIdx: number }} 最善手札インデックス（パスなら -1）
+ * @return {{ selectedIdx: number }} 最善手札インデックス（パスなら -1）
  */
 export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
   if (!hand || hand.length === 0 || laneIdx < 0 || laneIdx > 2) {
@@ -4496,7 +4496,7 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
  * @param {number} currentLane - 鼓舞スキルを発動したカードのレーン番号
  * @param {number} bVal - パワー上昇量
  * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
- * @returns {number|null} 最善対象レーン番号（対象なしの場合は null）
+ * @return {number|null} 最善対象レーン番号（対象なしの場合は null）
  */
 export function evaluateAdhocInspireChoice(
   myBoard,
@@ -4557,7 +4557,7 @@ export function evaluateAdhocInspireChoice(
  *
  * @param {Array<object|null>} myBoard - 味方盤面カード配列
  * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
- * @returns {number|null} 最善対象レーン番号（対象なしの場合は null）
+ * @return {number|null} 最善対象レーン番号（対象なしの場合は null）
  */
 export function evaluateAdhocProtectionChoice(myBoard, owner = 'red') {
   if (!myBoard) return null;
@@ -4611,7 +4611,7 @@ export function evaluateAdhocProtectionChoice(myBoard, owner = 'red') {
  * @param {number[]} validOppLanes - 奪うことが可能な相手レーン番号配列
  * @param {number} maxPower - 支配可能なカードのパワー上限
  * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
- * @returns {number} 奪う対象の相手レーン番号（キャンセルが最善の場合は -1）
+ * @return {number} 奪う対象の相手レーン番号（キャンセルが最善の場合は -1）
  */
 export function evaluateAdhocDominateChoice(
   validOppLanes,
@@ -4697,7 +4697,7 @@ export function evaluateAdhocDominateChoice(
  * @param {Array<object|null>} myBoard - 破壊対象を選ぶ側の盤面配列
  * @param {number} [selectCount=1] - 破壊対象とするカード枚数
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
- * @returns {Array<number>} 破壊対象とする最善レーン番号の配列
+ * @return {Array<number>} 破壊対象とする最善レーン番号の配列
  */
 export function evaluateAdhocCardDestructionChoice(
   myBoard,
@@ -4791,7 +4791,7 @@ export function evaluateAdhocCardDestructionChoice(
  *
  * @param {Array<object|null>} myBoard - 自軍の盤面配列
  * @param {'red' | 'blue'} [owner='red'] - 発動側プレイヤー種別
- * @returns {number} 破壊対象とする最善レーン番号（0〜2）。対象なしなら -1
+ * @return {number} 破壊対象とする最善レーン番号（0〜2）。対象なしなら -1
  */
 export function evaluateAdhocExecuteChoice(myBoard, owner = 'red') {
   const lanes = evaluateAdhocCardDestructionChoice(myBoard, 1, owner);
@@ -4805,7 +4805,7 @@ export function evaluateAdhocExecuteChoice(myBoard, owner = 'red') {
  * @param {Array<object|null>} myBoard - 選別を受けた側の盤面配列（自軍）
  * @param {number} [selectCount=1] - 破壊対象とするカード枚数
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
- * @returns {Array<number>} 破壊対象とする最善レーン番号の配列
+ * @return {Array<number>} 破壊対象とする最善レーン番号の配列
  */
 export function evaluateAdhocCullChoice(
   myBoard,
@@ -4825,7 +4825,7 @@ export function evaluateAdhocCullChoice(
  * @param {Array<string>} presentBoardIds - 盤面に既に存在するカードID群
  * @param {number} defaultLane - フォールバック先レーン
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
- * @returns {{ selectedIdx: number, laneIdx: number }} 最善手札インデックスと配置レーン（パスなら selectedIdx: -1）
+ * @return {{ selectedIdx: number, laneIdx: number }} 最善手札インデックスと配置レーン（パスなら selectedIdx: -1）
  */
 export function evaluateAdhocSummonMove(
   hand,
@@ -4964,7 +4964,7 @@ export function evaluateAdhocSummonMove(
  * @param {string|null} selfId - 発動元カードID
  * @param {number} defaultLane - 召喚先レーン番号
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
- * @returns {object|null} 最善カードオブジェクト（パスなら null）
+ * @return {object|null} 最善カードオブジェクト（パスなら null）
  */
 export function evaluateAdhocAssembleMove(
   deck,
@@ -5159,7 +5159,7 @@ export function evaluateAdhocAssembleMove(
  * @param {number} [maxChoices=1] - 選択可能な個数
  * @param {'red' | 'blue'} [owner='red'] - スキル発動陣営
  * @param {number} [sourceLane=-1] - 発動元カードが召喚された元のレーン番号（破壊後の参照用）
- * @returns {Array<object>} 最善の選択肢配列
+ * @return {Array<object>} 最善の選択肢配列
  */
 export function evaluateAdhocSkillChoice(
   card,
@@ -5326,7 +5326,7 @@ export function evaluateAdhocSkillChoice(
  * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）を適用するか
  * @param {boolean} [canCancel=false] - 配置キャンセルを候補に含めるか
  * @param {number[]|null} [candidateLanes=null] - 配置候補レーンの配列（分身の隣接レーン制限など）
- * @returns {number[]|null} 最善レーンの配列。キャンセルが最善の場合は null、候補なしの場合は空配列
+ * @return {number[]|null} 最善レーンの配列。キャンセルが最善の場合は null、候補なしの場合は空配列
  */
 export function evaluateAdhocTokenLanes(
   tokenCard,
@@ -6763,7 +6763,7 @@ export function evaluateAdhocTokenLanes(
  * @param {number} count - 配置要求数
  * @param {boolean} [canCancel=false] - 配置キャンセル可能フラグ
  * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）の適用フラグ
- * @returns {Array<number>} 決定された配置レーン配列
+ * @return {Array<number>} 決定された配置レーン配列
  */
 export function getNormalTokenLanes(
   allLanes,
