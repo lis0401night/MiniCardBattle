@@ -113,21 +113,37 @@ export function getEasyDecision() {
   // パス以外の有効な行動（手札を出す）が存在するなら、必ずそれを選択する（手札があるのにパスはしない）
   let playMoves = safeCandidates.filter((c) => c.index !== -1);
 
-  // 【追加】初級AIでも、手札から「虚空（token_void）」を出すことはなるべく避ける
-  // 他に「虚空以外」を出す手がある場合は、虚空を出す手を候補から除外する
-  const nonVoidPlayMoves = playMoves.filter((c) => {
+  // 【追加】初級AIでも、手札から「虚空（token_void）」を出すことや、
+  // パワー0かつ味方不在で出現後即座に自壊するカード（味方不在時のレイジ等）は避ける
+  const viablePlayMoves = playMoves.filter((c) => {
     const card = GameState.enemyHand[c.index];
-    return card && card.id !== 'token_void' && card.baseId !== 'token_void';
+    if (!card) return false;
+    if (card.id === 'token_void' || card.baseId === 'token_void') return false;
+    // パワー0で味方が不在のカード（レイジ等）は出しても即自壊して盤面に残らないため除外
+    if (
+      (card.power || 0) === 0 &&
+      !GameState.enemyBoard.some((b) => b !== null)
+    ) {
+      return false;
+    }
+    return true;
   });
 
-  if (nonVoidPlayMoves.length > 0) {
-    playMoves = nonVoidPlayMoves;
+  if (viablePlayMoves.length > 0) {
+    playMoves = viablePlayMoves;
+  } else {
+    // 有効なプレイ候補がない（即自壊するカードしかない）場合は、無駄撃ちを避けてパスする
+    playMoves = [];
   }
 
   if (playMoves.length > 0) {
     return playMoves[Math.floor(getSeededRandom() * playMoves.length)];
   }
 
-  // もし手札がない等でパス以外の手段がなければ、仕方なくパスする
+  // もし有効な手札プレイがなければ、無駄撃ちを避けてパスを選択する
+  const passMoveFinal = safeCandidates.find((c) => c.index === -1);
+  if (passMoveFinal) {
+    return passMoveFinal;
+  }
   return safeCandidates[Math.floor(getSeededRandom() * safeCandidates.length)];
 }

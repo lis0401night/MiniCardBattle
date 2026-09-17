@@ -1426,6 +1426,46 @@ export function processActionSequence(
   }
 }
 
+/**
+ * 候補手の総アクション数（手数）を算出する。
+ *
+ * 【設計目的】
+ * 「同じ結果をもたらす場合は手が少ないもの（パス等）を選ぶ原則」を厳密に実現するための判定基準。
+ * - パス（手札プレイなし、スキル使用なし）: 0手
+ * - 通常の手札プレイ（index !== -1）: 1手
+ * - リーダースキル使用（useSkill）: 1手
+ * - 召喚時スキル等に伴う追加・追従アクション: actionQueue や leaderCardSkillActions の要素数を加算
+ *
+ * これにより、例えば味方不在時の「レイジ」のように自壊して盤面・ライフに一切寄与しない（パスと同スコアの）手札プレイ（1手）が、
+ * 手数0の「パス」よりもタイブレーク加算によって不当に優先されるバグを根絶する。
+ *
+ * @param {Object} candidate - 評価対象の候補手オブジェクト
+ * @returns {number} 候補手が消費する総アクション数（手数）
+ */
+export function getCandidateActionCount(candidate) {
+  if (!candidate) return 0;
+  let count = 0;
+  // リーダースキルの使用
+  if (candidate.useSkill) {
+    count += 1;
+    if (
+      candidate.leaderCardSkillActions &&
+      Array.isArray(candidate.leaderCardSkillActions)
+    ) {
+      count += candidate.leaderCardSkillActions.length;
+    }
+  }
+  // 手札からのカードプレイ
+  if (candidate.index !== -1 && candidate.index !== undefined) {
+    count += 1;
+  }
+  // 召喚時スキル（召喚・召集・復活等）に伴う後続アクション
+  if (candidate.actionQueue && Array.isArray(candidate.actionQueue)) {
+    count += candidate.actionQueue.length;
+  }
+  return count;
+}
+
 export function getBestSimulatedMove() {
   const hand = GameState.enemyHand.map(cloneCard);
   const discard = GameState.enemyDiscard.map(cloneCard);
@@ -3345,22 +3385,23 @@ export function getBestSimulatedMove() {
           c.tieBreaker += getLanePri(a.laneIdx) * 0.0001;
         }
       });
-      // 【手数ペナルティ】アクション数（手数）が増えるごとにタイブレークを微小減点する
-      // （不要な中間プレイによるタイブレーク加点を防ぎ、最短手数を選択させる）
-      c.tieBreaker -= c.actionQueue.length * 0.002;
     }
+    // 【手数ペナルティ】アクション数（手数）が増えるごとにタイブレークを微小減点する
+    // （不要なプレイや中間アクションによるタイブレーク加点を防ぎ、最短手数を選択させる）
+    c.tieBreaker -= getCandidateActionCount(c) * 0.002;
   });
 
-  // スコア順、次いでリーダースキル不使用優先、タイブレーク順、最後にアクションの短さ順でソート（不要なスキル消費を避ける）
+  // スコア順、次いでリーダースキル不使用優先、アクションの短さ順（同じ結果なら手が少ないもの・パスを優先）、最後にタイブレーク順でソート
   candidates.sort((a, b) => {
     if (Math.abs(a.score - b.score) > 0.00001) return b.score - a.score;
     if (a.useSkill !== b.useSkill) return a.useSkill ? 1 : -1;
+    const aLen = getCandidateActionCount(a);
+    const bLen = getCandidateActionCount(b);
+    if (aLen !== bLen) return aLen - bLen;
     if (Math.abs((a.tieBreaker || 0) - (b.tieBreaker || 0)) > 0.00001) {
       return (b.tieBreaker || 0) - (a.tieBreaker || 0);
     }
-    const aLen = a.actionQueue ? a.actionQueue.length : 0;
-    const bLen = b.actionQueue ? b.actionQueue.length : 0;
-    return aLen - bLen;
+    return 0;
   });
 
   if (candidates.length === 0) return { index: -1, lane: -1, useSkill: false };
@@ -3377,18 +3418,19 @@ export function getBestSimulatedMove() {
     bestGroup = bestGroup.filter((c) => !c.useSkill);
   }
 
-  // 3. その中で、タイブレークスコアが最善のもののみを抽出（バグ修正：不要なスキル使用を防止）
-  const maxTieBreaker = Math.max(...bestGroup.map((c) => c.tieBreaker || 0));
+  // 3. その中で最短のアクション数のものだけを残す（「同じ結果をもたらす場合は手が少ないものを選ぶ原則」の徹底）
+  // ※パス（手数0）と無意味なプレイ（手数1以上）が同スコアの場合、確実にパスを残す
+  const minActionLen = Math.min(
+    ...bestGroup.map((c) => getCandidateActionCount(c))
+  );
   bestGroup = bestGroup.filter(
-    (c) => Math.abs((c.tieBreaker || 0) - maxTieBreaker) < 0.00001
+    (c) => getCandidateActionCount(c) === minActionLen
   );
 
-  // 4. その中で最短のアクション数のものだけを残す（不要なスキル消費を避ける）
-  const minActionLen = Math.min(
-    ...bestGroup.map((c) => (c.actionQueue ? c.actionQueue.length : 0))
-  );
+  // 4. 同手数の中で、タイブレークスコア（レーン優先順位等）が最善のもののみを抽出
+  const maxTieBreaker = Math.max(...bestGroup.map((c) => c.tieBreaker || 0));
   const finalGroup = bestGroup.filter(
-    (c) => (c.actionQueue ? c.actionQueue.length : 0) === minActionLen
+    (c) => Math.abs((c.tieBreaker || 0) - maxTieBreaker) < 0.00001
   );
 
   const finalDecision =
@@ -4057,9 +4099,10 @@ export function evaluateTriggerSimulation(
   let bestScore = isRed ? -Infinity : Infinity;
 
   // 1. 「誘発しない（パス）」候補のシミュレーション
+  let passScore;
   {
     const simState = structuredClone(initialSimState);
-    const passScore = evaluateTurnOutcome(simState, owner);
+    passScore = evaluateTurnOutcome(simState, owner);
     bestScore = passScore;
     bestMove = { cardIdx: -1, laneIdx: -1, score: passScore };
   }
@@ -4144,9 +4187,18 @@ export function evaluateTriggerSimulation(
       processDestructionTriggers(simState, []);
 
       // ターン状況（自ターン/相手ターン）に応じた戦闘シミュレーションと評価
-      let score = evaluateTurnOutcome(simState, owner);
-      // タイブレーク微調整（左 > 右 > 中央）
-      score += (isRed ? 0.01 : -0.01) / lanePriorityOrder[lane];
+      const rawScore = evaluateTurnOutcome(simState, owner);
+
+      // 【手数ペナルティ／パス優先原則】
+      // 「同じ結果をもたらす場合は手が少ないもの（パス）を選ぶ」原則に従い、
+      // 基礎スコアがパスと同等以下であれば、タイブレークによってパスを逆転しないよう除外する。
+      // （自壊や不発など盤面・ライフを改善しない手はパスと同スコアになるため自然に排除される）
+      if (isRed ? rawScore <= passScore : rawScore >= passScore) {
+        continue;
+      }
+
+      // パスよりも明確に戦況が改善し、カードが有効に機能した手のみ、レーン優先タイブレークを適用
+      let score = rawScore + (isRed ? 0.01 : -0.01) / lanePriorityOrder[lane];
 
       if (isRed) {
         if (score > bestScore) {
@@ -4294,9 +4346,16 @@ export function evaluateBestResurrectChoice(
       processDestructionTriggers(simState, []);
 
       // 評価スコア計算
-      let score = evaluateTurnOutcome(simState, owner);
+      const rawScore = evaluateTurnOutcome(simState, owner);
+
+      // 【手が少ないもの（パス）を選ぶ原則】
+      // 基礎スコアがパス（配置しない）と同等以下であれば、タイブレークによってパスを逆転しないよう除外
+      if (isRed ? rawScore <= bestScore : rawScore >= bestScore) {
+        continue;
+      }
+
       // タイブレーク（左 > 右 > 中央）
-      score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[lane];
+      let score = rawScore + (isRed ? 0.001 : -0.001) / lanePriorityOrder[lane];
 
       if (isRed) {
         if (score > bestScore) {
@@ -4593,8 +4652,16 @@ export function evaluateAdhocDominateChoice(
     }
 
     processDestructionTriggers(simState, []);
-    let score = evaluateTurnOutcome(simState, owner);
-    score += (isRed ? 0.001 : -0.001) / lanePriorityOrder[oppLane];
+    const rawScore = evaluateTurnOutcome(simState, owner);
+
+    // 【手が少ないもの（奪わない・キャンセル）を選ぶ原則】
+    // 基礎スコアが奪わない基準と同等以下であれば、タイブレークによってキャンセルを逆転しないよう除外
+    if (isRed ? rawScore <= bestScore : rawScore >= bestScore) {
+      continue;
+    }
+
+    let score =
+      rawScore + (isRed ? 0.001 : -0.001) / lanePriorityOrder[oppLane];
 
     if (isRed) {
       if (score > bestScore) {
