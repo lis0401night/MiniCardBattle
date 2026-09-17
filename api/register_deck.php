@@ -68,46 +68,8 @@ if (strlen($uuid) < 10 || count($deck) !== 20) {
     exit;
 }
 
-// 保存ディレクトリの確認
-$dir = __DIR__ . '/decks/players';
-if (!is_dir($dir)) {
-    mkdir($dir, 0777, true);
-}
-
-$filename = "{$dir}/{$uuid}.js";
-
-$fp = fopen($filename, 'c+');
-if (!$fp) {
-    echo json_encode(['success' => false, 'error' => 'Failed to open deck file']);
-    exit;
-}
-
-if (!flock($fp, LOCK_EX)) {
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Failed to lock deck file']);
-    exit;
-}
-
-clearstatcache(true, $filename);
-$fileSize = filesize($filename);
-$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
-
-$player_data = [];
-
-if ($fileSize > 0) {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-        $existing_data = json_decode($matches[2], true);
-        if ($existing_data) {
-            $player_data = $existing_data;
-        } else {
-            // データ破損時は空配列として扱い、上書き保存による復旧を許可する
-            $player_data = [];
-        }
-    } else {
-        // フォーマット異常時も同様に上書き保存による復旧を許可する
-        $player_data = [];
-    }
-}
+$dir = getPlayersDirectory();
+$player_data = loadPlayerData($uuid, $dir);
 
 if (empty($player_data)) {
     $player_data = createDefaultPlayerData($uuid, $name, $initial_points, $initial_total_points);
@@ -124,22 +86,9 @@ $player_data['skins'] = $skins;
 $player_data['timestamp'] = $timestamp;
 $player_data['lastAccessAt'] = $timestamp;
 
-$data_json = json_encode($player_data);
-$js_content = <<<EOT
-if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
-PLAYER_DECKS['{$uuid}'] = {$data_json};
-EOT;
+$saved = savePlayerData($uuid, $player_data, $dir);
 
-ftruncate($fp, 0);
-rewind($fp);
-
-$writeSuccess = fwrite($fp, $js_content);
-fflush($fp);
-
-flock($fp, LOCK_UN);
-fclose($fp);
-
-if ($writeSuccess === strlen($js_content)) {
+if ($saved) {
     echo json_encode(['success' => true]);
 } else {
     echo json_encode(['success' => false, 'error' => 'Failed to save deck file completely']);

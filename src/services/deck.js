@@ -41,6 +41,7 @@ import {
   showOnlineLobby,
 } from './uiMainCore.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
+import { asyncPost } from '../utils/fetch.js';
 
 // ==========================================
 // カードIDのマイグレーション（後方互換性維持用）
@@ -1422,10 +1423,9 @@ export async function submitDefenseDeck(providedName = null) {
   closePlayerNameModal();
 
   try {
-    const response = await fetch('api/register_deck.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const result = await asyncPost(
+      'register_deck.php',
+      {
         uuid: getOrCreateUUID(),
         name: playerName,
         icon: resolveValidIconId(GameState.userProfile?.icon),
@@ -1450,18 +1450,16 @@ export async function submitDefenseDeck(providedName = null) {
           parseInt(
             localStorage.getItem('mini_card_battle_defense_total_points')
           ) || 0,
-      }),
-    });
+      },
+      { timeout: 8000 }
+    );
 
-    if (!response.ok) throw new Error('Network response was not ok');
-
-    const result = await response.json();
-    if (result.success) {
+    if (result && result.success) {
       showAlertModal('防衛デッキの登録が完了しました！', () => {
         showDefenseMenu();
       });
     } else {
-      throw new Error(result.error || 'Unknown error');
+      throw new Error(result?.error || 'Unknown error');
     }
   } catch (err) {
     console.error('Registration error:', err);

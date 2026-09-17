@@ -375,4 +375,128 @@ function applyPlayerCollectionUpdates(array &$player_data, array $data): void {
     }
 }
 
+/**
+ * プレイヤーデータの保存ディレクトリパスを取得し、未存在の場合は自動作成します。
+ * 
+ * @return string プレイヤーディレクトリの絶対パス
+ */
+function getPlayersDirectory(): string {
+    $dir = __DIR__ . '/decks/players';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0777, true);
+    }
+    return $dir;
+}
+
+/**
+ * プレイヤーデータを安全に読み込みます（デュアルリード対応）。
+ * まず高速な JSON 形式（{$uuid}.json）を探索し、未移行の場合は旧 JS 形式（{$uuid}.js）からパースします。
+ * 
+ * @param string $uuid プレイヤーのUUID
+ * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
+ * @return array|null プレイヤーデータ配列、未登録または破損時はnull
+ */
+function loadPlayerData(string $uuid, ?string $dir = null): ?array {
+    $cleanUuid = preg_replace('/[^a-zA-Z0-9_\-]/', '', $uuid);
+    if ($cleanUuid === '') {
+        return null;
+    }
+    $targetDir = $dir ?? getPlayersDirectory();
+
+    // 1. JSON 形式の読み込み（優先・超高速）
+    $jsonPath = "{$targetDir}/{$cleanUuid}.json";
+    if (file_exists($jsonPath)) {
+        $content = @file_get_contents($jsonPath);
+        if ($content !== false && $content !== '') {
+            $data = json_decode($content, true);
+            if (is_array($data)) {
+                return $data;
+            }
+        }
+    }
+
+    // 2. 旧 JS 形式のフォールバック読み込み（移行過渡期用）
+    $jsPath = "{$targetDir}/{$cleanUuid}.js";
+    if (file_exists($jsPath)) {
+        $content = @file_get_contents($jsPath);
+        if ($content !== false && $content !== '') {
+            if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
+                $data = json_decode($matches[2], true);
+                if (is_array($data)) {
+                    return $data;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * プレイヤーデータを永続化します（デュアルライト対応）。
+ * メインとして高速な純粋 JSON 形式（{$uuid}.json）をアトミック保存しつつ、
+ * 古いクライアント（未リロード端末）との下位互換性（相手デッキ読込用の <script> タグ対応）を維持するため
+ * 旧 JS 形式（{$uuid}.js）も同時に更新・保存します。
+ * 
+ * @param string $uuid プレイヤーのUUID
+ * @param array $playerData 保存するプレイヤーデータ配列
+ * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
+ * @return bool 保存に成功したかどうか
+ */
+function savePlayerData(string $uuid, array $playerData, ?string $dir = null): bool {
+    $cleanUuid = preg_replace('/[^a-zA-Z0-9_\-]/', '', $uuid);
+    if ($cleanUuid === '' || empty($playerData)) {
+        return false;
+    }
+    $targetDir = $dir ?? getPlayersDirectory();
+    $jsonPath = "{$targetDir}/{$cleanUuid}.json";
+    $jsonString = json_encode($playerData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    if ($jsonString === false) {
+        return false;
+    }
+
+    $saved = false;
+
+    // 1. JSON 形式のアトミック保存試行（一時ファイル -> リネーム上書き）
+    $tmpPath = "{$targetDir}/{$cleanUuid}.tmp." . uniqid('', true);
+    $bytesWritten = @file_put_contents($tmpPath, $jsonString, LOCK_EX);
+
+    if ($bytesWritten !== false && $bytesWritten === strlen($jsonString)) {
+        // Windows環境でのrename失敗対策を含むアトミック更新
+        if (@rename($tmpPath, $jsonPath)) {
+            $saved = true;
+        } else {
+            // リネームに失敗した場合は直接上書きフォールバック
+            @unlink($tmpPath);
+            $fp = @fopen($jsonPath, 'c+');
+            if ($fp) {
+                if (flock($fp, LOCK_EX)) {
+                    ftruncate($fp, 0);
+                    rewind($fp);
+                    $w = fwrite($fp, $jsonString);
+                    fflush($fp);
+                    flock($fp, LOCK_UN);
+                    $saved = ($w === strlen($jsonString));
+                }
+                fclose($fp);
+            }
+        }
+    } else {
+        @unlink($tmpPath);
+    }
+
+    // 2. 古いクライアント互換用：旧 JS 形式（.js）も同時に書き出し（デュアルライト）
+    // 古いクライアントが防衛戦で <script src="api/decks/players/{uuid}.js"> を読み込む際の404エラーを防止
+    if ($saved) {
+        $jsPath = "{$targetDir}/{$cleanUuid}.js";
+        $jsContent = "if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }\n" .
+                     "PLAYER_DECKS['{$cleanUuid}'] = {$jsonString};\n";
+        @file_put_contents($jsPath, $jsContent, LOCK_EX);
+    }
+
+    return $saved;
+}
+
+
 

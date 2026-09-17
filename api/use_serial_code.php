@@ -35,51 +35,20 @@ if (strlen($uuid) < 10) {
 }
 
 
-$dir = __DIR__ . '/decks/players';
-if (!is_dir($dir)) {
-    mkdir($dir, 0777, true);
-}
+$dir = getPlayersDirectory();
+$jsonPath = "{$dir}/{$uuid}.json";
+$jsPath = "{$dir}/{$uuid}.js";
+$fileExists = file_exists($jsonPath) || file_exists($jsPath);
 
-$filename = "{$dir}/{$uuid}.js";
+$player_data = loadPlayerData($uuid, $dir);
 
-$fp = fopen($filename, 'c+');
-if (!$fp) {
-    echo json_encode(['success' => false, 'error' => 'failed_to_open_player_file']);
-    exit;
-}
-
-if (!flock($fp, LOCK_EX)) {
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'failed_to_lock_player_file']);
-    exit;
-}
-
-clearstatcache(true, $filename);
-$fileSize = filesize($filename);
-$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
-
-$player_data = [];
-$parseFailed = false;
-
-// 既存のデータを読み込んで引き継ぐ
-if ($fileSize > 0) {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-        $existing = json_decode($matches[2], true);
-        if ($existing) {
-            $player_data = $existing;
-        } else {
-            $parseFailed = true;
-        }
-    } else {
-        $parseFailed = true;
-    }
-}
-
-if ($parseFailed) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
+if ($fileExists && $player_data === null) {
     echo json_encode(['success' => false, 'error' => 'player_data_corrupt']);
     exit;
+}
+
+if (!is_array($player_data)) {
+    $player_data = createDefaultPlayerData($uuid, 'プレイヤー');
 }
 
 // used_serials が存在しなければ初期化
@@ -101,16 +70,12 @@ if (!isset($player_data['icon'])) {
 // 定数ファイル（serials.json）からシリアルコード一覧をロード
 $json_path = __DIR__ . '/serials.json';
 if (!file_exists($json_path)) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
     echo json_encode(['success' => false, 'error' => 'config_missing']);
     exit;
 }
 
 $serials_config = json_decode(file_get_contents($json_path), true);
 if (!$serials_config) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
     echo json_encode(['success' => false, 'error' => 'config_corrupt']);
     exit;
 }
@@ -174,23 +139,9 @@ if (isset($serials_config[$code])) {
     $player_data['used_serials'][] = $code;
     $player_data['timestamp'] = time();
 
-    // ファイル書き込み
-    $data_json = json_encode($player_data);
-    $js_content = <<<EOT
-if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
-PLAYER_DECKS['{$uuid}'] = {$data_json};
-EOT;
+    $saved = savePlayerData($uuid, $player_data, $dir);
 
-    ftruncate($fp, 0);
-    rewind($fp);
-
-    $writeSuccess = fwrite($fp, $js_content);
-    fflush($fp);
-
-    flock($fp, LOCK_UN);
-    fclose($fp);
-
-    if ($writeSuccess === strlen($js_content)) {
+    if ($saved) {
         echo json_encode([
             'success' => true,
             'reward' => $rewardValue,
@@ -201,8 +152,6 @@ EOT;
         echo json_encode(['success' => false, 'error' => 'failed_to_save']);
     }
 } else {
-    flock($fp, LOCK_UN);
-    fclose($fp);
     echo json_encode(['success' => false, 'error' => 'invalid_code']);
 }
 

@@ -35,44 +35,19 @@ import {
   UNLOCKED_ICONS_KEY,
   UNLOCKED_PREMIUM_KEY,
 } from './constants/config.js';
+import { asyncGet, asyncPost } from './fetch.js';
 
-/** API通信のデフォルトタイムアウト時間 (ms) */
-const API_TIMEOUT_MS = 3000;
+/** API通信のデフォルトタイムアウト時間 (ms): モバイル環境やサーバー負荷を考慮し余裕を持たせた設定 */
+const API_TIMEOUT_MS = 6000;
 
-/** ハートビート送信のタイムアウト時間 (ms) */
-const HEARTBEAT_TIMEOUT_MS = 5000;
+/** デッキ一覧取得のタイムアウト時間 (ms): 参加プレイヤー増加やデータ量肥大化に耐える余裕値 */
+const FETCH_DECKS_TIMEOUT_MS = 10000;
 
-/** 防衛戦結果送信のタイムアウト時間 (ms) */
-const DEFENSE_RECORD_TIMEOUT_MS = 4000;
+/** ハートビート送信のタイムアウト時間 (ms): 全デッキ・所持カード・インベントリを確実に送信するための余裕値 */
+const HEARTBEAT_TIMEOUT_MS = 10000;
 
-/**
- * タイムアウト付きでfetchおよびレスポンス消費を実行する共通ヘルパー。
- * レスポンスボディの読み込み完了までAbortSignalのタイムアウト監視を持続し、ヘッダー受信後のハングを防ぎます。
- *
- * @param {string} url - リクエスト先URL
- * @param {RequestInit} options - fetchオプション
- * @param {number} [timeoutMs=API_TIMEOUT_MS] - タイムアウト時間（ミリ秒）
- * @param {Function} [consumeResponse=(res) => res] - レスポンス消費関数（例: async (res) => res.json()）
- * @returns {Promise<any>} fetchおよびレスポンス消費の結果
- */
-async function fetchWithTimeout(
-  url,
-  options = {},
-  timeoutMs = API_TIMEOUT_MS,
-  consumeResponse = (response) => response
-) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    return await consumeResponse(response);
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
+/** 防衛戦結果送信のタイムアウト時間 (ms): 対戦結果およびデッキ構成を確実に送信するための余裕値 */
+const DEFENSE_RECORD_TIMEOUT_MS = 8000;
 
 /**
  * プレイヤーのポイント情報をサーバーへ同期・送信します。
@@ -81,8 +56,10 @@ async function fetchWithTimeout(
  * @param {string} endpoint - APIエンドポイントファイル名（例: 'update_challenge_points.php'）
  * @param {number} points - 現在の所持ポイント
  * @param {number} totalPoints - 累計獲得ポイント
+ * @param {Object} [extraBody={}] - 追加の送信データオブジェクト
+ * @returns {Promise<boolean>} 送信成功したかどうか
  */
-export function savePointsToServer(
+export async function savePointsToServer(
   endpoint,
   points,
   totalPoints,
@@ -90,82 +67,53 @@ export function savePointsToServer(
 ) {
   try {
     const uuid = getOrCreateUUID?.();
-    if (!uuid) return Promise.resolve(false);
+    if (!uuid) return false;
 
     const playerName = resolvePlayerName();
 
-    return fetchWithTimeout(
-      `api/${endpoint}`,
+    const result = await asyncPost(
+      endpoint,
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uuid: uuid,
-          name: playerName,
-          points: points,
-          total_points: totalPoints,
-          ...extraBody,
-        }),
-        keepalive: true,
+        uuid: uuid,
+        name: playerName,
+        points: points,
+        total_points: totalPoints,
+        ...extraBody,
       },
-      API_TIMEOUT_MS,
-      async (res) => {
-        if (!res.ok) {
-          console.error(
-            `サーバーへのポイント同期（${endpoint}）に失敗しました。ステータス: ${res.status}`
-          );
-          return null;
-        }
-        return await res.json().catch(() => null);
+      {
+        timeout: API_TIMEOUT_MS,
+        keepalive: true,
       }
-    )
-      .then((result) => {
-        if (!result || !result.success) {
-          console.error(
-            `サーバーへのポイント同期（${endpoint}）をサーバーが拒否または失敗しました:`,
-            result?.error || 'Unknown error'
-          );
-          return false;
-        }
-        console.log(`サーバーへのポイント同期（${endpoint}）に成功しました。`);
-        return true;
-      })
-      .catch((err) => {
-        if (err.name === 'AbortError') {
-          console.error(
-            `サーバーへのポイント同期（${endpoint}）がタイムアウトしました。`
-          );
-        } else {
-          console.error(
-            `サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`,
-            err
-          );
-        }
-        return false;
-      });
-  } catch (e) {
-    console.error('サーバーへのポイント同期処理で例外が発生しました:', e);
-    return Promise.resolve(false);
+    );
+
+    if (!result || !result.success) {
+      console.error(
+        `サーバーへのポイント同期（${endpoint}）をサーバーが拒否または失敗しました:`,
+        result?.error || 'Unknown error'
+      );
+      return false;
+    }
+    console.log(`サーバーへのポイント同期（${endpoint}）に成功しました。`);
+    return true;
+  } catch (err) {
+    console.error(
+      `サーバーへのポイント同期（${endpoint}）で通信エラーが発生しました:`,
+      err
+    );
+    return false;
   }
 }
 
 /**
  * 全プレイヤーのデッキ・プロフィールデータをサーバーから取得します（キャッシュ対策パラメータ付き）。
+ *
  * @returns {Promise<Object>} APIレスポンスオブジェクト
  */
 export async function fetchPlayerDecks() {
-  return await fetchWithTimeout(
-    `api/get_player_decks.php?t=${Date.now()}`,
-    {},
-    API_TIMEOUT_MS,
-    async (response) => {
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch player decks. Status: ${response.status}`
-        );
-      }
-      return await response.json();
-    }
+  return await asyncGet(
+    'get_player_decks.php',
+    { t: Date.now() },
+    { timeout: FETCH_DECKS_TIMEOUT_MS }
   );
 }
 
@@ -887,27 +835,16 @@ export async function syncUserProfile(
         ? favoriteCard
         : GameState.userProfile?.favoriteCard || null;
 
-    const result = await fetchWithTimeout(
-      'api/update_profile.php',
+    const result = await asyncPost(
+      'update_profile.php',
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uuid,
-          name,
-          icon: resolveValidIconId(icon),
-          character,
-          favoriteCard: favCardToSync,
-        }),
+        uuid,
+        name,
+        icon: resolveValidIconId(icon),
+        character,
+        favoriteCard: favCardToSync,
       },
-      API_TIMEOUT_MS,
-      async (response) => {
-        if (!response.ok) {
-          console.error(`Profile sync failed. Status: ${response.status}`);
-          return null;
-        }
-        return await response.json();
-      }
+      { timeout: API_TIMEOUT_MS }
     );
 
     if (!result) return false;
@@ -919,14 +856,7 @@ export async function syncUserProfile(
       return false;
     }
   } catch (err) {
-    if (err.name === 'AbortError') {
-      console.error('Profile sync timed out.');
-    } else {
-      console.warn(
-        'Failed to sync profile to server, saved locally only:',
-        err
-      );
-    }
+    console.warn('Failed to sync profile to server, saved locally only:', err);
     return false;
   }
 }
@@ -942,35 +872,24 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
   if (!targetUuid) return false;
 
   try {
-    const resData = await fetchWithTimeout(
-      'api/record_defense_battle.php',
+    const resData = await asyncPost(
+      'record_defense_battle.php',
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target_uuid: targetUuid,
-          attacker_uuid: data.attackerUuid || getOrCreateUUID(),
-          attacker_name: data.attackerName,
-          attacker_character: data.attackerCharacter,
-          attacker_skin: data.attackerSkin || 'default',
-          attacker_total_points: data.attackerTotalPoints,
-          attacker_deck: data.attackerDeck,
-          defender_character: data.defenderCharacter,
-          defender_skin: data.defenderSkin || 'default',
-          defender_deck: data.defenderDeck,
-          result: data.result,
-        }),
-        keepalive: true,
+        target_uuid: targetUuid,
+        attacker_uuid: data.attackerUuid || getOrCreateUUID(),
+        attacker_name: data.attackerName,
+        attacker_character: data.attackerCharacter,
+        attacker_skin: data.attackerSkin || 'default',
+        attacker_total_points: data.attackerTotalPoints,
+        attacker_deck: data.attackerDeck,
+        defender_character: data.defenderCharacter,
+        defender_skin: data.defenderSkin || 'default',
+        defender_deck: data.defenderDeck,
+        result: data.result,
       },
-      DEFENSE_RECORD_TIMEOUT_MS,
-      async (response) => {
-        if (!response.ok) {
-          console.error(
-            `Record defense battle failed. Status: ${response.status}`
-          );
-          return null;
-        }
-        return await response.json();
+      {
+        timeout: DEFENSE_RECORD_TIMEOUT_MS,
+        keepalive: true,
       }
     );
 
@@ -1090,33 +1009,22 @@ export async function sendHeartbeat() {
       registeredDecks = Array.isArray(GameState.decks) ? GameState.decks : [];
     }
 
-    const result = await fetchWithTimeout(
-      'api/heartbeat.php',
+    const result = await asyncPost(
+      'heartbeat.php',
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uuid,
-          name,
-          icon,
-          inventory,
-          unlocked_premium_cards: unlockedPremiumCards,
-          unlocked_icons: unlockedIcons,
-          unlocked_skins: unlockedSkins,
-          owned_playmats: ownedPlaymats,
-          registered_decks: registeredDecks,
-        }),
-        keepalive: true,
+        uuid,
+        name,
+        icon,
+        inventory,
+        unlocked_premium_cards: unlockedPremiumCards,
+        unlocked_icons: unlockedIcons,
+        unlocked_skins: unlockedSkins,
+        owned_playmats: ownedPlaymats,
+        registered_decks: registeredDecks,
       },
-      HEARTBEAT_TIMEOUT_MS,
-      async (response) => {
-        if (!response.ok) {
-          console.error(
-            `ハートビート送信に失敗しました。ステータス: ${response.status}`
-          );
-          return null;
-        }
-        return await response.json();
+      {
+        timeout: HEARTBEAT_TIMEOUT_MS,
+        keepalive: true,
       }
     );
 
@@ -1131,11 +1039,7 @@ export async function sendHeartbeat() {
     }
     return false;
   } catch (err) {
-    if (err.name === 'AbortError') {
-      console.error('ハートビート送信がタイムアウトしました。');
-    } else {
-      console.error('ハートビート送信で通信エラーが発生しました:', err);
-    }
+    console.error('ハートビート送信で通信エラーが発生しました:', err);
     return false;
   }
 }

@@ -39,37 +39,12 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$dir = __DIR__ . '/decks/players';
-if (!is_dir($dir)) {
-    mkdir($dir, 0777, true);
-}
-$filename = "{$dir}/{$uuid}.js";
+$dir = getPlayersDirectory();
+$playerData = loadPlayerData($uuid, $dir);
 
-$fp = fopen($filename, 'c+');
-if (!$fp) {
-    echo json_encode(['success' => false, 'error' => 'Failed to open player file']);
-    exit;
-}
-
-if (!flock($fp, LOCK_EX)) {
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Failed to lock player file']);
-    exit;
-}
-
-clearstatcache(true, $filename);
-$fileSize = filesize($filename);
-$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
-
-$playerData = null;
-
-if ($fileSize === 0) {
+if (!$playerData) {
     $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
     $playerData = createDefaultPlayerData($uuid, $playerName);
-} else {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-        $playerData = json_decode($matches[2], true);
-    }
 }
 
 if ($playerData) {
@@ -98,22 +73,9 @@ if ($playerData) {
 
     $playerData['timestamp'] = time();
 
-    $data_json = json_encode($playerData);
-    $js_content = <<<EOT
-if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
-PLAYER_DECKS['{$uuid}'] = {$data_json};
-EOT;
+    $saved = savePlayerData($uuid, $playerData, $dir);
 
-    ftruncate($fp, 0);
-    rewind($fp);
-
-    $writeSuccess = fwrite($fp, $js_content);
-    fflush($fp);
-
-    flock($fp, LOCK_UN);
-    fclose($fp);
-
-    if ($writeSuccess === strlen($js_content)) {
+    if ($saved) {
         echo json_encode([
             'success' => true,
             'common_points' => $playerData['common_points'],
@@ -125,8 +87,6 @@ EOT;
         exit;
     }
 } else {
-    flock($fp, LOCK_UN);
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Player not found']);
+    echo json_encode(['success' => false, 'error' => 'Failed to load or initialize player data']);
     exit;
 }

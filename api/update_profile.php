@@ -38,49 +38,14 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$dir = __DIR__ . '/decks/players';
-if (!is_dir($dir)) {
-    mkdir($dir, 0777, true);
-}
+$dir = getPlayersDirectory();
+$jsonPath = "{$dir}/{$uuid}.json";
+$jsPath = "{$dir}/{$uuid}.js";
+$fileExists = file_exists($jsonPath) || file_exists($jsPath);
 
-$filename = "{$dir}/{$uuid}.js";
+$player_data = loadPlayerData($uuid, $dir);
 
-$fp = fopen($filename, 'c+');
-if (!$fp) {
-    echo json_encode(['success' => false, 'error' => 'Failed to open player file']);
-    exit;
-}
-
-if (!flock($fp, LOCK_EX)) {
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Failed to lock player file']);
-    exit;
-}
-
-clearstatcache(true, $filename);
-$fileSize = filesize($filename);
-$content = $fileSize > 0 ? stream_get_contents($fp) : '';
-
-$player_data = [];
-$parseFailed = false;
-
-// 既存のデータを読み込んで引き継ぐ
-if ($fileSize > 0) {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-        $existing = json_decode($matches[2], true);
-        if ($existing) {
-            $player_data = $existing;
-        } else {
-            $parseFailed = true;
-        }
-    } else {
-        $parseFailed = true;
-    }
-}
-
-if ($parseFailed) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
+if ($fileExists && $player_data === null) {
     echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
     exit;
 }
@@ -110,22 +75,9 @@ if (array_key_exists('favoriteCard', $data)) {
 }
 $player_data['timestamp'] = $timestamp;
 
-$data_json = json_encode($player_data);
-$js_content = <<<EOT
-if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
-PLAYER_DECKS['{$uuid}'] = {$data_json};
-EOT;
+$saved = savePlayerData($uuid, $player_data, $dir);
 
-ftruncate($fp, 0);
-rewind($fp);
-
-$writeSuccess = fwrite($fp, $js_content);
-fflush($fp);
-
-flock($fp, LOCK_UN);
-fclose($fp);
-
-if ($writeSuccess === strlen($js_content)) {
+if ($saved) {
     echo json_encode(['success' => true]);
 } else {
     echo json_encode(['success' => false, 'error' => 'Failed to save profile completely']);

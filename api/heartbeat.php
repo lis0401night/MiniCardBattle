@@ -33,52 +33,16 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$dir = __DIR__ . '/decks/players';
-if (!is_dir($dir)) {
-    mkdir($dir, 0777, true);
-}
+$dir = getPlayersDirectory();
+$jsonPath = "{$dir}/{$uuid}.json";
+$jsPath = "{$dir}/{$uuid}.js";
+$fileExists = file_exists($jsonPath) || file_exists($jsPath);
 
-$filename = "{$dir}/{$uuid}.js";
+$player_data = loadPlayerData($uuid, $dir);
+$isNewPlayer = !$fileExists;
 
-$fp = fopen($filename, 'c+');
-if (!$fp) {
-    echo json_encode(['success' => false, 'error' => 'Failed to open deck file']);
-    exit;
-}
-
-if (!flock($fp, LOCK_EX)) {
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Failed to lock deck file']);
-    exit;
-}
-
-clearstatcache(true, $filename);
-$fileSize = filesize($filename);
-$content = $fileSize > 0 ? fread($fp, $fileSize) : '';
-
-$player_data = [];
-$isNewPlayer = true;
-$isCorrupted = false;
-
-if ($fileSize > 0) {
-    if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-        $existing_data = json_decode($matches[2], true);
-        if ($existing_data) {
-            $player_data = $existing_data;
-            $isNewPlayer = false;
-        } else {
-            $isCorrupted = true;
-        }
-    } else {
-        $isCorrupted = true;
-    }
-}
-
-// 既存ファイルが破損している場合はデフォルト値で上書きせず、エラーを返して処理を中断する
-// （heartbeatは自動送信されるため、破損時の上書きはプレイヤーの進行データ消失に直結する）
-if ($isCorrupted) {
-    flock($fp, LOCK_UN);
-    fclose($fp);
+// 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断
+if ($fileExists && $player_data === null) {
     echo json_encode(['success' => false, 'error' => 'Existing player data is corrupted']);
     exit;
 }
@@ -103,23 +67,11 @@ if (empty($player_data)) {
 // インベントリ・プレミアム解放・登録デッキの更新を一元適用
 applyPlayerCollectionUpdates($player_data, $data);
 
-$data_json = json_encode($player_data);
-$js_content = <<<EOT
-if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
-PLAYER_DECKS['{$uuid}'] = {$data_json};
-EOT;
+$saved = savePlayerData($uuid, $player_data, $dir);
 
-ftruncate($fp, 0);
-rewind($fp);
-
-$writeSuccess = fwrite($fp, $js_content);
-fflush($fp);
-
-flock($fp, LOCK_UN);
-fclose($fp);
-
-if ($writeSuccess === strlen($js_content)) {
+if ($saved) {
     echo json_encode(['success' => true, 'isNewPlayer' => $isNewPlayer]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Failed to save deck file completely']);
+    echo json_encode(['success' => false, 'error' => 'Failed to save player data completely']);
 }
+

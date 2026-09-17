@@ -63,33 +63,12 @@ if (!in_array($result, ['win', 'lose', 'draw'], true)) {
 // 防衛側視点での勝敗結果 ('win': 防衛成功, 'lose': 防衛失敗, 'draw': 引き分け)
 $defense_result = $result === 'win' ? 'lose' : ($result === 'lose' ? 'win' : 'draw');
 
-$dir = __DIR__ . '/decks/players';
-$filename = "{$dir}/{$target_uuid}.js";
+$dir = getPlayersDirectory();
+$playerData = loadPlayerData($target_uuid, $dir);
 
-if (!file_exists($filename)) {
+if (!$playerData) {
     echo json_encode(['success' => false, 'error' => 'Target player file not found']);
     exit;
-}
-
-$fp = fopen($filename, 'c+');
-if (!$fp) {
-    echo json_encode(['success' => false, 'error' => 'Failed to open target player file']);
-    exit;
-}
-
-if (!flock($fp, LOCK_EX)) {
-    fclose($fp);
-    echo json_encode(['success' => false, 'error' => 'Failed to lock target player file']);
-    exit;
-}
-
-clearstatcache(true, $filename);
-$fileSize = filesize($filename);
-$content = $fileSize > 0 ? stream_get_contents($fp) : '';
-
-$playerData = null;
-if ($fileSize > 0 && preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-    $playerData = json_decode($matches[2], true);
 }
 
 if ($playerData) {
@@ -135,22 +114,9 @@ if ($playerData) {
     $playerData['defense_history'] = $history;
     $playerData['timestamp'] = time();
 
-    $data_json = json_encode($playerData);
-    $js_content = <<<EOT
-if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }
-PLAYER_DECKS['{$target_uuid}'] = {$data_json};
-EOT;
+    $saved = savePlayerData($target_uuid, $playerData, $dir);
 
-    ftruncate($fp, 0);
-    rewind($fp);
-
-    $writeSuccess = fwrite($fp, $js_content);
-    fflush($fp);
-
-    flock($fp, LOCK_UN);
-    fclose($fp);
-
-    if ($writeSuccess !== strlen($js_content)) {
+    if (!$saved) {
         echo json_encode(['success' => false, 'error' => 'Failed to save updated file completely']);
         exit;
     }

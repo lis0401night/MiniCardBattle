@@ -6,6 +6,7 @@ import {
   switchScreen,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import { asyncGet } from '../../utils/fetch.js';
 
 // リンクを常に新しいタブ(外部ブラウザ)で開くようにDOMPurifyを設定
 DOMPurify.addHook('afterSanitizeAttributes', function (node) {
@@ -74,56 +75,83 @@ export default function NewsBanner() {
   const touchEndX = useRef(0);
 
   useEffect(() => {
-    fetch(NEWS_API_ENDPOINT)
-      .then((res) => res.text())
-      .then((text) => {
-        try {
-          const data = JSON.parse(text);
-          if (data.success && data.news && data.news.length > 0) {
-            const now = new Date();
-
-            // 【お知らせ配信期間フィルター】ユーザー表示用にisActiveがtrueかつ公開期間内のものだけフィルタ
-            // 現在時刻とお知らせの開始日・終了日を比較して表示対象を絞り込む
-            const activeNews = data.news.filter((n) => {
-              if (!n.isActive) return false;
-
-              if (n.startDate) {
-                const start = new Date(n.startDate);
-                if (now < start) return false;
-              }
-              if (n.endDate) {
-                const end = new Date(n.endDate);
-                if (now > end) return false;
-              }
-
-              return true;
-            });
-
-            setNewsItems(activeNews);
+    asyncGet(NEWS_API_ENDPOINT)
+      .then((data) => {
+        let newsList = null;
+        if (data && typeof data === 'object') {
+          if (data.success && Array.isArray(data.news)) {
+            newsList = data.news;
           }
-        } catch {
-          // ローカルのViteサーバー環境などでPHPが実行されずパースエラーになった場合のフォールバック
-          if (import.meta.env.DEV) {
-            setNewsItems([
-              {
-                id: 1,
-                title: 'ローカルテスト表示：お知らせ機能',
-                content:
-                  '<p>これはローカル環境用の一時的な表示です。</p><br><p><a href="https://example.com/">外部サイトのテストリンク</a></p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
-                color1: '#3b82f6',
-                color2: '#1d4ed8',
-                icon: '✨',
-                isActive: true,
-                date: '2026/06/12',
-              },
-            ]);
-          } else {
-            setNewsItems([]);
+        } else if (typeof data === 'string') {
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.success && Array.isArray(parsed.news)) {
+              newsList = parsed.news;
+            }
+          } catch {
+            // パース失敗時は下部のフォールバックへ
           }
+        }
+
+        if (newsList && newsList.length > 0) {
+          const now = new Date();
+
+          // 【お知らせ配信期間フィルター】ユーザー表示用にisActiveがtrueかつ公開期間内のものだけフィルタ
+          // 現在時刻とお知らせの開始日・終了日を比較して表示対象を絞り込む
+          const activeNews = newsList.filter((n) => {
+            if (!n.isActive) return false;
+
+            if (n.startDate) {
+              const start = new Date(n.startDate);
+              if (now < start) return false;
+            }
+            if (n.endDate) {
+              const end = new Date(n.endDate);
+              if (now > end) return false;
+            }
+
+            return true;
+          });
+
+          setNewsItems(activeNews);
+        } else if (import.meta.env.DEV) {
+          // ローカルのViteサーバー環境などでPHPが実行されずレスポンスが得られない場合のフォールバック
+          setNewsItems([
+            {
+              id: 1,
+              title: 'ローカルテスト表示：お知らせ機能',
+              content:
+                '<p>これはローカル環境用の一時的な表示です。</p><br><p><a href="https://example.com/">外部サイトのテストリンク</a></p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
+              color1: '#3b82f6',
+              color2: '#1d4ed8',
+              icon: '✨',
+              isActive: true,
+              date: '2026/06/12',
+            },
+          ]);
+        } else {
+          setNewsItems([]);
         }
       })
       .catch((err) => {
         console.error('Failed to fetch news:', err);
+        if (import.meta.env.DEV) {
+          setNewsItems([
+            {
+              id: 1,
+              title: 'ローカルテスト表示：お知らせ機能',
+              content:
+                '<p>これはローカル環境用の一時的な表示です。</p><br><p><a href="https://example.com/">外部サイトのテストリンク</a></p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
+              color1: '#3b82f6',
+              color2: '#1d4ed8',
+              icon: '✨',
+              isActive: true,
+              date: '2026/06/12',
+            },
+          ]);
+        } else {
+          setNewsItems([]);
+        }
       })
       .finally(() => {
         setIsLoading(false);

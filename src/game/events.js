@@ -3,6 +3,7 @@ import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
 import { EVENT_FORTUNE_DIALOGUES } from '../utils/constants/eventFortuneDialogues.js';
 import { switchScreen } from '../utils/gameUtils.js';
+import { asyncGet } from '../utils/fetch.js';
 import { startBattleFlow, migrateCardId } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
 import {
@@ -185,44 +186,72 @@ export function setupEventConfrontation() {
 }
 
 /**
- * 他プレイヤーのデッキデータをJSファイルから読み込む
+ * 他プレイヤーのデッキデータを取得・解決します。
+ * 高速な JSON 形式（api/decks/players/{uuid}.json）を優先取得し、
+ * 未移行の場合は旧 JS 形式（api/decks/players/{uuid}.js）へのフォールバックを行います。
+ *
+ * @param {string} uuid - 読み込み対象プレイヤーのUUID
+ * @returns {Promise<{ id: string, name: string, character: string, deck: Array<any> }>} 敵デッキ定義データ
  */
 export async function loadPlayerDeck(uuid) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `api/decks/players/${uuid}.js?t=${Date.now()}`;
-    script.onload = () => {
-      if (
-        typeof window.PLAYER_DECKS !== 'undefined' &&
-        window.PLAYER_DECKS[uuid]
-      ) {
-        const data = window.PLAYER_DECKS[uuid];
-        // データを安全にマイグレーション
-        const migratedDeck = Array.isArray(data.deck)
-          ? data.deck.map((item) => migrateCardId(item))
-          : [];
+  let data = null;
 
-        // 敵デッキデータとして整形
-        const enemyDeckData = {
-          id: 'player_defense',
-          name: data.name,
-          character: data.character,
-          deck: migratedDeck,
-        };
-        // ENEMY_DECKSに一時的に登録
-        ENEMY_DECKS['player_defense'] = migratedDeck;
+  // 1. JSON 形式の直接取得（優先・高速パース）
+  try {
+    const jsonData = await asyncGet(`decks/players/${uuid}.json`, {
+      t: Date.now(),
+    });
+    if (jsonData && typeof jsonData === 'object') {
+      data = jsonData;
+    }
+  } catch {
+    // 未移行や取得失敗時は旧JS形式へフォールバック
+  }
 
+  // 2. 旧 JS 形式のフォールバック読み込み
+  if (!data) {
+    data = await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `api/decks/players/${uuid}.js?t=${Date.now()}`;
+      script.onload = () => {
+        if (
+          typeof window.PLAYER_DECKS !== 'undefined' &&
+          window.PLAYER_DECKS[uuid]
+        ) {
+          const loadedData = window.PLAYER_DECKS[uuid];
+          if (script.parentNode) script.parentNode.removeChild(script);
+          resolve(loadedData);
+        } else {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          reject(new Error('Player deck data not found in script'));
+        }
+      };
+      script.onerror = () => {
         if (script.parentNode) script.parentNode.removeChild(script);
-        resolve(enemyDeckData);
-      } else {
-        if (script.parentNode) script.parentNode.removeChild(script);
-        reject(new Error('Player deck data not found in script'));
-      }
-    };
-    script.onerror = () => {
-      document.body.removeChild(script);
-      reject(new Error('Failed to load player deck script'));
-    };
-    document.body.appendChild(script);
-  });
+        reject(new Error('Failed to load player deck script'));
+      };
+      document.body.appendChild(script);
+    });
+  }
+
+  if (!data) {
+    throw new Error('Player data could not be loaded');
+  }
+
+  // データを安全にマイグレーション
+  const migratedDeck = Array.isArray(data.deck)
+    ? data.deck.map((item) => migrateCardId(item))
+    : [];
+
+  // 敵デッキデータとして整形
+  const enemyDeckData = {
+    id: 'player_defense',
+    name: data.name,
+    character: data.character,
+    deck: migratedDeck,
+  };
+  // ENEMY_DECKSに一時的に登録
+  ENEMY_DECKS['player_defense'] = migratedDeck;
+
+  return enemyDeckData;
 }

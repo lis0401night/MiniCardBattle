@@ -22,6 +22,7 @@ import {
   updateSeVolume,
 } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
+import { asyncPost } from '../utils/fetch.js';
 import { GameState } from '../state/gameState.js';
 import {
   DEFAULT_SOUND_VOLUME,
@@ -85,14 +86,12 @@ export default function OptionsScreen() {
         return;
       }
 
-      const res = await fetch('api/use_serial_code.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid, code: formattedCode }),
+      const result = await asyncPost('use_serial_code.php', {
+        uuid,
+        code: formattedCode,
       });
-      const result = await res.json();
 
-      if (result.success) {
+      if (result && result.success) {
         const rewardId = result.reward;
         const rewardType = result.rewardType || 'premium';
         const rewardName = result.rewardName || '';
