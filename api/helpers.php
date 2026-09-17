@@ -389,8 +389,28 @@ function getPlayersDirectory(): string {
 }
 
 /**
- * プレイヤーデータを安全に読み込みます（デュアルリード対応）。
- * まず高速な JSON 形式（{$uuid}.json）を探索し、未移行の場合は旧 JS 形式（{$uuid}.js）からパースします。
+ * プレイヤーデータファイル（.json または .js）が存在するかどうかを判定します。
+ * 
+ * 読み込み失敗時（loadPlayerData が null を返した際）に、既存のセーブデータを
+ * createDefaultPlayerData で誤って初期化・上書き保存してしまう事故を恒久的に防ぐために使用します。
+ * 
+ * @param string $uuid プレイヤーのUUID
+ * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
+ * @return bool ファイルが存在する場合はtrue、存在しない（新規プレイヤー）ならfalse
+ */
+function playerDataFileExists(string $uuid, ?string $dir = null): bool {
+    $cleanUuid = preg_replace('/[^a-zA-Z0-9_\-]/', '', $uuid);
+    if ($cleanUuid === '') {
+        return false;
+    }
+    $targetDir = $dir ?? getPlayersDirectory();
+    return file_exists("{$targetDir}/{$cleanUuid}.json") || file_exists("{$targetDir}/{$cleanUuid}.js");
+}
+
+/**
+ * プレイヤーデータを読み込みます（デュアルリード対応）。
+ * 高速な純粋 JSON 形式（{$uuid}.json）を最優先で直接デコードし、
+ * 未移行のデータがある場合は旧 JS 形式（{$uuid}.js）から安全にフォールバック読み込みします。
  * 
  * @param string $uuid プレイヤーのUUID
  * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
@@ -489,11 +509,21 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null, bo
 
     // 2. 古いクライアント互換用：旧 JS 形式（.js）も同時に書き出し（デュアルライト）
     // 古いクライアントが防衛戦で <script src="api/decks/players/{uuid}.js"> を読み込む際の404エラーを防止
+    // 旧クライアントが <script> で取得中の不完全読み込み（構文エラー）を防ぐためリネームでアトミックに差し替える
     if ($saved && $writeLegacyJs) {
         $jsPath = "{$targetDir}/{$cleanUuid}.js";
         $jsContent = "if (typeof PLAYER_DECKS === 'undefined') { var PLAYER_DECKS = {}; }\n" .
                      "PLAYER_DECKS['{$cleanUuid}'] = {$jsonString};\n";
-        @file_put_contents($jsPath, $jsContent, LOCK_EX);
+        $jsTmpPath = "{$targetDir}/{$cleanUuid}.jstmp." . uniqid('', true);
+        $jsBytes = @file_put_contents($jsTmpPath, $jsContent);
+        if ($jsBytes !== false && $jsBytes === strlen($jsContent)) {
+            if (!@rename($jsTmpPath, $jsPath)) {
+                @unlink($jsTmpPath);
+                @file_put_contents($jsPath, $jsContent, LOCK_EX);
+            }
+        } else {
+            @unlink($jsTmpPath);
+        }
     }
 
     return $saved;
@@ -546,6 +576,7 @@ const DEFENSE_DECK_SIZE = 20;
  * 登録済み全プレイヤーのデータを読み込みます（JSON優先・旧JSフォールバック）。
  * 
  * JSONファイルと旧JSファイルの両方を走査し、最新のプレイヤーデータ配列のリストを返します。
+ * 重複排除キーには物理ファイル名（UUID）を使用し、旧JSフォールバックとの二重登録を確実に防止します。
  * UUID がデータ内に欠落している場合はファイル名から自動補完し、一覧からの脱落を防止します。
  * 
  * @param bool $includeDeck デッキ配列（deck）を含めるかどうか（falseの場合は一覧軽量化のため除外）
@@ -569,12 +600,16 @@ function loadAllPlayers(bool $includeDeck, ?string $dir = null): array {
             if ($content !== false && $content !== '') {
                 $data = json_decode($content, true);
                 if (is_array($data) && !empty($data)) {
+                    $fileUuid = basename($file, '.json');
                     // uuid が欠落している旧データはファイル名から安全に補完
                     if (empty($data['uuid'])) {
-                        $data['uuid'] = basename($file, '.json');
+                        $data['uuid'] = $fileUuid;
                     }
-                    $uuid = $data['uuid'];
-                    $processedUuids[$uuid] = true;
+                    // 物理ファイル名およびデータ内UUIDを重複排除キーにし、旧 .js の二重読込を防止
+                    $processedUuids[$fileUuid] = true;
+                    if (!empty($data['uuid'])) {
+                        $processedUuids[$data['uuid']] = true;
+                    }
                     // 防衛デッキが正しく登録されている（規定枚数）かどうかを判定するフラグを付与
                     $data['has_defense_deck'] = (isset($data['deck']) && is_array($data['deck']) && count($data['deck']) === DEFENSE_DECK_SIZE);
                     if (!$includeDeck) {
@@ -590,23 +625,30 @@ function loadAllPlayers(bool $includeDeck, ?string $dir = null): array {
     $jsFiles = glob("{$targetDir}/*.js");
     if ($jsFiles) {
         foreach ($jsFiles as $file) {
+            $fileUuid = basename($file, '.js');
+            // 既に JSON 側で同一 UUID のファイルが処理済みの場合はスキップ
+            if (isset($processedUuids[$fileUuid])) {
+                continue;
+            }
             $content = @file_get_contents($file);
             if ($content !== false && $content !== '') {
                 if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
-                    $uuid = $matches[1];
-                    if (!isset($processedUuids[$uuid])) {
-                        $data = json_decode($matches[2], true);
-                        if (is_array($data)) {
-                            if (empty($data['uuid'])) {
-                                $data['uuid'] = $uuid;
-                            }
-                            $processedUuids[$uuid] = true;
-                            $data['has_defense_deck'] = (isset($data['deck']) && is_array($data['deck']) && count($data['deck']) === DEFENSE_DECK_SIZE);
-                            if (!$includeDeck) {
-                                unset($data['deck']);
-                            }
-                            $players[] = $data;
+                    $jsKeyUuid = $matches[1];
+                    if (isset($processedUuids[$jsKeyUuid])) {
+                        continue;
+                    }
+                    $data = json_decode($matches[2], true);
+                    if (is_array($data)) {
+                        if (empty($data['uuid'])) {
+                            $data['uuid'] = $jsKeyUuid !== '' ? $jsKeyUuid : $fileUuid;
                         }
+                        $processedUuids[$fileUuid] = true;
+                        $processedUuids[$data['uuid']] = true;
+                        $data['has_defense_deck'] = (isset($data['deck']) && is_array($data['deck']) && count($data['deck']) === DEFENSE_DECK_SIZE);
+                        if (!$includeDeck) {
+                            unset($data['deck']);
+                        }
+                        $players[] = $data;
                     }
                 }
             }

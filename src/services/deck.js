@@ -43,6 +43,9 @@ import {
 import { showAlertModal, showConfirmModal } from './uiModals.js';
 import { asyncPost } from '../utils/fetch.js';
 
+/** 防衛デッキ登録通信のタイムアウト時間 (ms) */
+const DEFENSE_DECK_REGISTRATION_TIMEOUT_MS = 8000;
+
 // ==========================================
 // カードIDのマイグレーション（後方互換性維持用）
 // ==========================================
@@ -1451,7 +1454,7 @@ export async function submitDefenseDeck(providedName = null) {
             localStorage.getItem('mini_card_battle_defense_total_points')
           ) || 0,
       },
-      { timeout: 8000 }
+      { timeout: DEFENSE_DECK_REGISTRATION_TIMEOUT_MS }
     );
 
     if (result && result.success) {

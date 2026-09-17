@@ -45,10 +45,7 @@ if (!$lock) {
     exit;
 }
 
-$jsonPath = "{$dir}/{$uuid}.json";
-$jsPath = "{$dir}/{$uuid}.js";
-$fileExists = file_exists($jsonPath) || file_exists($jsPath);
-
+$fileExists = playerDataFileExists($uuid, $dir);
 $player_data = loadPlayerData($uuid, $dir);
 
 if ($fileExists && $player_data === null) {

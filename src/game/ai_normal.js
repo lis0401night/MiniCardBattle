@@ -7,13 +7,13 @@ import {
   getSkillValue,
   hasSkill,
   hasSkillDeep,
-  setCurrentRNG,
   matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
   matchesResurrectTarget,
   matchesSummonTarget,
   matchesUnionMaterial,
+  setCurrentRNG,
 } from '../utils/gameUtils.js';
 import {
   applyEquipment,
@@ -1459,7 +1459,7 @@ export function getCandidateActionCount(candidate) {
   if (candidate.index !== -1 && candidate.index !== undefined) {
     count += 1;
   }
-  // 召喚時スキル（召喚・召集・復活等）に伴う後続アクション
+  // 召喚時スキル（召喚・召集）および配置スキル（復活・傀儡等）に伴う後続アクション
   if (candidate.actionQueue && Array.isArray(candidate.actionQueue)) {
     count += candidate.actionQueue.length;
   }

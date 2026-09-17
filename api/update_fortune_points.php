@@ -37,6 +37,8 @@ $fortune_cleared = isset($data['fortune_cleared']) ? $data['fortune_cleared'] : 
 $fortune_max_total_cost = isset($data['fortune_max_total_cost']) ? intval($data['fortune_max_total_cost']) : 0;
 $fortune_max_total_cost_automata = isset($data['fortune_max_total_cost_automata']) ? intval($data['fortune_max_total_cost_automata']) : 0;
 $fortune_max_total_cost_valkyria = isset($data['fortune_max_total_cost_valkyria']) ? intval($data['fortune_max_total_cost_valkyria']) : 0;
+$character = isset($data['character']) ? preg_replace('/[^a-z0-9_]/', '', (string)$data['character']) : '';
+
 
 if (strlen($uuid) < 10) {
     echo json_encode(['success' => false, 'error' => 'Invalid uuid format']);
@@ -56,7 +58,15 @@ if (!$lock) {
     exit;
 }
 
+$fileExists = playerDataFileExists($uuid, $dir);
 $playerData = loadPlayerData($uuid, $dir);
+
+// 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断（既定値での上書き防止）
+if ($fileExists && $playerData === null) {
+    releasePlayerLock($lock);
+    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
+    exit;
+}
 
 if (!$playerData) {
     $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
@@ -122,18 +132,30 @@ if ($playerData) {
         $playerData['fortune_max_total_cost_valkyria'] = 0;
     }
 
+    // クライアントから明示的に送信されたキャラクター別コストは常に最大値マージ（実績消失防止）
+    $playerData['fortune_max_total_cost_automata'] = max(
+        intval($playerData['fortune_max_total_cost_automata']),
+        $fortune_max_total_cost_automata
+    );
+    $playerData['fortune_max_total_cost_valkyria'] = max(
+        intval($playerData['fortune_max_total_cost_valkyria']),
+        $fortune_max_total_cost_valkyria
+    );
+
+    // 今回のプレイ結果（fortune_max_total_cost）をプレイ対象キャラクターへ反映（ホワイトリスト判定）
     if ($character === 'valkyria') {
-        if ($fortune_max_total_cost > intval($playerData['fortune_max_total_cost_valkyria'])) {
-            $playerData['fortune_max_total_cost_valkyria'] = $fortune_max_total_cost;
-        }
-    } else {
-        // デフォルトまたはマキナ
-        if ($fortune_max_total_cost > intval($playerData['fortune_max_total_cost_automata'])) {
-            $playerData['fortune_max_total_cost_automata'] = $fortune_max_total_cost;
-        }
+        $playerData['fortune_max_total_cost_valkyria'] = max(
+            intval($playerData['fortune_max_total_cost_valkyria']),
+            $fortune_max_total_cost
+        );
+    } elseif ($character === 'automata') {
+        $playerData['fortune_max_total_cost_automata'] = max(
+            intval($playerData['fortune_max_total_cost_automata']),
+            $fortune_max_total_cost
+        );
     }
 
-    // 総合合計目標値（キャラクター別記録のうち最大値を保持）
+    // 総合合計目標値（キャラクター別記録および今回の結果のうち最大値を保持）
     $autoCost = intval($playerData['fortune_max_total_cost_automata']);
     $valkCost = intval($playerData['fortune_max_total_cost_valkyria']);
     $playerData['fortune_max_total_cost'] = max($fortune_max_total_cost, $autoCost, $valkCost);

@@ -1,3 +1,34 @@
+import { GameState } from '../state/gameState.js';
+import { resolveValidIconId } from './constants/avatars.js';
+import {
+  CHALLENGE_POINTS_KEY,
+  CHALLENGE_TOTAL_POINTS_KEY,
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
+  DEFENSE_WINS_KEY,
+  DUNGEON_MAX_STREAK_KEY,
+  EXCHANGE_LINEUPS_BY_MODE,
+  FORTUNE_POINTS_KEY,
+  FORTUNE_TOTAL_POINTS_KEY,
+  HIGH_DIFFICULTY_CLEARED_KEY,
+  HIGH_DIFFICULTY_POINTS_KEY,
+  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
+  INVENTORY_KEY,
+  LAST_HEARTBEAT_KEY,
+  OWNED_PLAYMATS_KEY,
+  POINT_CONVERSION_MODES,
+  PROFILE_ICON_KEY,
+  TOURNAMENT_POINTS_KEY,
+  TOURNAMENT_TOTAL_POINTS_KEY,
+  UNLOCKED_ICONS_KEY,
+  UNLOCKED_PREMIUM_KEY,
+  UNLOCKED_SKINS_KEY,
+} from './constants/config.js';
+import {
+  calculateHandicapPointsFromMap,
+  loadFortuneClearedData,
+} from './constants/fortuneRewards.js';
+import { asyncGet, asyncPost, DEFAULT_API_TIMEOUT_MS } from './fetch.js';
 import {
   getOrCreateUUID,
   loadHighDifficultyClearedData,
@@ -5,40 +36,6 @@ import {
   safeParseArray,
   safeParseObject,
 } from './gameUtils.js';
-import { resolveValidIconId } from './constants/avatars.js';
-import { GameState } from '../state/gameState.js';
-import {
-  loadFortuneClearedData,
-  calculateHandicapPointsFromMap,
-} from './constants/fortuneRewards.js';
-import {
-  CHALLENGE_POINTS_KEY,
-  CHALLENGE_TOTAL_POINTS_KEY,
-  TOURNAMENT_POINTS_KEY,
-  TOURNAMENT_TOTAL_POINTS_KEY,
-  DEFENSE_POINTS_KEY,
-  DEFENSE_TOTAL_POINTS_KEY,
-  DEFENSE_WINS_KEY,
-  FORTUNE_POINTS_KEY,
-  FORTUNE_TOTAL_POINTS_KEY,
-  HIGH_DIFFICULTY_POINTS_KEY,
-  HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
-  HIGH_DIFFICULTY_CLEARED_KEY,
-  DUNGEON_MAX_STREAK_KEY,
-  LAST_HEARTBEAT_KEY,
-  PROFILE_ICON_KEY,
-  EXCHANGE_LINEUPS_BY_MODE,
-  POINT_CONVERSION_MODES,
-  INVENTORY_KEY,
-  UNLOCKED_SKINS_KEY,
-  OWNED_PLAYMATS_KEY,
-  UNLOCKED_ICONS_KEY,
-  UNLOCKED_PREMIUM_KEY,
-} from './constants/config.js';
-import { asyncGet, asyncPost } from './fetch.js';
-
-/** API通信のデフォルトタイムアウト時間 (ms): モバイル環境やサーバー負荷を考慮し余裕を持たせた設定 */
-const API_TIMEOUT_MS = 6000;
 
 /** デッキ一覧取得のタイムアウト時間 (ms): 参加プレイヤー増加やデータ量肥大化に耐える余裕値 */
 const FETCH_DECKS_TIMEOUT_MS = 10000;
@@ -81,7 +78,7 @@ export async function savePointsToServer(
         ...extraBody,
       },
       {
-        timeout: API_TIMEOUT_MS,
+        timeout: DEFAULT_API_TIMEOUT_MS,
         keepalive: true,
       }
     );
@@ -844,7 +841,7 @@ export async function syncUserProfile(
         character,
         favoriteCard: favCardToSync,
       },
-      { timeout: API_TIMEOUT_MS }
+      { timeout: DEFAULT_API_TIMEOUT_MS }
     );
 
     if (!result) return false;
@@ -1024,6 +1021,7 @@ export async function sendHeartbeat() {
       },
       {
         timeout: HEARTBEAT_TIMEOUT_MS,
+        keepalive: true,
       }
     );
 
