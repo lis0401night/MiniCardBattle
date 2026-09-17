@@ -36,12 +36,13 @@ import {
   resolveCardSupremacySkills,
   triggerShakeAnimation,
   unmergeCardSkills,
-  matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
   matchesResurrectTarget,
   matchesSummonTarget,
   matchesUnionMaterial,
+  matchesAssembleTarget,
+  matchesPuppetTarget,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
@@ -2476,8 +2477,17 @@ export async function resolveActiveSkillEffect(
     const oppOwner = o === 'blue' ? 'red' : 'blue';
     const oppDiscard =
       o === 'blue' ? GameState.enemyDiscard : GameState.playerDiscard;
-    const validCards = oppDiscard.filter(
-      (card) => (card.power || 0) <= maxPow && !card.isToken
+    const isExcludeBoard = Boolean(skObj?.excludeBoard);
+    const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const presentBoardIds = isExcludeBoard
+      ? myBoard
+          .filter((card) => Boolean(card))
+          .flatMap((card) => [card.id, card.baseId])
+          .filter(Boolean)
+      : [];
+
+    const validCards = oppDiscard.filter((card) =>
+      matchesPuppetTarget(card, skObj, { presentBoardIds })
     );
     let tokenLanes = null;
 
@@ -2852,40 +2862,27 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'assemble') {
     // 【召集（assemble）】召喚時、デッキから条件に合致するカードを1枚選び、自分のレーンに召喚する
     const deck = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
-    let validCards = [...deck];
-
-    const isSelf = Boolean(skObj?.self || skObj?.targetSelf);
     const selfId = c ? c.baseId || c.id : null;
+    const isExcludeBoard = Boolean(skObj?.excludeBoard);
+    const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const presentBoardIds = isExcludeBoard
+      ? myBoard
+          .filter((card) => Boolean(card))
+          .flatMap((card) => [card.id, card.baseId])
+          .filter(Boolean)
+      : [];
 
-    const targetIds = Array.isArray(skObj?.targetIds)
-      ? skObj.targetIds
-      : skObj?.targetId
-        ? [skObj.targetId]
-        : [];
-    const targetKeyword = skObj?.targetKeyword;
-
-    if (isSelf && selfId) {
-      // 自身と同じカード指定
-      validCards = validCards.filter((card) => matchesCardId(card, selfId));
-    } else if (targetIds.length > 0) {
-      // カードID指定
-      validCards = validCards.filter((card) => matchesCardIds(card, targetIds));
-    } else if (typeof targetKeyword === 'string' && targetKeyword) {
-      // キーワード指定
-      validCards = validCards.filter((card) =>
-        matchesCardKeyword(card, targetKeyword)
-      );
-    } else if (skillValue !== undefined && skillValue !== null) {
-      // パワー指定（パワー以下のカード）
-      validCards = validCards.filter((card) => (card.power || 0) <= skillValue);
-    }
+    const validCards = deck.filter((card) =>
+      matchesAssembleTarget(card, skObj, { selfId, presentBoardIds })
+    );
 
     if (validCards.length > 0) {
       const targetLabel = getSkillTargetLabel(skObj);
       const keywordDesc =
         targetLabel === '自身'
           ? 'デッキから自身と同じカードを1枚選び、自分のレーンに召喚します。'
-          : targetLabel?.includes('特殊') || targetIds.length > 0
+          : targetLabel?.includes('特殊') ||
+              Boolean(skObj?.targetIds?.length || skObj?.targetId)
             ? 'デッキから指定されたカードを1枚選び、自分のレーンに召喚します。'
             : targetLabel
               ? `デッキから「${targetLabel}」カードを1枚選び、自分のレーンに召喚します。`

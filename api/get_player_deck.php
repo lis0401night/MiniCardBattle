@@ -27,9 +27,27 @@ $dir = getPlayersDirectory();
 $playerData = loadPlayerData($cleanUuid, $dir);
 
 if ($playerData && is_array($playerData)) {
+    // 防衛戦の対戦・演出に必要な公開項目のみをホワイトリストで抽出（不要なインベントリやシリアル履歴等の情報露出を防止）
+    $publicKeys = [
+        'uuid',
+        'name',
+        'icon',
+        'character',
+        'skin',
+        'skins',
+        'playmat',
+        'stage',
+        'deck',
+        'points',
+        'total_points',
+        'defense_wins',
+        'timestamp',
+    ];
+    $publicPlayer = array_intersect_key($playerData, array_flip($publicKeys));
+
     echo json_encode([
         'success' => true,
-        'player' => $playerData,
+        'player' => $publicPlayer,
     ]);
 } else {
     echo json_encode([

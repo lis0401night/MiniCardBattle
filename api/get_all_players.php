@@ -15,28 +15,11 @@ header('Content-Type: application/json');
 
 $players = loadAllPlayers(true);
 
-// 全体対戦ログ (api/decks/recent_battles.json) の読み込み
-$recentLogFile = __DIR__ . '/decks/recent_battles.json';
-$recentBattles = [];
-if (file_exists($recentLogFile)) {
-    // 書き込み中の不完全なJSONを読まないよう共有ロック(LOCK_SH)を取得する
-    $rfp = @fopen($recentLogFile, 'r');
-    if ($rfp) {
-        if (flock($rfp, LOCK_SH)) {
-            $rfSize = filesize($recentLogFile);
-            $recentContent = $rfSize > 0 ? stream_get_contents($rfp) : '';
-            flock($rfp, LOCK_UN);
-            if ($recentContent !== false && $recentContent !== '') {
-                $decoded = json_decode($recentContent, true);
-                $recentBattles = is_array($decoded) ? $decoded : [];
-            }
-        }
-        fclose($rfp);
-    }
-}
+// 全体対戦ログ (api/decks/recent_battles.json) の読み込み（共有ロック付き）
+$recentBattles = loadRecentBattles();
 
 echo json_encode([
     'success' => true,
     'players' => $players,
-    'recent_battles' => array_slice($recentBattles, 0, 2000),
+    'recent_battles' => $recentBattles,
 ]);

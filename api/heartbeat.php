@@ -40,18 +40,17 @@ if (!$lock) {
     exit;
 }
 
-$fileExists = playerDataFileExists($uuid, $dir);
-
-$player_data = loadPlayerData($uuid, $dir);
-$isNewPlayer = !$fileExists;
+$playerResult = loadPlayerDataForUpdate($uuid, $dir);
 
 // 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断
-if ($fileExists && $player_data === null) {
+if ($playerResult['status'] === 'corrupted') {
     releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'Existing player data is corrupted']);
     exit;
 }
 
+$isNewPlayer = ($playerResult['status'] === 'new');
+$player_data = $playerResult['data'];
 $timestamp = time();
 
 if (empty($player_data)) {

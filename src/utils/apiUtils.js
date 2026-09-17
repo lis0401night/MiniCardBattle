@@ -1021,7 +1021,6 @@ export async function sendHeartbeat() {
       },
       {
         timeout: HEARTBEAT_TIMEOUT_MS,
-        keepalive: true,
       }
     );
 

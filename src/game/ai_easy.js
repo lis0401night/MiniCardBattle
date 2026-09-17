@@ -1,11 +1,12 @@
 import {
   hasSkill,
   getSeededRandom,
-  matchesCardId,
-  matchesCardIds,
-  matchesCardKeyword,
   matchesSummonTarget,
   matchesResurrectTarget,
+  matchesAssembleTarget,
+  matchesPuppetTarget,
+  matchesCardIds,
+  matchesCardKeyword,
 } from '../utils/gameUtils.js';
 import { simulateMove } from './ai_normal.js';
 import { GameState } from '../state/gameState.js';
@@ -310,28 +311,18 @@ export function canResolveStandaloneSkill(
       const deck = gameState.enemyDeck || [];
       if (deck.length === 0) return false;
 
-      const isSelf = Boolean(skObj?.self || skObj?.targetSelf);
       const selfId = card.baseId || card.id;
-      const targetIds = Array.isArray(skObj?.targetIds)
-        ? skObj.targetIds
-        : skObj?.targetId
-          ? [skObj.targetId]
-          : [];
-      const targetKeyword = skObj?.targetKeyword;
+      const presentBoardIds = (gameState.enemyBoard || [])
+        .filter(Boolean)
+        .flatMap((c) => [c.id, c.baseId])
+        .filter(Boolean);
 
-      return deck.some((c) => {
-        if (!c) return false;
-        if (isSelf && selfId) {
-          return matchesCardId(c, selfId);
-        } else if (targetIds.length > 0) {
-          return matchesCardIds(c, targetIds);
-        } else if (typeof targetKeyword === 'string' && targetKeyword) {
-          return matchesCardKeyword(c, targetKeyword);
-        } else if (skillValue !== undefined && skillValue !== null) {
-          return (c.power || 0) <= skillValue;
-        }
-        return true;
-      });
+      return deck.some((candidate) =>
+        matchesAssembleTarget(candidate, skObj || { id: 'assemble' }, {
+          selfId,
+          presentBoardIds,
+        })
+      );
     }
 
     case 'summon': {
@@ -374,10 +365,15 @@ export function canResolveStandaloneSkill(
       const oppDiscard = gameState.playerDiscard || [];
       if (oppDiscard.length === 0) return false;
 
-      const maxPow =
-        skillValue !== undefined && skillValue !== null ? skillValue : 1;
-      return oppDiscard.some(
-        (c) => c && !c.isToken && (c.power || 0) <= maxPow
+      const presentBoardIds = (gameState.enemyBoard || [])
+        .filter(Boolean)
+        .flatMap((c) => [c.id, c.baseId])
+        .filter(Boolean);
+
+      return oppDiscard.some((candidate) =>
+        matchesPuppetTarget(candidate, skObj || { id: 'puppet' }, {
+          presentBoardIds,
+        })
       );
     }
 

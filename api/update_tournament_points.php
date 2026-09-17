@@ -43,16 +43,16 @@ if (!$lock) {
     exit;
 }
 
-$fileExists = playerDataFileExists($uuid, $dir);
-$playerData = loadPlayerData($uuid, $dir);
+$playerResult = loadPlayerDataForUpdate($uuid, $dir);
 
 // 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断（既定値での上書き防止）
-if ($fileExists && $playerData === null) {
+if ($playerResult['status'] === 'corrupted') {
     releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
     exit;
 }
 
+$playerData = $playerResult['data'];
 if (!$playerData) {
     $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
     $playerData = createDefaultPlayerData($uuid, $playerName);

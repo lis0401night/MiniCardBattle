@@ -42,15 +42,15 @@ if (!$lock) {
     exit;
 }
 
-$fileExists = playerDataFileExists($uuid, $dir);
-$player_data = loadPlayerData($uuid, $dir);
+$playerResult = loadPlayerDataForUpdate($uuid, $dir);
 
-if ($fileExists && $player_data === null) {
+if ($playerResult['status'] === 'corrupted') {
     releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'player_data_corrupt']);
     exit;
 }
 
+$player_data = $playerResult['data'];
 if (!is_array($player_data)) {
     $player_data = createDefaultPlayerData($uuid, 'プレイヤー');
 }

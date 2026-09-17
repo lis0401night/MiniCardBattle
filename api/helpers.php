@@ -453,6 +453,32 @@ function loadPlayerData(string $uuid, ?string $dir = null): ?array {
 }
 
 /**
+ * 更新用にプレイヤーデータを読み込み、データ状態を明示して返します。
+ *
+ * 単なる null ではなく、ファイルが存在しない正常な「新規プレイヤー（status: 'new'）」と、
+ * ファイルが存在するのに構文エラー等で読めない異常な「データ破損（status: 'corrupted'）」を明確に判別します。
+ * これにより、各更新APIが破損データを createDefaultPlayerData で誤って初期値上書き・消失させてしまう事故を
+ * ヘルパーレベルで一元的に防止します。
+ *
+ * @param string $uuid プレイヤーのUUID
+ * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
+ * @return array{status: 'loaded'|'new'|'corrupted', data: array|null} 読み込み結果配列
+ */
+function loadPlayerDataForUpdate(string $uuid, ?string $dir = null): array {
+    $targetDir = $dir ?? getPlayersDirectory();
+    $exists = playerDataFileExists($uuid, $targetDir);
+    $data = loadPlayerData($uuid, $targetDir);
+
+    if ($data !== null) {
+        return ['status' => 'loaded', 'data' => $data];
+    }
+
+    // 既存ファイルがあるのに読めない場合は破損。既定値での上書きを禁止する
+    return $exists ? ['status' => 'corrupted', 'data' => null]
+                   : ['status' => 'new', 'data' => null];
+}
+
+/**
  * プレイヤーデータを永続化します（デュアルライト対応）。
  * メインとして高速な純粋 JSON 形式（{$uuid}.json）をアトミック保存しつつ、
  * 古いクライアント（未リロード端末）との下位互換性（相手デッキ読込用の <script> タグ対応）を維持するため
@@ -572,6 +598,9 @@ function releasePlayerLock($fp): void {
 /** 防衛デッキとして必要なカード枚数 */
 const DEFENSE_DECK_SIZE = 20;
 
+/** 全体対戦ログで保持する最大件数 */
+const MAX_RECENT_BATTLES = 2000;
+
 /**
  * 登録済み全プレイヤーのデータを読み込みます（JSON優先・旧JSフォールバック）。
  * 
@@ -662,4 +691,125 @@ function loadAllPlayers(bool $includeDeck, ?string $dir = null): array {
 
     return $players;
 }
+
+/**
+ * 全体対戦ログファイル（recent_battles.json）の絶対パスを取得します。
+ *
+ * @param string|null $dir 保存ディレクトリ（省略時は api/decks を使用）
+ * @return string ファイルパス
+ */
+function getRecentBattlesFilePath(?string $dir = null): string {
+    $baseDir = $dir ?? (__DIR__ . '/decks');
+    return "{$baseDir}/recent_battles.json";
+}
+
+/**
+ * 全体対戦ログ（recent_battles.json）を安全に読み込みます。
+ * 専用ロックファイル（recent_battles.json.lock）に対する共有ロック（LOCK_SH）により、
+ * 書き込み処理との競合や不完全データの読み取りを防止します。
+ *
+ * @param string|null $dir 保存ディレクトリ（省略時は api/decks を使用）
+ * @param int $limit 取得上限件数（デフォルト: MAX_RECENT_BATTLES）
+ * @return array<array> 直近対戦ログ配列（新しい順）
+ */
+function loadRecentBattles(?string $dir = null, int $limit = MAX_RECENT_BATTLES): array {
+    $filePath = getRecentBattlesFilePath($dir);
+    $lockPath = $filePath . '.lock';
+
+    if (!file_exists($filePath)) {
+        return [];
+    }
+
+    $lockFp = @fopen($lockPath, 'c');
+    $content = false;
+    if ($lockFp) {
+        if (flock($lockFp, LOCK_SH)) {
+            $content = @file_get_contents($filePath);
+            flock($lockFp, LOCK_UN);
+        }
+        fclose($lockFp);
+    } else {
+        $content = @file_get_contents($filePath);
+    }
+
+    if ($content === false || $content === '') {
+        return [];
+    }
+
+    $decoded = json_decode($content, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    return array_slice($decoded, 0, $limit);
+}
+
+/**
+ * 全体対戦ログ（recent_battles.json）に新しい対戦記録を安全に追記（先頭追加）します。
+ *
+ * 専用ロックファイルによる排他ロック（LOCK_EX）と、
+ * 一時ファイルへの完全書き込み＋アトミック置換（rename）により、
+ * プロセス中断や容量不足時でも既存ログが0バイトや破損状態に陥ることを完全に防止します。
+ *
+ * @param array $record 追加する対戦記録
+ * @param string|null $dir 保存ディレクトリ（省略時は api/decks を使用）
+ * @param int $limit 保持上限件数（デフォルト: MAX_RECENT_BATTLES）
+ * @return bool 保存に成功したかどうか
+ */
+function appendRecentBattle(array $record, ?string $dir = null, int $limit = MAX_RECENT_BATTLES): bool {
+    $filePath = getRecentBattlesFilePath($dir);
+    $lockPath = $filePath . '.lock';
+
+    $lockFp = @fopen($lockPath, 'c');
+    if (!$lockFp || !flock($lockFp, LOCK_EX)) {
+        if ($lockFp) {
+            fclose($lockFp);
+        }
+        error_log('recent_battles.json のロック取得に失敗しました。');
+        return false;
+    }
+
+    clearstatcache(true, $filePath);
+    $content = is_file($filePath) ? (string) @file_get_contents($filePath) : '';
+    $recentBattles = $content !== '' ? json_decode($content, true) : [];
+    if (!is_array($recentBattles)) {
+        $recentBattles = [];
+    }
+
+    array_unshift($recentBattles, $record);
+    if (count($recentBattles) > $limit) {
+        $recentBattles = array_slice($recentBattles, 0, $limit);
+    }
+
+    $jsonString = json_encode($recentBattles, JSON_UNESCAPED_UNICODE);
+    if ($jsonString === false) {
+        error_log('recent_battles.json のエンコードに失敗しました: ' . json_last_error_msg());
+        flock($lockFp, LOCK_UN);
+        fclose($lockFp);
+        return false;
+    }
+
+    // 一時ファイルへ完全に書き込んでからアトミック置換（rename）
+    $tmpPath = $filePath . '.tmp.' . uniqid('', true);
+    $written = @file_put_contents($tmpPath, $jsonString, LOCK_EX);
+
+    $success = false;
+    if ($written !== false && $written === strlen($jsonString)) {
+        if (@rename($tmpPath, $filePath)) {
+            $success = true;
+        } else {
+            @unlink($tmpPath);
+            error_log('recent_battles.json のリネーム置換に失敗しました。');
+        }
+    } else {
+        @unlink($tmpPath);
+        error_log('recent_battles.json の一時ファイル書き込みが不完全です。');
+    }
+
+    flock($lockFp, LOCK_UN);
+    fclose($lockFp);
+
+    return $success;
+}
+
 
