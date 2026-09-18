@@ -53,7 +53,7 @@ if (array_key_exists('defense_wins', $data) &&
     exit;
 }
 
-$defaultName = isset($data['name']) ? $data['name'] : 'プレイヤー';
+$defaultName = sanitizePlayerDisplayName($data['name'] ?? null);
 
 $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($increment, $points, $total_points, $data, $defense_wins) {
     $currentPoints = isset($playerData['points']) ? intval($playerData['points']) : 0;

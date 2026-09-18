@@ -92,54 +92,70 @@ export default function NewsBanner() {
   const touchEndX = useRef(0);
 
   useEffect(() => {
+    /**
+     * ニュースAPIの応答データを検証し、公開期間内のお知らせを抽出して状態へ反映します。
+     *
+     * @param {{success?: boolean, news?: Array<object>}|null|undefined} data ニュースAPIからの応答データ
+     * @returns {void}
+     */
+    const handleNewsResponse = (data) => {
+      let newsList = null;
+      if (
+        data &&
+        typeof data === 'object' &&
+        data.success &&
+        Array.isArray(data.news)
+      ) {
+        newsList = data.news;
+      }
+
+      if (newsList && newsList.length > 0) {
+        const now = new Date();
+
+        // 【お知らせ配信期間フィルター】ユーザー表示用にisActiveがtrueかつ公開期間内のものだけフィルタ
+        // 現在時刻とお知らせの開始日・終了日を比較して表示対象を絞り込む
+        const activeNews = newsList.filter((n) => {
+          if (!n.isActive) return false;
+
+          if (n.startDate) {
+            const start = new Date(n.startDate);
+            if (now < start) return false;
+          }
+          if (n.endDate) {
+            const end = new Date(n.endDate);
+            if (now > end) return false;
+          }
+
+          return true;
+        });
+
+        setNewsItems(activeNews);
+      } else if (import.meta.env.DEV) {
+        // ローカルのViteサーバー環境などでPHPが実行されずレスポンスが得られない場合のフォールバック
+        setNewsItems(DEV_FALLBACK_NEWS);
+      } else {
+        setNewsItems([]);
+      }
+    };
+
+    /**
+     * ニュース取得通信失敗時のエラーハンドリングを行います。
+     *
+     * @param {Error|unknown} err 発生したエラーオブジェクト
+     * @returns {void}
+     */
+    const handleNewsError = (err) => {
+      console.error('Failed to fetch news:', err);
+      if (import.meta.env.DEV) {
+        setNewsItems(DEV_FALLBACK_NEWS);
+      } else {
+        setNewsItems([]);
+      }
+    };
+
     asyncGet(NEWS_API_ENDPOINT)
-      .then((data) => {
-        let newsList = null;
-        if (
-          data &&
-          typeof data === 'object' &&
-          data.success &&
-          Array.isArray(data.news)
-        ) {
-          newsList = data.news;
-        }
-
-        if (newsList && newsList.length > 0) {
-          const now = new Date();
-
-          // 【お知らせ配信期間フィルター】ユーザー表示用にisActiveがtrueかつ公開期間内のものだけフィルタ
-          // 現在時刻とお知らせの開始日・終了日を比較して表示対象を絞り込む
-          const activeNews = newsList.filter((n) => {
-            if (!n.isActive) return false;
-
-            if (n.startDate) {
-              const start = new Date(n.startDate);
-              if (now < start) return false;
-            }
-            if (n.endDate) {
-              const end = new Date(n.endDate);
-              if (now > end) return false;
-            }
-
-            return true;
-          });
-
-          setNewsItems(activeNews);
-        } else if (import.meta.env.DEV) {
-          // ローカルのViteサーバー環境などでPHPが実行されずレスポンスが得られない場合のフォールバック
-          setNewsItems(DEV_FALLBACK_NEWS);
-        } else {
-          setNewsItems([]);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to fetch news:', err);
-        if (import.meta.env.DEV) {
-          setNewsItems(DEV_FALLBACK_NEWS);
-        } else {
-          setNewsItems([]);
-        }
-      })
+      .then(handleNewsResponse)
+      .catch(handleNewsError)
       .finally(() => {
         setIsLoading(false);
       });

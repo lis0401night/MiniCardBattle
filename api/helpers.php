@@ -65,16 +65,20 @@ function createDefaultPlayerData($uuid, $name = 'プレイヤー', $points = 0, 
 
 /**
  * プレイヤー表示名をサニタイズ（制御文字除去・長さを切り詰め・空文字時のデフォルト代入）します。
+ * 文字列以外の型（配列・オブジェクト等）が渡された場合も TypeError を起こさずにデフォルト値へフォールバックします。
  * 
  * ※ DB/JSON 保存時は二重エスケープ・文字化けを防ぐため htmlspecialchars は行わず生文字列で保持し、
  *    画面描画（React JSX / escapeHtml）側で安全にサニタイズ・レンダリングする設計としています。
  * 
- * @param string|null $name 対象の名前文字列
+ * @param mixed $name 対象の名前（文字列、数値、またはnull等）
  * @param string $default デフォルト表示名（デフォルト: 'プレイヤー'）
  * @param int $maxLength 最大文字数（デフォルト: 12）
  * @return string サニタイズ済み文字列
  */
-function sanitizePlayerDisplayName(?string $name, string $default = 'プレイヤー', int $maxLength = 12): string {
+function sanitizePlayerDisplayName($name = null, string $default = 'プレイヤー', int $maxLength = 12): string {
+    if (!is_string($name) && !is_numeric($name)) {
+        return $default;
+    }
     $cleaned = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', (string) $name), 0, $maxLength);
     return $cleaned === '' ? $default : $cleaned;
 }

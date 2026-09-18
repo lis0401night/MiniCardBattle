@@ -38,7 +38,7 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$defaultName = isset($data['name']) ? $data['name'] : 'プレイヤー';
+$defaultName = sanitizePlayerDisplayName($data['name'] ?? null);
 
 $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($points, $total_points, $max_streak, $data) {
     $playerData['challenge_points'] = $points;

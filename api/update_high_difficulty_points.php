@@ -44,7 +44,7 @@ if ($clearedDecoded === null && $high_difficulty_cleared !== '{}') {
     $high_difficulty_cleared = '{}';
 }
 
-$defaultName = isset($data['name']) ? $data['name'] : 'プレイヤー';
+$defaultName = sanitizePlayerDisplayName($data['name'] ?? null);
 
 $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($points, $total_points, $high_difficulty_cleared, $clearedDecoded, $data) {
     $playerData['high_difficulty_points'] = $points;

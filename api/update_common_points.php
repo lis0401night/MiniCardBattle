@@ -39,7 +39,7 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$defaultName = isset($data['name']) ? $data['name'] : 'プレイヤー';
+$defaultName = sanitizePlayerDisplayName($data['name'] ?? null);
 
 $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($increment, $points, $total_points) {
     $currentPoints = isset($playerData['common_points']) ? intval($playerData['common_points']) : 0;
