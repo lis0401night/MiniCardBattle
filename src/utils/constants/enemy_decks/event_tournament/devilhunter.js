@@ -7,6 +7,8 @@ export default [
   [
     'snowwhite',
     'snowwhite',
+    'gungnir',
+    'gungnir',
     'graverobber',
     'graverobber',
     'graverobber',
