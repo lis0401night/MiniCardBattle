@@ -4244,6 +4244,228 @@ export function applyOpponentTriggerReaction(_simState) {
 }
 
 /**
+ * シミュレーション盤面の指定レーンにカードを配置・召喚・装備・合体する共通シミュレーション関数。
+ * 「起動（startup）消滅」、「装備（canEquipCard）」、「合体（matchesUnionMaterial）」、
+ * および通常の上書き墓地送りをゲームエンジン実戦処理と完全に一致させてシミュレートする。
+ *
+ * @param {object} simState - シミュレーション用ゲーム状態オブジェクト
+ * @param {'red' | 'blue'} owner - プレイヤー ('red' | 'blue')
+ * @param {number} laneIdx - 対象レーンインデックス (0〜2)
+ * @param {object} card - 配置・召喚するカードオブジェクト
+ * @param {boolean} isSummon - 召喚（スキル発動あり）の場合は true、配置（スキル不発）の場合は false
+ * @param {object} [options={}] - 追加オプション（除外スキルID等）
+ * @returns {{ activeCard: object|null, isEquipped: boolean, isUnion: boolean, isDispelled: boolean }} 盤面処理結果
+ */
+export function simulateCardPlacementOnBoard(
+  simState,
+  owner,
+  laneIdx,
+  card,
+  isSummon,
+  _options = {}
+) {
+  if (!simState || !card || laneIdx < 0 || laneIdx > 2) {
+    return {
+      activeCard: null,
+      isEquipped: false,
+      isUnion: false,
+      isDispelled: false,
+    };
+  }
+
+  const isRed = owner === 'red';
+  const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+  const targetDiscard = isRed ? simState.enemyDiscard : simState.playerDiscard;
+  const existing = targetBoard[laneIdx];
+
+  // 配置カードのクローンと初期化
+  const placedCard = cloneCard(card);
+  placedCard.owner = owner;
+  placedCard.stunTurns = 0;
+
+  // パワーの正規化
+  if (
+    placedCard.currentPower === undefined ||
+    Number.isNaN(placedCard.currentPower) ||
+    (placedCard.currentPower <= 0 && (placedCard.power || 0) > 0)
+  ) {
+    placedCard.currentPower = placedCard.power || 0;
+    placedCard.basePower = placedCard.power || 0;
+  }
+
+  // 1. 起動（startup）スキルの解除判定
+  if (existing && hasSkill(existing, 'startup')) {
+    existing.skills = existing.skills.filter(
+      (s) => s.id !== 'startup' && s.id !== 'defender'
+    );
+    targetDiscard.push(placedCard);
+    return {
+      activeCard: existing,
+      isEquipped: false,
+      isUnion: false,
+      isDispelled: true,
+    };
+  }
+
+  // 2. 装備（canEquipCard）判定
+  if (existing && canEquipCard(placedCard, existing)) {
+    const { equipSkills } = applyEquipment(existing, placedCard);
+    // 装備パッシブ/アクティブ効果のシミュレート
+    applyActiveSkillLogic(
+      simState,
+      owner,
+      laneIdx,
+      'equip',
+      0,
+      [],
+      null,
+      laneIdx
+    );
+
+    // 召喚（isSummon === true）の場合のみ、装備カード自身が持つアクティブ召喚時スキルを発動
+    // ※ 配置（isSummon === false: 復活・傀儡等）はゲームルール厳守でオンプレイスキル不発
+    if (isSummon && Array.isArray(equipSkills)) {
+      equipSkills.forEach((sk) => {
+        // 連鎖召喚系スキルは個別管理のため即時実行をスキップ
+        if (
+          [
+            'clone',
+            'servant',
+            'summon',
+            'ambush',
+            'puppet',
+            'resurrect',
+            'execute',
+            'inspire',
+            'protection',
+            'dominate',
+          ].includes(sk.id)
+        ) {
+          return;
+        }
+        applyActiveSkillLogic(
+          simState,
+          owner,
+          laneIdx,
+          sk.id,
+          sk.value,
+          [],
+          null,
+          undefined
+        );
+      });
+    }
+
+    return {
+      activeCard: existing,
+      isEquipped: true,
+      isUnion: false,
+      isDispelled: false,
+    };
+  }
+
+  // 3. 合体（union）判定
+  const unionSkill =
+    placedCard.skills && placedCard.skills.find((s) => s.id === 'union');
+  if (existing && unionSkill && matchesUnionMaterial(existing, unionSkill)) {
+    const masterData =
+      CARD_MASTER.find((c) => c.id === unionSkill.summonId) ||
+      CARD_MASTER.find((c) => c.id === 'android');
+    let unionCard = JSON.parse(JSON.stringify(masterData));
+    unionCard.uid = `sim_union_${Math.floor(Math.random() * 1000000)}`;
+    unionCard.owner = owner;
+    unionCard.baseId = unionCard.id;
+    unionCard.basePower = unionCard.power;
+    unionCard.currentPower = unionCard.power;
+    unionCard.stunTurns = 0;
+    targetBoard[laneIdx] = unionCard;
+    simState.lastPlayedLane = laneIdx;
+
+    if (isSummon) {
+      if (hasActiveSkill(unionCard)) {
+        unionCard.isSkillResolving = true;
+      }
+      if (Array.isArray(unionCard.skills)) {
+        unionCard.skills.forEach((sk) => {
+          if (
+            sk.id !== 'trigger' &&
+            sk.id !== 'summon' &&
+            sk.id !== 'invite' &&
+            sk.id !== 'assemble'
+          ) {
+            applyActiveSkillLogic(
+              simState,
+              owner,
+              laneIdx,
+              sk.id,
+              sk.value,
+              [],
+              null,
+              undefined
+            );
+          }
+        });
+      }
+      unionCard.isSkillResolving = false;
+      unionCard.skillTriggered = true;
+    } else {
+      unionCard.skillTriggered = true; // 配置（復活等）では召喚時効果不発
+    }
+
+    return {
+      activeCard: unionCard,
+      isEquipped: false,
+      isUnion: true,
+      isDispelled: false,
+    };
+  }
+
+  // 4. 通常の上書き配置
+  if (existing && !existing.isToken) {
+    targetDiscard.push(existing);
+  }
+
+  placedCard.skillTriggered = !isSummon;
+  if (isSummon && hasActiveSkill(placedCard)) {
+    placedCard.isSkillResolving = true;
+  }
+
+  targetBoard[laneIdx] = placedCard;
+  simState.lastPlayedLane = laneIdx;
+
+  if (isSummon && Array.isArray(placedCard.skills)) {
+    placedCard.skills.forEach((sk) => {
+      if (
+        sk.id !== 'trigger' &&
+        sk.id !== 'summon' &&
+        sk.id !== 'invite' &&
+        sk.id !== 'assemble'
+      ) {
+        applyActiveSkillLogic(
+          simState,
+          owner,
+          laneIdx,
+          sk.id,
+          sk.value,
+          [],
+          null,
+          undefined
+        );
+      }
+    });
+    placedCard.isSkillResolving = false;
+    placedCard.skillTriggered = true;
+  }
+
+  return {
+    activeCard: placedCard,
+    isEquipped: false,
+    isUnion: false,
+    isDispelled: false,
+  };
+}
+
+/**
  * 復活（resurrect）および傀儡（puppet）のアドホック（解決時）シミュレーション評価。
  * 相手の誘発（trigger）等で戦況が変化した場合や、事前計画キューが存在しない場合に、
  * 墓地の候補カード群と現在の最新盤面をシミュレートし、最も盤面スコアが高くなる
@@ -4303,7 +4525,6 @@ export function evaluateBestResurrectChoice(
 
     for (const lane of lanesToTest) {
       const simState = structuredClone(initialSimState);
-      const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
       const targetDiscard = isRed
         ? isPuppet
           ? simState.playerDiscard
@@ -4324,32 +4545,8 @@ export function evaluateBestResurrectChoice(
         targetDiscard.splice(dIdx, 1);
       }
 
-      // カードを配置
-      const placedCard = cloneCard(card);
-      placedCard.owner = owner;
-      placedCard.skillTriggered = true; // 配置（Place）のため召喚時スキルは不発
-      placedCard.stunTurns = 0;
-
-      // パワーの正規化
-      if (
-        placedCard.currentPower === undefined ||
-        Number.isNaN(placedCard.currentPower) ||
-        (placedCard.currentPower <= 0 && (placedCard.power || 0) > 0)
-      ) {
-        placedCard.currentPower = placedCard.power || 0;
-        placedCard.basePower = placedCard.power || 0;
-      }
-
-      // 上書きされるカードがあれば墓地送り
-      const existing = targetBoard[lane];
-      if (existing && !existing.isToken) {
-        const myDiscard = isRed
-          ? simState.enemyDiscard
-          : simState.playerDiscard;
-        myDiscard.push(existing);
-      }
-
-      targetBoard[lane] = placedCard;
+      // カードを配置（共通シミュレーション処理: 装備・合体・通常上書きに対応、配置のため isSummon = false）
+      simulateCardPlacementOnBoard(simState, owner, lane, card, false);
 
       // 破壊クリーンアップ
       processDestructionTriggers(simState, []);
@@ -4419,55 +4616,12 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
 
     const simState = structuredClone(initialSimState);
     const targetHand = isRed ? simState.enemyHand : simState.playerHand;
-    const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
-    const targetDiscard = isRed
-      ? simState.enemyDiscard
-      : simState.playerDiscard;
-
     const consumedCard = targetHand.splice(i, 1)[0];
     if (!consumedCard) continue;
 
-    const existing = targetBoard[laneIdx];
-    if (existing && !existing.isToken) {
-      targetDiscard.push(existing);
-    }
+    // カードを召喚（共通シミュレーション処理: 装備・合体・通常上書きに対応、召喚のため isSummon = true）
+    simulateCardPlacementOnBoard(simState, owner, laneIdx, consumedCard, true);
 
-    consumedCard.owner = owner;
-    consumedCard.skillTriggered = false;
-    if (
-      consumedCard.currentPower === undefined ||
-      Number.isNaN(consumedCard.currentPower) ||
-      (consumedCard.currentPower <= 0 && (consumedCard.power || 0) > 0)
-    ) {
-      consumedCard.currentPower = consumedCard.power || 0;
-      consumedCard.basePower = consumedCard.power || 0;
-    }
-
-    if (hasActiveSkill(consumedCard)) {
-      consumedCard.isSkillResolving = true;
-    }
-
-    targetBoard[laneIdx] = consumedCard;
-    simState.lastPlayedLane = laneIdx;
-
-    if (Array.isArray(consumedCard.skills)) {
-      consumedCard.skills.forEach((sk) => {
-        if (sk.id !== 'trigger' && sk.id !== 'invite') {
-          applyActiveSkillLogic(
-            simState,
-            owner,
-            laneIdx,
-            sk.id,
-            sk.value,
-            [],
-            null,
-            undefined
-          );
-        }
-      });
-      consumedCard.skillTriggered = true;
-    }
-    consumedCard.isSkillResolving = false;
     processDestructionTriggers(simState, []);
 
     let score = evaluateTurnOutcome(simState, owner);
@@ -4873,53 +5027,17 @@ export function evaluateAdhocSummonMove(
     for (const laneIdx of candidateLanes) {
       const simState = structuredClone(initialSimState);
       const targetHand = isRed ? simState.enemyHand : simState.playerHand;
-      const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
-      const targetDiscard = isRed
-        ? simState.enemyDiscard
-        : simState.playerDiscard;
-
       const consumedCard = targetHand.splice(i, 1)[0];
       if (!consumedCard) continue;
 
-      const existing = targetBoard[laneIdx];
-      if (existing && !existing.isToken) {
-        targetDiscard.push(existing);
-      }
-
-      consumedCard.owner = owner;
-      consumedCard.skillTriggered = false;
-      if (
-        consumedCard.currentPower === undefined ||
-        Number.isNaN(consumedCard.currentPower) ||
-        (consumedCard.currentPower <= 0 && (consumedCard.power || 0) > 0)
-      ) {
-        consumedCard.currentPower = consumedCard.power || 0;
-        consumedCard.basePower = consumedCard.power || 0;
-      }
-
-      if (hasActiveSkill(consumedCard)) {
-        consumedCard.isSkillResolving = true;
-      }
-
-      targetBoard[laneIdx] = consumedCard;
-      simState.lastPlayedLane = laneIdx;
-
-      if (Array.isArray(consumedCard.skills)) {
-        consumedCard.skills.forEach((sk) => {
-          if (sk.id !== 'trigger' && sk.id !== 'summon') {
-            applyActiveSkillLogic(
-              simState,
-              owner,
-              laneIdx,
-              sk.id,
-              sk.value,
-              [],
-              null,
-              undefined
-            );
-          }
-        });
-      }
+      // カードを召喚（共通シミュレーション処理: 装備・合体・通常上書きに対応、召喚のため isSummon = true）
+      simulateCardPlacementOnBoard(
+        simState,
+        owner,
+        laneIdx,
+        consumedCard,
+        true
+      );
 
       processDestructionTriggers(simState, []);
       const score = evaluateTurnOutcome(simState, owner);
@@ -5042,45 +5160,15 @@ export function evaluateAdhocAssembleMove(
     for (const targetLane of candidateLanes) {
       const simState = structuredClone(initialSimState);
       const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
-      const targetDiscard = isRed
-        ? simState.enemyDiscard
-        : simState.playerDiscard;
 
-      const existing = targetBoard[targetLane];
-
-      if (existing && !existing.isToken) {
-        targetDiscard.push(existing);
-      }
-
-      const assembleCard = cloneCard(card);
-      assembleCard.owner = owner;
-      assembleCard.skillTriggered = false;
-      assembleCard.currentPower = assembleCard.power || 0;
-      assembleCard.basePower = assembleCard.power || 0;
-
-      if (hasActiveSkill(assembleCard)) {
-        assembleCard.isSkillResolving = true;
-      }
-
-      targetBoard[targetLane] = assembleCard;
-      simState.lastPlayedLane = targetLane;
-
-      if (Array.isArray(assembleCard.skills)) {
-        assembleCard.skills.forEach((sk) => {
-          if (sk.id !== 'trigger' && sk.id !== 'assemble') {
-            applyActiveSkillLogic(
-              simState,
-              owner,
-              targetLane,
-              sk.id,
-              sk.value,
-              [],
-              null,
-              undefined
-            );
-          }
-        });
-      }
+      // カードを召喚（共通シミュレーション処理: 装備・合体・通常上書きに対応、召喚のため isSummon = true）
+      const { activeCard: assembleCard } = simulateCardPlacementOnBoard(
+        simState,
+        owner,
+        targetLane,
+        card,
+        true
+      );
 
       processDestructionTriggers(simState, []);
       let score = evaluateTurnOutcome(simState, owner);
@@ -5088,9 +5176,9 @@ export function evaluateAdhocAssembleMove(
       // 【召集連鎖の評価】
       // 候補カード自身が「召集（assemble）」スキルを持ち、デッキにさらに対象カードが存在し、
       // かつ次のカードを展開して盤面をさらに改善できる余地（空き枠または弱体化味方の戦力向上）がある場合、連鎖価値を加算
-      const assembleSk = assembleCard.skills?.find((s) => s.id === 'assemble');
+      const assembleSk = assembleCard?.skills?.find((s) => s.id === 'assemble');
       if (assembleSk) {
-        const childSelfId = assembleCard.baseId || assembleCard.id;
+        const childSelfId = assembleCard?.baseId || assembleCard?.id;
         const isChildSelf = Boolean(assembleSk.self || assembleSk.targetSelf);
         const nextTargets = deck.filter((dc) => {
           if (
