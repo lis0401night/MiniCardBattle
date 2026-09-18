@@ -7,6 +7,7 @@ import {
   getSkillValue,
   hasSkill,
   hasSkillDeep,
+  matchesAssembleTarget,
   matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
@@ -3394,9 +3395,8 @@ export function getBestSimulatedMove() {
         }
       });
     }
-    // 【手数ペナルティ】アクション数（手数）が増えるごとにタイブレークを微小減点する
-    // （不要なプレイや中間アクションによるタイブレーク加点を防ぎ、最短手数を選択させる）
-    c.tieBreaker -= getCandidateActionCount(c) * 0.002;
+    // ※ 手数（アクション数の短さ）の優先順位は、直後の候補ソート（aLen - bLen）および
+    //    最善手絞り込み（minActionLen）において一元的に厳密適用されるため、tieBreakerでの減算は不要
   });
 
   // スコア順、次いでリーダースキル不使用優先、アクションの短さ順（同じ結果なら手が少ないもの・パスを優先）、最後にタイブレーク順でソート
@@ -5082,6 +5082,7 @@ export function evaluateAdhocSummonMove(
  * @param {string|null} selfId - 発動元カードID
  * @param {number} defaultLane - 召喚先レーン番号
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
+ * @param {Array<string>} [presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard用）
  * @return {object|null} 最善カードオブジェクト（パスなら null）
  */
 export function evaluateAdhocAssembleMove(
@@ -5089,33 +5090,17 @@ export function evaluateAdhocAssembleMove(
   skObj,
   selfId,
   defaultLane,
-  owner = 'red'
+  owner = 'red',
+  presentBoardIds = []
 ) {
   if (!deck || deck.length === 0 || defaultLane < 0 || defaultLane > 2) {
     return null;
   }
 
-  const isSelf = Boolean(skObj?.self || skObj?.targetSelf);
-  const targetIds = Array.isArray(skObj?.targetIds)
-    ? skObj.targetIds
-    : skObj?.targetId
-      ? [skObj.targetId]
-      : [];
-  const targetKeyword = skObj?.targetKeyword;
-  const skillValue = skObj?.value;
-
-  let validCards = [...deck];
-  if (isSelf && selfId) {
-    validCards = validCards.filter((card) => matchesCardId(card, selfId));
-  } else if (targetIds.length > 0) {
-    validCards = validCards.filter((card) => matchesCardIds(card, targetIds));
-  } else if (typeof targetKeyword === 'string' && targetKeyword) {
-    validCards = validCards.filter((card) =>
-      matchesCardKeyword(card, targetKeyword)
-    );
-  } else if (skillValue !== undefined && skillValue !== null) {
-    validCards = validCards.filter((card) => (card.power || 0) <= skillValue);
-  }
+  // 実戦（skillLogic.js）と完全に同一の対象判定ロジック（matchesAssembleTarget）で候補を抽出
+  const validCards = deck.filter((card) =>
+    matchesAssembleTarget(card, skObj, { selfId, presentBoardIds })
+  );
 
   if (validCards.length === 0) return null;
   if (validCards.length === 1) return validCards[0];

@@ -595,6 +595,74 @@ function releasePlayerLock($fp): void {
     }
 }
 
+/**
+ * プレイヤーデータの読み込み・更新・保存（read-modify-write）を排他ロック下で安全に実行します。
+ * 
+ * 排他ロック取得、データ破損（corrupted）の検知、未存在時の createDefaultPlayerData 生成、
+ * コールバックによる更新の適用、アトミック保存、および try...finally による確実なロック解放を一元的に管理します。
+ * 
+ * @param string $uuid プレイヤーのUUID
+ * @param callable $mutator 更新処理を行うコールバック関数
+ *                          シグネチャ: function(array &$playerData, array $playerResult): mixed
+ *                          - $playerData: 更新対象のプレイヤーデータ（参照渡し）
+ *                          - $playerResult: loadPlayerDataForUpdate の結果（status 等）
+ *                          戻り値として明示的に false を返した場合は保存を中断（ロールバック）します。
+ * @param string $defaultName 未存在時のデフォルトプレイヤー名（省略時は 'プレイヤー'）
+ * @param string|null $dir 保存ディレクトリ（省略時は getPlayersDirectory()）
+ * @return array{success: bool, error?: string, data?: array, result?: mixed, status?: string} 処理結果
+ */
+function modifyPlayerDataWithLock(
+    string $uuid,
+    callable $mutator,
+    string $defaultName = 'プレイヤー',
+    ?string $dir = null
+): array {
+    $cleanUuid = preg_replace('/[^a-zA-Z0-9_\-]/', '', $uuid);
+    if ($cleanUuid === '' || strlen($cleanUuid) < 10) {
+        return ['success' => false, 'error' => 'Invalid uuid format'];
+    }
+
+    $targetDir = $dir ?? getPlayersDirectory();
+    $lock = acquirePlayerLock($cleanUuid, $targetDir);
+    if (!$lock) {
+        return ['success' => false, 'error' => 'Failed to acquire player lock'];
+    }
+
+    try {
+        $playerResult = loadPlayerDataForUpdate($cleanUuid, $targetDir);
+
+        // 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断（既定値での上書き防止）
+        if ($playerResult['status'] === 'corrupted') {
+            return ['success' => false, 'error' => 'Failed to parse player data or file is corrupted'];
+        }
+
+        $playerData = $playerResult['data'];
+        if (empty($playerData)) {
+            $playerData = createDefaultPlayerData($cleanUuid, $defaultName);
+        }
+
+        // コールバック関数を実行してデータを更新
+        $customResult = $mutator($playerData, $playerResult);
+        if ($customResult === false) {
+            return ['success' => false, 'error' => 'Mutation aborted'];
+        }
+
+        $saved = savePlayerData($cleanUuid, $playerData, $targetDir);
+        if (!$saved) {
+            return ['success' => false, 'error' => 'Failed to save updated file completely'];
+        }
+
+        return [
+            'success' => true,
+            'data' => $playerData,
+            'result' => $customResult,
+            'status' => $playerResult['status'],
+        ];
+    } finally {
+        releasePlayerLock($lock);
+    }
+}
+
 /** 防衛デッキとして必要なカード枚数 */
 const DEFENSE_DECK_SIZE = 20;
 

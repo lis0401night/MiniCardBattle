@@ -38,52 +38,31 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$dir = getPlayersDirectory();
-$lock = acquirePlayerLock($uuid, $dir);
-if (!$lock) {
-    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
-    exit;
-}
-
-$playerResult = loadPlayerDataForUpdate($uuid, $dir);
-
-if ($playerResult['status'] === 'corrupted') {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
-    exit;
-}
-
-$player_data = $playerResult['data'];
-if (empty($player_data)) {
-    $player_data = createDefaultPlayerData($uuid, $name);
-}
-
-// プロフィール情報を更新
-$player_data['uuid'] = $uuid;
-$player_data['name'] = $name;
-$player_data['icon'] = $icon;
-if (array_key_exists('favoriteCard', $data)) {
-    $cleaned_card_id = (is_array($data['favoriteCard']) && isset($data['favoriteCard']['cardId']))
-        ? preg_replace('/[^a-zA-Z0-9_]/', '', (string) $data['favoriteCard']['cardId'])
-        : '';
-    if ($cleaned_card_id !== '') {
-        // cardIdのみサニタイズし、isPremiumはbool型で保持
-        $player_data['favorite_card'] = [
-            'cardId' => $cleaned_card_id,
-            'isPremium' => !empty($data['favoriteCard']['isPremium']),
-        ];
-    } else {
-        // nullや空のcardIdが送られた場合はお気に入り解除
-        $player_data['favorite_card'] = null;
+$updateResult = modifyPlayerDataWithLock($uuid, function (array &$player_data) use ($uuid, $name, $icon, $timestamp, $data) {
+    // プロフィール情報を更新
+    $player_data['uuid'] = $uuid;
+    $player_data['name'] = $name;
+    $player_data['icon'] = $icon;
+    if (array_key_exists('favoriteCard', $data)) {
+        $cleaned_card_id = (is_array($data['favoriteCard']) && isset($data['favoriteCard']['cardId']))
+            ? preg_replace('/[^a-zA-Z0-9_]/', '', (string) $data['favoriteCard']['cardId'])
+            : '';
+        if ($cleaned_card_id !== '') {
+            // cardIdのみサニタイズし、isPremiumはbool型で保持
+            $player_data['favorite_card'] = [
+                'cardId' => $cleaned_card_id,
+                'isPremium' => !empty($data['favoriteCard']['isPremium']),
+            ];
+        } else {
+            // nullや空のcardIdが送られた場合はお気に入り解除
+            $player_data['favorite_card'] = null;
+        }
     }
-}
-$player_data['timestamp'] = $timestamp;
+    $player_data['timestamp'] = $timestamp;
+}, $name);
 
-$saved = savePlayerData($uuid, $player_data, $dir);
-releasePlayerLock($lock);
-
-if ($saved) {
+if ($updateResult['success']) {
     echo json_encode(['success' => true]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Failed to save profile completely']);
+    echo json_encode(['success' => false, 'error' => $updateResult['error']]);
 }

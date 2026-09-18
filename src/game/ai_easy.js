@@ -1,15 +1,15 @@
+import { GameState } from '../state/gameState.js';
 import {
-  hasSkill,
   getSeededRandom,
-  matchesSummonTarget,
-  matchesResurrectTarget,
+  hasSkill,
   matchesAssembleTarget,
-  matchesPuppetTarget,
   matchesCardIds,
   matchesCardKeyword,
+  matchesPuppetTarget,
+  matchesResurrectTarget,
+  matchesSummonTarget,
 } from '../utils/gameUtils.js';
 import { simulateMove } from './ai_normal.js';
-import { GameState } from '../state/gameState.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（初級・ランダム版）
@@ -224,8 +224,8 @@ export function isImmediatelySelfDestructiveOnPlay(card) {
     'execute', // 処刑（敵破壊）
     'dominate', // 支配（敵強奪）
     'burial', // 埋葬
-    'decree', // 布告
-    'portent', // 不吉
+    'decree', // 宣告
+    'portent', // 凶兆
     'invade', // 侵略
     'heal', // 回復（プレイヤーHP回復）
     'draw', // ドロー

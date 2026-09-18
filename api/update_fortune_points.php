@@ -51,29 +51,18 @@ if ($clearedDecoded === null && $fortune_cleared !== '{}') {
     $fortune_cleared = '{}';
 }
 
-$dir = getPlayersDirectory();
-$lock = acquirePlayerLock($uuid, $dir);
-if (!$lock) {
-    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
-    exit;
-}
+$defaultName = isset($data['name']) ? $data['name'] : 'プレイヤー';
 
-$playerResult = loadPlayerDataForUpdate($uuid, $dir);
-
-// 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断（既定値での上書き防止）
-if ($playerResult['status'] === 'corrupted') {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
-    exit;
-}
-
-$playerData = $playerResult['data'];
-if (!$playerData) {
-    $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
-    $playerData = createDefaultPlayerData($uuid, $playerName);
-}
-
-if ($playerData) {
+$updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use (
+    $points,
+    $total_points,
+    $fortune_max_grade,
+    $clearedDecoded,
+    $fortune_max_total_cost_automata,
+    $fortune_max_total_cost_valkyria,
+    $fortune_max_total_cost,
+    $character
+) {
     $playerData['fortune_points'] = $points;
     $playerData['fortune_total_points'] = $total_points;
 
@@ -160,28 +149,21 @@ if ($playerData) {
     $valkCost = intval($playerData['fortune_max_total_cost_valkyria']);
     $playerData['fortune_max_total_cost'] = max($fortune_max_total_cost, $autoCost, $valkCost);
 
-
     $playerData['timestamp'] = time();
+}, $defaultName);
 
-    $saved = savePlayerData($uuid, $playerData, $dir);
-    releasePlayerLock($lock);
-
-    if ($saved) {
-        echo json_encode([
-            'success' => true,
-            'fortune_points' => $playerData['fortune_points'],
-            'fortune_total_points' => $playerData['fortune_total_points'],
-            'fortune_max_grade' => $playerData['fortune_max_grade'] ?? -1,
-            'fortune_max_total_cost_automata' => $playerData['fortune_max_total_cost_automata'] ?? 0,
-            'fortune_max_total_cost_valkyria' => $playerData['fortune_max_total_cost_valkyria'] ?? 0,
-        ]);
-        exit;
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to save updated file completely']);
-        exit;
-    }
+if ($updateResult['success']) {
+    $playerData = $updateResult['data'];
+    echo json_encode([
+        'success' => true,
+        'fortune_points' => $playerData['fortune_points'],
+        'fortune_total_points' => $playerData['fortune_total_points'],
+        'fortune_max_grade' => $playerData['fortune_max_grade'] ?? -1,
+        'fortune_max_total_cost_automata' => $playerData['fortune_max_total_cost_automata'] ?? 0,
+        'fortune_max_total_cost_valkyria' => $playerData['fortune_max_total_cost_valkyria'] ?? 0,
+    ]);
+    exit;
 } else {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Failed to load or initialize player data']);
+    echo json_encode(['success' => false, 'error' => $updateResult['error']]);
     exit;
 }

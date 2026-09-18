@@ -68,43 +68,39 @@ if (strlen($uuid) < 10 || count($deck) !== 20) {
     exit;
 }
 
-$dir = getPlayersDirectory();
-$lock = acquirePlayerLock($uuid, $dir);
-if (!$lock) {
-    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
-    exit;
-}
+$updateResult = modifyPlayerDataWithLock($uuid, function (array &$player_data, array $playerResult) use (
+    $name,
+    $icon,
+    $character,
+    $skin,
+    $playmat,
+    $stage,
+    $deck,
+    $skins,
+    $timestamp,
+    $initial_points,
+    $initial_total_points
+) {
+    // 新規プレイヤーの場合は初期ポイントを設定（既存データの場合はポイントを上書きしない）
+    if ($playerResult['status'] === 'new') {
+        $player_data['points'] = $initial_points;
+        $player_data['total_points'] = $initial_total_points;
+    }
 
-$playerResult = loadPlayerDataForUpdate($uuid, $dir);
+    $player_data['name'] = $name;
+    $player_data['icon'] = $icon;
+    $player_data['character'] = $character;
+    $player_data['skin'] = $skin;
+    $player_data['playmat'] = $playmat;
+    $player_data['stage'] = $stage;
+    $player_data['deck'] = $deck;
+    $player_data['skins'] = $skins;
+    $player_data['timestamp'] = $timestamp;
+    $player_data['lastAccessAt'] = $timestamp;
+}, $name);
 
-// 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断（既定値での上書き防止）
-if ($playerResult['status'] === 'corrupted') {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
-    exit;
-}
-
-$player_data = $playerResult['data'];
-if (empty($player_data)) {
-    $player_data = createDefaultPlayerData($uuid, $name, $initial_points, $initial_total_points);
-}
-
-$player_data['name'] = $name;
-$player_data['icon'] = $icon;
-$player_data['character'] = $character;
-$player_data['skin'] = $skin;
-$player_data['playmat'] = $playmat;
-$player_data['stage'] = $stage;
-$player_data['deck'] = $deck;
-$player_data['skins'] = $skins;
-$player_data['timestamp'] = $timestamp;
-$player_data['lastAccessAt'] = $timestamp;
-
-$saved = savePlayerData($uuid, $player_data, $dir);
-releasePlayerLock($lock);
-
-if ($saved) {
+if ($updateResult['success']) {
     echo json_encode(['success' => true]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Failed to save deck file completely']);
+    echo json_encode(['success' => false, 'error' => $updateResult['error']]);
 }

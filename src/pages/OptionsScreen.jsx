@@ -63,6 +63,9 @@ export default function OptionsScreen() {
   const [creditVisible, setCreditVisible] = useState(false);
   const [serialVisible, setSerialVisible] = useState(false);
 
+  /**
+   * シリアルコード入力モーダルを開きます。
+   */
   const handleOpenSerial = () => {
     if (typeof playSound === 'function') {
       playSound(SOUNDS.seClick);
@@ -70,10 +73,19 @@ export default function OptionsScreen() {
     setSerialVisible(true);
   };
 
+  /**
+   * シリアルコード入力モーダルを閉じます。
+   */
   const handleCloseSerial = () => {
     setSerialVisible(false);
   };
 
+  /**
+   * 入力されたシリアルコードをサーバーに送信し、報酬を適用します。
+   *
+   * @param {string} code 入力されたシリアルコード文字列
+   * @returns {Promise<void>}
+   */
   const handleSerialSubmit = async (code) => {
     const formattedCode = code.trim().toUpperCase();
 
@@ -185,11 +197,11 @@ export default function OptionsScreen() {
         }
       } else {
         if (typeof showAlertModal === 'function') {
-          if (result.error === 'already_used') {
+          if (result?.error === 'already_used') {
             showAlertModal('このシリアルコードはすでに使用されています。');
-          } else if (result.error === 'invalid_code') {
+          } else if (result?.error === 'invalid_code') {
             showAlertModal('無効なシリアルコードです。');
-          } else if (result.error === 'invalid_format') {
+          } else if (result?.error === 'invalid_format') {
             showAlertModal('シリアルコードの形式が正しくありません。');
           } else {
             showAlertModal('シリアルコードの適用に失敗しました。');

@@ -64,6 +64,23 @@ const ALLOWED_SHORTCUTS = [
   'screen-ending-illust',
 ];
 
+/**
+ * ローカル開発環境（Vite開発サーバー等でPHPが動作しない場合）に表示するテスト用お知らせデータ。
+ */
+const DEV_FALLBACK_NEWS = [
+  {
+    id: 1,
+    title: 'ローカルテスト表示：お知らせ機能',
+    content:
+      '<p>これはローカル環境用の一時的な表示です。</p><br><p><a href="https://example.com/">外部サイトのテストリンク</a></p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
+    color1: '#3b82f6',
+    color2: '#1d4ed8',
+    icon: '✨',
+    isActive: true,
+    date: '2026/06/12',
+  },
+];
+
 export default function NewsBanner() {
   const [newsItems, setNewsItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -78,19 +95,13 @@ export default function NewsBanner() {
     asyncGet(NEWS_API_ENDPOINT)
       .then((data) => {
         let newsList = null;
-        if (data && typeof data === 'object') {
-          if (data.success && Array.isArray(data.news)) {
-            newsList = data.news;
-          }
-        } else if (typeof data === 'string') {
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.success && Array.isArray(parsed.news)) {
-              newsList = parsed.news;
-            }
-          } catch {
-            // パース失敗時は下部のフォールバックへ
-          }
+        if (
+          data &&
+          typeof data === 'object' &&
+          data.success &&
+          Array.isArray(data.news)
+        ) {
+          newsList = data.news;
         }
 
         if (newsList && newsList.length > 0) {
@@ -116,19 +127,7 @@ export default function NewsBanner() {
           setNewsItems(activeNews);
         } else if (import.meta.env.DEV) {
           // ローカルのViteサーバー環境などでPHPが実行されずレスポンスが得られない場合のフォールバック
-          setNewsItems([
-            {
-              id: 1,
-              title: 'ローカルテスト表示：お知らせ機能',
-              content:
-                '<p>これはローカル環境用の一時的な表示です。</p><br><p><a href="https://example.com/">外部サイトのテストリンク</a></p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
-              color1: '#3b82f6',
-              color2: '#1d4ed8',
-              icon: '✨',
-              isActive: true,
-              date: '2026/06/12',
-            },
-          ]);
+          setNewsItems(DEV_FALLBACK_NEWS);
         } else {
           setNewsItems([]);
         }
@@ -136,19 +135,7 @@ export default function NewsBanner() {
       .catch((err) => {
         console.error('Failed to fetch news:', err);
         if (import.meta.env.DEV) {
-          setNewsItems([
-            {
-              id: 1,
-              title: 'ローカルテスト表示：お知らせ機能',
-              content:
-                '<p>これはローカル環境用の一時的な表示です。</p><br><p><a href="https://example.com/">外部サイトのテストリンク</a></p><br><p>ここから長い文章が続きます。</p><p>テスト用のテキスト1</p><p>テスト用のテキスト2</p><p>テスト用のテキスト3</p><p>テスト用のテキスト4</p><p>テスト用のテキスト5</p><p>スクロールの確認のためのテキストです。</p><p>まだまだ続きます。</p><p>このお知らせ詳細ウィンドウは、本文が長い場合にスクロールできるようになっている必要があります。</p><br><p>【一番下のテキスト】ご確認ありがとうございます。</p>',
-              color1: '#3b82f6',
-              color2: '#1d4ed8',
-              icon: '✨',
-              isActive: true,
-              date: '2026/06/12',
-            },
-          ]);
+          setNewsItems(DEV_FALLBACK_NEWS);
         } else {
           setNewsItems([]);
         }

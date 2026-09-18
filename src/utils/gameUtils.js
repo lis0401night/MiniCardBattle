@@ -2339,27 +2339,17 @@ export function matchesUnionMaterial(card, unionSkill) {
 }
 
 /**
- * 対象カードが「召喚（summon）」スキルの発動条件・対象指定に合致するか判定する共通関数。
- * 実戦（skillLogic.js）とAIシミュレーション（ai_normal.js）で同一の判定ロジック・順序を共有し、挙動の乖離を構造的に防ぎます。
+ * 対象カードが「召喚（summon）」または「召集（assemble）」スキルの発動条件・対象指定に合致するか判定する共通実体関数。
+ * 手札またはデッキからのカード召喚において、同一の判定ロジック・順序（excludeBoard → self → token → targetIds → targetKeyword → targetSkills → value/reqPower）を一元的に保証します。
  *
- * 判定順序および論理構造：
- * 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）は除外（false）
- * 2. self / targetSelf: 自身と同じカード指定（一致すれば true、不一致なら false）
- * 3. targetToken: トークンカード限定指定（トークンでなければ false、トークンなら後続条件も評価）
- * 4. targetIds: 特定カードID配列の指定（指定がある場合は合致判定結果を即返却）
- * 5. targetKeyword: カード名のキーワード指定（指定がある場合は合致判定結果を即返却）
- * 6. targetSkills: 所持スキル指定（指定がある場合、対象スキルを持っていなければ false、持っていれば後続判定へ）
- * 7. value / reqPower: パワー制限（指定がある場合、パワー超過なら false）
- * 8. 上記の除外条件に該当しなければ true
- *
- * @param {object|null|undefined} card - 判定対象の手札カードオブジェクト
- * @param {object|null|undefined} skill - 召喚スキル定義オブジェクト（targetIds, targetSkills, targetToken, value 等）
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト（手札またはデッキ）
+ * @param {object|null|undefined} skill - スキル定義オブジェクト（targetIds, targetSkills, targetToken, value 等）
  * @param {object} [options={}] - 判定用オプション
  * @param {string|null} [options.selfId=null] - 発動元カードのIDまたはbaseId（self/targetSelf 指定時の照合用）
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard 指定時の除外用）
- * @returns {boolean} 召喚対象として有効であれば true、そうでなければ false
+ * @returns {boolean} 対象として有効であれば true、そうでなければ false
  */
-export function matchesSummonTarget(card, skill, options = {}) {
+export function matchesHandOrDeckTarget(card, skill, options = {}) {
   if (
     !card ||
     typeof card !== 'object' ||
@@ -2447,23 +2437,51 @@ export function matchesSummonTarget(card, skill, options = {}) {
 }
 
 /**
- * 対象カードが「復活（resurrect）」スキルの発動条件・対象指定に合致するか判定する共通関数。
- * 実戦（skillLogic.js）とAIシミュレーション（ai_normal.js）で同一の判定ロジック・順序を共有し、挙動の乖離を構造的に防ぎます。
+ * 対象カードが「召喚（summon）」スキルの発動条件・対象指定に合致するか判定する公開関数。
+ *
+ * @param {object|null|undefined} card - 判定対象の手札カードオブジェクト
+ * @param {object|null|undefined} skill - 召喚スキル定義オブジェクト
+ * @param {object} [options={}] - 判定用オプション
+ * @param {string|null} [options.selfId=null] - 発動元カードのIDまたはbaseId
+ * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @returns {boolean} 召喚対象として有効であれば true、そうでなければ false
+ */
+export function matchesSummonTarget(card, skill, options = {}) {
+  return matchesHandOrDeckTarget(card, skill, options);
+}
+
+/**
+ * 対象カードが「召集（assemble）」スキルの発動条件・対象指定に合致するか判定する公開関数。
+ *
+ * @param {object|null|undefined} card - 判定対象のデッキカードオブジェクト
+ * @param {object|null|undefined} skill - 召集スキル定義オブジェクト
+ * @param {object} [options={}] - 判定用オプション
+ * @param {string|null} [options.selfId=null] - 召集元カードのIDまたはbaseId
+ * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @returns {boolean} 召集対象として有効であれば true、そうでなければ false
+ */
+export function matchesAssembleTarget(card, skill, options = {}) {
+  return matchesHandOrDeckTarget(card, skill, options);
+}
+
+/**
+ * 対象カードが「復活（resurrect）」または「傀儡（puppet）」スキルの発動条件・対象指定に合致するか判定する共通実体関数。
+ * 自軍墓地（復活）または敵軍墓地（傀儡）からのカード配置において、同一の判定ロジック・順序を一元的に保証します。
  *
  * 判定順序および論理構造：
- * 1. トークンカードは復活不可（false）
+ * 1. トークンカードは配置不可（false）
  * 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）は除外（false）
- * 3. targetIds / targetId: 特定カードID指定（万相 all_forms を含む一致判定、指定があれば合致結果を即返却）
- * 4. targetKeyword: カード名のキーワード指定（万相 all_forms を含む一致判定、指定があれば合致結果を即返却）
- * 5. value / maxPower: パワー制限（指定値以下のパワーであれば true、未指定時は1以下）
+ * 3. targetIds / targetId: 特定カードID指定（万相 all_forms を含む一致判定）
+ * 4. targetKeyword: カード名のキーワード指定（万相 all_forms を含む一致判定）
+ * 5. value / maxPower: パワー制限（マスターカードの基礎パワー基準、未指定時は1以下）
  *
  * @param {object|null|undefined} card - 判定対象の墓地カードオブジェクト
- * @param {object|null|undefined} skill - 復活スキル定義オブジェクト（targetIds, targetKeyword, value 等）
+ * @param {object|null|undefined} skill - スキル定義オブジェクト（targetIds, targetKeyword, value 等）
  * @param {object} [options={}] - 判定用オプション
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard 指定時の除外用）
- * @returns {boolean} 復活対象として有効であれば true、そうでなければ false
+ * @returns {boolean} 墓地配置対象として有効であれば true、そうでなければ false
  */
-export function matchesResurrectTarget(card, skill, options = {}) {
+export function matchesGraveyardTarget(card, skill, options = {}) {
   if (
     !card ||
     typeof card !== 'object' ||
@@ -2473,7 +2491,7 @@ export function matchesResurrectTarget(card, skill, options = {}) {
     return false;
   }
 
-  // 1. トークンカードは復活不可
+  // 1. トークンカードは墓地配置不可
   if (card.isToken) return false;
 
   const { presentBoardIds = [] } = options;
@@ -2518,179 +2536,27 @@ export function matchesResurrectTarget(card, skill, options = {}) {
 }
 
 /**
- * 対象カードが「召集（assemble）」スキルの発動条件・対象指定に合致するか判定する共通関数。
- * 実戦（skillLogic.js）とAIシミュレーション（ai_normal.js, ai_easy.js）で同一の判定ロジック・順序を共有します。
+ * 対象カードが「復活（resurrect）」スキルの発動条件・対象指定に合致するか判定する公開関数。
  *
- * 判定順序および論理構造：
- * 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
- * 2. self / targetSelf: 自身と同じカード指定（selfIdとの一致）
- * 3. targetToken / targetType === 'token': トークン限定指定
- * 4. targetIds / targetId: 特定カードID指定
- * 5. targetKeyword: キーワード指定（属性や種族等）
- * 6. targetSkills / targetSkill: 特定スキル所持指定
- * 7. value / reqPower: パワー制限（指定パワー以下）
- *
- * @param {object|null|undefined} card - 判定対象のデッキカードオブジェクト
- * @param {object|null|undefined} skill - 召集スキル定義オブジェクト
+ * @param {object|null|undefined} card - 判定対象の自軍墓地カードオブジェクト
+ * @param {object|null|undefined} skill - 復活スキル定義オブジェクト
  * @param {object} [options={}] - 判定用オプション
- * @param {string|null} [options.selfId=null] - 召集元カードのID/baseId
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
- * @returns {boolean} 召集対象として有効であれば true、そうでなければ false
+ * @returns {boolean} 復活対象として有効であれば true、そうでなければ false
  */
-export function matchesAssembleTarget(card, skill, options = {}) {
-  if (
-    !card ||
-    typeof card !== 'object' ||
-    !skill ||
-    typeof skill !== 'object'
-  ) {
-    return false;
-  }
-
-  const { selfId = null, presentBoardIds = [] } = options;
-
-  // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
-  if (
-    skill.excludeBoard &&
-    Array.isArray(presentBoardIds) &&
-    presentBoardIds.length > 0
-  ) {
-    if (
-      presentBoardIds.includes(card.id) ||
-      (card.baseId && presentBoardIds.includes(card.baseId))
-    ) {
-      return false;
-    }
-  }
-
-  // 2. self / targetSelf: 自身と同じカード指定
-  const isSelf = Boolean(skill.self || skill.targetSelf);
-  if (isSelf && selfId) {
-    return matchesCardId(card, selfId);
-  }
-
-  // 3. targetToken / targetType === 'token': トークン限定指定
-  const isTargetToken = Boolean(
-    skill.targetToken || skill.targetType === 'token'
-  );
-  if (isTargetToken) {
-    const isTok = Boolean(
-      card.isToken ||
-      card.id?.startsWith('token_') ||
-      card.baseId?.startsWith('token_')
-    );
-    if (!isTok) return false;
-  }
-
-  // 4. targetIds / targetId: 特定カードID指定
-  const targetIds = Array.isArray(skill.targetIds)
-    ? skill.targetIds
-    : skill.targetId
-      ? [skill.targetId]
-      : null;
-  if (Array.isArray(targetIds) && targetIds.length > 0) {
-    return matchesCardIds(card, targetIds);
-  }
-
-  // 5. targetKeyword: キーワード指定（属性や種族等）
-  if (typeof skill.targetKeyword === 'string' && skill.targetKeyword) {
-    return matchesCardKeyword(card, skill.targetKeyword);
-  }
-
-  // 6. targetSkills / targetSkill: 特定スキル所持指定
-  const rawSkillIds = Array.isArray(skill.targetSkills)
-    ? skill.targetSkills.filter(Boolean)
-    : typeof skill.targetSkills === 'string' && skill.targetSkills.trim() !== ''
-      ? [skill.targetSkills.trim()]
-      : skill.targetSkill
-        ? [skill.targetSkill]
-        : [];
-  const targetSkills = [...new Set(rawSkillIds)];
-  if (targetSkills.length > 0) {
-    const masterCard = CARD_MASTER?.find((m) => m.id === card.id);
-    const hasMatchingSkill = targetSkills.some(
-      (sId) =>
-        hasSkillDeep(card, sId) || (masterCard && hasSkillDeep(masterCard, sId))
-    );
-    if (!hasMatchingSkill) return false;
-  }
-
-  // 7. value / reqPower: パワー制限（指定パワー以下）
-  const reqPower = skill.value !== undefined ? skill.value : skill.reqPower;
-  if (reqPower !== undefined && reqPower !== null) {
-    return (card.power || 0) <= reqPower;
-  }
-
-  return true;
+export function matchesResurrectTarget(card, skill, options = {}) {
+  return matchesGraveyardTarget(card, skill, options);
 }
 
 /**
- * 対象カードが「傀儡（puppet）」スキルの発動条件・対象指定に合致するか判定する共通関数。
- * 実戦（skillLogic.js）とAIシミュレーション（ai_normal.js, ai_easy.js）で同一の判定ロジック・順序を共有します。
+ * 対象カードが「傀儡（puppet）」スキルの発動条件・対象指定に合致するか判定する公開関数。
  *
- * 判定順序および論理構造：
- * 1. トークンカードは傀儡不可（false）
- * 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
- * 3. targetIds / targetId: 特定カードID指定
- * 4. targetKeyword: キーワード指定
- * 5. value / maxPower: パワー制限（マスターカードの基礎パワー基準、未指定時は1以下）
- *
- * @param {object|null|undefined} card - 判定対象の相手墓地カードオブジェクト
+ * @param {object|null|undefined} card - 判定対象の敵軍墓地カードオブジェクト
  * @param {object|null|undefined} skill - 傀儡スキル定義オブジェクト
  * @param {object} [options={}] - 判定用オプション
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
  * @returns {boolean} 傀儡対象として有効であれば true、そうでなければ false
  */
 export function matchesPuppetTarget(card, skill, options = {}) {
-  if (
-    !card ||
-    typeof card !== 'object' ||
-    !skill ||
-    typeof skill !== 'object'
-  ) {
-    return false;
-  }
-
-  // 1. トークンカードは傀儡不可
-  if (card.isToken) return false;
-
-  const { presentBoardIds = [] } = options;
-
-  // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
-  if (
-    skill.excludeBoard &&
-    Array.isArray(presentBoardIds) &&
-    presentBoardIds.length > 0
-  ) {
-    if (
-      presentBoardIds.includes(card.id) ||
-      (card.baseId && presentBoardIds.includes(card.baseId))
-    ) {
-      return false;
-    }
-  }
-
-  // 3. targetIds / targetId: 特定カードID指定
-  const targetIds = Array.isArray(skill.targetIds)
-    ? skill.targetIds
-    : skill.targetId
-      ? [skill.targetId]
-      : null;
-  if (Array.isArray(targetIds) && targetIds.length > 0) {
-    return matchesCardIds(card, targetIds);
-  }
-
-  // 4. targetKeyword: キーワード指定（属性や種族等）
-  if (typeof skill.targetKeyword === 'string' && skill.targetKeyword) {
-    return matchesCardKeyword(card, skill.targetKeyword);
-  }
-
-  // 5. value / maxPower: パワー制限（マスターカードの基礎パワー基準、未指定時は1以下）
-  const maxPower =
-    skill.value !== undefined && skill.value !== null ? skill.value : 1;
-  const master = CARD_MASTER?.find(
-    (m) => m.id === card.id || (card.baseId && m.id === card.baseId)
-  );
-  const cardPower = master ? master.power : card.power || 0;
-  return cardPower <= maxPower;
+  return matchesGraveyardTarget(card, skill, options);
 }

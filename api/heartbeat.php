@@ -33,50 +33,30 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$dir = getPlayersDirectory();
-$lock = acquirePlayerLock($uuid, $dir);
-if (!$lock) {
-    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
-    exit;
-}
-
-$playerResult = loadPlayerDataForUpdate($uuid, $dir);
-
-// 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断
-if ($playerResult['status'] === 'corrupted') {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Existing player data is corrupted']);
-    exit;
-}
-
-$isNewPlayer = ($playerResult['status'] === 'new');
-$player_data = $playerResult['data'];
 $timestamp = time();
 
-if (empty($player_data)) {
-    $player_data = createDefaultPlayerData($uuid, $name);
-    $player_data['icon'] = $icon;
+$updateResult = modifyPlayerDataWithLock($uuid, function (array &$player_data, array $playerResult) use ($name, $icon, $timestamp, $data) {
     $player_data['lastAccessAt'] = $timestamp;
-} else {
-    // 既存データの更新
-    $player_data['lastAccessAt'] = $timestamp;
-    if (isset($data['name'])) {
-        $player_data['name'] = $name;
-    }
-    if (isset($data['icon'])) {
+
+    if ($playerResult['status'] === 'new') {
         $player_data['icon'] = $icon;
+    } else {
+        if (isset($data['name'])) {
+            $player_data['name'] = $name;
+        }
+        if (isset($data['icon'])) {
+            $player_data['icon'] = $icon;
+        }
     }
-}
 
-// インベントリ・プレミアム解放・登録デッキの更新を一元適用
-applyPlayerCollectionUpdates($player_data, $data);
+    // インベントリ・プレミアム解放・登録デッキの更新を一元適用
+    applyPlayerCollectionUpdates($player_data, $data);
+}, $name);
 
-$saved = savePlayerData($uuid, $player_data, $dir);
-releasePlayerLock($lock);
-
-if ($saved) {
+if ($updateResult['success']) {
+    $isNewPlayer = ($updateResult['status'] === 'new');
     echo json_encode(['success' => true, 'isNewPlayer' => $isNewPlayer]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Failed to save player data completely']);
+    echo json_encode(['success' => false, 'error' => $updateResult['error']]);
 }
 

@@ -1396,6 +1396,12 @@ export function finishDeckEdit() {
   }
 }
 
+/**
+ * 現在選択中のデッキを防衛デッキとしてサーバーに登録します。
+ *
+ * @param {string|null} [providedName=null] 指定されたプレイヤー名（省略時は保存済み名またはデフォルト名を使用）
+ * @returns {Promise<void>}
+ */
 export async function submitDefenseDeck(providedName = null) {
   const playerName = resolvePlayerName(providedName);
 
@@ -1408,16 +1414,29 @@ export async function submitDefenseDeck(providedName = null) {
 
   const uuid = getOrCreateUUID();
   const payload = {
-    uuid: uuid,
+    uuid,
     name: playerName,
+    icon: resolveValidIconId(GameState.userProfile?.icon),
     character: GameState.playerConfig.id,
-    stage: GameState.selectedStageId, // 追加
+    stage: GameState.selectedStageId || 'plain',
     deck: sortedSelection.map((c) => ({
       id: typeof c === 'string' ? c : c.id,
-      isPremium: (GameState.premiumCards || []).includes(
-        typeof c === 'string' ? c : c.id
+      isPremium: Boolean(
+        GameState.premiumCards &&
+        GameState.premiumCards.includes(typeof c === 'string' ? c : c.id)
       ),
     })),
+    playmat: GameState.selectedPlaymatId,
+    skin: GameState.playerSkins
+      ? GameState.playerSkins[GameState.playerConfig.id]
+      : null,
+    // トークン画像等の正しい表示のため、デッキ固有のスキン設定全体も送信
+    skins: GameState.playerSkins || {},
+    points:
+      parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
+    total_points:
+      parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) ||
+      0,
   };
 
   console.log('Registering defense deck:', payload);
@@ -1426,36 +1445,9 @@ export async function submitDefenseDeck(providedName = null) {
   closePlayerNameModal();
 
   try {
-    const result = await asyncPost(
-      'register_deck.php',
-      {
-        uuid: getOrCreateUUID(),
-        name: playerName,
-        icon: resolveValidIconId(GameState.userProfile?.icon),
-        character: GameState.playerConfig.id,
-        stage: GameState.selectedStageId || 'plain',
-        deck: sortedSelection.map((c) => ({
-          id: typeof c === 'string' ? c : c.id,
-          isPremium: GameState.premiumCards
-            ? GameState.premiumCards.includes(typeof c === 'string' ? c : c.id)
-            : false,
-        })),
-        playmat: GameState.selectedPlaymatId,
-        skin: GameState.playerSkins
-          ? GameState.playerSkins[GameState.playerConfig.id]
-          : null,
-        // トークン画像等の正しい表示のため、デッキ固有のスキン設定全体も送信
-        skins: GameState.playerSkins || {},
-        points:
-          parseInt(localStorage.getItem('mini_card_battle_defense_points')) ||
-          0,
-        total_points:
-          parseInt(
-            localStorage.getItem('mini_card_battle_defense_total_points')
-          ) || 0,
-      },
-      { timeout: DEFENSE_DECK_REGISTRATION_TIMEOUT_MS }
-    );
+    const result = await asyncPost('register_deck.php', payload, {
+      timeout: DEFENSE_DECK_REGISTRATION_TIMEOUT_MS,
+    });
 
     if (result && result.success) {
       showAlertModal('防衛デッキの登録が完了しました！', () => {

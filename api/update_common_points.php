@@ -39,29 +39,9 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$dir = getPlayersDirectory();
-$lock = acquirePlayerLock($uuid, $dir);
-if (!$lock) {
-    echo json_encode(['success' => false, 'error' => 'Failed to acquire player lock']);
-    exit;
-}
+$defaultName = isset($data['name']) ? $data['name'] : 'プレイヤー';
 
-$playerResult = loadPlayerDataForUpdate($uuid, $dir);
-
-// 既存ファイルが存在するのにパースできなかった場合はデータ破損として安全に中断（既定値での上書き防止）
-if ($playerResult['status'] === 'corrupted') {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Failed to parse player data or file is corrupted']);
-    exit;
-}
-
-$playerData = $playerResult['data'];
-if (!$playerData) {
-    $playerName = isset($data['name']) ? $data['name'] : 'プレイヤー';
-    $playerData = createDefaultPlayerData($uuid, $playerName);
-}
-
-if ($playerData) {
+$updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($increment, $points, $total_points) {
     $currentPoints = isset($playerData['common_points']) ? intval($playerData['common_points']) : 0;
     $currentTotal = isset($playerData['common_total_points']) ? intval($playerData['common_total_points']) : 0;
 
@@ -86,23 +66,17 @@ if ($playerData) {
     }
 
     $playerData['timestamp'] = time();
+}, $defaultName);
 
-    $saved = savePlayerData($uuid, $playerData, $dir);
-    releasePlayerLock($lock);
-
-    if ($saved) {
-        echo json_encode([
-            'success' => true,
-            'common_points' => $playerData['common_points'],
-            'common_total_points' => $playerData['common_total_points']
-        ]);
-        exit;
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to save updated file completely']);
-        exit;
-    }
+if ($updateResult['success']) {
+    $savedData = $updateResult['data'];
+    echo json_encode([
+        'success' => true,
+        'common_points' => $savedData['common_points'],
+        'common_total_points' => $savedData['common_total_points']
+    ]);
+    exit;
 } else {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Failed to load or initialize player data']);
+    echo json_encode(['success' => false, 'error' => $updateResult['error']]);
     exit;
 }

@@ -296,6 +296,17 @@ async function executeGroupDestruction(targets) {
   // 墓地送り完了後はカードが盤面から消去されるため、DOM操作でのクリーンアップは不要です
 }
 
+/**
+ * アクティブスキル（召喚時、またはカード選択時）の効果を個別に解決・実行します。
+ *
+ * @param {'blue'|'red'} o スキルを発動したプレイヤー陣営
+ * @param {number} l スキルを発動したレーンインデックス (0〜2)
+ * @param {object} c スキルを発動したカードオブジェクト
+ * @param {string} skillId 発動するスキルの識別子
+ * @param {number|undefined} skillValue スキル効果値（パワーや対象枚数など）
+ * @param {object|null} [skObj=null] スキル定義オブジェクト（省略時は c.skills からフォールバック解決）
+ * @returns {Promise<void>}
+ */
 export async function resolveActiveSkillEffect(
   o,
   l,
@@ -2477,7 +2488,7 @@ export async function resolveActiveSkillEffect(
     const oppOwner = o === 'blue' ? 'red' : 'blue';
     const oppDiscard =
       o === 'blue' ? GameState.enemyDiscard : GameState.playerDiscard;
-    const isExcludeBoard = Boolean(skObj?.excludeBoard);
+    const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     const presentBoardIds = isExcludeBoard
       ? myBoard
@@ -2487,7 +2498,7 @@ export async function resolveActiveSkillEffect(
       : [];
 
     const validCards = oppDiscard.filter((card) =>
-      matchesPuppetTarget(card, skObj, { presentBoardIds })
+      matchesPuppetTarget(card, currentSkill, { presentBoardIds })
     );
     let tokenLanes = null;
 
@@ -2760,12 +2771,12 @@ export async function resolveActiveSkillEffect(
     const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
     let validCards = [...deck];
 
-    const targetIds = Array.isArray(skObj?.targetIds)
-      ? skObj.targetIds
-      : skObj?.targetId
-        ? [skObj.targetId]
+    const targetIds = Array.isArray(currentSkill?.targetIds)
+      ? currentSkill.targetIds
+      : currentSkill?.targetId
+        ? [currentSkill.targetId]
         : [];
-    const targetKeyword = skObj?.targetKeyword;
+    const targetKeyword = currentSkill?.targetKeyword;
 
     if (targetIds.length > 0) {
       validCards = validCards.filter((card) => matchesCardIds(card, targetIds));
@@ -2776,7 +2787,7 @@ export async function resolveActiveSkillEffect(
     }
 
     if (validCards.length > 0) {
-      const targetLabel = getSkillTargetLabel(skObj);
+      const targetLabel = getSkillTargetLabel(currentSkill);
       const keywordDesc =
         targetLabel === '特殊'
           ? 'デッキから指定されたカードを1枚選び、手札に加えます。'
@@ -2863,7 +2874,7 @@ export async function resolveActiveSkillEffect(
     // 【召集（assemble）】召喚時、デッキから条件に合致するカードを1枚選び、自分のレーンに召喚する
     const deck = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
     const selfId = c ? c.baseId || c.id : null;
-    const isExcludeBoard = Boolean(skObj?.excludeBoard);
+    const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
     const presentBoardIds = isExcludeBoard
       ? myBoard
@@ -2873,16 +2884,16 @@ export async function resolveActiveSkillEffect(
       : [];
 
     const validCards = deck.filter((card) =>
-      matchesAssembleTarget(card, skObj, { selfId, presentBoardIds })
+      matchesAssembleTarget(card, currentSkill, { selfId, presentBoardIds })
     );
 
     if (validCards.length > 0) {
-      const targetLabel = getSkillTargetLabel(skObj);
+      const targetLabel = getSkillTargetLabel(currentSkill);
       const keywordDesc =
         targetLabel === '自身'
           ? 'デッキから自身と同じカードを1枚選び、自分のレーンに召喚します。'
           : targetLabel?.includes('特殊') ||
-              Boolean(skObj?.targetIds?.length || skObj?.targetId)
+              Boolean(currentSkill?.targetIds?.length || currentSkill?.targetId)
             ? 'デッキから指定されたカードを1枚選び、自分のレーンに召喚します。'
             : targetLabel
               ? `デッキから「${targetLabel}」カードを1枚選び、自分のレーンに召喚します。`
@@ -2907,7 +2918,14 @@ export async function resolveActiveSkillEffect(
           selectedCard = sorted[0] || null;
         } else {
           // Normal以上: 常に最新の盤面・デッキ状況に基づき、直前シミュレーションで最善のカードを評価決定
-          selectedCard = evaluateAdhocAssembleMove(deck, skObj, selfId, l, o);
+          selectedCard = evaluateAdhocAssembleMove(
+            deck,
+            currentSkill,
+            selfId,
+            l,
+            o,
+            presentBoardIds
+          );
         }
       } else {
         selectedCard = await waitPlayerDiscardSelection(
@@ -3227,13 +3245,13 @@ export async function resolveActiveSkillEffect(
     const hasTopCard = d.length > 0;
     const topCard = hasTopCard ? d[d.length - 1] : null;
 
-    const targetLabel = getSkillTargetLabel(skObj);
-    const targetIds = Array.isArray(skObj?.targetIds)
-      ? skObj.targetIds
-      : skObj?.targetId
-        ? [skObj.targetId]
+    const targetLabel = getSkillTargetLabel(currentSkill);
+    const targetIds = Array.isArray(currentSkill?.targetIds)
+      ? currentSkill.targetIds
+      : currentSkill?.targetId
+        ? [currentSkill.targetId]
         : [];
-    const targetKeyword = skObj?.targetKeyword;
+    const targetKeyword = currentSkill?.targetKeyword;
 
     let isSuccess = false;
     if (hasTopCard) {
