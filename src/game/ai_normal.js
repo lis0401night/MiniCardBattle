@@ -4,6 +4,7 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import { ACTIVE_SKILLS } from '../utils/constants/skills.js';
 import {
   getCurrentRNG,
+  getSeededRandom,
   getSkillValue,
   hasSkill,
   hasSkillDeep,
@@ -5223,9 +5224,280 @@ export function evaluateAdhocAssembleMove(
 }
 
 /**
- * 選択（choice）スキルの直前シミュレーション評価。
- * waitSkillChoice 呼び出し時に、最新盤面において各選択肢スキルを仮想適用し、
- * 最も安全かつ有利になる最善の選択肢を決定する。
+ * 選択（choice）スキル解決シミュレーションにおいて、手札からの召喚（summon / invite / forge）を精密に評価・適用する。
+ * 手札に対象カードが存在しない場合は不発（何もしない）とし、
+ * 存在する場合は最善カードとレーンを選択して盤面に召喚・装備・合体シミュレートを適用する。
+ *
+ * @param {object} simState - シミュレーション中のゲーム状態
+ * @param {'red' | 'blue'} owner - 発動プレイヤー
+ * @param {number} sourceLane - 発動元カードのレーン
+ * @param {object} choiceSkill - 選択された召喚スキル定義オブジェクト
+ * @returns {void}
+ */
+export function simulateAdhocChoiceSummon(
+  simState,
+  owner,
+  sourceLane,
+  choiceSkill
+) {
+  const isRed = owner === 'red';
+  const simHand = isRed ? simState.enemyHand : simState.playerHand;
+  if (!simHand || simHand.length === 0) return;
+
+  const simBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+  const sourceCard = simBoard[sourceLane];
+  const selfId = sourceCard ? sourceCard.baseId || sourceCard.id : null;
+  const presentBoardIds = simBoard
+    .filter(Boolean)
+    .flatMap((c) => [c.id, c.baseId])
+    .filter(Boolean);
+
+  // 対象となる手札カードのインデックスを抽出
+  const validHandIndices = [];
+  for (let i = 0; i < simHand.length; i++) {
+    const hCard = simHand[i];
+    if (!hCard) continue;
+
+    if (choiceSkill.id === 'forge') {
+      if (hasSkill(hCard, 'equip')) validHandIndices.push(i);
+    } else {
+      if (
+        matchesSummonTarget(hCard, choiceSkill, { selfId, presentBoardIds })
+      ) {
+        validHandIndices.push(i);
+      }
+    }
+  }
+
+  // 手札に対象カードが1枚もない場合は不発（何も召喚できない）
+  if (validHandIndices.length === 0) return;
+
+  // 配置候補レーンの決定
+  const sealed = isRed ? simState.enemySealedLanes : simState.playerSealedLanes;
+  let candidateLanes;
+  if (choiceSkill.id === 'invite' || choiceSkill.id === 'forge') {
+    // 招来・鍛造は発動元レーン限定
+    candidateLanes = !sealed || sealed[sourceLane] === 0 ? [sourceLane] : [];
+  } else {
+    // 通常の召喚は封印されていない全レーン
+    candidateLanes = [0, 1, 2].filter((l) => !sealed || sealed[l] === 0);
+  }
+
+  if (candidateLanes.length === 0) return;
+
+  // 最善の（カード, レーン）を探索
+  let bestHandIdx = validHandIndices[0];
+  let bestPlacementLane = candidateLanes[0];
+  let bestScore = isRed ? -Infinity : Infinity;
+
+  for (const hIdx of validHandIndices) {
+    const testCard = simHand[hIdx];
+    for (const candLane of candidateLanes) {
+      const testState = structuredClone(simState);
+      simulateCardPlacementOnBoard(testState, owner, candLane, testCard, true);
+      processDestructionTriggers(testState, []);
+      const subScore = evaluateTurnOutcome(testState, owner);
+      if (isRed) {
+        if (subScore > bestScore) {
+          bestScore = subScore;
+          bestHandIdx = hIdx;
+          bestPlacementLane = candLane;
+        }
+      } else {
+        if (subScore < bestScore) {
+          bestScore = subScore;
+          bestHandIdx = hIdx;
+          bestPlacementLane = candLane;
+        }
+      }
+    }
+  }
+
+  // 決定した最善カードを手札から消費し、シミュレーション盤面に召喚
+  const [chosenCard] = simHand.splice(bestHandIdx, 1);
+  simulateCardPlacementOnBoard(
+    simState,
+    owner,
+    bestPlacementLane,
+    chosenCard,
+    true
+  );
+
+  // 召喚スキル固有の「虚空」トークン手札補充
+  const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void');
+  if (voidTpl) {
+    simHand.push({
+      ...voidTpl,
+      isToken: true,
+      baseId: 'token_void',
+      uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
+    });
+  }
+}
+
+/**
+ * 選択（choice）スキル解決シミュレーションにおいて、デッキからの召集（assemble）を精密に評価・適用する。
+ * デッキに対象カードが存在しない場合は不発（何もしない）とし、
+ * 存在する場合は最善カードとレーンを選択して盤面に召喚・装備・合体シミュレートを適用する。
+ *
+ * @param {object} simState - シミュレーション中のゲーム状態
+ * @param {'red' | 'blue'} owner - 発動プレイヤー
+ * @param {number} sourceLane - 発動元カードのレーン
+ * @param {object} choiceSkill - 選択された召集スキル定義オブジェクト
+ * @returns {void}
+ */
+export function simulateAdhocChoiceAssemble(
+  simState,
+  owner,
+  sourceLane,
+  choiceSkill
+) {
+  const isRed = owner === 'red';
+  const simDeck = isRed ? simState.enemyDeck : simState.playerDeck;
+  if (!simDeck || simDeck.length === 0) return;
+
+  const simBoard = isRed ? simState.enemyBoard : simState.playerBoard;
+  const sourceCard = simBoard[sourceLane];
+  const selfId = sourceCard ? sourceCard.baseId || sourceCard.id : null;
+  const presentBoardIds = simBoard
+    .filter(Boolean)
+    .flatMap((c) => [c.id, c.baseId])
+    .filter(Boolean);
+
+  const validDeckIndices = [];
+  for (let i = 0; i < simDeck.length; i++) {
+    const dCard = simDeck[i];
+    if (
+      dCard &&
+      matchesAssembleTarget(dCard, choiceSkill, { selfId, presentBoardIds })
+    ) {
+      validDeckIndices.push(i);
+    }
+  }
+
+  if (validDeckIndices.length === 0) return;
+
+  const sealed = isRed ? simState.enemySealedLanes : simState.playerSealedLanes;
+  const candidateLanes = [0, 1, 2].filter((l) => !sealed || sealed[l] === 0);
+  if (candidateLanes.length === 0) return;
+
+  let bestDeckIdx = validDeckIndices[0];
+  let bestPlacementLane = candidateLanes[0];
+  let bestScore = isRed ? -Infinity : Infinity;
+
+  for (const dIdx of validDeckIndices) {
+    const testCard = simDeck[dIdx];
+    for (const candLane of candidateLanes) {
+      const testState = structuredClone(simState);
+      simulateCardPlacementOnBoard(testState, owner, candLane, testCard, true);
+      processDestructionTriggers(testState, []);
+      const subScore = evaluateTurnOutcome(testState, owner);
+      if (isRed) {
+        if (subScore > bestScore) {
+          bestScore = subScore;
+          bestDeckIdx = dIdx;
+          bestPlacementLane = candLane;
+        }
+      } else {
+        if (subScore < bestScore) {
+          bestScore = subScore;
+          bestDeckIdx = dIdx;
+          bestPlacementLane = candLane;
+        }
+      }
+    }
+  }
+
+  const [chosenCard] = simDeck.splice(bestDeckIdx, 1);
+  simulateCardPlacementOnBoard(
+    simState,
+    owner,
+    bestPlacementLane,
+    chosenCard,
+    true
+  );
+}
+
+/**
+ * 選択（choice）スキル解決シミュレーションにおいて、墓地からの復活（resurrect）を精密に評価・適用する。
+ * 墓地に対象カードが存在しない場合は不発（何もしない）とし、
+ * 存在する場合は最善カードとレーンを選択して盤面に配置・装備・合体シミュレートを適用する。
+ *
+ * @param {object} simState - シミュレーション中のゲーム状態
+ * @param {'red' | 'blue'} owner - 発動プレイヤー
+ * @param {number} _sourceLane - 発動元カードのレーン
+ * @param {object} choiceSkill - 選択された復活スキル定義オブジェクト
+ * @returns {void}
+ */
+export function simulateAdhocChoiceResurrect(
+  simState,
+  owner,
+  _sourceLane,
+  choiceSkill
+) {
+  if (isGraveKeeperActive(simState)) return;
+
+  const isRed = owner === 'red';
+  const simDiscard = isRed ? simState.enemyDiscard : simState.playerDiscard;
+  if (!simDiscard || simDiscard.length === 0) return;
+
+  const maxPower = choiceSkill.value || 1;
+  const validDiscardIndices = [];
+  for (let i = 0; i < simDiscard.length; i++) {
+    const dCard = simDiscard[i];
+    if (dCard && !dCard.isToken && (dCard.power || 0) <= maxPower) {
+      if (matchesResurrectTarget(dCard, choiceSkill)) {
+        validDiscardIndices.push(i);
+      }
+    }
+  }
+
+  if (validDiscardIndices.length === 0) return;
+
+  const sealed = isRed ? simState.enemySealedLanes : simState.playerSealedLanes;
+  const candidateLanes = [0, 1, 2].filter((l) => !sealed || sealed[l] === 0);
+  if (candidateLanes.length === 0) return;
+
+  let bestDiscardIdx = validDiscardIndices[0];
+  let bestPlacementLane = candidateLanes[0];
+  let bestScore = isRed ? -Infinity : Infinity;
+
+  for (const dIdx of validDiscardIndices) {
+    const testCard = simDiscard[dIdx];
+    for (const candLane of candidateLanes) {
+      const testState = structuredClone(simState);
+      // 復活は「配置（Place）」のため isSummon = false
+      simulateCardPlacementOnBoard(testState, owner, candLane, testCard, false);
+      processDestructionTriggers(testState, []);
+      const subScore = evaluateTurnOutcome(testState, owner);
+      if (isRed) {
+        if (subScore > bestScore) {
+          bestScore = subScore;
+          bestDiscardIdx = dIdx;
+          bestPlacementLane = candLane;
+        }
+      } else {
+        if (subScore < bestScore) {
+          bestScore = subScore;
+          bestDiscardIdx = dIdx;
+          bestPlacementLane = candLane;
+        }
+      }
+    }
+  }
+
+  const [chosenCard] = simDiscard.splice(bestDiscardIdx, 1);
+  simulateCardPlacementOnBoard(
+    simState,
+    owner,
+    bestPlacementLane,
+    chosenCard,
+    false
+  );
+}
+
+/**
+ * 選択（choice）や命令（force）など、カード効果によるスキル選択において最善の選択肢を直前シミュレーションする。
  *
  * @param {object} card - 選択スキルを発動したカードオブジェクト
  * @param {Array<object>} choices - 選択肢オブジェクト配列
@@ -5345,6 +5617,27 @@ export function evaluateAdhocSkillChoice(
             null,
             bestPlacementLane
           );
+        } else if (
+          choiceSkill.id === 'summon' ||
+          choiceSkill.id === 'invite' ||
+          choiceSkill.id === 'forge'
+        ) {
+          // 手札からの召喚・招来・鍛造：手札に対象カードが存在するか判定し、精密にシミュレート（不在なら不発）
+          simulateAdhocChoiceSummon(simState, owner, lane, choiceSkill);
+        } else if (choiceSkill.id === 'assemble') {
+          // デッキからの召集：デッキに対象カードが存在するか判定し、精密にシミュレート（不在なら不発）
+          simulateAdhocChoiceAssemble(simState, owner, lane, choiceSkill);
+        } else if (choiceSkill.id === 'call') {
+          // 号令（call）：デッキトップの内容は非公開情報であり事前に予測してはならないため、
+          // 一律で期待値として+3（または指定値）のパワー加算判定を行う
+          if (simCard) {
+            const callBonus = choiceSkill.value || 3;
+            simCard.currentPower = (simCard.currentPower || 0) + callBonus;
+            simCard.basePower = (simCard.basePower || 0) + callBonus;
+          }
+        } else if (choiceSkill.id === 'resurrect') {
+          // 墓地からの復活：墓地に対象カードが存在するか判定し、精密にシミュレート（不在なら不発）
+          simulateAdhocChoiceResurrect(simState, owner, lane, choiceSkill);
         } else {
           applyActiveSkillLogic(
             simState,

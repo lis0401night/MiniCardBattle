@@ -2782,6 +2782,8 @@ export function applyActiveSkillLogic(
     case 'assemble': {
       // 【召集(assemble)スキル処理】
       // 召喚時、デッキから条件に合うカード1枚を自分のレーンに召喚する
+      const myDeck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
+      if (!myDeck || myDeck.length === 0) break;
       const assembleBonus = val || 3;
       c.currentPower += assembleBonus;
       events.push({
@@ -2796,21 +2798,20 @@ export function applyActiveSkillLogic(
     case 'summon': {
       // 【召喚(summon)スキル処理】
       // 召喚時、手札から条件に合うカード1枚を召喚し、「虚空（パワー0）」を手札に加える
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      if (!myHand || myHand.length === 0) break;
       const summonBonus = val || 3;
       c.currentPower += summonBonus;
-      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
-      if (myHand) {
-        const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-          name: '虚空',
-          power: 0,
-        };
-        myHand.push({
-          ...voidTpl,
-          isToken: true,
-          baseId: 'token_void',
-          uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
-        });
-      }
+      const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+        name: '虚空',
+        power: 0,
+      };
+      myHand.push({
+        ...voidTpl,
+        isToken: true,
+        baseId: 'token_void',
+        uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
+      });
       events.push({
         type: 'power_change',
         side: owner,
@@ -2823,21 +2824,20 @@ export function applyActiveSkillLogic(
     case 'invite': {
       // 【招来(invite)スキル処理】
       // 召喚時、同じレーンに手札から1枚カードを召喚し、「虚空（パワー0）」を手札に加える
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      if (!myHand || myHand.length === 0) break;
       const inviteBonus = 3;
       c.currentPower += inviteBonus;
-      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
-      if (myHand) {
-        const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-          name: '虚空',
-          power: 0,
-        };
-        myHand.push({
-          ...voidTpl,
-          isToken: true,
-          baseId: 'token_void',
-          uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
-        });
-      }
+      const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+        name: '虚空',
+        power: 0,
+      };
+      myHand.push({
+        ...voidTpl,
+        isToken: true,
+        baseId: 'token_void',
+        uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
+      });
       events.push({
         type: 'power_change',
         side: owner,
@@ -2850,21 +2850,20 @@ export function applyActiveSkillLogic(
     case 'forge': {
       // 【鍛造(forge)スキル処理】
       // 召喚時、カードが配置されているレーンに手札から「装備」を持つカードを召喚し、「虚空」を手札に加える
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      if (!myHand || myHand.length === 0) break;
       const forgeBonus = 3;
       c.currentPower += forgeBonus;
-      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
-      if (myHand) {
-        const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-          name: '虚空',
-          power: 0,
-        };
-        myHand.push({
-          ...voidTpl,
-          isToken: true,
-          baseId: 'token_void',
-          uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
-        });
-      }
+      const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+        name: '虚空',
+        power: 0,
+      };
+      myHand.push({
+        ...voidTpl,
+        isToken: true,
+        baseId: 'token_void',
+        uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
+      });
       events.push({
         type: 'power_change',
         side: owner,
