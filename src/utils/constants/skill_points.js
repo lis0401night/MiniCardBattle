@@ -179,6 +179,10 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 2 / 3,
   },
+  corrosion: {
+    base: 0,
+    multiplier: -2 / 3,
+  },
   convert: {
     base: 0,
     multiplier: -1,

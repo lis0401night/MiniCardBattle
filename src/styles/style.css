@@ -1905,6 +1905,19 @@ h2 {
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
+.card-skill.badge-poison {
+  border-color: #22c55e;
+  color: #f0fdf4;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.95),
+    rgba(21, 128, 61, 0.95)
+  );
+  font-weight: 900;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.8);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
 .hand-area {
   display: flex;
   gap: 1.5%;

@@ -10,6 +10,7 @@ import {
   clearCardAbilities,
   getSeededRandom,
   getSkillValue,
+  grantCardStatus,
   hasSkill,
   isProtectedZeroPowerCard,
   resolveCardSupremacySkills,
@@ -20,6 +21,7 @@ import {
   matchesCardKeyword,
   matchesUnionMaterial,
   isCardInvincible,
+  syncCardStatuses,
 } from '../utils/gameUtils.js';
 
 /** 戦乙女の加護の持続カウンター（発動後、次の自分のターン開始時スキル解決完了までを1とする） */
@@ -48,6 +50,7 @@ function getValkyriaGuardKey(side) {
 
 /**
  * 指定サイドの戦乙女の加護状態を解除（クリア）する
+ * 陣営全体の加護フラグを0にし、該当盤面にあるカードの個別加護フラグを削除してスキル枠と同期します。
  * @param {Object} state - バトル状態オブジェクト
  * @param {string} side - 対象サイド ('blue' または 'red')
  */
@@ -61,6 +64,7 @@ export function clearValkyriaGuard(state, side) {
       if (c && (c.valkyriaGuard || c.valkyriaGuardTurns)) {
         delete c.valkyriaGuard;
         delete c.valkyriaGuardTurns;
+        syncCardStatuses(c);
       }
     });
   }
@@ -893,6 +897,7 @@ export function applyActiveSkillLogic(
     'invade',
     'replicate',
     'standby',
+    'corrosion',
     'stealth',
     'invincible',
     'buff_void',
@@ -924,10 +929,7 @@ export function applyActiveSkillLogic(
         for (let i = 0; i < 3; i++) {
           const card = board[i];
           if (card) {
-            card.skills = [];
-            card.choices = [];
-            card.choices2 = null;
-            if ('summonId' in card) delete card.summonId;
+            clearCardAbilities(card);
 
             events.push({
               type: 'oblivion_clear',
@@ -1593,32 +1595,35 @@ export function applyActiveSkillLogic(
     case 'toxic':
       if (eB[l]) {
         const toxVal = val || 1;
-        eB[l].skills = eB[l].skills || [];
-        const existIndex = eB[l].skills.findIndex((s) => s.id === 'growth');
-        const exist = existIndex !== -1 ? eB[l].skills[existIndex] : null;
-        let finalValue = -toxVal;
-        if (exist) {
-          const nextValue = (exist.value ?? 1) - toxVal;
-          if (nextValue === 0) {
-            eB[l].skills.splice(existIndex, 1);
-            finalValue = 0;
-          } else {
-            exist.value = nextValue;
-            finalValue = nextValue;
-          }
-        } else {
-          eB[l].skills.push({ id: 'growth', value: -toxVal });
-        }
+        // 【有毒スキル: 毒状態の付与】
+        // 成長スキルの付与ではなく独立した「毒（poison）」状態を付与する。
+        // 重ね掛け時はBの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
+        grantCardStatus(eB[l], 'poison', toxVal);
         events.push({
-          type: 'add_skill',
+          type: 'add_status',
           side: oppOwner,
           lane: l,
-          skillId: 'growth',
-          skillValue: finalValue,
+          status: 'poison',
+          value: eB[l].poison,
           source: 'toxic',
         });
       }
       break;
+    case 'corrosion': {
+      const pVal = val || 1;
+      // 【腐食スキル: 自身の毒状態付与】
+      // 召喚時、自身に毒を付与する。Bの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
+      grantCardStatus(c, 'poison', pVal);
+      events.push({
+        type: 'add_status',
+        side: owner,
+        lane: l,
+        status: 'poison',
+        value: c.poison,
+        source: 'corrosion',
+      });
+      break;
+    }
     case 'spread': {
       const spVal = val || 2;
       [l - 1, l, l + 1].forEach((j) => {
@@ -1629,19 +1634,20 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'bind':
-      // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する
-      if (eB[l])
-        eB[l].stunTurns = Math.max(eB[l].stunTurns || 0, (val || 1) + 1);
+      // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
+      if (eB[l]) {
+        grantCardStatus(eB[l], 'stun', (val || 1) + 1);
+      }
       break;
     case 'standby':
-      // 既存の防御・拘束ターン数と比較し、大きい方の値を維持・適用する
-      c.stunTurns = Math.max(c.stunTurns || 0, val || 1);
+      // 既存の防御・拘束ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
+      grantCardStatus(c, 'stun', val || 1);
       break;
     case 'freeze':
-      // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する
+      // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
       [l - 1, l, l + 1].forEach((j) => {
         if (j >= 0 && j < 3 && eB[j]) {
-          eB[j].stunTurns = Math.max(eB[j].stunTurns || 0, (val || 1) + 1);
+          grantCardStatus(eB[j], 'stun', (val || 1) + 1);
         }
       });
       break;
@@ -2482,8 +2488,8 @@ export function applyActiveSkillLogic(
     case 'stealth':
     case 'invincible': {
       const invVal = val || 1;
-      // 「能力（スキル）」ではなく「状態（ステータス）」としてフラグ管理
-      c.invincibleTurns = Math.max(c.invincibleTurns || 0, invVal);
+      // 「状態（ステータス）」としてスロット順に追加・管理
+      grantCardStatus(c, 'invincible', invVal);
       events.push({
         type: 'add_skill',
         side: owner,
@@ -5961,198 +5967,220 @@ export function applyPassiveSkillLogic(
       }
     }
 
-    if (hasSkill(c, 'growth')) {
-      const sk = c.skills ? c.skills.find((s) => s.id === 'growth') : null;
-      const v = sk ? (sk.value ?? 1) : 1;
-      c.currentPower += v;
-      events.push({
-        type: 'power_change',
-        side,
-        lane: i,
-        amount: v,
-        source: 'growth',
-      });
+    // スキルおよび状態の時系列スロット順（付与順）に順次解決
+    const cardSkills = Array.isArray(c.skills) ? [...c.skills] : [];
+    // レガシー互換: 直接プロパティに毒が存在するが skills に未登録の場合は末尾に追加
+    if (
+      (c.poison || 0) > 0 &&
+      !cardSkills.some((s) => s && (s.id === 'poison' || s === 'poison'))
+    ) {
+      cardSkills.push({ id: 'poison', value: c.poison, isStatus: true });
     }
-    // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
-    if (hasSkill(c, 'intercept')) {
-      const dmg = getSkillValue(c, 'intercept') || 2;
-      const eB = side === 'blue' ? state.enemyBoard : state.playerBoard;
-      const oppSide = side === 'blue' ? 'red' : 'blue';
-      let maxL = -1,
-        maxP = -1;
-      for (let j = 0; j < 3; j++) {
-        if (eB[j]) {
-          const p = eB[j].currentPower;
-          // 同値の場合は左（jが小さい方）を優先するため、> を使用
-          if (p > maxP) {
-            maxP = p;
-            maxL = j;
-          }
-        }
-      }
-      if (maxL !== -1) {
+
+    for (const sk of cardSkills) {
+      if (!sk) continue;
+      const skId = typeof sk === 'string' ? sk : sk.id;
+      const skVal =
+        typeof sk === 'object' && sk.value !== undefined ? sk.value : null;
+
+      if (skId === 'growth') {
+        const v = skVal ?? 1;
+        c.currentPower += v;
         events.push({
-          type: 'skill_popup',
+          type: 'power_change',
           side,
           lane: i,
-          skillName: '迎撃',
+          amount: v,
+          source: 'growth',
         });
-        const blockType = getDamageBlockType(
-          eB[maxL],
-          dmg,
-          true,
-          state,
-          oppSide
-        );
-        if (!blockType) {
-          eB[maxL].currentPower -= dmg;
-          events.push({
-            type: 'damage_card',
-            side: oppSide,
-            lane: maxL,
-            amount: dmg,
-            source: 'intercept',
-          });
-        } else if (blockType === 'valkyria_guard') {
-          events.push({
-            type: 'valkyria_guard_block',
-            side: oppSide,
-            lane: maxL,
-            amount: dmg,
-            source: 'intercept',
-          });
-        } else {
-          events.push({
-            type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
-            side: oppSide,
-            lane: maxL,
-            source: 'intercept',
-          });
-        }
-      }
-    }
-    if (hasSkill(c, 'contract') && !skipContract) {
-      let v = getSkillValue(c, 'contract') || 3;
-      damageLeader(state, side, v, 'contract', events);
-    }
-    if (hasSkill(c, 'samsara')) {
-      // 輪廻: ターン開始時、お互いの手札を全て捨てる。その後、お互いにカードを3枚引く。
-      const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
-      const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
-      const myDiscard =
-        side === 'blue' ? state.playerDiscard : state.enemyDiscard;
-      const opDiscard =
-        side === 'blue' ? state.enemyDiscard : state.playerDiscard;
-
-      // 1. お互いの手札を全て捨てる（トークンは除外）
-      if (myHand) {
-        while (myHand.length > 0) {
-          const card = myHand.pop();
-          if (card && !card.isToken && myDiscard) {
-            myDiscard.push(card);
-          }
-        }
-      }
-      if (opHand) {
-        while (opHand.length > 0) {
-          const card = opHand.pop();
-          if (card && !card.isToken && opDiscard) {
-            opDiscard.push(card);
-          }
-        }
-      }
-
-      // 2. お互いに3枚引く
-      const drawSim = (p) => {
-        const h = p === 'blue' ? state.playerHand : state.enemyHand;
-        const d = p === 'blue' ? state.playerDeck : state.enemyDeck;
-        const ds = p === 'blue' ? state.playerDiscard : state.enemyDiscard;
-
-        if (!h || !d) return;
-        if (h.length >= 4) return;
-
-        if (d.length === 0 && ds && ds.length > 0) {
-          // 墓地を戻す
-          d.push(...ds);
-          ds.length = 0;
-          // シャッフル
-          for (let k = d.length - 1; k > 0; k--) {
-            const j = Math.floor(getSeededRandom() * (k + 1));
-            [d[k], d[j]] = [d[j], d[k]];
-          }
-          // HP半減
-          if (p === 'blue') {
-            state.playerHP = Math.ceil(state.playerHP / 2);
-          } else {
-            state.enemyHP = Math.ceil(state.enemyHP / 2);
-          }
-        }
-
-        if (d.length > 0) {
-          const drawn = d.pop();
-          if (drawn) {
-            if (
-              drawn.currentPower === undefined ||
-              Number.isNaN(drawn.currentPower) ||
-              (drawn.currentPower <= 0 && (drawn.power || 0) > 0)
-            ) {
-              drawn.currentPower = drawn.power || 0;
+      } else if (skId === 'poison') {
+        // 【毒状態（debuff）のターン開始時処理】
+        const pVal = skVal || c.poison || 1;
+        c.currentPower -= pVal;
+        events.push({
+          type: 'power_change',
+          side,
+          lane: i,
+          amount: -pVal,
+          source: 'poison',
+        });
+      } else if (skId === 'intercept') {
+        // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
+        const dmg = skVal || 2;
+        const eB = side === 'blue' ? state.enemyBoard : state.playerBoard;
+        const oppSide = side === 'blue' ? 'red' : 'blue';
+        let maxL = -1,
+          maxP = -1;
+        for (let j = 0; j < 3; j++) {
+          if (eB[j]) {
+            const p = eB[j].currentPower;
+            // 同値の場合は左（jが小さい方）を優先するため、> を使用
+            if (p > maxP) {
+              maxP = p;
+              maxL = j;
             }
-            h.push(drawn);
           }
         }
-      };
+        if (maxL !== -1) {
+          events.push({
+            type: 'skill_popup',
+            side,
+            lane: i,
+            skillName: '迎撃',
+          });
+          const blockType = getDamageBlockType(
+            eB[maxL],
+            dmg,
+            true,
+            state,
+            oppSide
+          );
+          if (!blockType) {
+            eB[maxL].currentPower -= dmg;
+            events.push({
+              type: 'damage_card',
+              side: oppSide,
+              lane: maxL,
+              amount: dmg,
+              source: 'intercept',
+            });
+          } else if (blockType === 'valkyria_guard') {
+            events.push({
+              type: 'valkyria_guard_block',
+              side: oppSide,
+              lane: maxL,
+              amount: dmg,
+              source: 'intercept',
+            });
+          } else {
+            events.push({
+              type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
+              side: oppSide,
+              lane: maxL,
+              source: 'intercept',
+            });
+          }
+        }
+      } else if (skId === 'contract' && !skipContract) {
+        let v = skVal || 3;
+        damageLeader(state, side, v, 'contract', events);
+      } else if (skId === 'samsara') {
+        // 輪廻: ターン開始時、お互いの手札を全て捨てる。その後、お互いにカードを3枚引く。
+        const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
+        const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
+        const myDiscard =
+          side === 'blue' ? state.playerDiscard : state.enemyDiscard;
+        const opDiscard =
+          side === 'blue' ? state.enemyDiscard : state.playerDiscard;
 
-      for (let k = 0; k < 3; k++) {
-        drawSim('blue');
-      }
-      for (let k = 0; k < 3; k++) {
-        drawSim('red');
-      }
+        // 1. お互いの手札を全て捨てる（トークンは除外）
+        if (myHand) {
+          while (myHand.length > 0) {
+            const card = myHand.pop();
+            if (card && !card.isToken && myDiscard) {
+              myDiscard.push(card);
+            }
+          }
+        }
+        if (opHand) {
+          while (opHand.length > 0) {
+            const card = opHand.pop();
+            if (card && !card.isToken && opDiscard) {
+              opDiscard.push(card);
+            }
+          }
+        }
 
-      events.push({
-        type: 'samsara_trigger',
-        side,
-        lane: i,
-        source: 'samsara',
-      });
-    }
-    if (hasSkill(c, 'awake') || hasSkill(c, 'awake_legendary')) {
-      if (isLaneSealed(state, side, i)) {
-        // 封印されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
-        continue;
-      }
-      const currentAwakeSkillId = hasSkill(c, 'awake_legendary')
-        ? 'awake_legendary'
-        : 'awake';
-      const v = getSkillValue(c, currentAwakeSkillId) || 1;
-      // 解決対象のスキルIDと同一のスキルから summonId を取得する
-      const awakeSkill = c.skills?.find((s) => s.id === currentAwakeSkillId);
-      const summonId =
-        awakeSkill?.summonId ||
-        (currentAwakeSkillId === 'awake_legendary'
-          ? 'token_thebeast'
-          : 'token_dragon');
+        // 2. お互いに3枚引く
+        const drawSim = (p) => {
+          const h = p === 'blue' ? state.playerHand : state.enemyHand;
+          const d = p === 'blue' ? state.playerDeck : state.enemyDeck;
+          const ds = p === 'blue' ? state.playerDiscard : state.enemyDiscard;
 
-      // 同レーンにトークンを配置（Place）
-      events.push({
-        type: 'awake_trigger',
-        side,
-        lane: i,
-        card: c,
-        summonId,
-        value: v,
-      });
-      applyActiveSkillLogic(
-        state,
-        side,
-        i,
-        currentAwakeSkillId,
-        v,
-        events,
-        [],
-        i
-      );
+          if (!h || !d) return;
+          if (h.length >= 4) return;
+
+          if (d.length === 0 && ds && ds.length > 0) {
+            // 墓地を戻す
+            d.push(...ds);
+            ds.length = 0;
+            // シャッフル
+            for (let k = d.length - 1; k > 0; k--) {
+              const j = Math.floor(getSeededRandom() * (k + 1));
+              [d[k], d[j]] = [d[j], d[k]];
+            }
+            // HP半減
+            if (p === 'blue') {
+              state.playerHP = Math.ceil(state.playerHP / 2);
+            } else {
+              state.enemyHP = Math.ceil(state.enemyHP / 2);
+            }
+          }
+
+          if (d.length > 0) {
+            const drawn = d.pop();
+            if (drawn) {
+              if (
+                drawn.currentPower === undefined ||
+                Number.isNaN(drawn.currentPower) ||
+                (drawn.currentPower <= 0 && (drawn.power || 0) > 0)
+              ) {
+                drawn.currentPower = drawn.power || 0;
+              }
+              h.push(drawn);
+            }
+          }
+        };
+
+        for (let k = 0; k < 3; k++) {
+          drawSim('blue');
+        }
+        for (let k = 0; k < 3; k++) {
+          drawSim('red');
+        }
+
+        events.push({
+          type: 'samsara_trigger',
+          side,
+          lane: i,
+          source: 'samsara',
+        });
+      } else if (skId === 'awake' || skId === 'awake_legendary') {
+        if (isLaneSealed(state, side, i)) {
+          // 封印されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
+          continue;
+        }
+        const currentAwakeSkillId = skId;
+        const v = skVal || 1;
+        const awakeSkill = typeof sk === 'object' ? sk : null;
+        const summonId =
+          awakeSkill?.summonId ||
+          (currentAwakeSkillId === 'awake_legendary'
+            ? 'token_thebeast'
+            : 'token_dragon');
+
+        // 同レーンにトークンを配置（Place）
+        events.push({
+          type: 'awake_trigger',
+          side,
+          lane: i,
+          card: c,
+          summonId,
+          value: v,
+        });
+        applyActiveSkillLogic(
+          state,
+          side,
+          i,
+          currentAwakeSkillId,
+          v,
+          events,
+          [],
+          i
+        );
+        // カードが新トークンに置換されたため、後続のスキル・状態処理を中断
+        break;
+      }
     }
   }
   processDestructionTriggers(state, events);

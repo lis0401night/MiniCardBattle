@@ -26,6 +26,9 @@ import {
   clearCardAbilities,
   createDamagePopup,
   getCardImgUrl,
+  grantCardStatus,
+  removeCardStatus,
+  syncCardStatuses,
   getSeededRandom,
   getSkillTargetLabel,
   getSkillValue,
@@ -443,6 +446,7 @@ export async function resolveActiveSkillEffect(
       fate: '運命',
       reinforce: '増援',
       toxic: '有毒',
+      corrosion: '腐食',
       convert: '対価',
       invade: '侵略',
       petrify: '石化',
@@ -1635,10 +1639,7 @@ export async function resolveActiveSkillEffect(
       for (let i = 0; i < 3; i++) {
         const card = b[i];
         if (card) {
-          card.skills = [];
-          card.choices = [];
-          card.choices2 = null;
-          if ('summonId' in card) delete card.summonId;
+          clearCardAbilities(card);
 
           if (window.updateCardVisualsReact) {
             window.updateCardVisualsReact(i, side);
@@ -1683,24 +1684,14 @@ export async function resolveActiveSkillEffect(
       await sleep(400);
     }
   } else if (skillId === 'toxic') {
-    createDamagePopup(cEl, '有毒', '#10b981');
+    createDamagePopup(cEl, '有毒', '#22c55e');
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     if (eB[l]) {
       const toxVal = skillValue || 1;
-      eB[l].skills = eB[l].skills || [];
-
-      const existIndex = eB[l].skills.findIndex((s) => s.id === 'growth');
-      const exist = existIndex !== -1 ? eB[l].skills[existIndex] : null;
-      if (exist) {
-        const nextValue = (exist.value ?? 1) - toxVal;
-        if (nextValue === 0) {
-          eB[l].skills.splice(existIndex, 1);
-        } else {
-          exist.value = nextValue;
-        }
-      } else {
-        eB[l].skills.push({ id: 'growth', value: -toxVal });
-      }
+      // 【有毒スキル: 毒状態の付与】
+      // 成長スキルの付与ではなく独立した「毒（poison）」状態を付与する。
+      // 重ね掛け時はBの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
+      grantCardStatus(eB[l], 'poison', toxVal);
 
       const tgtSide = o === 'blue' ? 'enemy' : 'player';
 
@@ -2047,9 +2038,9 @@ export async function resolveActiveSkillEffect(
     if (eB[l]) {
       // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正。
       // val=1 で「このターンは動けない」→ターン終了時に1減って stunTurns=1 → 次ターン防御 → 終了時に0、で計1ターン拘束。
-      // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する
+      // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
       const turns = (skillValue || 1) + 1;
-      eB[l].stunTurns = Math.max(eB[l].stunTurns || 0, turns);
+      grantCardStatus(eB[l], 'stun', turns);
 
       const tgtSide = o === 'blue' ? 'enemy' : 'player';
 
@@ -2108,10 +2099,10 @@ export async function resolveActiveSkillEffect(
 
     if (targets.length > 0) {
       // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正（bindと同じロジック）。
-      // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する
+      // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
       const turns = (skillValue || 1) + 1;
       for (const tL of targets) {
-        eB[tL].stunTurns = Math.max(eB[tL].stunTurns || 0, turns);
+        grantCardStatus(eB[tL], 'stun', turns);
       }
 
       // VFX演出の再生（すべての対象レーンで同時に並列再生）
@@ -2296,9 +2287,16 @@ export async function resolveActiveSkillEffect(
     // 【仕様】自分のカードに適用するため、+1 補正は不要。
     // bind/freeze は相手カードに適用し、「発動したターンも防御状態にする」ため +1 しているが、
     // standby は自分が召喚したこのターンから待機するため、val そのままで正しい挙動になる。
-    // 既存の防御・拘束ターン数と比較し、大きい方の値を維持・適用する
+    // 既存の防御・拘束ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
     const turns = skillValue || 1;
-    c.stunTurns = Math.max(c.stunTurns || 0, turns);
+    grantCardStatus(c, 'stun', turns);
+    renderBoard();
+    await sleep(400);
+  } else if (skillId === 'corrosion') {
+    const pVal = skillValue || 1;
+    // 【腐食スキル: 自身の毒状態付与】
+    // 召喚時、自身に毒を付与する。Bの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
+    grantCardStatus(c, 'poison', pVal);
     renderBoard();
     await sleep(400);
   } else if (skillId === 'decay') {
@@ -4221,29 +4219,86 @@ export async function triggerStartTurnPassive(owner, lane) {
   let triggered = false;
   let events = [];
 
-  // Engine 内の個別処理を真似て状態更新ログを作成
+  // Engine 内の個別処理を真似て状態更新ログを作成（スロット順解決）
   let skillsToResolve = Array.isArray(c.skills) ? [...c.skills] : [];
-
-  // 【無敵（状態）のターン経過減衰処理】
-  // スキル枠ではなくフラグ card.invincibleTurns を減衰させる
-  if (c.invincibleTurns > 0) {
-    c.invincibleTurns--;
-    if (c.invincibleTurns <= 0) {
-      delete c.invincibleTurns;
-      const cEl = document.querySelector(
-        `#${side}-lanes .cell[data-lane="${lane}"] .card`
-      );
-      if (cEl) {
-        createDamagePopup(cEl, '無敵終了', '#94a3b8');
-        await sleep(150);
-      }
-    }
-    triggered = true;
+  // レガシー互換: 直接プロパティに毒または無敵が存在するが skills 配列に未登録の場合は末尾に追加
+  if (
+    (c.poison || 0) > 0 &&
+    !skillsToResolve.some((s) => s && (s.id === 'poison' || s === 'poison'))
+  ) {
+    skillsToResolve.push({ id: 'poison', value: c.poison, isStatus: true });
+  }
+  if (
+    (c.invincibleTurns || 0) > 0 &&
+    !skillsToResolve.some(
+      (s) => s && (s.id === 'invincible' || s === 'invincible')
+    )
+  ) {
+    skillsToResolve.push({
+      id: 'invincible',
+      value: c.invincibleTurns,
+      isStatus: true,
+    });
   }
 
   for (const sk of skillsToResolve) {
-    if (sk.id === 'growth') {
-      const val = sk.value ?? 1;
+    if (!sk) continue;
+    const skId = typeof sk === 'string' ? sk : sk.id;
+    const skVal =
+      typeof sk === 'object' && sk.value !== undefined ? sk.value : null;
+
+    // 【無敵（状態）のターン経過減衰処理】
+    if (skId === 'invincible') {
+      if (c.invincibleTurns > 0) {
+        c.invincibleTurns--;
+        if (c.invincibleTurns <= 0) {
+          removeCardStatus(c, 'invincible');
+          const cEl = document.querySelector(
+            `#${side}-lanes .cell[data-lane="${lane}"] .card`
+          );
+          if (cEl) {
+            createDamagePopup(cEl, '無敵終了', '#94a3b8');
+            await sleep(150);
+          }
+        } else {
+          syncCardStatuses(c);
+        }
+        triggered = true;
+      } else if (skVal > 0) {
+        sk.value--;
+        if (sk.value <= 0) {
+          removeCardStatus(c, 'invincible');
+          const cEl = document.querySelector(
+            `#${side}-lanes .cell[data-lane="${lane}"] .card`
+          );
+          if (cEl) {
+            createDamagePopup(cEl, '無敵終了', '#94a3b8');
+            await sleep(150);
+          }
+        }
+        triggered = true;
+      }
+      continue;
+    }
+
+    // 【毒（状態）のパワー減少処理】
+    // 「成長」スキルの対となる状態異常。自分のターン開始時、付与されている毒の値分パワーを減少させる
+    if (skId === 'poison') {
+      const pVal = skVal || c.poison || 1;
+      c.power -= pVal; // RendererがcurrentPowerを処理するためpowerを減算
+      events.push({
+        type: 'power_change',
+        side: owner,
+        lane,
+        amount: -pVal,
+        source: 'poison',
+      });
+      triggered = true;
+      continue;
+    }
+
+    if (skId === 'growth') {
+      const val = skVal ?? 1;
       c.power += val; // RendererがcurrentPowerを処理するのでここはpowerのみアップ
       events.push({
         type: 'power_change',
@@ -4256,8 +4311,8 @@ export async function triggerStartTurnPassive(owner, lane) {
     }
 
     // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
-    if (sk.id === 'intercept') {
-      const dmg = sk.value || 2;
+    if (skId === 'intercept') {
+      const dmg = skVal || 2;
       const eB =
         owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
       let maxL = -1,
@@ -4317,29 +4372,8 @@ export async function triggerStartTurnPassive(owner, lane) {
       triggered = true;
     }
 
-    if (sk.id === 'invincible') {
-      // 後方互換処理: skills 配列内に残っている場合
-      sk.value--;
-      if (sk.value <= 0) {
-        if (Array.isArray(c.skills)) {
-          const idx = c.skills.indexOf(sk);
-          if (idx !== -1) c.skills.splice(idx, 1);
-        }
-        if (!c.invincibleTurns) {
-          const cEl = document.querySelector(
-            `#${side}-lanes .cell[data-lane="${lane}"] .card`
-          );
-          if (cEl) {
-            createDamagePopup(cEl, '無敵終了', '#94a3b8');
-            await sleep(150);
-          }
-        }
-      }
-      triggered = true;
-    }
-
-    if (sk.id === 'contract') {
-      const val = sk.value || 3;
+    if (skId === 'contract') {
+      const val = skVal || 3;
       // 自分側にスキル発動のポップアップを出す
       events.push({
         type: 'skill_popup',
@@ -4367,7 +4401,7 @@ export async function triggerStartTurnPassive(owner, lane) {
       triggered = true;
     }
 
-    if (sk.id === 'samsara') {
+    if (skId === 'samsara') {
       const cEl = document.querySelector(
         `#${side}-lanes .cell[data-lane="${lane}"] .card`
       );
@@ -4411,13 +4445,13 @@ export async function triggerStartTurnPassive(owner, lane) {
       triggered = true;
     }
 
-    if (sk.id === 'awake' || sk.id === 'awake_legendary') {
+    if (skId === 'awake' || skId === 'awake_legendary') {
       if (isLaneSealed(GameState, owner, lane)) {
         // 封印（seal）されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
         continue;
       }
 
-      const val = sk.value || 1;
+      const val = skVal || 1;
       // エンジンのロジックを流用してイベントを生成
       const currentState = {
         playerBoard: GameState.playerBoard.map((c) =>
@@ -4441,7 +4475,7 @@ export async function triggerStartTurnPassive(owner, lane) {
       };
 
       let awakeEvents = [];
-      applyActiveSkillLogic(currentState, owner, lane, sk.id, val, awakeEvents);
+      applyActiveSkillLogic(currentState, owner, lane, skId, val, awakeEvents);
 
       if (awakeEvents.length > 0) {
         // 覚醒は該当レーンのみを置換する（盤面配列全体の差し替えによる他レーンのカード参照破損を防止）

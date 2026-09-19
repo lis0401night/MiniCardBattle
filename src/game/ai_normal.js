@@ -16,6 +16,7 @@ import {
   matchesSummonTarget,
   matchesUnionMaterial,
   setCurrentRNG,
+  syncCardStatuses,
 } from '../utils/gameUtils.js';
 import {
   applyEquipment,
@@ -203,36 +204,6 @@ function estimateCallAssembleBonus(sk) {
     callBonus = maxPower > 0 ? maxPower : 6;
   }
   return callBonus;
-}
-
-/**
- * ボード上の全カードの「無敵（invincible）」スキルの持続ターンを減退・解除する共通ヘルパー
- * @param {Array} board - カードの配列 (playerBoard または enemyBoard)
- */
-function decayInvincibleSkills(board) {
-  if (!Array.isArray(board)) return;
-  board.forEach((c) => {
-    if (!c) return;
-
-    // 1. フラグ invincibleTurns の減衰
-    if ((c.invincibleTurns || 0) > 0) {
-      c.invincibleTurns--;
-      if (c.invincibleTurns <= 0) {
-        delete c.invincibleTurns;
-      }
-    }
-
-    // 2. skills 配列内に invincible がある場合（後方互換）
-    if (Array.isArray(c.skills)) {
-      const invSk = c.skills.find((s) => s.id === 'invincible');
-      if (invSk) {
-        invSk.value = (invSk.value || 1) - 1;
-        if (invSk.value <= 0) {
-          c.skills = c.skills.filter((s) => s !== invSk);
-        }
-      }
-    }
-  });
 }
 
 const cloneCard = (c) => (c ? structuredClone(c) : null);
@@ -4019,27 +3990,36 @@ export function evaluateSimState(state) {
 }
 
 /**
- * 指定陣営の戦闘フェーズ（パッシブスキル・状態異常減衰・戦闘ダメージ計算・破壊処理）をシミュレートする共通関数。
- * ※実戦では無敵（invincible）の減衰はターン開始時（triggerStartTurnPassive）に行われるため、
- * 戦闘直前の減衰は行わず、カードの無敵防御能力を正常に機能させる。
+ * 指定陣営の戦闘フェーズ（ターン開始時パッシブ・状態異常減衰・戦闘ダメージ計算・破壊処理）をシミュレートする共通関数。
+ * 実戦の startTurn シーケンスと同一の順序で、ターンプレイヤー（攻撃側陣営）の盤面カードの状態
+ * （スタン・攻撃不能・無敵ターン）をターン開始時に減衰・同期させ、客観的な戦闘計算を行います。
  *
  * @param {object} simState - シミュレーション盤面状態
  * @param {'red' | 'blue'} attackerSide - 攻撃側陣営 ('blue' = プレイヤー, 'red' = 敵AI)
+ * @returns {void}
  */
 export function simulateCombatStep(simState, attackerSide) {
   const isRed = attackerSide === 'red';
   const board = isRed ? simState.enemyBoard : simState.playerBoard;
   const hpBeforeCombat = isRed ? simState.playerHP : simState.enemyHP;
 
-  // パッシブスキルの適用
+  // 1. パッシブスキルの適用（ターン開始時スキル・毒ダメージ・契約・加護解除等）
   applyPassiveSkillLogic(simState, attackerSide);
 
-  // 状態異常の持続ターン減衰
+  // 2. 状態異常の持続ターン減衰（ターン開始時にターンプレイヤー側の盤面状態を減衰）
   board.forEach((c) => {
     if (c) {
       if (c.stunTurns > 0) c.stunTurns--;
       if (c.cantAttackTurns > 0) c.cantAttackTurns--;
-      if (c.immuneTurns > 0) c.immuneTurns--;
+      // 無敵（invincibleTurns）のターン経過減衰処理
+      if ((c.invincibleTurns || 0) > 0) {
+        c.invincibleTurns--;
+        if (c.invincibleTurns <= 0) {
+          delete c.invincibleTurns;
+        }
+      }
+      // スキル枠（c.skills）内の状態エントリと同期
+      syncCardStatuses(c);
     }
   });
 
@@ -4119,7 +4099,6 @@ export function advanceCombatPhase(simState) {
 
     // ② Red攻撃後、両者が生存していれば、Redターン終了後の次のBlueターンの攻撃（相手の反撃）
     if (simState.enemyHP > 0 && simState.playerHP > 0) {
-      decayInvincibleSkills(simState.enemyBoard);
       if (!(simState.extraTurnCount > 0)) {
         simulateCombatStep(simState, 'blue');
       } else {

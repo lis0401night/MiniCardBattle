@@ -24,6 +24,7 @@ import {
   hasSkill,
   playSound,
   sleep,
+  syncCardStatuses,
   matchesUnionMaterial,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -317,15 +318,15 @@ function decrementStatusCounters(owner) {
   const myBoard =
     owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   myBoard.forEach((c) => {
-    if (c && c.stunTurns > 0) {
+    if (!c) return;
+    if (c.stunTurns > 0) {
       c.stunTurns--;
     }
-    if (c && c.cantAttackTurns > 0) {
+    if (c.cantAttackTurns > 0) {
       c.cantAttackTurns--;
     }
-    if (c && c.immuneTurns > 0) {
-      c.immuneTurns--;
-    }
+    // スキル枠（c.skills）内の状態エントリと同期
+    syncCardStatuses(c);
   });
 }
 

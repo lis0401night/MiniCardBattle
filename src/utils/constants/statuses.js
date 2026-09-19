@@ -94,6 +94,30 @@ export const STATUSES = {
      */
     desc: (turns) => `${turns || 1}ターンの間、攻撃を行えない。`,
   },
+
+  /**
+   * 毒状態
+   * 「成長」スキルの対となる状態異常。自分のターン開始時、自身のパワーを減少させる。
+   */
+  poison: {
+    id: 'poison',
+    name: '毒',
+    icon: '💀',
+    type: 'debuff',
+    property: 'poison',
+    turnsProperty: 'poisonTurns',
+    badgeClass: 'badge-poison',
+    /**
+     * 毒の説明文を生成する
+     * 自分のターン開始時、パワーを減少させる。
+     * @param {number} [val=1] - ターン開始時に減少するパワー値
+     * @returns {string} 説明文
+     */
+    desc: (val) => {
+      const v = val !== undefined && val !== null ? Math.abs(val) : 1;
+      return `自分のターン開始時、パワー-${v}`;
+    },
+  },
 };
 
 /** 全状態IDのリスト */

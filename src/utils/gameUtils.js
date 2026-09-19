@@ -755,8 +755,6 @@ export function hasSkill(c, skillId) {
 
   // 拘束（スタン）状態は「防御（攻撃不可）」として扱う
   if (skillId === 'defender' && c.stunTurns > 0) return true;
-  // ターン制限付き「無効」状態
-  if (skillId === 'immune' && c.immuneTurns > 0) return true;
   if (Array.isArray(c.skills)) {
     return c.skills.some((s) => s.id === skillId);
   }
@@ -870,15 +868,189 @@ export function isCardInvincible(card) {
 }
 
 /**
+ * 対象カードに状態（ステータス / バフ・デバフ）を付与または更新します。
+ * スキル枠（card.skills）の末尾（下のスロット）に { id: statusId, value: finalValue, isStatus: true } を追加します。
+ * 既に同種の状態が存在する場合は、重ね掛け仕様（Bの仕様: Math.maxで高い方を優先）に従って値を更新します（スロット位置は維持）。
+ * 同時に後方互換性のため、直接プロパティ（card.poison, card.stunTurns 等）も同期更新します。
+ * ※「無効（immune）」はスキルであり、状態ではないため本関数の対象外です。
+ *
+ * @param {object|null} card - 対象カード
+ * @param {string} statusId - 状態ID ('poison' | 'stun' | 'invincible' | 'valkyria_guard' | 'cant_attack')
+ * @param {number} [value=1] - 付与する値（毒の減少値、または持続ターン数）
+ * @returns {number} 最終的に設定された値
+ */
+export function grantCardStatus(card, statusId, value = 1) {
+  if (!card) return 0;
+  if (!Array.isArray(card.skills)) {
+    card.skills = [];
+  }
+
+  // 既存の状態エントリを検索
+  const existingIdx = card.skills.findIndex(
+    (s) => s && s.isStatus && s.id === statusId
+  );
+
+  // 既存値の取得（直接プロパティもフォールバックとして考慮）
+  let currentVal = 0;
+  if (existingIdx !== -1) {
+    currentVal = card.skills[existingIdx].value || 0;
+  } else {
+    if (statusId === 'poison') currentVal = card.poison || 0;
+    else if (statusId === 'stun') currentVal = card.stunTurns || 0;
+    else if (statusId === 'invincible') currentVal = card.invincibleTurns || 0;
+    else if (statusId === 'valkyria_guard')
+      currentVal = card.valkyriaGuardTurns || (card.valkyriaGuard ? 1 : 0);
+    else if (statusId === 'cant_attack') currentVal = card.cantAttackTurns || 0;
+  }
+
+  // Bの仕様（高い方を優先、Math.max）
+  const finalValue = Math.max(
+    currentVal,
+    value !== undefined && value !== null ? value : 1
+  );
+
+  if (existingIdx !== -1) {
+    // 既存スロットの値を更新（スロット順序・位置は維持）
+    card.skills[existingIdx].value = finalValue;
+    card.skills[existingIdx].isStatus = true;
+  } else {
+    // 新たに下のスロット（末尾）に追加
+    card.skills.push({
+      id: statusId,
+      value: finalValue,
+      isStatus: true,
+    });
+  }
+
+  // 直接プロパティの同期（後方互換性および判定ロジック用）
+  if (statusId === 'poison') {
+    card.poison = finalValue;
+  } else if (statusId === 'stun') {
+    card.stunTurns = finalValue;
+  } else if (statusId === 'invincible') {
+    card.invincibleTurns = finalValue;
+  } else if (statusId === 'valkyria_guard') {
+    card.valkyriaGuard = true;
+    card.valkyriaGuardTurns = finalValue;
+  } else if (statusId === 'cant_attack') {
+    card.cantAttackTurns = finalValue;
+  }
+
+  return finalValue;
+}
+
+/**
+ * 対象カードから指定した状態を解除・消去します。
+ * card.skills 配列内の該当状態エントリを削除し、直接プロパティもリセットします。
+ *
+ * @param {object|null} card - 対象カード
+ * @param {string} statusId - 解除する状態ID
+ */
+export function removeCardStatus(card, statusId) {
+  if (!card) return;
+  if (Array.isArray(card.skills)) {
+    card.skills = card.skills.filter(
+      (s) => !(s && s.isStatus && s.id === statusId)
+    );
+  }
+  if (statusId === 'poison') {
+    delete card.poison;
+  } else if (statusId === 'stun') {
+    card.stunTurns = 0;
+  } else if (statusId === 'invincible') {
+    delete card.invincibleTurns;
+  } else if (statusId === 'valkyria_guard') {
+    delete card.valkyriaGuard;
+    delete card.valkyriaGuardTurns;
+  } else if (statusId === 'cant_attack') {
+    delete card.cantAttackTurns;
+  }
+}
+
+/**
+ * 対象カードの直接プロパティ（stunTurns, poison等）の変動を card.skills 内の状態スロットと同期します。
+ * ターン経過によるカウントダウンや外部プロパティ更新後に呼び出すことで、スロットとの不整合を防ぎます。
+ *
+ * @param {object|null} card - 対象カード
+ */
+export function syncCardStatuses(card) {
+  if (!card) return;
+  if (!Array.isArray(card.skills)) return;
+
+  // 1. stun (stunTurns)
+  if ((card.stunTurns || 0) <= 0) {
+    card.skills = card.skills.filter(
+      (s) => !(s && s.isStatus && s.id === 'stun')
+    );
+  } else {
+    const sEntry = card.skills.find(
+      (s) => s && s.isStatus && s.id === 'stun'
+    );
+    if (sEntry) sEntry.value = card.stunTurns;
+  }
+
+  // 2. invincible (invincibleTurns)
+  if ((card.invincibleTurns || 0) <= 0) {
+    card.skills = card.skills.filter(
+      (s) => !(s && s.isStatus && s.id === 'invincible')
+    );
+  } else {
+    const sEntry = card.skills.find(
+      (s) => s && s.isStatus && s.id === 'invincible'
+    );
+    if (sEntry) sEntry.value = card.invincibleTurns;
+  }
+
+  // 3. poison
+  if ((card.poison || 0) <= 0) {
+    card.skills = card.skills.filter(
+      (s) => !(s && s.isStatus && s.id === 'poison')
+    );
+  } else {
+    const sEntry = card.skills.find(
+      (s) => s && s.isStatus && s.id === 'poison'
+    );
+    if (sEntry) sEntry.value = card.poison;
+  }
+
+  // 4. valkyria_guard
+  if (!card.valkyriaGuard && (card.valkyriaGuardTurns || 0) <= 0) {
+    card.skills = card.skills.filter(
+      (s) => !(s && s.isStatus && s.id === 'valkyria_guard')
+    );
+  } else {
+    const sEntry = card.skills.find(
+      (s) => s && s.isStatus && s.id === 'valkyria_guard'
+    );
+    if (sEntry && card.valkyriaGuardTurns)
+      sEntry.value = card.valkyriaGuardTurns;
+  }
+
+  // 5. cant_attack (cantAttackTurns)
+  if ((card.cantAttackTurns || 0) <= 0) {
+    card.skills = card.skills.filter(
+      (s) => !(s && s.isStatus && s.id === 'cant_attack')
+    );
+  } else {
+    const sEntry = card.skills.find(
+      (s) => s && s.isStatus && s.id === 'cant_attack'
+    );
+    if (sEntry) sEntry.value = card.cantAttackTurns;
+  }
+}
+
+/**
  * 対象カードの全能力と一時効果を消去する共通処理（沈黙・忘却等で共用）。
  * スキル配列、選択肢、召喚ID、スキル解決中フラグ等を初期化します。
- * ※スタン（stunTurns）、無敵（invincibleTurns）、加護（valkyriaGuard）等の「状態（ステータス）」は能力ではないため消去されません。
+ * ※状態（ステータス: isStatus === true / stunTurns / invincibleTurns / poison 等）は能力ではないため消去されず、スロット内に保護されます。
  *
  * @param {object|null} targetCard - 対象カード
  */
 export function clearCardAbilities(targetCard) {
   if (!targetCard) return;
-  targetCard.skills = [];
+  targetCard.skills = Array.isArray(targetCard.skills)
+    ? targetCard.skills.filter((s) => s && s.isStatus)
+    : [];
   targetCard.choices = [];
   targetCard.choices2 = [];
   targetCard.supremacySkills = [];
@@ -1262,7 +1434,27 @@ export function getSkillBadgeInfo(sk) {
 }
 
 /**
+ * 状態（ステータス）のバッジHTML文字列を生成する内部ヘルパー。
+ * @param {string} statusId - 状態ID
+ * @param {number} [value=1] - 状態の値または持続ターン数
+ * @returns {string} バッジHTML
+ */
+function createStatusBadgeHtml(statusId, value = 1) {
+  const def = STATUSES[statusId];
+  if (!def) return '';
+  if (statusId === 'cant_attack') {
+    return `<div class="card-skill" style="border-color: #ef4444; color: #fecdd3;">${def.name}${value}</div>`;
+  }
+  if (statusId === 'valkyria_guard') {
+    return `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}</div>`;
+  }
+  return `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}${value}</div>`;
+}
+
+/**
  * カードに付与されているスキルのバッジHTML文字列を生成する。
+ * スキル枠（card.skills）のスロット順（付与された時系列順）に従って上から下へ描画します。
+ *
  * @param {Object} card - 対象のカードオブジェクト
  * @param {boolean} [isBoard=false] - 盤面配置中かどうか
  * @param {boolean|null} [valkyriaGuardActive=null] - 戦乙女の加護が有効かどうか（nullの場合はGameStateからフォールバック取得）
@@ -1274,75 +1466,14 @@ export function renderSkillTag(
   valkyriaGuardActive = null
 ) {
   if (!card) return '';
-  let skillCandidates = [];
 
-  // 1. 表示対象のスキルを全てリストアップ
-  const addCandidate = (sk) => {
-    if (!sk) return;
-    const id = typeof sk === 'string' ? sk : sk.id;
-    // 「無敵」は通常スキルではなく独立した状態バッジ（badge-invincible）として描画するためスキップ
-    if (id === 'invincible') return;
-    const s = SKILLS[id];
-    if (s && id !== 'none' && s.name !== '通常') {
-      // 盤面配置時のバッジ表示制御:
-      // 1. トリガースキルおよび伝説を除く制約スキルは、盤面（isBoard）では最初から非表示
-      // 2. アクティブスキルは、召喚時効果の解決完了（カード全体のskillTriggeredまたは個別スキルのtriggered）後に非表示
-      // 3. 伝説スキルおよびパッシブスキルは、盤面でも常に表示を継続
-      const isResolved = card.skillTriggered || Boolean(sk && sk.triggered);
-      const showBadge =
-        !isBoard ||
-        (!BOARD_NEVER_SHOW_SKILL_IDS.includes(id) &&
-          (!isResolved || !ACTIVE_SKILLS.includes(id)));
-      if (showBadge) {
-        const info = getSkillBadgeInfo(sk);
-        skillCandidates.push({
-          id: info.id,
-          name: info.name,
-          icon: info.icon,
-          value: info.value,
-          targetId: info.targetId,
-          targetIds: info.targetIds,
-          targetKeyword: info.targetKeyword,
-        });
-      }
-    }
-  };
+  const badges = [];
+  const renderedStatuses = new Set();
 
-  if (Array.isArray(card.skills)) {
-    card.skills.forEach((sk) => addCandidate(sk));
-  }
-
-  // 2. IDと値が一致するものを集計（「選択」「命令」「覇道」およびターゲット指定のある特殊スキルはマージせず個別に表示）
-  // targetIds（配列）は順序を含めて文字列化し、比較キーとして扱う
-  const targetIdsKey = (ids) => (Array.isArray(ids) ? ids.join(',') : '');
-  let grouped = [];
-  skillCandidates.forEach((c) => {
-    const isExcludedFromMerge = isSkillMergeExcluded(c);
-    const existing = isExcludedFromMerge
-      ? null
-      : grouped.find(
-          (g) =>
-            g.id === c.id &&
-            g.value === c.value &&
-            g.targetId === c.targetId &&
-            g.targetKeyword === c.targetKeyword &&
-            targetIdsKey(g.targetIds) === targetIdsKey(c.targetIds)
-        );
-    if (existing) {
-      existing.count++;
-    } else {
-      grouped.push({ ...c, count: 1 });
-    }
-  });
-
-  // 3. バッジの生成
-  let badges = [];
-
-  // 【状態（ステータス）バッジ群】（優先表示）
-  // 1. 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブ、またはカード自身に加護が付与されている場合に優先表示）
-  if (isBoard) {
-    const isGuardActive =
-      Boolean(card?.valkyriaGuard) ||
+  // 戦乙女の加護（盤面全体の加護効果発動時、カード自身が持っていなくても付与表示）
+  const isGuardActive =
+    isBoard &&
+    (Boolean(card?.valkyriaGuard) ||
       (card?.valkyriaGuardTurns || 0) > 0 ||
       (valkyriaGuardActive !== null
         ? valkyriaGuardActive
@@ -1350,60 +1481,138 @@ export function renderSkillTag(
           ? card.owner === 'blue'
             ? (GameState.valkyriaGuardBlue || 0) > 0
             : (GameState.valkyriaGuardRed || 0) > 0
-          : false);
+          : false));
 
-    if (isGuardActive) {
-      const def = STATUSES.valkyria_guard;
+  // 1. スキル枠（card.skills）のスロット順（付与順）にバッジアイテムを生成
+  const targetIdsKey = (ids) => (Array.isArray(ids) ? ids.join(',') : '');
+  const slotItems = [];
+
+  if (Array.isArray(card.skills)) {
+    for (const sk of card.skills) {
+      if (!sk) continue;
+      const id = typeof sk === 'string' ? sk : sk.id;
+
+      // 状態（ステータス）エントリの判定
+      const isStatusEntry =
+        Boolean(sk.isStatus) ||
+        id === 'invincible' ||
+        id === 'poison' ||
+        id === 'stun' ||
+        id === 'valkyria_guard' ||
+        id === 'cant_attack';
+
+      if (isStatusEntry) {
+        if (!renderedStatuses.has(id)) {
+          let val = sk.value || 1;
+          // 直接プロパティがあれば最新値を同期
+          if (id === 'poison' && card.poison) val = card.poison;
+          else if (id === 'stun' && card.stunTurns) val = card.stunTurns;
+          else if (id === 'invincible' && card.invincibleTurns)
+            val = card.invincibleTurns;
+          else if (id === 'cant_attack' && card.cantAttackTurns)
+            val = card.cantAttackTurns;
+
+          if (val > 0 || id === 'valkyria_guard') {
+            slotItems.push({
+              type: 'status',
+              statusId: id,
+              value: val,
+              html: createStatusBadgeHtml(id, val),
+            });
+            renderedStatuses.add(id);
+          }
+        }
+        continue;
+      }
+
+      // 通常スキルの判定
+      const s = SKILLS[id];
+      if (s && id !== 'none' && s.name !== '通常') {
+        const isResolved = card.skillTriggered || Boolean(sk && sk.triggered);
+        const showBadge =
+          !isBoard ||
+          (!BOARD_NEVER_SHOW_SKILL_IDS.includes(id) &&
+            (!isResolved || !ACTIVE_SKILLS.includes(id)));
+
+        if (showBadge) {
+          const info = getSkillBadgeInfo(sk);
+          const isExcludedFromMerge = isSkillMergeExcluded(info);
+          const existing = isExcludedFromMerge
+            ? null
+            : slotItems.find(
+                (item) =>
+                  item.type === 'skill' &&
+                  item.id === info.id &&
+                  item.value === info.value &&
+                  item.targetId === info.targetId &&
+                  item.targetKeyword === info.targetKeyword &&
+                  targetIdsKey(item.targetIds) === targetIdsKey(info.targetIds)
+              );
+
+          if (existing) {
+            existing.count++;
+          } else {
+            slotItems.push({
+              type: 'skill',
+              id: info.id,
+              name: info.name,
+              icon: info.icon,
+              value: info.value,
+              targetId: info.targetId,
+              targetIds: info.targetIds,
+              targetKeyword: info.targetKeyword,
+              count: 1,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // 2. スロット順のバッジHTMLを構築
+  for (const item of slotItems) {
+    if (item.type === 'status') {
+      badges.push(item.html);
+    } else if (item.type === 'skill') {
+      const countSuffix = item.count > 1 ? ` * ${item.count}` : '';
       badges.push(
-        `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}</div>`
+        `<div class="card-skill">${item.icon} ${item.name}${item.value}${countSuffix}</div>`
       );
     }
   }
 
-  // 2. 無敵状態バッジ（状態フラグ invincibleTurns または skills 配列の残骸から取得）
+  // 3. レガシー互換・外部設定（直接プロパティ）のフォールバック
+  if (isGuardActive && !renderedStatuses.has('valkyria_guard')) {
+    badges.unshift(createStatusBadgeHtml('valkyria_guard', 1));
+    renderedStatuses.add('valkyria_guard');
+  }
+
   const invincibleTurns =
     (card.invincibleTurns || 0) > 0
       ? card.invincibleTurns
       : Array.isArray(card.skills)
-        ? card.skills.find((s) => s && (s.id === 'invincible' || s === 'invincible'))?.value || 0
+        ? card.skills.find(
+            (s) => s && (s.id === 'invincible' || s === 'invincible')
+          )?.value || 0
         : 0;
-  if (invincibleTurns > 0) {
-    const def = STATUSES.invincible;
-    badges.push(
-      `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}${invincibleTurns}</div>`
-    );
+  if (invincibleTurns > 0 && !renderedStatuses.has('invincible')) {
+    badges.push(createStatusBadgeHtml('invincible', invincibleTurns));
+    renderedStatuses.add('invincible');
   }
 
-  // 3. 拘束・待機・凍結（スタン）状態バッジ
-  if (card.stunTurns > 0) {
-    const def = STATUSES.stun;
-    badges.push(
-      `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}${card.stunTurns}</div>`
-    );
+  if (card.stunTurns > 0 && !renderedStatuses.has('stun')) {
+    badges.push(createStatusBadgeHtml('stun', card.stunTurns));
+    renderedStatuses.add('stun');
   }
 
-  // 通常スキルのバッジ描画
-  grouped.forEach((g) => {
-    const countSuffix = g.count > 1 ? ` * ${g.count}` : '';
-    badges.push(
-      `<div class="card-skill">${g.icon} ${g.name}${g.value}${countSuffix}</div>`
-    );
-  });
-
-  // 攻撃不能状態バッジ（絵文字なし）
-  if (card.cantAttackTurns > 0) {
-    const def = STATUSES.cant_attack;
-    badges.push(
-      `<div class="card-skill" style="border-color: #ef4444; color: #fecdd3;">${def.name}${card.cantAttackTurns}</div>`
-    );
+  if ((card.poison || 0) > 0 && !renderedStatuses.has('poison')) {
+    badges.push(createStatusBadgeHtml('poison', card.poison));
+    renderedStatuses.add('poison');
   }
 
-  // ターン制限付き「無効」状態バッジ
-  if (card.immuneTurns > 0) {
-    const im = SKILLS['immune'];
-    badges.push(
-      `<div class="card-skill" style="border-color: #3b82f6; color: #93c5fd;">${im ? im.icon : '🚫'} ${im?.name || '無効'}${card.immuneTurns}</div>`
-    );
+  if (card.cantAttackTurns > 0 && !renderedStatuses.has('cant_attack')) {
+    badges.push(createStatusBadgeHtml('cant_attack', card.cantAttackTurns));
+    renderedStatuses.add('cant_attack');
   }
 
   if (badges.length === 0) return '';
@@ -1413,6 +1622,9 @@ window.renderSkillTag = renderSkillTag;
 window.getSkillBadgeInfo = getSkillBadgeInfo;
 window.getSkillTargetLabel = getSkillTargetLabel;
 window.stripEphemeralSkills = stripEphemeralSkills;
+window.grantCardStatus = grantCardStatus;
+window.removeCardStatus = removeCardStatus;
+window.syncCardStatuses = syncCardStatuses;
 
 /**
  * セーブデータ(LocalStorage)を保持したまま、キャッシュとサービスワーカーを完全にクリアする。

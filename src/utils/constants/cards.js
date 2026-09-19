@@ -281,7 +281,7 @@ export const CARD_MASTER = [
     name: '旧式マンティス',
     rarity: 1,
     power: 4,
-    skills: [{ id: 'quick' }, { id: 'growth', value: -2 }],
+    skills: [{ id: 'corrosion', value: 2 }, { id: 'quick' }],
     voiceCategory: 'machine_old',
     flavor:
       '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。',
@@ -292,7 +292,7 @@ export const CARD_MASTER = [
     name: '旧式タイタン',
     rarity: 1,
     power: 8,
-    skills: [{ id: 'growth', value: -2 }],
+    skills: [{ id: 'corrosion', value: 2 }],
     voiceCategory: 'machine_old',
     flavor:
       '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。',

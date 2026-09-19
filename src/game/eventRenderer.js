@@ -20,6 +20,7 @@ import {
   clearCardAbilities,
   createDamagePopup,
   getSeededRandom,
+  grantCardStatus,
   hasSkill,
   mergeCardSkills,
   playSound,
@@ -737,8 +738,12 @@ export async function playEvents(events) {
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const targetCard = board[ev.lane];
         if (targetCard) {
-          if (!Array.isArray(targetCard.skills)) targetCard.skills = [];
-          targetCard.skills.push({ id: ev.skillId, value: ev.value || 1 });
+          if (ev.skillId === 'invincible') {
+            grantCardStatus(targetCard, 'invincible', ev.value || 1);
+          } else {
+            if (!Array.isArray(targetCard.skills)) targetCard.skills = [];
+            targetCard.skills.push({ id: ev.skillId, value: ev.value || 1 });
+          }
         }
 
         const cEl = document.querySelector(
@@ -754,6 +759,21 @@ export async function playEvents(events) {
         } else {
           playSound(SOUNDS.seSkill);
           await sleep(200);
+        }
+        break;
+      }
+      case 'add_status': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const targetCard = board ? board[ev.lane] : null;
+        if (targetCard) {
+          if (ev.status === 'poison') {
+            grantCardStatus(targetCard, 'poison', ev.value || 1);
+          } else if (ev.status === 'valkyria_guard') {
+            grantCardStatus(targetCard, 'valkyria_guard', ev.value || 1);
+          } else if (ev.status === 'stun') {
+            grantCardStatus(targetCard, 'stun', ev.value || 1);
+          }
         }
         break;
       }
