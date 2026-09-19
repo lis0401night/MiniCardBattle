@@ -3,8 +3,7 @@
  * Mini Card Battle - Get Single Player Deck API
  * 
  * 指定されたUUIDのプレイヤーデータ（デッキおよび設定情報）を取得します。
- * helpers.php の loadPlayerData を使用し、高速な .json 形式を優先取得し、
- * 未移行の場合は旧 .js 形式から安全にパースして返却します（デュアルリード）。
+ * helpers.php の loadPlayerData を使用し、純粋な .json 形式から安全に取得して返却します。
  * 
  * @method GET
  * @param string $uuid 取得対象プレイヤーのUUID

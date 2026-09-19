@@ -126,5 +126,25 @@ export async function asyncPost(url, data = null, config = {}) {
       : {}),
   };
 
-  return await apiClient.post(targetUrl, data, requestConfig);
+  // axios 内部の mergeConfig (utils.merge) におけるプロトタイプ汚染対策で、
+  // 'prototype' 等の予約プロパティ名がリクエスト本文から自動除外される不具合を防止するため、
+  // オブジェクトペイロードは事前に JSON 文字列化して渡す。
+  let requestData = data;
+  if (
+    data !== null &&
+    typeof data === 'object' &&
+    typeof FormData !== 'undefined' &&
+    !(data instanceof FormData) &&
+    typeof Blob !== 'undefined' &&
+    !(data instanceof Blob) &&
+    typeof ArrayBuffer !== 'undefined' &&
+    !(data instanceof ArrayBuffer)
+  ) {
+    requestData = JSON.stringify(data);
+  } else if (data !== null && typeof data === 'object' && typeof FormData === 'undefined') {
+    // Node.js等 FormData 等のブラウザAPIが存在しない環境向けフォールバック
+    requestData = JSON.stringify(data);
+  }
+
+  return await apiClient.post(targetUrl, requestData, requestConfig);
 }

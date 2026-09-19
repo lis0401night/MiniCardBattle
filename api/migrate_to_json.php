@@ -88,12 +88,24 @@ foreach ($jsFiles as $file) {
         }
     }
 
-    // loadPlayerData を使用して旧 .js から安全にパース（DRY原則）
-    $data = loadPlayerData($cleanUuid, $dir);
+    // 旧 .js ファイルから安全にパースして抽出
+    $data = null;
+    $content = @file_get_contents($file);
+    if ($content !== false && $content !== '') {
+        if (preg_match('/PLAYER_DECKS\[\'(.*?)\'\] = ({.*});/s', $content, $matches)) {
+            $parsed = json_decode($matches[2], true);
+            if (is_array($parsed) && !empty($parsed)) {
+                $data = $parsed;
+                if (empty($data['uuid'])) {
+                    $data['uuid'] = $cleanUuid;
+                }
+            }
+        }
+    }
 
     if (is_array($data) && !empty($data)) {
-        // savePlayerData のアトミック保存（一時ファイル+リネーム）を使用し、.js の再生成は抑止（$writeLegacyJs = false）
-        $saved = savePlayerData($cleanUuid, $data, $dir, false);
+        // savePlayerData のアトミック保存（一時ファイル+リネーム）を使用して .json を保存
+        $saved = savePlayerData($cleanUuid, $data, $dir);
         if ($saved) {
             // .json 保存成功を100%確認した後にのみ旧 .js を削除
             @unlink($file);
