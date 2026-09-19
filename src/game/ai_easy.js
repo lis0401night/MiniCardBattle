@@ -173,11 +173,16 @@ export function getEasyDecision() {
  *    有効なアクションであるため除外しない（false）。
  * 4. 味方カードが存在して初めて効果を発揮するスキル（鼓舞、味方強化、味方回復、味方加護等）しか持たず、
  *    味方が0体では対象不在で不発となり、即座にパワー0で自壊するカード（例:「レイジ」や「虚空」等）のみ true を返す。
- *
  * @param {Object|null|undefined} card - 判定対象のカードオブジェクト
+ * @param {'red' | 'blue'} [owner='red'] - カードをプレイする陣営
+ * @param {Object} [gameState=GameState] - 現在のゲームステート
  * @return {boolean} 味方不在時に即自壊して無駄になるカードであれば true、それ以外は false
  */
-export function isImmediatelySelfDestructiveOnPlay(card) {
+export function isImmediatelySelfDestructiveOnPlay(
+  card,
+  owner = 'red',
+  gameState = GameState
+) {
   if (!card) return false;
 
   // 元々のパワーが 1 以上のカードはユニットとして盤面に残るため自壊しない
@@ -242,7 +247,7 @@ export function isImmediatelySelfDestructiveOnPlay(card) {
   const hasBeneficialSkill = standaloneBeneficialSkills.some(
     (skillId) =>
       hasSkill(card, skillId) &&
-      canResolveStandaloneSkill(card, skillId, GameState)
+      canResolveStandaloneSkill(card, skillId, gameState, owner)
   );
   if (hasBeneficialSkill) {
     return false;
@@ -266,12 +271,14 @@ export function isImmediatelySelfDestructiveOnPlay(card) {
  * @param {Object} card - スキルを持つカードオブジェクト
  * @param {string} skillId - 判定対象のスキルID
  * @param {Object} [gameState=GameState] - 現在のゲームステート
+ * @param {'red' | 'blue'} [owner='red'] - スキルを発動する陣営（'red': 敵AI, 'blue': プレイヤー）
  * @return {boolean} スキルが解決可能であれば true、対象不在で不発になる場合は false
  */
 export function canResolveStandaloneSkill(
   card,
   skillId,
-  gameState = GameState
+  gameState = GameState,
+  owner = 'red'
 ) {
   if (!card || !skillId) return false;
 
@@ -283,10 +290,18 @@ export function canResolveStandaloneSkill(
   const skillValue =
     typeof skObj === 'object' && skObj !== null ? skObj.value : undefined;
 
+  // 陣営（owner）に応じたリソース参照の分離
+  const isBlue = owner === 'blue';
+  const myDeck = isBlue ? gameState.playerDeck : gameState.enemyDeck;
+  const myHand = isBlue ? gameState.playerHand : gameState.enemyHand;
+  const myDiscard = isBlue ? gameState.playerDiscard : gameState.enemyDiscard;
+  const oppDiscard = isBlue ? gameState.enemyDiscard : gameState.playerDiscard;
+  const myBoard = isBlue ? gameState.playerBoard : gameState.enemyBoard;
+
   switch (skillId) {
     case 'call': {
-      // 号令（デッキトップから召喚）: デッキトップに対象カードが存在するか判定
-      const deck = gameState.enemyDeck || [];
+      // 号令（デッキトップから召喚）: 自身のデッキトップに対象カードが存在するか判定
+      const deck = myDeck || [];
       if (deck.length === 0) return false;
       const topCard = deck[deck.length - 1];
       if (!topCard) return false;
@@ -309,12 +324,12 @@ export function canResolveStandaloneSkill(
     }
 
     case 'assemble': {
-      // 召集（デッキ内から条件合致カードを召喚）: デッキ内に対象カードが存在するか判定
-      const deck = gameState.enemyDeck || [];
+      // 召集（デッキ内から条件合致カードを召喚）: 自身のデッキ内に対象カードが存在するか判定
+      const deck = myDeck || [];
       if (deck.length === 0) return false;
 
       const selfId = card.baseId || card.id;
-      const presentBoardIds = (gameState.enemyBoard || [])
+      const presentBoardIds = (myBoard || [])
         .filter(Boolean)
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
@@ -329,9 +344,9 @@ export function canResolveStandaloneSkill(
 
     case 'summon': {
       // 召喚（手札から条件合致カードを召喚）: 自分以外の手札に対象カードが存在するか判定
-      const hand = gameState.enemyHand || [];
+      const hand = myHand || [];
       const selfId = card.baseId || card.id;
-      const presentBoardIds = (gameState.enemyBoard || [])
+      const presentBoardIds = (myBoard || [])
         .filter(Boolean)
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
@@ -347,10 +362,10 @@ export function canResolveStandaloneSkill(
 
     case 'resurrect': {
       // 復活（自墓地からカードを配置）: 自分の墓地に有効な対象カードが存在するか判定
-      const discard = gameState.enemyDiscard || [];
+      const discard = myDiscard || [];
       if (discard.length === 0) return false;
 
-      const presentBoardIds = (gameState.enemyBoard || [])
+      const presentBoardIds = (myBoard || [])
         .filter(Boolean)
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
@@ -364,15 +379,15 @@ export function canResolveStandaloneSkill(
 
     case 'puppet': {
       // 傀儡（相手墓地からカードを配置）: 相手の墓地に有効な対象カードが存在するか判定
-      const oppDiscard = gameState.playerDiscard || [];
-      if (oppDiscard.length === 0) return false;
+      const oppDiscardCards = oppDiscard || [];
+      if (oppDiscardCards.length === 0) return false;
 
-      const presentBoardIds = (gameState.enemyBoard || [])
+      const presentBoardIds = (myBoard || [])
         .filter(Boolean)
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
 
-      return oppDiscard.some((candidate) =>
+      return oppDiscardCards.some((candidate) =>
         matchesPuppetTarget(candidate, skObj || { id: 'puppet' }, {
           presentBoardIds,
         })

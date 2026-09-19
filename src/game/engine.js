@@ -549,8 +549,8 @@ export function registerPlacementEvaluator(fn) {
 
 /**
  * シミュレーション内において、カードやトークンの最適な配置先レーンを決定する共通関数。
- * 各候補レーンに配置した仮想盤面を作成して総合評価関数（evaluateTurnOutcome等）を実行し、
- * 戦闘フェーズおよびターン進行後の最終的な盤面評価スコアを客観的に比較して最善のレーンを選択・返却する。
+ * 各候補レーンにカードを配置した仮想盤面を作成（structuredClone による完全なディープコピー）し、
+ * 戦闘フェーズおよびターン進行後の最終的な盤面評価スコア（evaluateTurnOutcome等）を客観的に比較して最善のレーンを選択・返却する。
  *
  * @param {object} state - シミュレーション中のゲーム状態
  * @param {'blue' | 'red'} owner - 配置を行う側のプレイヤー ('blue' | 'red')
@@ -599,6 +599,7 @@ export function getBestSimulatedPlacementLane(
   let bestLane = constrainedLanes[0];
 
   for (const l of constrainedLanes) {
+    // 正確なシミュレーションを行うため、親状態や他ノードへの参照汚染を防ぐ完全なディープコピーを行う
     const testState = structuredClone(state);
     testState.playerDiscard = testState.playerDiscard || [];
     testState.enemyDiscard = testState.enemyDiscard || [];
@@ -627,7 +628,9 @@ export function getBestSimulatedPlacementLane(
 
     let score;
     if (typeof placementEvaluator === 'function') {
-      score = placementEvaluator(testState, owner);
+      // evaluateTurnOutcome は常に red 視点のスコアを返すため、blue の配置評価では符号を反転する
+      const rawScore = placementEvaluator(testState, owner);
+      score = owner === 'blue' ? -rawScore : rawScore;
     } else {
       // フォールバック（評価関数未登録時）: 盤面の純粋な合計パワー差分
       const myPow = (
@@ -4143,6 +4146,11 @@ export function applyLeaderSkillLogic(
       return selectedCard;
     };
 
+    const mySealed =
+      (isBlue ? state.playerSealedLanes : state.enemySealedLanes) || [0, 0, 0];
+    const isLaneAvailable = (l) =>
+      typeof l === 'number' && l >= 0 && l < 3 && mySealed[l] === 0;
+
     // 自分の墓地 → tokenLanes[0] (forcedTargetIdx が指定されている場合はその優先)
     const myCandidates = myDiscard.filter((card) => card && !card.isToken);
     const targetMyCard =
@@ -4152,9 +4160,12 @@ export function applyLeaderSkillLogic(
         ? myDiscard[forcedTargetIdx]
         : [...myCandidates].sort((a, b) => (b.power || 0) - (a.power || 0))[0];
 
-    let lane1 = tokenLanes && tokenLanes.length > 0 ? tokenLanes[0] : -1;
+    let lane1 =
+      tokenLanes && tokenLanes.length > 0 && isLaneAvailable(tokenLanes[0])
+        ? tokenLanes[0]
+        : -1;
     if (lane1 === -1 && targetMyCard) {
-      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+      // 盤面シミュレーション評価に基づき客観的最適レーンを決定（未封印レーンのみ対象）
       lane1 = getBestSimulatedPlacementLane(
         state,
         owner,
@@ -4163,36 +4174,38 @@ export function applyLeaderSkillLogic(
         false
       );
     }
-    if (lane1 === -1) lane1 = 0;
 
-    if (
-      forcedTargetIdx !== null &&
-      myDiscard[forcedTargetIdx] &&
-      !myDiscard[forcedTargetIdx].isToken
-    ) {
-      const forcedCard = myDiscard[forcedTargetIdx];
-      const existingCard = board[lane1];
-      if (existingCard) myDiscard.push(existingCard);
-      const resurrectedCard = {
-        ...forcedCard,
-        id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
-        baseId: forcedCard.baseId || forcedCard.id,
-      };
-      resurrectedCard.currentPower = resurrectedCard.power;
-      resurrectedCard.skillTriggered = true;
-      resurrectedCard.stunTurns = 0;
-      board[lane1] = resurrectedCard;
-      events.push({
-        type: 'summon_card',
-        side: owner,
-        lane: lane1,
-        card: JSON.parse(JSON.stringify(resurrectedCard)),
-        source: 'overdrive',
-      });
-      mySelectedCard = forcedCard;
-      myDiscard.splice(forcedTargetIdx, 1);
-    } else {
-      mySelectedCard = placeFromDiscard(myDiscard, lane1);
+    // 未封印レーンが存在し、有効なレーンが決定できた場合のみ配置を実行
+    if (lane1 !== -1) {
+      if (
+        forcedTargetIdx !== null &&
+        myDiscard[forcedTargetIdx] &&
+        !myDiscard[forcedTargetIdx].isToken
+      ) {
+        const forcedCard = myDiscard[forcedTargetIdx];
+        const existingCard = board[lane1];
+        if (existingCard) myDiscard.push(existingCard);
+        const resurrectedCard = {
+          ...forcedCard,
+          id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+          baseId: forcedCard.baseId || forcedCard.id,
+        };
+        resurrectedCard.currentPower = resurrectedCard.power;
+        resurrectedCard.skillTriggered = true;
+        resurrectedCard.stunTurns = 0;
+        board[lane1] = resurrectedCard;
+        events.push({
+          type: 'summon_card',
+          side: owner,
+          lane: lane1,
+          card: JSON.parse(JSON.stringify(resurrectedCard)),
+          source: 'overdrive',
+        });
+        mySelectedCard = forcedCard;
+        myDiscard.splice(forcedTargetIdx, 1);
+      } else {
+        mySelectedCard = placeFromDiscard(myDiscard, lane1);
+      }
     }
 
     // 相手の墓地 → tokenLanes[1]
@@ -4204,55 +4217,68 @@ export function applyLeaderSkillLogic(
         ? oppDiscard[forcedOppTargetIdx]
         : [...oppCandidates].sort((a, b) => (b.power || 0) - (a.power || 0))[0];
 
-    let lane2 = tokenLanes && tokenLanes.length > 1 ? tokenLanes[1] : -1;
+    let lane2 =
+      tokenLanes &&
+      tokenLanes.length > 1 &&
+      isLaneAvailable(tokenLanes[1]) &&
+      tokenLanes[1] !== lane1
+        ? tokenLanes[1]
+        : -1;
     if (lane2 === -1 && targetOppCard) {
-      const remainingLanes = [0, 1, 2].filter((l) => l !== lane1);
-      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
-      lane2 = getBestSimulatedPlacementLane(
-        state,
-        owner,
-        targetOppCard,
-        remainingLanes,
-        false
+      const remainingLanes = [0, 1, 2].filter(
+        (l) => l !== lane1 && isLaneAvailable(l)
       );
-    }
-    if (lane2 === -1) lane2 = lane1 !== 0 ? 0 : 1;
-    // 相手墓地のカード選択: forcedOppTargetIdx が指定されている場合はその優先
-    if (
-      forcedOppTargetIdx !== null &&
-      oppDiscard[forcedOppTargetIdx] &&
-      !oppDiscard[forcedOppTargetIdx].isToken
-    ) {
-      const forcedOppCard = oppDiscard[forcedOppTargetIdx];
-      const existingCard2 = board[lane2];
-      if (existingCard2) {
-        myDiscard.push(existingCard2);
+      if (remainingLanes.length > 0) {
+        // 盤面シミュレーション評価に基づき客観的最適レーンを決定（未封印の残りレーンのみ対象）
+        lane2 = getBestSimulatedPlacementLane(
+          state,
+          owner,
+          targetOppCard,
+          remainingLanes,
+          false
+        );
       }
-      const resurrectedOppCard = {
-        ...forcedOppCard,
-        id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
-        baseId: forcedOppCard.baseId || forcedOppCard.id,
-      };
-      resurrectedOppCard.currentPower = resurrectedOppCard.power;
-      resurrectedOppCard.skillTriggered = true;
-      resurrectedOppCard.stunTurns = 0;
-      board[lane2] = resurrectedOppCard;
-      events.push({
-        type: 'summon_card',
-        side: owner,
-        lane: lane2,
-        card: JSON.parse(JSON.stringify(resurrectedOppCard)),
-        source: 'overdrive',
-      });
-      oppSelectedCard = forcedOppCard;
-      oppDiscard.splice(forcedOppTargetIdx, 1);
-    } else {
-      oppSelectedCard = placeFromDiscard(oppDiscard, lane2);
+    }
+
+    // 未封印レーンが存在し、有効なレーンが決定できた場合のみ配置を実行
+    if (lane2 !== -1) {
+      // 相手墓地のカード選択: forcedOppTargetIdx が指定されている場合はその優先
+      if (
+        forcedOppTargetIdx !== null &&
+        oppDiscard[forcedOppTargetIdx] &&
+        !oppDiscard[forcedOppTargetIdx].isToken
+      ) {
+        const forcedOppCard = oppDiscard[forcedOppTargetIdx];
+        const existingCard2 = board[lane2];
+        if (existingCard2) {
+          myDiscard.push(existingCard2);
+        }
+        const resurrectedOppCard = {
+          ...forcedOppCard,
+          id: `od_sim_${Math.floor(getSeededRandom() * 1000000000)}`,
+          baseId: forcedOppCard.baseId || forcedOppCard.id,
+        };
+        resurrectedOppCard.currentPower = resurrectedOppCard.power;
+        resurrectedOppCard.skillTriggered = true;
+        resurrectedOppCard.stunTurns = 0;
+        board[lane2] = resurrectedOppCard;
+        events.push({
+          type: 'summon_card',
+          side: owner,
+          lane: lane2,
+          card: JSON.parse(JSON.stringify(resurrectedOppCard)),
+          source: 'overdrive',
+        });
+        oppSelectedCard = forcedOppCard;
+        oppDiscard.splice(forcedOppTargetIdx, 1);
+      } else {
+        oppSelectedCard = placeFromDiscard(oppDiscard, lane2);
+      }
     }
 
     // AIのアクションキューに決定した復活カード情報を登録（実際のゲームで正しく選択されるようにする）
     if (!state._actionQueue) state._actionQueue = [];
-    if (mySelectedCard) {
+    if (mySelectedCard && lane1 !== -1) {
       state._actionQueue.push({
         type: 'overdrive',
         targetIdx: myDiscard.indexOf(mySelectedCard), // すでに splice されている可能性を考慮するが、基本的には UID 照合を優先するため UID を渡す
@@ -4260,7 +4286,7 @@ export function applyLeaderSkillLogic(
         laneIdx: lane1,
       });
     }
-    if (oppSelectedCard) {
+    if (oppSelectedCard && lane2 !== -1) {
       state._actionQueue.push({
         type: 'overdrive',
         targetIdx: oppDiscard.indexOf(oppSelectedCard),

@@ -1352,7 +1352,8 @@ export async function resolveActiveSkillEffect(
           basePower: pValue,
           voiceCategory:
             tC.voiceCategory || (pValue >= 5 ? 'monster' : 'machine_new'),
-          skills: [],
+          // シミュレーション用トークン（simulatedToken）と同一のスキル構成にして評価と実行を一致させる
+          skills: tC.skills ? JSON.parse(JSON.stringify(tC.skills)) : [],
         };
         const existingCard = board[targetLane];
         if (existingCard && hasSkill(existingCard, 'startup')) {

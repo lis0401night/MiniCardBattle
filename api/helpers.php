@@ -470,6 +470,9 @@ function loadPlayerDataForUpdate(string $uuid, ?string $dir = null): array {
  * プレイヤーデータを永続化します（純粋 JSON 形式）。
  * 高速な JSON 形式（{$uuid}.json）をアトミック保存します。
  * 
+ * 一時ファイルへの完全書き込みと rename 置換を優先し、
+ * rename 失敗時のフォールバックでは既存データの退避を行い、書き込み不完全時のロールバック（巻き戻し復元）を保証します。
+ * 
  * @param string $uuid プレイヤーのUUID
  * @param array $playerData 保存するプレイヤーデータ配列
  * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
@@ -504,12 +507,22 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null): b
             $fp = @fopen($jsonPath, 'c+');
             if ($fp) {
                 if (flock($fp, LOCK_EX)) {
-                    ftruncate($fp, 0);
+                    // 書き込み失敗時にロールバック復元するため、既存内容を安全に退避
                     rewind($fp);
+                    $backup = stream_get_contents($fp);
+                    rewind($fp);
+                    ftruncate($fp, 0);
                     $w = fwrite($fp, $jsonString);
                     fflush($fp);
-                    flock($fp, LOCK_UN);
                     $saved = ($w === strlen($jsonString));
+                    // 部分書き込み等で保存に失敗した場合は退避データを書き戻して復元
+                    if (!$saved && $backup !== false && $backup !== '') {
+                        ftruncate($fp, 0);
+                        rewind($fp);
+                        fwrite($fp, $backup);
+                        fflush($fp);
+                    }
+                    flock($fp, LOCK_UN);
                 }
                 fclose($fp);
             }
@@ -526,6 +539,9 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null): b
  * read-modify-write（読み込み・更新・保存）のトランザクション全体を直列化し、
  * 並行リクエストによるロストアップデート（ポイント・インベントリ等の消失）を防止します。
  * 
+ * ノンブロッキングロック（LOCK_NB）と最大約2秒の短いリトライループを適用することで、
+ * 同一UUIDへの過度な輻輳時にもPHP-FPM等のワーカープロセスが無制限に滞留・枯渇することを防ぎます。
+ * 
  * @param string $uuid プレイヤーのUUID
  * @param string|null $dir 保存ディレクトリ（省略時はgetPlayersDirectory()を使用）
  * @return resource|null ロック済みファイルハンドル、失敗時はnull
@@ -541,9 +557,14 @@ function acquirePlayerLock(string $uuid, ?string $dir = null) {
     if (!$fp) {
         return null;
     }
-    if (!flock($fp, LOCK_EX)) {
-        fclose($fp);
-        return null;
+    // 最大約2秒までリトライし、輻輳時のワーカー枯渇を防止する
+    $deadline = microtime(true) + 2.0;
+    while (!flock($fp, LOCK_EX | LOCK_NB)) {
+        if (microtime(true) >= $deadline) {
+            fclose($fp);
+            return null;
+        }
+        usleep(50000); // 50ms待機
     }
     return $fp;
 }

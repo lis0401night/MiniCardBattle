@@ -2360,14 +2360,9 @@ export function getBestSimulatedMove() {
                   return combos;
                 };
 
-                let allCombos = [];
-                // 1〜count までの全配置パターンを生成（未封印レーンが存在する場合は必ず配置する）
+                let allCombos = [[]]; // 配置しない選択肢（canCancel: true に準拠し、自壊回避およびアドホックツリーと探索空間を統一）
                 for (let c = 1; c <= count; c++) {
                   allCombos.push(...generateLaneCombos(c));
-                }
-                // 全レーン封印等で配置可能レーンが0件の場合のみ、スキップ扱いとして空配列を許可
-                if (allCombos.length === 0) {
-                  allCombos = [[]];
                 }
                 for (let combo of allCombos) {
                   let tokenNode = {
@@ -4656,6 +4651,9 @@ export function syncAdhocDecision(bestBranch) {
  * @param {object|null} [parentCard=null] - 親カードオブジェクト（choice/forceの選択肢取得やselfId特定用）
  * @param {'red' | 'blue'} [owner='red'] - 発動陣営
  * @param {object} [leaderSkillContext=undefined] - リーダースキルコンテキスト
+ * @param {Array<object>|null} [currentHand=null] - シミュレーション上の手札配列（未指定時はGameStateからフォールバック）
+ * @param {Array<object>|null} [currentDiscardPile=null] - シミュレーション上の自陣営墓地配列（未指定時はGameStateからフォールバック）
+ * @param {Array<object>|null} [currentOppDiscardPile=null] - シミュレーション上の敵陣営墓地配列（未指定時はGameStateからフォールバック）
  * @return {Array<Array<object>>} アクションシーケンスの配列
  */
 export function buildSkillBranchAdhoc(
@@ -4669,7 +4667,10 @@ export function buildSkillBranchAdhoc(
   currentPlayerBoard = null,
   parentCard = null,
   owner = 'red',
-  leaderSkillContext = undefined
+  leaderSkillContext = undefined,
+  currentHand = null,
+  currentDiscardPile = null,
+  currentOppDiscardPile = null
 ) {
   if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
 
@@ -4687,14 +4688,48 @@ export function buildSkillBranchAdhoc(
   const activeMyBoard = isRed ? activeEnemyBoard : activePlayerBoard;
   const activeOppBoard = isRed ? activePlayerBoard : activeEnemyBoard;
 
-  const myHand = isRed ? GameState.enemyHand || [] : GameState.playerHand || [];
-  const myDiscard = isRed
-    ? GameState.enemyDiscard || []
-    : GameState.playerDiscard || [];
-  const oppDiscard = isRed
-    ? GameState.playerDiscard || []
-    : GameState.enemyDiscard || [];
+  const myHand =
+    currentHand ||
+    (isRed ? GameState.enemyHand || [] : GameState.playerHand || []);
+  const myDiscard =
+    currentDiscardPile ||
+    (isRed ? GameState.enemyDiscard || [] : GameState.playerDiscard || []);
+  const oppDiscard =
+    currentOppDiscardPile ||
+    (isRed ? GameState.playerDiscard || [] : GameState.enemyDiscard || []);
   const myDeck = isRed ? GameState.enemyDeck || [] : GameState.playerDeck || [];
+
+  // 自己再帰用ヘルパー：シミュレーション手札・墓地コンテキスト（myHand, myDiscard, oppDiscard）を確実に引き継ぐ
+  const callNextBranch = (
+    nextSkills,
+    nextUsedHand,
+    nextUsedDiscard,
+    nextDepth,
+    nextDiscard,
+    nextLane,
+    nextEnemyBoard,
+    nextPlayerBoard,
+    nextParentCard,
+    nextOwner = owner,
+    nextLeaderSkillContext = leaderSkillContext
+  ) => {
+    return buildSkillBranchAdhoc(
+      nextSkills,
+      nextUsedHand,
+      nextUsedDiscard,
+      nextDepth,
+      nextDiscard,
+      nextLane,
+      nextEnemyBoard,
+      nextPlayerBoard,
+      nextParentCard,
+      nextOwner,
+      nextLeaderSkillContext,
+      myHand,
+      myDiscard,
+      oppDiscard
+    );
+  };
 
   let sk = currentSkills[0];
   let remainingSkills = currentSkills.slice(1);
@@ -4713,7 +4748,7 @@ export function buildSkillBranchAdhoc(
   ].includes(sk.id);
   if (!isPlacementSkill) {
     results.push(
-      ...buildSkillBranchAdhoc(
+      ...callNextBranch(
         remainingSkills,
         currentUsedHand,
         currentUsedDiscard,
@@ -4748,7 +4783,7 @@ export function buildSkillBranchAdhoc(
         true
       );
       for (let cNode of children) {
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           [...currentUsedHand, i],
           currentUsedDiscard,
@@ -4813,7 +4848,7 @@ export function buildSkillBranchAdhoc(
           if (isRed) nextEnemyBoard[summonLane] = childCard;
           else nextPlayerBoard[summonLane] = childCard;
         }
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           [...currentUsedHand, i],
           currentUsedDiscard,
@@ -4931,7 +4966,7 @@ export function buildSkillBranchAdhoc(
           if (isRed) nextEnemyBoard[assembleLane] = assembleCard;
           else nextPlayerBoard[assembleLane] = assembleCard;
         }
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           currentUsedHand,
           currentUsedDiscard,
@@ -4980,7 +5015,7 @@ export function buildSkillBranchAdhoc(
           true
         );
         for (let cNode of children) {
-          let nextBranches = buildSkillBranchAdhoc(
+          let nextBranches = callNextBranch(
             remainingSkills,
             [...currentUsedHand, i],
             currentUsedDiscard,
@@ -5000,7 +5035,7 @@ export function buildSkillBranchAdhoc(
       }
     }
 
-    let nextBranches = buildSkillBranchAdhoc(
+    let nextBranches = callNextBranch(
       remainingSkills,
       currentUsedHand,
       currentUsedDiscard,
@@ -5017,7 +5052,7 @@ export function buildSkillBranchAdhoc(
       results.push([{ type: 'forge', targetIdx: -1, laneIdx: -1 }, ...nb]);
     }
   } else if (sk.id === 'leap') {
-    let leapBranch = buildSkillBranchAdhoc(
+    let leapBranch = callNextBranch(
       remainingSkills,
       currentUsedHand,
       currentUsedDiscard,
@@ -5073,7 +5108,7 @@ export function buildSkillBranchAdhoc(
           laneIdx: j,
           maxP: maxP,
         };
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           currentUsedHand,
           [...currentUsedDiscard, i],
@@ -5097,7 +5132,7 @@ export function buildSkillBranchAdhoc(
       targetIdx: -1,
       laneIdx: -1,
     };
-    let cancelBranches = buildSkillBranchAdhoc(
+    let cancelBranches = callNextBranch(
       remainingSkills,
       currentUsedHand,
       currentUsedDiscard,
@@ -5159,7 +5194,7 @@ export function buildSkillBranchAdhoc(
               : null;
         }
 
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           currentUsedHand,
           currentUsedDiscard,
@@ -5177,7 +5212,7 @@ export function buildSkillBranchAdhoc(
         }
       }
     } else {
-      return buildSkillBranchAdhoc(
+      return callNextBranch(
         remainingSkills,
         currentUsedHand,
         currentUsedDiscard,
@@ -5206,7 +5241,7 @@ export function buildSkillBranchAdhoc(
       }
     });
 
-    return buildSkillBranchAdhoc(
+    return callNextBranch(
       remainingSkills,
       currentUsedHand,
       currentUsedDiscard,
@@ -5259,7 +5294,7 @@ export function buildSkillBranchAdhoc(
         nextOppBoard[i] = null;
       }
 
-      let nextBranches = buildSkillBranchAdhoc(
+      let nextBranches = callNextBranch(
         remainingSkills,
         currentUsedHand,
         currentUsedDiscard,
@@ -5283,7 +5318,7 @@ export function buildSkillBranchAdhoc(
       myLaneIdx: -1,
       maxP: maxP,
     };
-    let cancelBranches = buildSkillBranchAdhoc(
+    let cancelBranches = callNextBranch(
       remainingSkills,
       currentUsedHand,
       currentUsedDiscard,
@@ -5322,7 +5357,7 @@ export function buildSkillBranchAdhoc(
           nextMyBoard[tgtLane].currentPower =
             (nextMyBoard[tgtLane].currentPower || 0) + bVal;
         }
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           currentUsedHand,
           currentUsedDiscard,
@@ -5340,7 +5375,7 @@ export function buildSkillBranchAdhoc(
         }
       }
     } else {
-      return buildSkillBranchAdhoc(
+      return callNextBranch(
         remainingSkills,
         currentUsedHand,
         currentUsedDiscard,
@@ -5372,7 +5407,7 @@ export function buildSkillBranchAdhoc(
         if (nextMyBoard[tgtLane]) {
           nextMyBoard[tgtLane].valkyriaGuard = true;
         }
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           currentUsedHand,
           currentUsedDiscard,
@@ -5390,7 +5425,7 @@ export function buildSkillBranchAdhoc(
         }
       }
     } else {
-      return buildSkillBranchAdhoc(
+      return callNextBranch(
         remainingSkills,
         currentUsedHand,
         currentUsedDiscard,
@@ -5420,7 +5455,7 @@ export function buildSkillBranchAdhoc(
           targetIdx: idx,
         }));
         let newlyDiscarded = combo.map((idx) => myHand[idx]);
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           [...currentUsedHand, ...combo],
           currentUsedDiscard,
@@ -5467,7 +5502,7 @@ export function buildSkillBranchAdhoc(
         summonId: sk.summonId,
         lanes: combo,
       };
-      let nextBranches = buildSkillBranchAdhoc(
+      let nextBranches = callNextBranch(
         remainingSkills,
         currentUsedHand,
         currentUsedDiscard,
@@ -5507,7 +5542,7 @@ export function buildSkillBranchAdhoc(
           laneIdx: j,
           maxP: maxP,
         };
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           remainingSkills,
           currentUsedHand,
           currentUsedDiscard,
@@ -5532,7 +5567,7 @@ export function buildSkillBranchAdhoc(
       laneIdx: -1,
       maxP: maxP,
     };
-    let cancelBranches = buildSkillBranchAdhoc(
+    let cancelBranches = callNextBranch(
       remainingSkills,
       currentUsedHand,
       currentUsedDiscard,
@@ -5565,7 +5600,7 @@ export function buildSkillBranchAdhoc(
           choices: combo,
           choiceGroup: sk.choiceGroup,
         };
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           nextSkills,
           currentUsedHand,
           currentUsedDiscard,
@@ -5600,7 +5635,7 @@ export function buildSkillBranchAdhoc(
           choices: combo,
           choiceGroup: sk.choiceGroup,
         };
-        let nextBranches = buildSkillBranchAdhoc(
+        let nextBranches = callNextBranch(
           nextSkills,
           currentUsedHand,
           currentUsedDiscard,
@@ -5619,7 +5654,7 @@ export function buildSkillBranchAdhoc(
       }
     }
   } else {
-    return buildSkillBranchAdhoc(
+    return callNextBranch(
       remainingSkills,
       currentUsedHand,
       currentUsedDiscard,
@@ -5872,7 +5907,9 @@ export function buildCardPlayTreeAdhoc(
             nextPlayerBoard,
             card,
             owner,
-            leaderSkillContext
+            leaderSkillContext,
+            originalHand,
+            originalDiscard
           );
           for (let chain of skillChains) {
             branches.push([node, ...chain]);

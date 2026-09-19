@@ -14,6 +14,8 @@ import {
   DECKS_KEY,
   DECK_SIZE,
   DEFAULT_DUNGEON_AI_LEVEL,
+  DEFENSE_POINTS_KEY,
+  DEFENSE_TOTAL_POINTS_KEY,
   DIFFICULTY,
   MAX_DECK_SLOTS,
 } from '../utils/constants/config.js';
@@ -1438,11 +1440,9 @@ export async function submitDefenseDeck(providedName = null) {
       : null,
     // トークン画像等の正しい表示のため、デッキ固有のスキン設定全体も送信
     skins: GameState.playerSkins || {},
-    points:
-      parseInt(localStorage.getItem('mini_card_battle_defense_points')) || 0,
+    points: parseInt(localStorage.getItem(DEFENSE_POINTS_KEY), 10) || 0,
     total_points:
-      parseInt(localStorage.getItem('mini_card_battle_defense_total_points')) ||
-      0,
+      parseInt(localStorage.getItem(DEFENSE_TOTAL_POINTS_KEY), 10) || 0,
   };
 
   console.log('Registering defense deck:', payload);

@@ -35,102 +35,81 @@ if (strlen($uuid) < 10) {
     exit;
 }
 
-$dir = getPlayersDirectory();
-$lock = acquirePlayerLock($uuid, $dir);
-if (!$lock) {
-    echo json_encode(['success' => false, 'error' => 'failed_to_acquire_lock']);
+if ($code === '') {
+    echo json_encode(['success' => false, 'error' => 'invalid_format']);
     exit;
 }
 
-$playerResult = loadPlayerDataForUpdate($uuid, $dir);
-
-if ($playerResult['status'] === 'corrupted') {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'player_data_corrupt']);
-    exit;
-}
-
-$player_data = $playerResult['data'];
-if (!is_array($player_data)) {
-    $player_data = createDefaultPlayerData($uuid, 'プレイヤー');
-}
-
-// used_serials が存在しなければ初期化
-if (!isset($player_data['used_serials']) || !is_array($player_data['used_serials'])) {
-    $player_data['used_serials'] = [];
-}
-
-// 新規プレイヤーファイル作成時のために基本プロパティを保証する
-if (!isset($player_data['uuid'])) {
-    $player_data['uuid'] = $uuid;
-}
-if (!isset($player_data['name'])) {
-    $player_data['name'] = 'プレイヤー';
-}
-if (!isset($player_data['icon'])) {
-    $player_data['icon'] = 'player';
-}
-
-// 定数ファイル（serials.json）からシリアルコード一覧をロード
+// 定数ファイル（serials.json）からシリアルコード一覧をロード（ロック取得前に検証して不要な排他ロックを防止）
 $json_path = __DIR__ . '/serials.json';
 if (!file_exists($json_path)) {
-    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'config_missing']);
     exit;
 }
 
 $serials_config = json_decode(file_get_contents($json_path), true);
 if (!$serials_config) {
-    releasePlayerLock($lock);
     echo json_encode(['success' => false, 'error' => 'config_corrupt']);
     exit;
 }
 
 // コードの検証
-if (isset($serials_config[$code])) {
-    $reward = $serials_config[$code];
-    $rewardType = $reward['rewardType'];
-    $rewardValue = $reward['rewardValue'];
+if (!isset($serials_config[$code])) {
+    echo json_encode(['success' => false, 'error' => 'invalid_code']);
+    exit;
+}
+
+$reward = $serials_config[$code];
+$rewardType = $reward['rewardType'];
+$rewardValue = $reward['rewardValue'];
+$rewardName = $reward['rewardName'] ?? '';
+$isRecovered = false;
+
+// プレイヤーデータの更新（共通ヘルパー modifyPlayerDataWithLock を使用して直列化・排他制御）
+$updateResult = modifyPlayerDataWithLock($uuid, function (array &$player_data, array $playerResult) use (
+    $code,
+    $rewardType,
+    $rewardValue,
+    &$isRecovered
+) {
+    // used_serials が存在しなければ初期化
+    if (!isset($player_data['used_serials']) || !is_array($player_data['used_serials'])) {
+        $player_data['used_serials'] = [];
+    }
 
     // すでに使用済みかチェック（巻き戻しバグ救済のための自己修復ロジック）
-    if (in_array($code, $player_data['used_serials'])) {
-        releasePlayerLock($lock);
-        echo json_encode([
-            'success' => true,
-            'reward' => $rewardValue,
-            'rewardType' => $rewardType,
-            'rewardName' => $reward['rewardName'] ?? '',
-            'recovered' => true
-        ]);
-        exit;
+    // 既存使用済みの場合は保存を中断して成功（recovered: true）として返却
+    if (in_array($code, $player_data['used_serials'], true)) {
+        $isRecovered = true;
+        return false; // 余計なディスクI/Oをスキップして中断
     }
 
     if ($rewardType === 'premium') {
         if (!isset($player_data['unlocked_premium_cards']) || !is_array($player_data['unlocked_premium_cards'])) {
             $player_data['unlocked_premium_cards'] = [];
         }
-        if (!in_array($rewardValue, $player_data['unlocked_premium_cards'])) {
+        if (!in_array($rewardValue, $player_data['unlocked_premium_cards'], true)) {
             $player_data['unlocked_premium_cards'][] = $rewardValue;
         }
     } else if ($rewardType === 'playmat') {
         if (!isset($player_data['owned_playmats']) || !is_array($player_data['owned_playmats'])) {
             $player_data['owned_playmats'] = [];
         }
-        if (!in_array($rewardValue, $player_data['owned_playmats'])) {
+        if (!in_array($rewardValue, $player_data['owned_playmats'], true)) {
             $player_data['owned_playmats'][] = $rewardValue;
         }
     } else if ($rewardType === 'skin') {
         if (!isset($player_data['unlocked_skins']) || !is_array($player_data['unlocked_skins'])) {
             $player_data['unlocked_skins'] = [];
         }
-        if (!in_array($rewardValue, $player_data['unlocked_skins'])) {
+        if (!in_array($rewardValue, $player_data['unlocked_skins'], true)) {
             $player_data['unlocked_skins'][] = $rewardValue;
         }
     } else if ($rewardType === 'icon') {
         if (!isset($player_data['unlocked_icons']) || !is_array($player_data['unlocked_icons'])) {
             $player_data['unlocked_icons'] = [];
         }
-        if (!in_array($rewardValue, $player_data['unlocked_icons'])) {
+        if (!in_array($rewardValue, $player_data['unlocked_icons'], true)) {
             $player_data['unlocked_icons'][] = $rewardValue;
         }
     } else if ($rewardType === 'card') {
@@ -144,21 +123,42 @@ if (isset($serials_config[$code])) {
     $player_data['used_serials'][] = $code;
     $player_data['timestamp'] = time();
 
-    $saved = savePlayerData($uuid, $player_data, $dir);
-    releasePlayerLock($lock);
+    return true;
+}, 'プレイヤー');
 
-    if ($saved) {
-        echo json_encode([
-            'success' => true,
-            'reward' => $rewardValue,
-            'rewardType' => $rewardType,
-            'rewardName' => $reward['rewardName'] ?? ''
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'failed_to_save']);
-    }
-} else {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'invalid_code']);
+// すでに使用済みだった場合の巻き戻し救済レスポンス
+if ($isRecovered) {
+    echo json_encode([
+        'success' => true,
+        'reward' => $rewardValue,
+        'rewardType' => $rewardType,
+        'rewardName' => $rewardName,
+        'recovered' => true
+    ]);
+    exit;
 }
+
+if (!$updateResult['success']) {
+    $rawError = $updateResult['error'] ?? '';
+    $errorCode = 'failed_to_save';
+
+    if ($rawError === 'Failed to acquire player lock') {
+        $errorCode = 'failed_to_acquire_lock';
+    } else if ($rawError === 'Failed to parse player data or file is corrupted') {
+        $errorCode = 'player_data_corrupt';
+    } else if ($rawError === 'Invalid uuid format') {
+        $errorCode = 'Invalid UUID';
+    }
+
+    echo json_encode(['success' => false, 'error' => $errorCode]);
+    exit;
+}
+
+echo json_encode([
+    'success' => true,
+    'reward' => $rewardValue,
+    'rewardType' => $rewardType,
+    'rewardName' => $rewardName
+]);
+exit;
 

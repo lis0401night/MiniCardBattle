@@ -1864,11 +1864,11 @@ export function checkIsTutorialMode(
 }
 
 /**
- * 現在のAI思考難易度が「初級（Easy）」であるかを安全に判定します。
- * 未定義や例外値に対するフォールバックを備え、ホワイトリスト方式で厳密に検証します。
+ * 現在のAI思考難易度が「初級（AI_LEVEL.EASY）」であるかを安全に判定します。
+ * ホワイトリスト方式で AI_LEVEL.EASY との完全一致のみを真とします。
  *
  * @param {object} [gameState] - 対象のゲームステートオブジェクト（省略時はグローバル GameState）
- * @returns {boolean} 初級AIであれば true、それ以外（通常・シミュレーション思考）は false
+ * @return {boolean} AI_LEVEL.EASY であれば true、それ以外は false
  */
 export function checkIsEasyAI(
   gameState = typeof GameState !== 'undefined' ? GameState : undefined
@@ -1880,11 +1880,11 @@ export function checkIsEasyAI(
 }
 
 /**
- * 現在のAI思考難易度が「通常以上（Normal / Hard）」であるかを安全に判定します。
- * 客観的シミュレーション思考を行うAIレベルであるかを検証します。
+ * 現在のAI思考難易度が「通常（AI_LEVEL.NORMAL）」であるかを安全に判定します。
+ * ホワイトリスト方式で AI_LEVEL.NORMAL との完全一致のみを真とします。
  *
  * @param {object} [gameState] - 対象のゲームステートオブジェクト（省略時はグローバル GameState）
- * @returns {boolean} 通常シミュレーションAIであれば true、初級AIは false
+ * @return {boolean} AI_LEVEL.NORMAL であれば true、それ以外は false
  */
 export function checkIsNormalAI(
   gameState = typeof GameState !== 'undefined' ? GameState : undefined
@@ -1894,9 +1894,6 @@ export function checkIsNormalAI(
     gameState.aiLevel === AI_LEVEL.NORMAL
   );
 }
-
-export const isEasyAI = checkIsEasyAI;
-export const isNormalAI = checkIsNormalAI;
 
 /**
  * 特級目標（ハンディキャップ）のローカルストレージ保存キーを生成します。

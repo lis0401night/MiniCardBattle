@@ -39,8 +39,27 @@ if (strlen($uuid) < 10) {
 $defaultName = sanitizePlayerDisplayName($data['name'] ?? null);
 
 $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($points, $total_points, $data) {
-    $playerData['tournament_points'] = $points;
-    $playerData['tournament_total_points'] = $total_points;
+    // 未指定のキーは既存値を維持し、意図しない0リセットを防ぐ
+    if (isset($data['points'])) {
+        $playerData['tournament_points'] = max(0, $points);
+    } elseif (!isset($playerData['tournament_points'])) {
+        $playerData['tournament_points'] = 0;
+    }
+
+    if (isset($data['total_points'])) {
+        $currentTotal = isset($playerData['tournament_total_points'])
+            ? intval($playerData['tournament_total_points'])
+            : 0;
+        // 累計ポイントは減少させない
+        $playerData['tournament_total_points'] = max($currentTotal, $total_points);
+    } elseif (!isset($playerData['tournament_total_points'])) {
+        $playerData['tournament_total_points'] = $playerData['tournament_points'];
+    }
+
+    // 累計ポイントは所持ポイント以上を維持
+    if ($playerData['tournament_total_points'] < $playerData['tournament_points']) {
+        $playerData['tournament_total_points'] = $playerData['tournament_points'];
+    }
 
     $converted_points = isset($data['tournament_converted_points'])
         ? intval($data['tournament_converted_points'])
@@ -51,14 +70,15 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
     }
 
     $playerData['timestamp'] = time();
+    $playerData['lastAccessAt'] = time();
 }, $defaultName);
 
 if ($updateResult['success']) {
     $playerData = $updateResult['data'];
     echo json_encode([
         'success' => true,
-        'tournament_points' => $playerData['tournament_points'],
-        'tournament_total_points' => $playerData['tournament_total_points'],
+        'tournament_points' => $playerData['tournament_points'] ?? 0,
+        'tournament_total_points' => $playerData['tournament_total_points'] ?? 0,
         'tournament_converted_points' => $playerData['tournament_converted_points'] ?? 0
     ]);
     exit;

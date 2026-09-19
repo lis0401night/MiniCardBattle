@@ -63,7 +63,7 @@ export default [
     'necromancer',
     'collector',
     'bahamut',
-    'assasin',
+    'assassin',
     'monk',
     'sentinel',
     'laser',

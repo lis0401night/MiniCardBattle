@@ -63,75 +63,89 @@ if (!in_array($result, ['win', 'lose', 'draw'], true)) {
 // 防衛側視点での勝敗結果 ('win': 防衛成功, 'lose': 防衛失敗, 'draw': 引き分け)
 $defense_result = $result === 'win' ? 'lose' : ($result === 'lose' ? 'win' : 'draw');
 
-$dir = getPlayersDirectory();
-$lock = acquirePlayerLock($target_uuid, $dir);
-if (!$lock) {
-    echo json_encode(['success' => false, 'error' => 'Failed to acquire target player lock']);
-    exit;
-}
+// 防衛履歴の更新は共通ヘルパーで排他制御・直列化（未登録プレイヤーは新規作成せず安全に中断）
+$history = [];
+$newRecord = [];
+$targetName = '防衛プレイヤー';
 
-$playerData = loadPlayerData($target_uuid, $dir);
+$updateResult = modifyPlayerDataWithLock($target_uuid, function (array &$playerData, array $playerResult) use (
+    $defense_result,
+    $attacker_uuid,
+    $attacker_name,
+    $attacker_character,
+    $attacker_skin,
+    $attacker_total_points,
+    $attacker_deck,
+    &$defender_character,
+    &$defender_skin,
+    &$defender_deck,
+    &$history,
+    &$newRecord,
+    &$targetName
+) {
+    // 未登録（新規）プレイヤーに対しては防衛履歴を記録せず中断（余計な空ファイルの作成を防止）
+    if ($playerResult['status'] === 'new') {
+        return false;
+    }
 
-if (!$playerData) {
-    releasePlayerLock($lock);
-    echo json_encode(['success' => false, 'error' => 'Target player file not found']);
-    exit;
-}
+    // 防衛側情報のフォールバック解決（リクエストにない場合はターゲットプレイヤーデータから補完）
+    if ($defender_character === '') {
+        $defender_character = preg_replace('/[^a-z0-9_]/', '', (string)($playerData['character'] ?? 'android'));
+    }
+    if ($defender_character === '') {
+        $defender_character = 'android';
+    }
+    if ($defender_skin === '') {
+        $defender_skin = preg_replace('/[^a-z0-9_]/', '', (string)($playerData['skin'] ?? 'default'));
+    }
+    if ($defender_skin === '') {
+        $defender_skin = 'default';
+    }
+    if (empty($defender_deck)) {
+        $defender_deck = sanitizeDeckList($playerData['deck'] ?? null);
+    }
 
-// 防衛側情報のフォールバック解決（リクエストにない場合はターゲットプレイヤーデータから補完）
-if ($defender_character === '') {
-    $defender_character = preg_replace('/[^a-z0-9_]/', '', (string)($playerData['character'] ?? 'android'));
-}
-if ($defender_character === '') {
-    $defender_character = 'android';
-}
-if ($defender_skin === '') {
-    $defender_skin = preg_replace('/[^a-z0-9_]/', '', (string)($playerData['skin'] ?? 'default'));
-}
-if ($defender_skin === '') {
-    $defender_skin = 'default';
-}
-if (empty($defender_deck)) {
-    $defender_deck = sanitizeDeckList($playerData['deck'] ?? null);
-}
+    $history = isset($playerData['defense_history']) && is_array($playerData['defense_history']) 
+        ? $playerData['defense_history'] 
+        : [];
 
-$history = isset($playerData['defense_history']) && is_array($playerData['defense_history']) 
-    ? $playerData['defense_history'] 
-    : [];
+    $newRecord = [
+        'result' => $defense_result,
+        'attackerUuid' => $attacker_uuid,
+        'attackerName' => $attacker_name,
+        'attackerCharacter' => $attacker_character,
+        'attackerSkin' => $attacker_skin,
+        'attackerTotalPoints' => $attacker_total_points,
+        'attackerDeck' => $attacker_deck,
+        'defenderCharacter' => $defender_character,
+        'defenderSkin' => $defender_skin,
+        'defenderDeck' => $defender_deck,
+        'timestamp' => time(),
+    ];
 
-$newRecord = [
-    'result' => $defense_result,
-    'attackerUuid' => $attacker_uuid,
-    'attackerName' => $attacker_name,
-    'attackerCharacter' => $attacker_character,
-    'attackerSkin' => $attacker_skin,
-    'attackerTotalPoints' => $attacker_total_points,
-    'attackerDeck' => $attacker_deck,
-    'defenderCharacter' => $defender_character,
-    'defenderSkin' => $defender_skin,
-    'defenderDeck' => $defender_deck,
-    'timestamp' => time(),
-];
+    // 先頭に追加し、最大5件に制限
+    array_unshift($history, $newRecord);
+    $history = array_slice($history, 0, 5);
 
-// 先頭に追加し、最大5件に制限
-array_unshift($history, $newRecord);
-$history = array_slice($history, 0, 5);
+    $playerData['defense_history'] = $history;
+    $playerData['timestamp'] = time();
 
-$playerData['defense_history'] = $history;
-$playerData['timestamp'] = time();
+    $targetName = $playerData['name'] ?? '防衛プレイヤー';
+    return true;
+}, '防衛プレイヤー');
 
-$saved = savePlayerData($target_uuid, $playerData, $dir);
-releasePlayerLock($lock);
-
-if (!$saved) {
-    echo json_encode(['success' => false, 'error' => 'Failed to save updated file completely']);
+if (!$updateResult['success']) {
+    $errorMsg = ($updateResult['error'] ?? '') === 'Mutation aborted'
+        ? 'Target player file not found'
+        : ($updateResult['error'] ?? 'Failed to update target player data');
+    echo json_encode(['success' => false, 'error' => $errorMsg]);
     exit;
 }
 
 // 【全体対戦ログ集約】直近対戦ログ (api/decks/recent_battles.json) に追記・一元化
 $logRecord = $newRecord;
 $logRecord['targetUuid'] = $target_uuid;
-$logRecord['targetName'] = $playerData['name'] ?? '防衛プレイヤー';
+$logRecord['targetName'] = $targetName;
 $logRecord['targetCharacter'] = $defender_character;
 $logRecord['targetSkin'] = $defender_skin;
 

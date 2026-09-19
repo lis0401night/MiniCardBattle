@@ -22,6 +22,14 @@ import {
 
 import CardPreviewContent from '../common/CardPreviewContent.jsx';
 
+/**
+ * バトル勝利時のカード報酬演出および開封演出を表示するオーバーレイコンポーネント。
+ *
+ * パックの開封演出、カード獲得情報のインベントリ保存、難易度別発光エフェクトの表示、
+ * 連続報酬（複数枚ドロップ時）のキュー処理および高難易度ポイント獲得モーダルへの橋渡しを担います。
+ *
+ * @return {JSX.Element|null} 報酬表示中のオーバーレイUI、非表示時はnull
+ */
 export default function RewardOverlay() {
   const [isVisible, setIsVisible] = useState(false);
   const [card, setCard] = useState(null);
@@ -30,6 +38,10 @@ export default function RewardOverlay() {
   const [rewardQueue, setRewardQueue] = useState([]);
   const timersRef = useRef([]);
 
+  /**
+   * 登録済みの全タイマーを安全にクリアして配列をリセットします。
+   * 画面のアンマウントやフェーズ切り替え時の多重実行・メモリリークを防止します。
+   */
   const clearAllTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
@@ -55,6 +67,12 @@ export default function RewardOverlay() {
     timersRef.current.push(timer2);
   }, []);
 
+  /**
+   * 獲得したカード報酬をセットアップし、インベントリ保存と画面表示の準備を行います。
+   *
+   * @param {string} rewardCardId - 付与する報酬カードのマスターID
+   * @param {boolean} [autoAnimate=false] - 2枚目以降など、パックタップを省略して自動開封演出を開始するかどうか
+   */
   const setupReward = useCallback(
     (rewardCardId, autoAnimate = false) => {
       // 新しい報酬を表示する前に既存のタイマーをすべてクリア
@@ -121,6 +139,12 @@ export default function RewardOverlay() {
     startOpeningAnimation(MANUAL_REVEAL_DELAY_MS);
   };
 
+  /**
+   * 報酬受取完了または次の報酬表示への進行ハンドラ。
+   * 未確認の報酬キューがある場合は次の報酬を表示し、すべて完了した場合は各ゲームモードに応じた画面遷移を実行します。
+   *
+   * @param {React.MouseEvent} e - クリックイベントオブジェクト
+   */
   const handleNext = (e) => {
     e.stopPropagation();
     playSound(SOUNDS.seClick);
@@ -169,6 +193,12 @@ export default function RewardOverlay() {
     setupDialogueScreen();
   };
 
+  /**
+   * カードのスキルタグHTMLを描画するためのReactヘルパー。
+   *
+   * @param {Object} c - 対象カードオブジェクト
+   * @return {JSX.Element|null} スキルタグ要素、または描画関数未定義時はnull
+   */
   const renderSkillTagReact = (c) => {
     if (!window.renderSkillTag) return null;
     return (
@@ -184,10 +214,21 @@ export default function RewardOverlay() {
     GameState.enemyConfig?.image || `assets/characters/char_${enemyId}.webp`
   );
 
-  // 難易度に応じた発光色を判定
+  /**
+   * 報酬パックの発光CSSクラスを返します。
+   * 高難易度イベントでは虹色（glow-rainbow）を返します。
+   * 通常モードでは対戦難易度（またはストーリー難易度）に対応する発光色を返します。
+   * - 初級 (DIFFICULTY.EASY): 緑色 (glow-green)
+   * - 中級 (DIFFICULTY.NORMAL): 黄色 (glow-yellow)
+   * - 上級以上 (DIFFICULTY.HARD): 赤色 (glow-red)
+   *
+   * @return {string} 発光用のCSSクラス名
+   */
   const getGlowColorClass = () => {
+    // 1. 高難易度イベント（超級イベント等）は最優先で虹色発光クラスを適用
     if (checkIsHighDiffMode(GameState.gameMode)) return 'glow-rainbow';
 
+    // 2. 対戦難易度またはストーリー難易度から発光色を決定（未設定時は初級）
     const diff =
       GameState.difficulty || GameState.storyDifficulty || DIFFICULTY.EASY;
     if (diff === DIFFICULTY.EASY) return 'glow-green';

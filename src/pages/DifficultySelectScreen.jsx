@@ -23,6 +23,11 @@ import { SOUNDS } from '../utils/sounds.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 
+/**
+ * 難易度クリア/カードコンプリートバッジコンポーネント。
+ *
+ * @return {JSX.Element} コンプリートバッジ要素
+ */
 function CompleteBadge() {
   return (
     <span
@@ -52,6 +57,14 @@ function CompleteBadge() {
   );
 }
 
+/**
+ * 対戦難易度選択画面コンポーネント。
+ *
+ * フリーバトル、高難易度イベント、運命の邂逅イベント等における
+ * 難易度選択ボタン（初級・中級・上級・超級・特級）やデッキプレビュー機能を提供します。
+ *
+ * @return {JSX.Element} 難易度選択画面UI
+ */
 export default function DifficultySelectScreen() {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
@@ -87,11 +100,22 @@ export default function DifficultySelectScreen() {
     };
   }, []);
 
+  /**
+   * 難易度選択時の確定ハンドラ。
+   *
+   * @param {number} level - 選択された難易度（DIFFICULTY.EASY / NORMAL / HARD）
+   * @return {void}
+   */
   const handleSelect = (level) => {
     confirmDifficulty?.(level);
   };
 
-  // デッキの所持コンプリートチェック（プレイヤーがデッキの全カードを4枚以上持っているか）
+  /**
+   * デッキの所持コンプリートチェック（プレイヤーがデッキの全カードを4枚以上所持しているか）。
+   *
+   * @param {Array<string>} deckCardIds - デッキに含まれるカードID配列
+   * @return {boolean} 全カードを4枚以上所持していれば true、それ以外は false
+   */
   const checkIsDeckComplete = (deckCardIds) => {
     if (!deckCardIds || !Array.isArray(deckCardIds) || deckCardIds.length === 0)
       return false;
@@ -221,7 +245,7 @@ export default function DifficultySelectScreen() {
               <MenuButton
                 label={isFortuneMode ? '特級' : '超級'}
                 variant={isFortuneMode ? 'orange' : 'purple'}
-                onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
+                onClick={() => handleSelect(DIFFICULTY.HARD)}
               >
                 {isHighComplete && <CompleteBadge />}
               </MenuButton>
@@ -243,7 +267,7 @@ export default function DifficultySelectScreen() {
               <MenuButton
                 label="初級"
                 variant="emerald"
-                onClick={() => handleSelect(DIFFICULTY.BEGINNER)}
+                onClick={() => handleSelect(DIFFICULTY.EASY)}
               >
                 {isBeginnerComplete && <CompleteBadge />}
               </MenuButton>
@@ -251,7 +275,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.BEGINNER)}
+                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.EASY)}
                   title="デッキ確認"
                 >
                   🔍
@@ -262,7 +286,7 @@ export default function DifficultySelectScreen() {
               <MenuButton
                 label="中級"
                 variant="yellow"
-                onClick={() => handleSelect(DIFFICULTY.INTERMEDIATE)}
+                onClick={() => handleSelect(DIFFICULTY.NORMAL)}
               >
                 {isIntermediateComplete && <CompleteBadge />}
               </MenuButton>
@@ -271,7 +295,7 @@ export default function DifficultySelectScreen() {
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
                   onClick={() =>
-                    openEnemyDeckPreview?.(DIFFICULTY.INTERMEDIATE)
+                    openEnemyDeckPreview?.(DIFFICULTY.NORMAL)
                   }
                   title="デッキ確認"
                 >
@@ -283,7 +307,7 @@ export default function DifficultySelectScreen() {
               <MenuButton
                 label="上級"
                 variant="red"
-                onClick={() => handleSelect(DIFFICULTY.ADVANCED)}
+                onClick={() => handleSelect(DIFFICULTY.HARD)}
               >
                 {isAdvancedComplete && <CompleteBadge />}
               </MenuButton>
@@ -291,7 +315,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.ADVANCED)}
+                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.HARD)}
                   title="デッキ確認"
                 >
                   🔍

@@ -13,6 +13,8 @@ import { checkIsEasyAI } from '../utils/gameUtils.js';
  * 戦闘プリセット（手札・山札・墓地・場・SP・HP・先攻/後攻）を指定し、
  * 即座にバトルを開始できるデバッグ専用画面。
  * GameState.battlePreset を設定して prepareBattle() を呼ぶ。
+ *
+ * @return {JSX.Element} デバッグ用バトル設定画面UI
  */
 
 // 使用するカードのみ抽出（トークンを除外）
@@ -90,6 +92,11 @@ export default function DebugBattleScreen() {
   }, [searchQuery, showTokens]);
 
   // --- バトル開始 ---
+  /**
+   * 入力した設定（キャラ・難易度・プリセット盤面等）をGameStateへ反映し、デバッグ対戦を開始する。
+   *
+   * @return {void}
+   */
   const handleStartBattle = () => {
     // プレイヤーは常に通常キャラ、敵はモードに応じて通常/高難易度を自動選択
     const playerChar = CHARACTERS[playerCharId];
@@ -131,7 +138,12 @@ export default function DebugBattleScreen() {
       preset.firstPlayer = firstPlayer;
     }
 
-    // カード配列のパース（カンマ区切りのID文字列 → 配列）
+    /**
+     * カンマ区切りのカードID文字列をトリミングした配列へパースするヘルパー。
+     *
+     * @param {string} str - カンマ区切りのカードID文字列
+     * @return {Array<string>|undefined} カードID配列（未指定または空文字時はundefined）
+     */
     const parseCardIds = (str) => {
       if (!str || !str.trim()) return undefined;
       return str
@@ -154,7 +166,12 @@ export default function DebugBattleScreen() {
     if (pDc) preset.playerDiscard = pDc;
     if (eDc) preset.enemyDiscard = eDc;
 
-    // 場のパース（カンマ区切り、空はnull）
+    /**
+     * カンマ区切りの盤面カードID文字列をトリミング・null補正して配列へパースするヘルパー。
+     *
+     * @param {string} str - カンマ区切りの盤面文字列（例: 'knight,,golem'）
+     * @return {Array<string|null>|undefined} 盤面カードID配列（空レーンはnull、すべて空ならundefined）
+     */
     const parseBoardIds = (str) => {
       if (!str) return undefined;
       const parts = str.split(',').map((s) => s.trim() || null);

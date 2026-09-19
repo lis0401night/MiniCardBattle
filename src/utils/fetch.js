@@ -97,6 +97,29 @@ export async function asyncGet(url, params = {}, config = {}) {
 }
 
 /**
+ * 値がブラウザまたは実行環境ネイティブのバイナリ／フォームデータ型であるかを判定します。
+ * FormData, Blob, ArrayBuffer 等に該当する場合は、axios にそのまま渡すため JSON 文字列化を抑止します。
+ *
+ * @param {any} value - 判定対象の値
+ * @return {boolean} ネイティブのボディ型であれば true、それ以外は false
+ */
+function isNativeBinaryOrFormData(value) {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  if (typeof FormData !== 'undefined' && value instanceof FormData) {
+    return true;
+  }
+  if (typeof Blob !== 'undefined' && value instanceof Blob) {
+    return true;
+  }
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * POST リクエストを非同期で実行します。
  * 送信データを自動で JSON シリアライズし、Content-Type ヘッダーを付与します。
  * keepalive: true が指定された場合は、画面遷移・バックグラウンド移行時の送信完了を保証するため
@@ -112,7 +135,8 @@ export async function asyncPost(url, data = null, config = {}) {
   const targetUrl = normalizeApiUrl(url);
   const { keepalive, fetchOptions, ...restConfig } = config;
 
-  // keepalive が指定されている場合は Fetch アダプタを使用してブラウザの keepalive 機能を有効化
+  // keepalive が指定されている場合は Fetch アダプタを使用してブラウザの keepalive 機能を有効化。
+  // keepalive 未指定時でも、呼び出し側から fetchOptions が指定されている場合は設定を破棄せず維持する。
   const requestConfig = {
     ...restConfig,
     ...(keepalive
@@ -123,30 +147,20 @@ export async function asyncPost(url, data = null, config = {}) {
             keepalive: true,
           },
         }
-      : {}),
+      : fetchOptions
+        ? { fetchOptions }
+        : {}),
   };
 
   // axios 内部の mergeConfig (utils.merge) におけるプロトタイプ汚染対策で、
   // 'prototype' 等の予約プロパティ名がリクエスト本文から自動除外される不具合を防止するため、
-  // オブジェクトペイロードは事前に JSON 文字列化して渡す。
+  // バイナリや FormData 以外のオブジェクトペイロードは事前に JSON 文字列化して渡す。
   let requestData = data;
   if (
     data !== null &&
     typeof data === 'object' &&
-    typeof FormData !== 'undefined' &&
-    !(data instanceof FormData) &&
-    typeof Blob !== 'undefined' &&
-    !(data instanceof Blob) &&
-    typeof ArrayBuffer !== 'undefined' &&
-    !(data instanceof ArrayBuffer)
+    !isNativeBinaryOrFormData(data)
   ) {
-    requestData = JSON.stringify(data);
-  } else if (
-    data !== null &&
-    typeof data === 'object' &&
-    typeof FormData === 'undefined'
-  ) {
-    // Node.js等 FormData 等のブラウザAPIが存在しない環境向けフォールバック
     requestData = JSON.stringify(data);
   }
 
