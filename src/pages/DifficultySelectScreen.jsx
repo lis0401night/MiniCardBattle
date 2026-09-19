@@ -294,9 +294,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() =>
-                    openEnemyDeckPreview?.(DIFFICULTY.NORMAL)
-                  }
+                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.NORMAL)}
                   title="デッキ確認"
                 >
                   🔍

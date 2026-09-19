@@ -39,7 +39,6 @@ export function normalizeApiUrl(url) {
 export const apiClient = axios.create({
   timeout: DEFAULT_API_TIMEOUT_MS,
   headers: {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
@@ -170,6 +169,18 @@ export async function asyncPost(url, data = null, config = {}) {
     !isNativeBinaryOrFormData(data)
   ) {
     requestData = JSON.stringify(data);
+    requestConfig.headers = {
+      'Content-Type': 'application/json',
+      ...(requestConfig.headers || {}),
+    };
+  } else if (
+    typeof URLSearchParams !== 'undefined' &&
+    data instanceof URLSearchParams
+  ) {
+    requestConfig.headers = {
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      ...(requestConfig.headers || {}),
+    };
   }
 
   return await apiClient.post(targetUrl, requestData, requestConfig);

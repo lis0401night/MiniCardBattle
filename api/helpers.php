@@ -522,8 +522,8 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null): b
                         }
                         $wOffset += $written;
                     }
-                    fflush($fp);
-                    $saved = ($wOffset === $jsonLength);
+                    $flushed = fflush($fp);
+                    $saved = ($wOffset === $jsonLength) && $flushed;
 
                     // 部分書き込み等で保存に失敗した場合は退避データを全バイト書き戻して復元
                     if (!$saved && $backup !== false && $backup !== '') {
@@ -538,8 +538,8 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null): b
                             }
                             $offset += $written;
                         }
-                        fflush($fp);
-                        if ($offset !== $backupLength) {
+                        $backupFlushed = fflush($fp);
+                        if ($offset !== $backupLength || !$backupFlushed) {
                             // 復元不能時は破損を検出可能な状態で扱う
                             $saved = false;
                         }

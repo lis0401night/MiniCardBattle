@@ -21,6 +21,7 @@ import {
   BOARD_NEVER_SHOW_SKILL_IDS,
   SKILLS,
 } from './constants/skills.js';
+import { STATUSES } from './constants/statuses.js';
 import { setCurrentScreen } from './errorReporter.js';
 import {
   audioCtx,
@@ -850,8 +851,28 @@ export function unmergeCardSkills(targetCard, equipSkills) {
 }
 
 /**
+ * カードが無敵状態（invincible）にあるかを判定する。
+ * 独立した状態フラグ（invincibleTurns）またはスキル配列内の無敵スキルのいずれかが有効な場合に true を返す。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @returns {boolean} 無敵状態であれば true、それ以外は false
+ */
+export function isCardInvincible(card) {
+  if (!card) return false;
+  if ((card.invincibleTurns || 0) > 0) return true;
+  if (
+    Array.isArray(card.skills) &&
+    card.skills.some((s) => s && (s.id === 'invincible' || s === 'invincible'))
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * 対象カードの全能力と一時効果を消去する共通処理（沈黙・忘却等で共用）。
- * スキル配列、選択肢、召喚ID、スタン状態、スキル解決中フラグ等を初期化します。
+ * スキル配列、選択肢、召喚ID、スキル解決中フラグ等を初期化します。
+ * ※スタン（stunTurns）、無敵（invincibleTurns）、加護（valkyriaGuard）等の「状態（ステータス）」は能力ではないため消去されません。
  *
  * @param {object|null} targetCard - 対象カード
  */
@@ -862,8 +883,6 @@ export function clearCardAbilities(targetCard) {
   targetCard.choices2 = [];
   targetCard.supremacySkills = [];
   if ('summonId' in targetCard) delete targetCard.summonId;
-  targetCard.stunTurns = 0;
-  targetCard.stunAppliedThisTurn = false;
   if ('isSkillResolving' in targetCard) targetCard.isSkillResolving = false;
 }
 
@@ -1261,6 +1280,8 @@ export function renderSkillTag(
   const addCandidate = (sk) => {
     if (!sk) return;
     const id = typeof sk === 'string' ? sk : sk.id;
+    // 「無敵」は通常スキルではなく独立した状態バッジ（badge-invincible）として描画するためスキップ
+    if (id === 'invincible') return;
     const s = SKILLS[id];
     if (s && id !== 'none' && s.name !== '通常') {
       // 盤面配置時のバッジ表示制御:
@@ -1317,7 +1338,8 @@ export function renderSkillTag(
   // 3. バッジの生成
   let badges = [];
 
-  // 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブ、またはカード自身に加護が付与されている場合に優先表示）
+  // 【状態（ステータス）バッジ群】（優先表示）
+  // 1. 戦乙女の加護バッジ（盤面配置中のカードで該当プレイヤーの加護がアクティブ、またはカード自身に加護が付与されている場合に優先表示）
   if (isBoard) {
     const isGuardActive =
       Boolean(card?.valkyriaGuard) ||
@@ -1331,10 +1353,36 @@ export function renderSkillTag(
           : false);
 
     if (isGuardActive) {
-      badges.push(`<div class="card-skill badge-valkyria-guard">🛡️ 加護</div>`);
+      const def = STATUSES.valkyria_guard;
+      badges.push(
+        `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}</div>`
+      );
     }
   }
 
+  // 2. 無敵状態バッジ（状態フラグ invincibleTurns または skills 配列の残骸から取得）
+  const invincibleTurns =
+    (card.invincibleTurns || 0) > 0
+      ? card.invincibleTurns
+      : Array.isArray(card.skills)
+        ? card.skills.find((s) => s && (s.id === 'invincible' || s === 'invincible'))?.value || 0
+        : 0;
+  if (invincibleTurns > 0) {
+    const def = STATUSES.invincible;
+    badges.push(
+      `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}${invincibleTurns}</div>`
+    );
+  }
+
+  // 3. 拘束・待機・凍結（スタン）状態バッジ
+  if (card.stunTurns > 0) {
+    const def = STATUSES.stun;
+    badges.push(
+      `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}${card.stunTurns}</div>`
+    );
+  }
+
+  // 通常スキルのバッジ描画
   grouped.forEach((g) => {
     const countSuffix = g.count > 1 ? ` * ${g.count}` : '';
     badges.push(
@@ -1342,17 +1390,11 @@ export function renderSkillTag(
     );
   });
 
-  // 拘束・待機・凍結（スタン）状態バッジ（集約対象外）
-  if (card.stunTurns > 0) {
-    badges.push(
-      `<div class="card-skill" style="border-color: #ef4444; color: #fca5a5;">💫 スタン${card.stunTurns}</div>`
-    );
-  }
-
   // 攻撃不能状態バッジ（絵文字なし）
   if (card.cantAttackTurns > 0) {
+    const def = STATUSES.cant_attack;
     badges.push(
-      `<div class="card-skill" style="border-color: #ef4444; color: #fecdd3;">攻撃不能${card.cantAttackTurns}</div>`
+      `<div class="card-skill" style="border-color: #ef4444; color: #fecdd3;">${def.name}${card.cantAttackTurns}</div>`
     );
   }
 
@@ -1360,7 +1402,7 @@ export function renderSkillTag(
   if (card.immuneTurns > 0) {
     const im = SKILLS['immune'];
     badges.push(
-      `<div class="card-skill" style="border-color: #3b82f6; color: #93c5fd;">${im ? im.icon : '🚫'} 無効${card.immuneTurns}</div>`
+      `<div class="card-skill" style="border-color: #3b82f6; color: #93c5fd;">${im ? im.icon : '🚫'} ${im?.name || '無効'}${card.immuneTurns}</div>`
     );
   }
 
@@ -2372,6 +2414,34 @@ export function matchesUnionMaterial(card, unionSkill) {
 }
 
 /**
+ * 盤面に存在するカードID配列（またはカードオブジェクト配列）の中に「万相（all_forms）」スキルを持つカードが含まれているか判定する。
+ * 万相を持つカードが自陣盤面に存在する場合、そのカードはすべてのカード名・カードIDと同じとして扱われるため、
+ * 「唯一（excludeBoard / 自分の場にいない）」効果を持つスキルにおいて、あらゆるカードが「既に自分の場に存在する」とみなされ、
+ * 他のカードの名前をすべて占有して場に出す対象から除外する。
+ *
+ * @param {Array<string|object>} [presentBoardIds=[]] - 盤面のカードID配列またはカードオブジェクト配列
+ * @returns {boolean} 万相を持つカードが存在する場合は true、それ以外は false
+ */
+export function checkHasAllFormsOnBoard(presentBoardIds = []) {
+  if (!Array.isArray(presentBoardIds) || presentBoardIds.length === 0) {
+    return false;
+  }
+  return presentBoardIds.some((item) => {
+    if (!item) return false;
+    if (typeof item === 'object') {
+      return hasSkill(item, 'all_forms') || hasSkillDeep(item, 'all_forms');
+    }
+    if (item === 'mimic') return true;
+    const masterCard = CARD_MASTER?.find((c) => c.id === item);
+    return Boolean(
+      masterCard &&
+        (hasSkill(masterCard, 'all_forms') ||
+          hasSkillDeep(masterCard, 'all_forms'))
+    );
+  });
+}
+
+/**
  * 対象カードが「召喚（summon）」または「召集（assemble）」スキルの発動条件・対象指定に合致するか判定する共通実体関数。
  * 手札またはデッキからのカード召喚において、同一の判定ロジック・順序（excludeBoard → self → token → targetIds → targetKeyword → targetSkills → value/reqPower）を一元的に保証します。
  *
@@ -2395,11 +2465,16 @@ export function matchesHandOrDeckTarget(card, skill, options = {}) {
   const { selfId = null, presentBoardIds = [] } = options;
 
   // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
+  // 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
+  // あらゆるカードが「既に場に存在する」とみなされて召喚・召集の対象から除外される。
   if (
     skill.excludeBoard &&
     Array.isArray(presentBoardIds) &&
     presentBoardIds.length > 0
   ) {
+    if (checkHasAllFormsOnBoard(presentBoardIds)) {
+      return false;
+    }
     if (
       presentBoardIds.includes(card.id) ||
       (card.baseId && presentBoardIds.includes(card.baseId))
@@ -2530,11 +2605,16 @@ export function matchesGraveyardTarget(card, skill, options = {}) {
   const { presentBoardIds = [] } = options;
 
   // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
+  // 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
+  // あらゆるカードが「既に場に存在する」とみなされて復活・傀儡の対象から除外される。
   if (
     skill.excludeBoard &&
     Array.isArray(presentBoardIds) &&
     presentBoardIds.length > 0
   ) {
+    if (checkHasAllFormsOnBoard(presentBoardIds)) {
+      return false;
+    }
     if (
       presentBoardIds.includes(card.id) ||
       (card.baseId && presentBoardIds.includes(card.baseId))

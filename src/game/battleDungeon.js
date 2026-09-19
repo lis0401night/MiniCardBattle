@@ -42,7 +42,7 @@ function syncEnemySkin(enemyId, skinName) {
  * 試練の宮殿（ダンジョン）用デッキを解決する共通ヘルパー
  * データ破損時や未定義時のフォールバックとしても機能する
  * ダンジョンのデフォルト難易度は hard に統一する
- * 
+ *
  * @param {string} leaderCardId - リーダーカードID
  * @param {string|number} [aiLevelOrDiff='hard'] - 難易度キー（'normal', 'hard'など）またはAIレベル（省略時は'hard'）
  * @return {Array<string>} 解決されたカードID配列

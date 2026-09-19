@@ -375,7 +375,7 @@ export const SKILL_POINTS = {
     base: 1,
     multiplier: 1,
   },
-  sublimation: {
+  buff_void: {
     base: 0,
     multiplier: 1,
   },

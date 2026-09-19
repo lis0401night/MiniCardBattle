@@ -1362,8 +1362,7 @@ export function confirmCharSelect() {
     ) {
       // 防衛登録 / オンライン：ステージ選択を省略してすぐデッキ編集へ移行
       const selectedLeaderId = GameState.pendingCharId;
-      const chosenSkin =
-        GameState.playerSkins?.[selectedLeaderId] || 'default';
+      const chosenSkin = GameState.playerSkins?.[selectedLeaderId] || 'default';
 
       if (!GameState.playerSkins) GameState.playerSkins = {};
       GameState.playerSkins[selectedLeaderId] = chosenSkin;
@@ -1381,8 +1380,7 @@ export function confirmCharSelect() {
             templateChar.imageLose ||
             templateChar.image;
           GameState.playerConfig.icon =
-            getSkinImage(templateChar, chosenSkin, 'icon') ||
-            templateChar.icon;
+            getSkinImage(templateChar, chosenSkin, 'icon') || templateChar.icon;
           GameState.playerConfig.iconDamage =
             getSkinImage(templateChar, chosenSkin, 'iconDamage') ||
             templateChar.iconDamage ||

@@ -729,7 +729,7 @@ export const CARD_MASTER = [
     name: 'ホロウ・ブレイバー',
     rarity: 1,
     power: 2,
-    skills: [{ id: 'sublimation', value: 2 }],
+    skills: [{ id: 'buff_void', value: 2 }],
     voiceCategory: 'stone',
     flavor:
       'その仮面の下には、もはや人の心は存在しない。虚無の魂が、ただ彼の体を動かしているだけだ。',
@@ -1759,7 +1759,7 @@ export const CARD_MASTER = [
     name: '虚無の捕食者',
     rarity: 2,
     power: 2,
-    skills: [{ id: 'sublimation', value: 1 }, { id: 'quick' }],
+    skills: [{ id: 'buff_void', value: 1 }, { id: 'quick' }],
     voiceCategory: 'stone',
     flavor:
       '次元の裂け目より現れる漆黒の魔獣。獲物の存在そのものを貪り喰らう。',
@@ -2175,7 +2175,7 @@ export const CARD_MASTER = [
   {
     id: 'countermagic',
     obtain: ['pack_1'],
-    name: 'カウンター・マジック',
+    name: 'カウンターマジック',
     rarity: 2,
     power: 0,
     skills: [{ id: 'trigger' }, { id: 'silence' }],
@@ -2950,7 +2950,7 @@ export const CARD_MASTER = [
     name: '虚空歩き',
     rarity: 3,
     power: 5,
-    skills: [{ id: 'legendary' }, { id: 'sublimation', value: 2 }],
+    skills: [{ id: 'legendary' }, { id: 'buff_void', value: 2 }],
     voiceCategory: 'stone',
     flavor: '次元の狭間である虚空を自在に渡り歩く、実体を持たない影の旅人。',
   },

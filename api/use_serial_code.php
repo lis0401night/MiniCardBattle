@@ -60,7 +60,15 @@ if (!isset($serials_config[$code])) {
 }
 
 $reward = $serials_config[$code];
-if (!is_array($reward) || !isset($reward['rewardType']) || !isset($reward['rewardValue'])) {
+$allowedRewardTypes = ['premium', 'playmat', 'skin', 'icon', 'card'];
+if (
+    !is_array($reward) ||
+    !isset($reward['rewardType'], $reward['rewardValue']) ||
+    !is_string($reward['rewardType']) ||
+    !is_string($reward['rewardValue']) ||
+    $reward['rewardValue'] === '' ||
+    !in_array($reward['rewardType'], $allowedRewardTypes, true)
+) {
     echo json_encode(['success' => false, 'error' => 'config_corrupt']);
     exit;
 }

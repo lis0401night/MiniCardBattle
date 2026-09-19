@@ -44,6 +44,7 @@ import {
   matchesUnionMaterial,
   matchesAssembleTarget,
   matchesPuppetTarget,
+  checkHasAllFormsOnBoard,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
@@ -427,7 +428,7 @@ export async function resolveActiveSkillEffect(
       cull: '選別',
       execute: '処刑',
       dominate: '支配',
-      sublimation: '昇華',
+      buff_void: '強化(虚)',
       snipe_void: '狙撃(虚)',
       heal_void: '回復(虚)',
       support_void: '援護(虚)',
@@ -744,7 +745,8 @@ export async function resolveActiveSkillEffect(
             if (typeof window.showAlertModal === 'function') {
               const isAlreadyOnBoard =
                 isExcludeBoard &&
-                (presentBoardIds.includes(pickedCard.id) ||
+                (checkHasAllFormsOnBoard(presentBoardIds) ||
+                  presentBoardIds.includes(pickedCard.id) ||
                   (pickedCard.baseId &&
                     presentBoardIds.includes(pickedCard.baseId)));
               const alertMsg = isAlreadyOnBoard
@@ -1637,8 +1639,6 @@ export async function resolveActiveSkillEffect(
           card.choices = [];
           card.choices2 = null;
           if ('summonId' in card) delete card.summonId;
-          card.stunTurns = 0;
-          card.stunAppliedThisTurn = false;
 
           if (window.updateCardVisualsReact) {
             window.updateCardVisualsReact(i, side);
@@ -4224,6 +4224,23 @@ export async function triggerStartTurnPassive(owner, lane) {
   // Engine 内の個別処理を真似て状態更新ログを作成
   let skillsToResolve = Array.isArray(c.skills) ? [...c.skills] : [];
 
+  // 【無敵（状態）のターン経過減衰処理】
+  // スキル枠ではなくフラグ card.invincibleTurns を減衰させる
+  if (c.invincibleTurns > 0) {
+    c.invincibleTurns--;
+    if (c.invincibleTurns <= 0) {
+      delete c.invincibleTurns;
+      const cEl = document.querySelector(
+        `#${side}-lanes .cell[data-lane="${lane}"] .card`
+      );
+      if (cEl) {
+        createDamagePopup(cEl, '無敵終了', '#94a3b8');
+        await sleep(150);
+      }
+    }
+    triggered = true;
+  }
+
   for (const sk of skillsToResolve) {
     if (sk.id === 'growth') {
       const val = sk.value ?? 1;
@@ -4301,18 +4318,21 @@ export async function triggerStartTurnPassive(owner, lane) {
     }
 
     if (sk.id === 'invincible') {
+      // 後方互換処理: skills 配列内に残っている場合
       sk.value--;
       if (sk.value <= 0) {
         if (Array.isArray(c.skills)) {
           const idx = c.skills.indexOf(sk);
           if (idx !== -1) c.skills.splice(idx, 1);
         }
-        const cEl = document.querySelector(
-          `#${side}-lanes .cell[data-lane="${lane}"] .card`
-        );
-        if (cEl) {
-          createDamagePopup(cEl, '無敵終了', '#94a3b8');
-          await sleep(150);
+        if (!c.invincibleTurns) {
+          const cEl = document.querySelector(
+            `#${side}-lanes .cell[data-lane="${lane}"] .card`
+          );
+          if (cEl) {
+            createDamagePopup(cEl, '無敵終了', '#94a3b8');
+            await sleep(150);
+          }
         }
       }
       triggered = true;

@@ -27,6 +27,7 @@ import {
   sleep,
   createGraveKeeperEvents,
   matchesUnionMaterial,
+  matchesCardId,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -1103,7 +1104,8 @@ export async function executeLeaderSkillAction(
     let voidDiscarded = 0;
     const opCards = opH.splice(0, opH.length).filter(Boolean);
     for (const card of opCards) {
-      if (card.id === 'token_void' || card.baseId === 'token_void') {
+      // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウント
+      if (matchesCardId(card, 'token_void')) {
         voidDiscarded++;
       }
       opDiscarded++;

@@ -214,7 +214,15 @@ function decayInvincibleSkills(board) {
   board.forEach((c) => {
     if (!c) return;
 
-    // 2. skills 配列内に invincible がある場合
+    // 1. フラグ invincibleTurns の減衰
+    if ((c.invincibleTurns || 0) > 0) {
+      c.invincibleTurns--;
+      if (c.invincibleTurns <= 0) {
+        delete c.invincibleTurns;
+      }
+    }
+
+    // 2. skills 配列内に invincible がある場合（後方互換）
     if (Array.isArray(c.skills)) {
       const invSk = c.skills.find((s) => s.id === 'invincible');
       if (invSk) {

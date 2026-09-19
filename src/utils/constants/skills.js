@@ -231,12 +231,7 @@ export const SKILLS = {
     name: '潜伏',
     icon: '👣',
     desc: (val) =>
-      `召喚時、自身に無敵${val || 1}（戦闘ダメージを受けない）を付与する。`,
-  },
-  invincible: {
-    name: '無敵',
-    icon: '✨',
-    desc: (val) => `${val}ターンの間、戦闘でダメージを受けない。`,
+      `召喚時、自身に${val || 1}ターンの間「無敵」（戦闘ダメージを受けない）を付与する。`,
   },
   reflect: {
     name: '反射',
@@ -282,7 +277,7 @@ export const SKILLS = {
   },
   force: {
     name: '命令',
-    icon: '⚖️',
+    icon: '🌗',
     desc: (val) => `召喚時、以下のスキルから相手が${val}つを選んで発動する。`,
   },
   metamorph: {
@@ -577,7 +572,7 @@ export const SKILLS = {
     name: '待機',
     icon: '⏳',
     desc: (val) =>
-      `召喚時、自身に${val}ターン「スタン」（攻撃せず、敵カードや敵リーダーにダメージを与えられない）を付与する。`,
+      `召喚時、自身に${val}ターンの間「スタン」（攻撃せず、敵カードや敵リーダーにダメージを与えられない）を付与する。`,
   },
   artillery: {
     name: '砲撃',
@@ -663,7 +658,7 @@ export const SKILLS = {
     name: '回避',
     icon: '💠',
     desc: (val) =>
-      `${val}以上のダメージを無効化する。（スタンが付与されている場合は無効）`,
+      `${val}以上のダメージを無効化する。（「スタン」が付与されている場合は無効）`,
   },
   fate: {
     name: '運命',
@@ -710,7 +705,7 @@ export const SKILLS = {
   },
   madness: {
     name: '狂気',
-    icon: '🚪',
+    icon: '🦠',
     desc: () => '手札から捨てられた時、自分のレーンに召喚できる。',
   },
   reanimate: {
@@ -749,7 +744,7 @@ export const SKILLS = {
     name: '位相',
     icon: '🌫️',
     desc: () =>
-      '「位相」か「防御」を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。（スタン・防御が付与されている場合は無効）',
+      '「位相」か「防御」を持たないカードと戦闘を行わず、互いにリーダーを直接攻撃する。（「スタン」が付与されている場合は無効）',
   },
   petrify: {
     name: '石化',
@@ -861,7 +856,7 @@ export const SKILLS = {
     name: '移動',
     icon: '🏃',
     desc: () =>
-      '自分のターン開始時、隣のレーンに移動できる。（スタンが付与されている場合は無効）',
+      '自分のターン開始時、隣のレーンに移動できる。（「スタン」が付与されている場合は無効）',
   },
   freeze: {
     name: '凍結',
@@ -876,9 +871,9 @@ export const SKILLS = {
   },
   teleport: {
     name: '神出',
-    icon: '🚪',
+    icon: '🎩',
     desc: () =>
-      '自分のターン開始時、ランダムな自分の空きレーンに移動する。（スタンが付与されている場合は無効）',
+      '自分のターン開始時、ランダムな自分の空きレーンに移動する。（「スタン」が付与されている場合は無効）',
   },
   brutal: {
     name: '暴虐',
@@ -1042,7 +1037,7 @@ export const SKILLS = {
   },
   explore: {
     name: '探索',
-    icon: '🗺',
+    icon: '🗺️',
     desc: (val, sk) => {
       const targetIds = resolveTargetIds(sk, 'explore');
       if (Array.isArray(targetIds) && targetIds.length > 0) {
@@ -1208,9 +1203,9 @@ export const SKILLS = {
     desc: (val) =>
       `召喚時、相手のパワー${val}以下のカード1枚を選択して正面のレーンに移動する。`,
   },
-  sublimation: {
-    name: '昇華',
-    icon: '🧿',
+  buff_void: {
+    name: '強化(虚)',
+    icon: '🔼',
     desc: (val) => [
       { type: 'text', value: '召喚時、自分の手札の' },
       { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
@@ -1276,7 +1271,7 @@ export const SKILLS = {
   },
   buff: {
     name: '強化',
-    icon: '💪',
+    icon: '🔼',
     /**
      * 「強化」スキルの説明テキストを生成する。
      * 召喚時、自身のパワーを指定値上昇させる自己強化能力。
@@ -1314,10 +1309,10 @@ export const SKILLS = {
     icon: '⛓',
     /**
      * 「解放」スキルの説明テキストを生成する。
-     * 召喚時、自身のスタンと防御をなくす。
+     * 召喚時、自身の「スタン」と「防御」をなくす。
      * @returns {string} スキル説明文
      */
-    desc: () => '召喚時、自身のスタンと防御をなくす。',
+    desc: () => '召喚時、自身の「スタン」と「防御」をなくす。',
   },
   all_forms: {
     name: '万相',
@@ -1402,7 +1397,7 @@ export const ACTIVE_SKILLS = [
   'cull',
   'execute',
   'dominate',
-  'sublimation',
+  'buff_void',
   'snipe_void',
   'heal_void',
   'support_void',
@@ -1427,7 +1422,6 @@ export const PASSIVE_SKILLS = [
   'growth',
   'defender',
   'split',
-  'invincible',
   'reflect',
   'legendary',
   'takeover',
@@ -1516,10 +1510,10 @@ export const SKILL_CATEGORIES = [
         name: '強化：自身',
         skills: [
           'buff',
+          'buff_void',
           'lone_wolf',
           'hero',
           'adversity',
-          'sublimation',
           'double_power',
           'replicate',
           'portent',
@@ -1535,19 +1529,19 @@ export const SKILL_CATEGORIES = [
         skills: ['bless'],
       },
       {
-        name: '能力付与：自身',
+        name: '能力・状態付与：自身',
         skills: ['stealth', 'unleash'],
       },
       {
-        name: '能力付与：味方',
+        name: '能力・状態付与：味方',
         skills: ['protection', 'grant_deadly', 'grant_sturdy'],
       },
       {
-        name: '能力付与：敵',
+        name: '能力・状態付与：敵',
         skills: ['bind', 'freeze', 'toxic', 'seal', 'petrify', 'silence'],
       },
       {
-        name: '能力付与：全体',
+        name: '能力・状態付与：全体',
         skills: ['oblivion'],
       },
       {

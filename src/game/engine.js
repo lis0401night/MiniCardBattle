@@ -15,9 +15,11 @@ import {
   resolveCardSupremacySkills,
   resolveStartupFade,
   unmergeCardSkills,
+  matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
   matchesUnionMaterial,
+  isCardInvincible,
 } from '../utils/gameUtils.js';
 
 /** 戦乙女の加護の持続カウンター（発動後、次の自分のターン開始時スキル解決完了までを1とする） */
@@ -893,7 +895,7 @@ export function applyActiveSkillLogic(
     'standby',
     'stealth',
     'invincible',
-    'sublimation',
+    'buff_void',
     'buff',
     'inspire',
     'supremacy',
@@ -926,8 +928,6 @@ export function applyActiveSkillLogic(
             card.choices = [];
             card.choices2 = null;
             if ('summonId' in card) delete card.summonId;
-            card.stunTurns = 0;
-            card.stunAppliedThisTurn = false;
 
             events.push({
               type: 'oblivion_clear',
@@ -1147,13 +1147,11 @@ export function applyActiveSkillLogic(
       }
       break;
     }
-    case 'sublimation': {
+    case 'buff_void': {
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter(
-            (card) =>
-              card && (card.id === 'token_void' || card.baseId === 'token_void')
-          ).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
         : 0;
       if (voidCount > 0) {
         const bonus = (val || 0) * voidCount;
@@ -1163,18 +1161,16 @@ export function applyActiveSkillLogic(
           side: owner,
           lane: l,
           amount: bonus,
-          source: 'sublimation',
+          source: sid || 'buff_void',
         });
       }
       break;
     }
     case 'snipe_void': {
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter(
-            (card) =>
-              card && (card.id === 'token_void' || card.baseId === 'token_void')
-          ).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
         : 0;
       if (voidCount > 0) {
         const baseDmg = val || 4;
@@ -1207,11 +1203,9 @@ export function applyActiveSkillLogic(
     }
     case 'heal_void': {
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter(
-            (card) =>
-              card && (card.id === 'token_void' || card.baseId === 'token_void')
-          ).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
         : 0;
       if (voidCount > 0) {
         const hAmt = (val || 3) * voidCount;
@@ -1221,11 +1215,9 @@ export function applyActiveSkillLogic(
     }
     case 'support_void': {
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter(
-            (card) =>
-              card && (card.id === 'token_void' || card.baseId === 'token_void')
-          ).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
         : 0;
       if (voidCount > 0) {
         const adjVal = (val || 2) * voidCount;
@@ -2488,19 +2480,20 @@ export function applyActiveSkillLogic(
       // engine.jsでは盤面に干渉しない（ai_normal等で独自に+3として期待値評価する）
       break;
     case 'stealth':
-    case 'invincible':
-      if (!Array.isArray(c.skills))
-        c.skills = [{ id: 'invincible', value: val || 1 }];
-      else c.skills.push({ id: 'invincible', value: val || 1 });
+    case 'invincible': {
+      const invVal = val || 1;
+      // 「能力（スキル）」ではなく「状態（ステータス）」としてフラグ管理
+      c.invincibleTurns = Math.max(c.invincibleTurns || 0, invVal);
       events.push({
         type: 'add_skill',
         side: owner,
         lane: l,
         skillId: 'invincible',
-        value: val || 1,
+        value: invVal,
         source: sid,
       });
       break;
+    }
     case 'decay': {
       const decayAmt = Math.floor((c.currentPower || c.power || 0) / 2);
       c.power = decayAmt;
@@ -3207,7 +3200,8 @@ export function applyLeaderSkillLogic(
     oppHand.length = 0;
     for (const card of oppCards) {
       if (!card) continue;
-      if (card.id === 'token_void' || card.baseId === 'token_void') {
+      // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウント
+      if (matchesCardId(card, 'token_void')) {
         voidDiscarded++;
       }
       if (!card.isToken) {
@@ -4146,8 +4140,9 @@ export function applyLeaderSkillLogic(
       return selectedCard;
     };
 
-    const mySealed =
-      (isBlue ? state.playerSealedLanes : state.enemySealedLanes) || [0, 0, 0];
+    const mySealed = (isBlue
+      ? state.playerSealedLanes
+      : state.enemySealedLanes) || [0, 0, 0];
     const isLaneAvailable = (l) =>
       typeof l === 'number' && l >= 0 && l < 3 && mySealed[l] === 0;
 
@@ -5112,7 +5107,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           });
           effectiveDmg = Math.floor(effectiveDmg / 2);
         }
-        if (hasSkill(targetCard, 'invincible')) {
+        if (isCardInvincible(targetCard)) {
           events.push({
             type: 'invincible_block',
             side: defSide,
@@ -5237,7 +5232,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
       events.push({ type: 'sturdy_block', side: attackerSide, lane: aLane });
       dmgToAtk = Math.floor(dmgToAtk / 2);
     }
-    if (dmgToAtk > 0 && hasSkill(aC_defend, 'invincible')) {
+    if (dmgToAtk > 0 && isCardInvincible(aC_defend)) {
       events.push({
         type: 'invincible_block',
         side: attackerSide,
@@ -5450,7 +5445,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         dmgToDef = 0;
       }
     }
-    if (dmgToDef > 0 && hasSkill(dC, 'invincible')) {
+    if (dmgToDef > 0 && isCardInvincible(dC)) {
       if (dmgToDef > 0)
         events.push({ type: 'invincible_block', side: defSide, lane: dLane });
       dmgToDef = 0;
@@ -5484,7 +5479,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           const chosenLane = chosenObj.lane;
 
           let effectiveDmg = dmgToDef;
-          if (hasSkill(chosenCard, 'invincible')) {
+          if (isCardInvincible(chosenCard)) {
             events.push({
               type: 'invincible_block',
               side: chosenSide,
@@ -5557,7 +5552,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
     ) {
       dmgToAtk = 0;
     }
-    if (dmgToAtk > 0 && hasSkill(aC_defend, 'invincible')) {
+    if (dmgToAtk > 0 && isCardInvincible(aC_defend)) {
       if (dmgToAtk > 0)
         events.push({
           type: 'invincible_block',
@@ -5599,7 +5594,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
           const chosenLane = chosenObj.lane;
 
           let effectiveDmg = dmgToAtk;
-          if (hasSkill(chosenCard, 'invincible')) {
+          if (isCardInvincible(chosenCard)) {
             events.push({
               type: 'invincible_block',
               side: chosenSide,

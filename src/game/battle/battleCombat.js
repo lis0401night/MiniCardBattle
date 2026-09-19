@@ -879,10 +879,13 @@ export async function discardCard(
     });
   }
 
-  // 一時的なスキルの除去（無敵など）
+  // 一時的な状態・スキルの除去（無敵・加護・スタンなど）
   if (Array.isArray(card.skills)) {
     card.skills = card.skills.filter((sk) => sk.id !== 'invincible');
   }
+  delete card.invincibleTurns;
+  delete card.valkyriaGuard;
+  delete card.valkyriaGuardTurns;
 
   // 変相の復帰処理
   if (card.originalCardId) {
