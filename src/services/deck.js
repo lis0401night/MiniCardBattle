@@ -14,6 +14,7 @@ import {
   DECKS_KEY,
   DECK_SIZE,
   DEFAULT_DUNGEON_AI_LEVEL,
+  DIFFICULTY,
   MAX_DECK_SLOTS,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
@@ -246,10 +247,15 @@ export function generateDeck(owner, config, sessionId) {
         // パターンデッキの場合
         deckIds = recipe;
       } else if (recipe.easy && recipe.normal && recipe.hard) {
-        if (typeof GameState.aiLevel !== 'undefined') {
-          if (GameState.aiLevel == 1) deckIds = recipe.easy;
-          else if (GameState.aiLevel == 3) deckIds = recipe.hard;
-          else deckIds = recipe.normal;
+        // 対戦難易度（GameState.difficulty / storyDifficulty）に基づいてデッキを確定する
+        const currentDiff =
+          GameState.difficulty ||
+          GameState.storyDifficulty ||
+          DIFFICULTY.NORMAL;
+        if (currentDiff === DIFFICULTY.EASY) {
+          deckIds = recipe.easy;
+        } else if (currentDiff === DIFFICULTY.HARD) {
+          deckIds = recipe.hard;
         } else {
           deckIds = recipe.normal;
         }

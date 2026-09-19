@@ -6,6 +6,7 @@ import { switchScreen } from '../utils/gameUtils.js';
 import { asyncGet } from '../utils/fetch.js';
 import { startBattleFlow, migrateCardId } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
+import { AI_LEVEL, DIFFICULTY } from '../utils/constants/config.js';
 import {
   setupDialogueScreen,
   showContinueScreen,
@@ -32,7 +33,8 @@ export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
 
   const modeKey = `event_${enemyCharId}_high`;
   GameState.gameMode = modeKey;
-  GameState.aiLevel = 3;
+  GameState.aiLevel = AI_LEVEL.NORMAL;
+  GameState.difficulty = DIFFICULTY.HARD;
   GameState.battleCount = 7;
   GameState.selectedStageId = enemyCharId; // ステージはボスのホーム
 

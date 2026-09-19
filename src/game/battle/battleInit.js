@@ -25,9 +25,11 @@ import { incrementStat } from '../../utils/constants/achievements.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
 import {
+  AI_LEVEL,
   AI_THINKING_DURATION,
   BATTLE_ASSET_LOAD_TIMEOUT_MS,
   BATTLE_SCREEN_READY_TIMEOUT_MS,
+  DIFFICULTY,
   INITIAL_DRAW_COUNT,
   MAX_HP,
   PLACE_ANIMATION_DURATION,
@@ -918,8 +920,10 @@ export function initBattleState() {
     if (
       GameState.gameMode?.startsWith('event_') &&
       GameState.gameMode?.endsWith('_high')
-    )
-      GameState.aiLevel = 3; // 念のため再セット
+    ) {
+      GameState.aiLevel = AI_LEVEL.NORMAL; // 念のため再セット
+      GameState.difficulty = DIFFICULTY.HARD;
+    }
 
     if (GameState.gameMode === 'battle_dungeon') {
       // 敵のHPは汎用モンスターのみレアリティで決定。固有キャラの場合は元のHPを優先

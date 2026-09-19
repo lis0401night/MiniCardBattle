@@ -2347,7 +2347,9 @@ export function getBestSimulatedMove() {
                   // 分身スキルの調整：元のレーン lane の隣接レーンのみを対象とする
                   const allowedLanes =
                     sk.id === 'clone'
-                      ? (lane === 1 ? [0, 2] : [1])
+                      ? lane === 1
+                        ? [0, 2]
+                        : [1]
                       : [0, 1, 2].filter((j) => j >= effectiveMinLane);
                   for (let j of allowedLanes) {
                     if (mySealedLanes[j] > 0) continue;
@@ -3060,9 +3062,7 @@ export function getBestSimulatedMove() {
       // dungeon_summon_leader の resurrect は buildSkillBranch で処理するため外側ループでは [-1] のみ
       dIdxLoop = [-1];
     } else {
-      dIdxLoop = isResurrectLeaderSkill
-        ? [-1, ...validResurrectIndices]
-        : [-1];
+      dIdxLoop = isResurrectLeaderSkill ? [-1, ...validResurrectIndices] : [-1];
     }
 
     // オーバードライブ用: 相手墓地のカードも全通りシミュレーションする
@@ -3117,16 +3117,7 @@ export function getBestSimulatedMove() {
       ) {
         cachedCardPlayTree =
           cachedNormalHandTrees.get(i) ||
-          buildCardPlayTree(
-            card,
-            i,
-            'play',
-            hand,
-            discard,
-            [i],
-            [],
-            0
-          );
+          buildCardPlayTree(card, i, 'play', hand, discard, [i], [], 0);
       }
 
       for (let tokenLanes of tokenLanePatterns) {
@@ -5981,7 +5972,8 @@ export function evaluateBestResurrectChoice(
         );
         if (!simState) continue;
 
-        const rawScore = evaluateTurnOutcome(simState, owner);
+        // 召集アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+        const rawScore = evaluateSimState(simState);
 
         // パス以下ならスキップ
         if (isRed ? rawScore <= passScore : rawScore >= passScore) {
@@ -6090,7 +6082,8 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
       );
       if (!simState) continue;
 
-      const score = evaluateTurnOutcome(simState, owner);
+      // 復活アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      const score = evaluateSimState(simState);
 
       if (isRed) {
         if (score > bestScore) {
@@ -6542,7 +6535,8 @@ export function evaluateAdhocSummonMove(
       );
       if (!simState) continue;
 
-      const score = evaluateTurnOutcome(simState, owner);
+      // 召喚アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      const score = evaluateSimState(simState);
 
       // タイブレーク：左(1) > 右(2) > 中央(3)
       const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
@@ -6668,7 +6662,8 @@ export function evaluateAdhocAssembleMove(
       );
       if (!simState) continue;
 
-      const score = evaluateTurnOutcome(simState, owner);
+      // 召集アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      const score = evaluateSimState(simState);
 
       if (isRed) {
         if (score > bestScore) {
@@ -6794,7 +6789,8 @@ export function simulateAdhocChoiceSummon(
       );
       if (!subState) continue;
 
-      const subScore = evaluateTurnOutcome(subState, owner);
+      // 傀儡による配置アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      const subScore = evaluateSimState(subState);
       if (isRed) {
         if (subScore > bestScore) {
           bestScore = subScore;
@@ -6923,7 +6919,8 @@ export function simulateAdhocChoiceAssemble(
       );
       if (!subState) continue;
 
-      const subScore = evaluateTurnOutcome(subState, owner);
+      // 招来による配置アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      const subScore = evaluateSimState(subState);
       if (isRed) {
         if (subScore > bestScore) {
           bestScore = subScore;
@@ -7035,7 +7032,8 @@ export function simulateAdhocChoiceResurrect(
       );
       if (!subState) continue;
 
-      const subScore = evaluateTurnOutcome(subState, owner);
+      // 鍛造による配置アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      const subScore = evaluateSimState(subState);
       if (isRed) {
         if (subScore > bestScore) {
           bestScore = subScore;
@@ -7472,8 +7470,8 @@ export function evaluateAdhocTokenLanes(
           );
           if (!simState) continue;
 
-          // 戦闘フェーズを解決して客観的総合評価を算出
-          let score = evaluateTurnOutcome(simState, 'red');
+          // トークン配置および戦闘フェーズ完了後の盤面状態を総合評価関数で客観的に採点
+          let score = evaluateSimState(simState);
 
           // タイブレーク：左 > 右 > 中央
           score += 0.001 / lanePriorityOrder[l];
@@ -7502,7 +7500,8 @@ export function evaluateAdhocTokenLanes(
       structuredClone(initialSimState)
     );
     if (simState) {
-      let score = evaluateTurnOutcome(simState, 'red') + 0.0005; // キャンセル時のタイブレーク微調整
+      // 配置を行わない（パス）盤面の戦闘解決結果を総合評価関数で採点
+      let score = evaluateSimState(simState) + 0.0005; // キャンセル時のタイブレーク微調整
       if (score > maxScore) {
         maxScore = score;
         bestBranch = [{ type: 'play_adhoc', card: null, laneIdx: -1 }];

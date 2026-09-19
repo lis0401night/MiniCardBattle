@@ -20,9 +20,10 @@ import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
   DEFAULT_DUNGEON_AI_LEVEL,
+  DEFAULT_DUNGEON_DIFFICULTY,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { playSound, switchScreen } from '../utils/gameUtils.js';
+import { checkIsEasyAI, playSound, switchScreen } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
 /**
@@ -42,6 +43,7 @@ function syncEnemySkin(enemyId, skinName) {
  * データ破損時や未定義時のフォールバックとしても機能する
  * @param {string} leaderCardId - リーダーカードID
  * @param {string|number} aiLevelOrDiff - 難易度キー（'normal', 'hard'など）またはAIレベル
+ * @return {Array<string>} 解決されたカードID配列
  */
 export function resolveDungeonDeck(leaderCardId, aiLevelOrDiff = 'normal') {
   const leaderId = leaderCardId || 'android';
@@ -50,11 +52,11 @@ export function resolveDungeonDeck(leaderCardId, aiLevelOrDiff = 'normal') {
     return [...rawDeck];
   }
 
-  let diffKey = 'normal';
-  if (typeof aiLevelOrDiff === 'number') {
-    diffKey = aiLevelOrDiff >= DEFAULT_DUNGEON_AI_LEVEL ? 'hard' : 'normal';
-  } else if (typeof aiLevelOrDiff === 'string') {
+  let diffKey = 'hard';
+  if (typeof aiLevelOrDiff === 'string') {
     diffKey = aiLevelOrDiff;
+  } else if (typeof aiLevelOrDiff === 'number') {
+    diffKey = checkIsEasyAI({ aiLevel: aiLevelOrDiff }) ? 'easy' : 'hard';
   }
 
   const resolved = rawDeck[diffKey] || rawDeck.normal || [];
@@ -358,6 +360,7 @@ export function startDungeonBattle(enemyIndex) {
   // 敵の設定を反映
   GameState.enemyConfig = enemy;
   GameState.aiLevel = enemy.fixedAiLevel || DEFAULT_DUNGEON_AI_LEVEL;
+  GameState.difficulty = DEFAULT_DUNGEON_DIFFICULTY;
   GameState.dungeonState = 'battle';
   GameState.selectedStageId = 'dungeon';
 

@@ -4,8 +4,12 @@ import {
   AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
 } from '../utils/constants/config.js';
-import { shuffleArray, sleep } from '../utils/gameUtils.js';
-import { getEasyDecision } from './ai_easy.js';
+import { checkIsEasyAI, shuffleArray, sleep } from '../utils/gameUtils.js';
+import {
+  getEasyDecision,
+  getEasyTokenLanes,
+  getEasyTriggerMove,
+} from './ai_easy.js';
 import {
   getNormalDecision,
   getNormalTokenLanes,
@@ -20,12 +24,7 @@ import {
   advanceCombatPhase,
   evaluateTurnOutcome,
 } from './ai_normal.js';
-import {
-  discardCard,
-  endTurnLogic,
-  playCard,
-  getValidSummonLanes,
-} from './battle/index.js';
+import { discardCard, endTurnLogic, playCard } from './battle/index.js';
 import { isGraveKeeperActive } from './engine.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 
@@ -114,10 +113,7 @@ export async function executeEnemyAI() {
         shouldForceSkill = true;
       }
       // 初級難易度の場合、空撃ち以外は100%使用
-      else if (
-        typeof GameState.aiLevel !== 'undefined' &&
-        GameState.aiLevel === 1
-      ) {
+      else if (checkIsEasyAI()) {
         if (
           skill.action === 'annihilation' ||
           skill.action === 'targeted_destruction' ||
@@ -158,7 +154,7 @@ export async function executeEnemyAI() {
     ) {
       let decision;
 
-      if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
+      if (checkIsEasyAI()) {
         // 初級難易度 (ai_easy.js)
         GameState.aiDecision = getEasyDecision();
       } else {
@@ -236,7 +232,7 @@ export async function executeEnemyAI() {
  * トークンおよびスキル召喚カードの配置レーン選択（難易度別ディスパッチャ）。
  *
  * 【直前シミュレーション原則】
- * 通常AI（aiLevel >= 2）では、事前計画の固定レーンを再生するのではなく、
+ * 通常AI（aiLevel: AI_LEVEL.NORMAL）では、事前計画の固定レーンを再生するのではなく、
  * 最新盤面に基づいた直前シミュレーション（evaluateAdhocTokenLanes）を実行して
  * 最善の配置レーン（空き枠または有意義な被弾カード上書き）を決定する。
  *
@@ -260,20 +256,16 @@ export function evaluateBestLanesForToken(
 ) {
   if (owner === 'blue') return shuffleArray([...allLanes]).slice(0, count);
 
-  if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
-    const emptyLanes = allLanes.filter((l) => GameState.enemyBoard[l] === null);
-    if (emptyLanes.length >= count) {
-      return shuffleArray(emptyLanes).slice(0, count);
-    } else {
-      // 空きレーンをすべて使い、残りを埋まっているレーンからランダムに選ぶ
-      const occupiedLanes = allLanes.filter(
-        (l) => GameState.enemyBoard[l] !== null
-      );
-      return [
-        ...shuffleArray(emptyLanes),
-        ...shuffleArray(occupiedLanes),
-      ].slice(0, count);
-    }
+  if (checkIsEasyAI()) {
+    return getEasyTokenLanes(
+      allLanes,
+      owner,
+      tokenCard,
+      count,
+      canCancel,
+      checkConstraints,
+      pendingSkills
+    );
   } else {
     return getNormalTokenLanes(
       allLanes,
@@ -290,7 +282,7 @@ export function evaluateBestLanesForToken(
 /**
  * 誘発（trigger）スキルの最適選択（難易度別ディスパッチャ）
  * 相手のターン中に召喚された際、AIが手札から誘発カードを出すべきか、
- * どのカードをどのレーンに出すかを評価・決定する。
+ * どのカードをどのレーンに出すかを難易度に応じて評価・決定する。
  *
  * @param {Array<object>} validTriggerCards - 手札にある召喚可能な誘発スキル所持カード群
  * @param {string} [owner='red'] - 誘発を行う陣営。AI側の 'red' のみ対応（それ以外は null を返却）
@@ -301,23 +293,9 @@ export function evaluateBestTriggerMove(validTriggerCards, owner = 'red') {
     return null;
   }
 
-  // 初級AIの場合: 最初に見つかった空きレーン（なければ召喚可能レーン先頭）に即座に出す
-  if (typeof GameState.aiLevel !== 'undefined' && GameState.aiLevel === 1) {
-    for (let i = 0; i < validTriggerCards.length; i++) {
-      const card = validTriggerCards[i];
-      const validLanes = getValidSummonLanes(owner, card);
-      if (validLanes && validLanes.length > 0) {
-        const emptyLane = validLanes.find(
-          (l) => GameState.enemyBoard[l] === null
-        );
-        const lane = emptyLane !== undefined ? emptyLane : validLanes[0];
-        const cardIdx = (GameState.enemyHand || []).indexOf(card);
-        if (cardIdx !== -1) {
-          return { cardIdx, laneIdx: lane, score: 0 };
-        }
-      }
-    }
-    return null;
+  // 初級AIの場合: ai_easy.js に委任
+  if (checkIsEasyAI()) {
+    return getEasyTriggerMove(validTriggerCards, owner);
   }
 
   // 通常・上級AI: 客観的なターン進行に基づいてシミュレートし最適手を決定

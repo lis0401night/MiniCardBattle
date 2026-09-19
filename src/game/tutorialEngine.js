@@ -15,6 +15,7 @@ import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { AI_LEVEL, DIFFICULTY } from '../utils/constants/config.js';
 import { playSound, sleep, switchScreen } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import { prepareBattle } from './battle/index.js';
@@ -1741,7 +1742,8 @@ export function startTutorial(tutorialId) {
   GameState.playerConfig = playerChar;
   GameState.enemyConfig = enemyChar;
   GameState.gameMode = 'tutorial';
-  GameState.aiLevel = 1;
+  GameState.aiLevel = AI_LEVEL.EASY;
+  GameState.difficulty = DIFFICULTY.EASY;
   GameState.appState = 'battle';
   GameState.selectedStageId = config.stageId || 'practice';
 

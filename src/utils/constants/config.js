@@ -4,7 +4,7 @@
 import { CARD_MASTER } from './cards.js';
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.4.0.17';
+export const GAME_VERSION = '0.4.0.18';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -45,6 +45,30 @@ export const TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS = [
   ...TOURNAMENT_BANNED_LEADER_IDS,
   ...BOSS_CHARACTER_IDS,
 ];
+/**
+ * AIの思考ルーチン・知能レベル定義
+ * AIの思考アルゴリズムは初級（ランダム・空き枠優先）と通常（シミュレーション思考）の2段階。
+ * 1 = easy (初級)
+ * 2 = normal, hard (通常・中級および上級・高難易度共通)
+ */
+export const AI_LEVEL = {
+  EASY: 1, // 初級AI（ランダム選択、空き枠優先）
+  NORMAL: 2, // 通常AI（中級・上級・高難易度共通の客観的シミュレーション思考）
+  HARD: 2, // 上級のAI思考レベルはNORMAL（レベル2）と同一
+};
+
+/**
+ * ゲーム・対戦難易度定義（デッキ選択、報酬、実績等）
+ */
+export const DIFFICULTY = {
+  EASY: 1, // 初級
+  NORMAL: 2, // 中級
+  HARD: 3, // 上級・超級・特級
+  BEGINNER: 1, // 初級（UI表示用エイリアス）
+  INTERMEDIATE: 2, // 中級（UI表示用エイリアス）
+  ADVANCED: 3, // 上級（UI表示用エイリアス）
+};
+
 export const AI_THINKING_DURATION = 800; // 敵AIが対象を選択する際の思考ウェイト時間 (ms)
 export const PLACE_ANIMATION_DURATION = 300; // カード登場・配置演出時のウェイト時間 (ms)
 export const PLACEMENT_CONFIRM_DELAY_MS = 300; // カード配置完了時の自動確定遅延時間 (ms)
@@ -444,7 +468,8 @@ export function getScreenBackgroundStyle(imagePath) {
   return getVersionedBackgroundStyle(imagePath, 0.7, 0.9);
 }
 
-export const DEFAULT_DUNGEON_AI_LEVEL = 3;
+export const DEFAULT_DUNGEON_AI_LEVEL = AI_LEVEL.NORMAL;
+export const DEFAULT_DUNGEON_DIFFICULTY = DIFFICULTY.HARD;
 
 // 運命の邂逅 交換所ラインナップ
 export const FORTUNE_EXCHANGE_LINEUP = freezeLineup([

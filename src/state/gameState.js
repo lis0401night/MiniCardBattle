@@ -9,6 +9,8 @@ import {
   DEFAULT_PLAYER_NAME,
   DEFAULT_PLAYER_ICON,
   DEFAULT_SOUND_VOLUME,
+  AI_LEVEL,
+  DIFFICULTY,
 } from '../utils/constants/config.js';
 import { safeParseArray } from '../utils/gameUtils.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
@@ -81,8 +83,9 @@ export const GameState = {
   enemySealedLanes: [0, 0, 0],
   appState: 'title',
   gameMode: 'story',
-  aiLevel: 1,
-  storyDifficulty: 1,
+  aiLevel: AI_LEVEL.EASY,
+  difficulty: DIFFICULTY.EASY,
+  storyDifficulty: DIFFICULTY.EASY,
   isProcessing: false,
   isAIThinking: false, // AIのシミュレーション計算中のみtrue（「思考中」UI表示用）
   selectedCardIndex: null,

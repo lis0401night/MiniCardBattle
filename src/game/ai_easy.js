@@ -8,8 +8,10 @@ import {
   matchesPuppetTarget,
   matchesResurrectTarget,
   matchesSummonTarget,
+  shuffleArray,
 } from '../utils/gameUtils.js';
 import { simulateMove } from './ai_normal.js';
+import { getValidSummonLanes } from './battle/index.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（初級・ランダム版）
@@ -381,4 +383,80 @@ export function canResolveStandaloneSkill(
       // その他のスキル（選択肢、使役、奇襲、分身、回復、狙撃等）は外部カードの存在に依存せず実行可能
       return true;
   }
+}
+
+/**
+ * 初級難易度（Easy AI）におけるトークンおよびスキル配置対象レーンの決定
+ *
+ * 【初級AIの配置方針】
+ * 空きレーンが存在する場合は空きレーンを最優先でランダムに選択する。
+ * 空きレーンが指定配置数に満たない場合は、空きレーンをすべて使い切った上で、
+ * 既存カードが存在する埋まっているレーンからランダムに上書き先を選択する。
+ *
+ * @param {Array<number>} allLanes - 選択候補レーンの配列 (例: [0, 1, 2])
+ * @param {'red' | 'blue'} [owner='red'] - 配置を行う陣営
+ * @param {object|null} [_tokenCard=null] - 配置対象のカードまたはトークンオブジェクト
+ * @param {number} [count=1] - 配置を決定するレーン数
+ * @param {boolean} [_canCancel=false] - キャンセル可否フラグ（Easyでは常時配置を行う）
+ * @param {boolean} [_checkConstraints=true] - 制約チェックフラグ
+ * @param {Array<object>} [_pendingSkills=[]] - 後続スキルリスト
+ * @return {Array<number>} 決定されたレーンインデックス配列
+ */
+export function getEasyTokenLanes(
+  allLanes,
+  owner = 'red',
+  _tokenCard = null,
+  count = 1,
+  _canCancel = false,
+  _checkConstraints = true,
+  _pendingSkills = []
+) {
+  const board = owner === 'red' ? GameState.enemyBoard : GameState.playerBoard;
+  const emptyLanes = allLanes.filter((l) => board[l] === null);
+
+  if (emptyLanes.length >= count) {
+    return shuffleArray(emptyLanes).slice(0, count);
+  }
+
+  // 空きレーンをすべて使い、不足分は埋まっているレーンからランダムに選ぶ
+  const occupiedLanes = allLanes.filter((l) => board[l] !== null);
+  return [...shuffleArray(emptyLanes), ...shuffleArray(occupiedLanes)].slice(
+    0,
+    count
+  );
+}
+
+/**
+ * 初級難易度（Easy AI）における誘発（trigger）スキルの最適手決定
+ *
+ * 【初級AIの誘発方針】
+ * 手札にある誘発可能カードを先頭から走査し、召喚制約を満たすレーンのうち
+ * 空きレーンが存在すればそこに即座に出し、空きがなければ召喚可能レーンの先頭に出す。
+ * 複雑な盤面・未来シミュレーションは行わず、シンプルな初級用ヒューリスティックで決定する。
+ *
+ * @param {Array<object>} validTriggerCards - 手札にある召喚可能な誘発スキル所持カード群
+ * @param {string} [owner='red'] - 誘発を行う陣営（AI側の 'red' のみ対応）
+ * @return {{ cardIdx: number, laneIdx: number, score: number }|null} 最善手オブジェクト（配置不可時は null）
+ */
+export function getEasyTriggerMove(validTriggerCards, owner = 'red') {
+  if (owner !== 'red' || !validTriggerCards || validTriggerCards.length === 0) {
+    return null;
+  }
+
+  for (let i = 0; i < validTriggerCards.length; i++) {
+    const card = validTriggerCards[i];
+    const validLanes = getValidSummonLanes(owner, card);
+    if (validLanes && validLanes.length > 0) {
+      const emptyLane = validLanes.find(
+        (l) => GameState.enemyBoard[l] === null
+      );
+      const lane = emptyLane !== undefined ? emptyLane : validLanes[0];
+      const cardIdx = (GameState.enemyHand || []).indexOf(card);
+      if (cardIdx !== -1) {
+        return { cardIdx, laneIdx: lane, score: 0 };
+      }
+    }
+  }
+
+  return null;
 }

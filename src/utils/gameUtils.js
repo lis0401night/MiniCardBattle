@@ -14,6 +14,7 @@ import {
   LOW_TIER_PICK_COUNT,
   MID_TIER_PICK_COUNT,
   PROFILE_NAME_KEY,
+  AI_LEVEL,
 } from './constants/config.js';
 import {
   ACTIVE_SKILLS,
@@ -1861,6 +1862,41 @@ export function checkIsTutorialMode(
 ) {
   return gameMode === 'tutorial';
 }
+
+/**
+ * 現在のAI思考難易度が「初級（Easy）」であるかを安全に判定します。
+ * 未定義や例外値に対するフォールバックを備え、ホワイトリスト方式で厳密に検証します。
+ *
+ * @param {object} [gameState] - 対象のゲームステートオブジェクト（省略時はグローバル GameState）
+ * @returns {boolean} 初級AIであれば true、それ以外（通常・シミュレーション思考）は false
+ */
+export function checkIsEasyAI(
+  gameState = typeof GameState !== 'undefined' ? GameState : undefined
+) {
+  return (
+    typeof gameState?.aiLevel !== 'undefined' &&
+    gameState.aiLevel === AI_LEVEL.EASY
+  );
+}
+
+/**
+ * 現在のAI思考難易度が「通常以上（Normal / Hard）」であるかを安全に判定します。
+ * 客観的シミュレーション思考を行うAIレベルであるかを検証します。
+ *
+ * @param {object} [gameState] - 対象のゲームステートオブジェクト（省略時はグローバル GameState）
+ * @returns {boolean} 通常シミュレーションAIであれば true、初級AIは false
+ */
+export function checkIsNormalAI(
+  gameState = typeof GameState !== 'undefined' ? GameState : undefined
+) {
+  return (
+    typeof gameState?.aiLevel !== 'undefined' &&
+    gameState.aiLevel === AI_LEVEL.NORMAL
+  );
+}
+
+export const isEasyAI = checkIsEasyAI;
+export const isNormalAI = checkIsNormalAI;
 
 /**
  * 特級目標（ハンディキャップ）のローカルストレージ保存キーを生成します。

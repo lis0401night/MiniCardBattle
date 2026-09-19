@@ -4,6 +4,7 @@ import {
 } from './battleDungeonCharacter.js';
 import { CARD_MASTER } from './cards.js';
 import { CHARACTERS, getSkinImage } from './characters.js';
+import { AI_LEVEL } from './config.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
 
 // 試練の宮殿の敵・レンタル候補から除外するリーダーID
@@ -231,7 +232,7 @@ export const generateGenericDungeonEnemy = (targetRarity) => {
     },
     leaderCardId: leaderCard.id,
     isDungeonEnemy: true,
-    fixedAiLevel: 3,
+    fixedAiLevel: AI_LEVEL.NORMAL,
     preBattleLine: dialogueData.preBattleLine,
     dialogue: dialogueData.dialogue,
     hp: hp,
@@ -295,7 +296,7 @@ export const generateCharacterBossEnemy = (floorNum) => {
     charId: bossId,
     isDungeonEnemy: true,
     isHighBoss: isHighBoss,
-    fixedAiLevel: 3,
+    fixedAiLevel: AI_LEVEL.NORMAL,
     hp: 20, // ダンジョンボスのHPは一律20
     dungeonDeck: deck,
   };

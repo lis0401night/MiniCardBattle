@@ -4,6 +4,8 @@ import { prepareBattle } from '../game/battle/index.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
+import { AI_LEVEL, DIFFICULTY } from '../utils/constants/config.js';
+import { checkIsEasyAI } from '../utils/gameUtils.js';
 
 /**
  * デバッグ用バトル設定画面
@@ -37,11 +39,10 @@ const GAME_MODES = [
   { value: 'high', label: '高難易度' },
 ];
 
-// AI難易度
+// AI難易度（思考レベル: 1=初級, 2=通常）
 const AI_LEVELS = [
-  { value: 1, label: '弱い' },
-  { value: 2, label: '普通' },
-  { value: 3, label: '強い' },
+  { value: AI_LEVEL.EASY, label: '初級（ランダム思考）' },
+  { value: AI_LEVEL.NORMAL, label: '通常（シミュレーション思考）' },
 ];
 
 export default function DebugBattleScreen() {
@@ -49,7 +50,7 @@ export default function DebugBattleScreen() {
   const [playerCharId, setPlayerCharId] = useState('android');
   const [enemyCharId, setEnemyCharId] = useState('witch');
   const [gameMode, setGameMode] = useState('free');
-  const [aiLevel, setAiLevel] = useState(2);
+  const [aiLevel, setAiLevel] = useState(AI_LEVEL.NORMAL);
   const [firstPlayer, setFirstPlayer] = useState('random');
 
   // --- プリセットフィールド ---
@@ -110,6 +111,9 @@ export default function DebugBattleScreen() {
     GameState.enemyConfig = JSON.parse(JSON.stringify(enemyChar));
     GameState.gameMode = actualGameMode;
     GameState.aiLevel = aiLevel;
+    GameState.difficulty = checkIsEasyAI({ aiLevel })
+      ? DIFFICULTY.EASY
+      : DIFFICULTY.HARD;
     GameState.appState = 'battle';
 
     // プリセットの構築

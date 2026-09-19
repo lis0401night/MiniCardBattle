@@ -22,6 +22,7 @@ import {
 } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  checkIsEasyAI,
   clearCardAbilities,
   createDamagePopup,
   getCardImgUrl,
@@ -517,7 +518,7 @@ export async function resolveActiveSkillEffect(
       // 事前計画キューに残骸があれば消費（クリーンアップ）する
       consumeAIAction(skillId);
 
-      if (GameState.aiLevel === 1) {
+      if (checkIsEasyAI()) {
         // Easy AI: 手札の先頭で配置可能なカードを選択
         for (let i = 0; i < h.length; i++) {
           if (h[i]) {
@@ -670,7 +671,7 @@ export async function resolveActiveSkillEffect(
       // 事前計画キューに残骸があれば消費（クリーンアップ）する
       consumeAIAction(skillId);
 
-      if (GameState.aiLevel === 1) {
+      if (checkIsEasyAI()) {
         // Easy AI: 条件を満たす最初のカードを選択し、合法なレーンへ安全に召喚
         const foundIdx = h.findIndex((card) => isValidSummonCard(card));
         if (foundIdx !== -1) {
@@ -1449,7 +1450,7 @@ export async function resolveActiveSkillEffect(
         }
       }
       // 事前計画の固定キュー再生を廃止し、常に最新盤面に基づいた直前シミュレーションを実行する
-      if (GameState.aiLevel === 1) {
+      if (checkIsEasyAI()) {
         // Easy AI: フォールバック配置を許可（clonePredefinedLanes = null のまま）
       } else {
         // Normal以上: 隣接レーン（l - 1, l + 1）から動的シミュレーション評価で最善レーンを選択
@@ -2350,7 +2351,7 @@ export async function resolveActiveSkillEffect(
         // 事前計画キューに残骸があれば消費（クリーンアップ）する
         consumeAIAction('resurrect');
 
-        if (GameState.aiLevel === 1) {
+        if (checkIsEasyAI()) {
           // Easy AI: 最強カードを選択（レーンはフォールバック配置）
           const sortedRes = [...validCards].sort(
             (a, b) => (b.power || 0) - (a.power || 0)
@@ -2551,7 +2552,7 @@ export async function resolveActiveSkillEffect(
         // 事前計画キューに残骸があれば消費（クリーンアップ）する
         consumeAIAction('puppet');
 
-        if (GameState.aiLevel === 1) {
+        if (checkIsEasyAI()) {
           // Easy AI: 最強カードをフォールバック選択
           const sortedPuppet = [...validCards].sort(
             (a, b) => (b.power || 0) - (a.power || 0)
@@ -2948,7 +2949,7 @@ export async function resolveActiveSkillEffect(
       ) {
         consumeAIAction('assemble');
 
-        if (GameState.aiLevel === 1) {
+        if (checkIsEasyAI()) {
           // Easy AI: 最大パワーのカードを単純選択
           const sorted = [...validCards].sort(
             (a, b) => (b.power || 0) - (a.power || 0)
@@ -3731,7 +3732,7 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        if (GameState.aiLevel === 1) {
+        if (checkIsEasyAI()) {
           // Easy AI: 最もパワーの低いカードを単純選択
           const sortedLanes = [...occupiedLanes].sort((a, b) => {
             const aUndestroyable = !canCardBeDestroyed(
@@ -3840,7 +3841,7 @@ export async function resolveActiveSkillEffect(
         // 事前計画キューに残骸があれば消費（クリーンアップ）する
         consumeAIAction('execute');
 
-        if (GameState.aiLevel === 1) {
+        if (checkIsEasyAI()) {
           // Easy AI: 最もパワーの低いカードを単純選択
           const occupiedLanes = myBoard
             .map((bc, i) => (bc !== null ? i : -1))
@@ -4024,7 +4025,7 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        if (GameState.aiLevel <= 1) {
+        if (checkIsEasyAI()) {
           // Easy AI: 最もパワーの高い他カードを自動選択
           const sortedLanes = [...otherOccupiedLanes].sort((a, b) => {
             const diff =
@@ -4093,7 +4094,7 @@ export async function resolveActiveSkillEffect(
         GameState.gameMode !== 'online' &&
         GameState.gameMode !== 'pvp'
       ) {
-        if (GameState.aiLevel <= 1) {
+        if (checkIsEasyAI()) {
           // Easy AI: 味方（自身含む）で最もパワーの高いカード（加護未付与を優先）を選択
           const sortedLanes = [...occupiedLanes].sort((a, b) => {
             const gA = Boolean(myBoard[a].valkyriaGuard);

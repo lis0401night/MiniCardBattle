@@ -7,7 +7,10 @@ import {
 } from '../../game/battle/index.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import { appendVersionQuery } from '../../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  DIFFICULTY,
+} from '../../utils/constants/config.js';
 import { checkIsHighDiffMode, playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import {
@@ -185,10 +188,11 @@ export default function RewardOverlay() {
   const getGlowColorClass = () => {
     if (checkIsHighDiffMode(GameState.gameMode)) return 'glow-rainbow';
 
-    const level = GameState.aiLevel || 1;
-    if (level === 1) return 'glow-green';
-    if (level === 2) return 'glow-yellow';
-    if (level >= 3) return 'glow-red';
+    const diff =
+      GameState.difficulty || GameState.storyDifficulty || DIFFICULTY.EASY;
+    if (diff === DIFFICULTY.EASY) return 'glow-green';
+    if (diff === DIFFICULTY.NORMAL) return 'glow-yellow';
+    if (diff >= DIFFICULTY.HARD) return 'glow-red';
     return 'glow-green';
   };
 

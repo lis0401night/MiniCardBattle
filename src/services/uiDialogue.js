@@ -13,6 +13,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS, AUDIO_INSTANCES } from '../utils/sounds.js';
 import { GameState } from '../state/gameState.js';
+import { AI_LEVEL, DIFFICULTY } from '../utils/constants/config.js';
 import { saveStoryProgress } from '../game/story.js';
 import { handleProgressionNextStep } from '../game/progression.js';
 import { performFadeTransition } from './uiMainCore.js';
@@ -85,9 +86,13 @@ export function startNextBattleSequence() {
   applyStoryEnemyConfig(nextEnemyId);
 
   if (GameState.gameMode === 'story') {
-    GameState.aiLevel = GameState.storyDifficulty;
+    GameState.difficulty = GameState.storyDifficulty;
+    GameState.aiLevel =
+      GameState.storyDifficulty === DIFFICULTY.EASY
+        ? AI_LEVEL.EASY
+        : AI_LEVEL.NORMAL;
     console.log(
-      `Story Mode Battle: ${GameState.battleCount}, GameState.aiLevel set to: ${GameState.aiLevel}`
+      `Story Mode Battle: ${GameState.battleCount}, GameState.aiLevel set to: ${GameState.aiLevel}, difficulty: ${GameState.difficulty}`
     );
   }
   GameState.appState = 'pre_dialogue';
@@ -790,7 +795,11 @@ export function skipStoryDialogue() {
   const nextEnemyId = GameState.storyQueue[targetBattleCount - 1];
   applyStoryEnemyConfig(nextEnemyId);
 
-  GameState.aiLevel = GameState.storyDifficulty;
+  GameState.difficulty = GameState.storyDifficulty;
+  GameState.aiLevel =
+    GameState.storyDifficulty === DIFFICULTY.EASY
+      ? AI_LEVEL.EASY
+      : AI_LEVEL.NORMAL;
   GameState.appState = 'pre_dialogue';
   GameState.isSimplifiedDialogue = true;
 

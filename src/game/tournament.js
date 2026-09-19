@@ -3,7 +3,11 @@ import { setupDialogueScreen } from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { CHARACTERS } from '../utils/constants/characters.js';
-import { TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/config.js';
+import {
+  AI_LEVEL,
+  DIFFICULTY,
+  TOURNAMENT_RANDOM_OPPONENT_EXCLUDED_IDS,
+} from '../utils/constants/config.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import {
   TOURNAMENT_INTRO_DIALOGUE,
@@ -265,7 +269,8 @@ export function startTournamentMatch() {
   GameState.enemySkins[opponent.charId] = 'school';
 
   GameState.selectedStageId = 'tournament'; // トーナメント用の背景（全国大会）
-  GameState.aiLevel = 2; // 適度な強さ
+  GameState.aiLevel = AI_LEVEL.NORMAL; // 通常シミュレーションAI思考
+  GameState.difficulty = DIFFICULTY.NORMAL;
 
   // バトル前の会話をセットアップ
   performFadeTransition(() => {

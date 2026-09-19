@@ -2,6 +2,7 @@ import { useEffect, useReducer } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { GameState } from '../state/gameState.js';
 import {
+  DIFFICULTY,
   getScreenBackgroundStyle,
   MAX_CARD_COPIES,
 } from '../utils/constants/config.js';
@@ -21,13 +22,6 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import { CHAR_FORTUNE_HANDICAPS } from '../utils/constants/fortuneHandicaps.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-
-// 難易度レベル定数
-const DIFFICULTY = {
-  BEGINNER: 1, // 初級
-  INTERMEDIATE: 2, // 中級
-  ADVANCED: 3, // 上級
-};
 
 function CompleteBadge() {
   return (

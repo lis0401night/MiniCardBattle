@@ -9,7 +9,11 @@ import {
   showContinueScreen,
 } from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
-import { STORY_RANDOM_OPPONENT_EXCLUDED_IDS } from '../utils/constants/config.js';
+import {
+  AI_LEVEL,
+  DIFFICULTY,
+  STORY_RANDOM_OPPONENT_EXCLUDED_IDS,
+} from '../utils/constants/config.js';
 
 // ==========================================
 // ストーリーモード進行管理 (story.js)
@@ -160,7 +164,11 @@ export function resumeStoryProgress(savedData) {
   GameState.storyQueue = savedData.storyQueue;
   GameState.battleCount = savedData.battleCount;
   GameState.storyDifficulty = savedData.storyDifficulty;
-  GameState.aiLevel = savedData.storyDifficulty;
+  GameState.difficulty = savedData.storyDifficulty;
+  GameState.aiLevel =
+    savedData.storyDifficulty === DIFFICULTY.EASY
+      ? AI_LEVEL.EASY
+      : AI_LEVEL.NORMAL;
   GameState.currentDeckIndex = savedData.currentDeckIndex;
 
   GameState.playerConfig = CHARACTERS[savedData.pendingCharId];

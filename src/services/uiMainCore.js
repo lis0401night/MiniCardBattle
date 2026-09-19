@@ -16,6 +16,8 @@ import {
   SE_MUTED_KEY,
   LEGACY_VOLUME_KEY,
   DEFAULT_SOUND_VOLUME,
+  AI_LEVEL,
+  DIFFICULTY,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { LEADER_SKILLS } from '../utils/constants/leaderSkills.js';
@@ -1186,7 +1188,8 @@ export async function startAttackBattle(enemyPlayerData) {
     await loadPlayerDeck(enemyPlayerData.uuid);
 
     GameState.gameMode = 'defense_attack';
-    GameState.aiLevel = 3; // 防衛戦のAIは常に上級（レベル3）固定
+    GameState.aiLevel = AI_LEVEL.NORMAL; // 防衛戦のAI思考は通常シミュレーション（レベル2）
+    GameState.difficulty = DIFFICULTY.HARD;
 
     // 敵の設定を保存
     GameState.enemyConfig = {
@@ -1458,7 +1461,8 @@ export function confirmCharSelect() {
       );
     }
 
-    GameState.aiLevel = 3;
+    GameState.aiLevel = AI_LEVEL.NORMAL;
+    GameState.difficulty = DIFFICULTY.HARD;
     confirmStageSelect('practice');
   } else if (GameState.appState === 'select_enemy') {
     GameState.enemyConfig = CHARACTERS[GameState.pendingCharId];
@@ -1469,8 +1473,10 @@ export function confirmCharSelect() {
 
 export function confirmDifficulty(level) {
   playSound(SOUNDS.seClick);
-  GameState.aiLevel = level;
+  GameState.difficulty = level;
   GameState.storyDifficulty = level;
+  GameState.aiLevel =
+    level === DIFFICULTY.EASY ? AI_LEVEL.EASY : AI_LEVEL.NORMAL;
   if (GameState.gameMode === 'story') {
     initStoryMode(GameState.pendingCharId);
   } else if (GameState.gameMode === 'free') {

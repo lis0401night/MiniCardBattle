@@ -76,6 +76,7 @@ import {
   HIGH_DIFFICULTY_REWARD_POINTS,
   HIGH_DIFFICULTY_TOTAL_POINTS_KEY,
   MAX_CARD_COPIES,
+  DIFFICULTY,
 } from '../../utils/constants/config.js';
 import {
   calculateFortuneRewards,
@@ -722,10 +723,12 @@ function resolveCardDrop() {
     }
   }
 
+  const diff =
+    GameState.difficulty || GameState.storyDifficulty || DIFFICULTY.NORMAL;
   const diffKey =
-    GameState.aiLevel === 1
+    diff === DIFFICULTY.EASY
       ? 'easy'
-      : GameState.aiLevel === 3
+      : diff === DIFFICULTY.HARD
         ? 'hard'
         : 'normal';
 
@@ -874,10 +877,8 @@ export function endBattle() {
       ) {
         if (GameState.enemyConfig.id === 'satan') {
           incrementStat('storyClears', GameState.playerConfig.id);
-          if (
-            typeof GameState.aiLevel !== 'undefined' &&
-            GameState.aiLevel === 3
-          ) {
+          const currentDiff = GameState.difficulty || GameState.storyDifficulty;
+          if (currentDiff === DIFFICULTY.HARD) {
             incrementStat('storyClearsHard', GameState.playerConfig.id);
           }
         } else if (GameState.enemyConfig.id === 'void') {

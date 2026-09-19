@@ -17,6 +17,7 @@ import { applyActiveSkillLogic, calculateCombatPhase } from '../engine.js';
 import { isTutorialMode, filterPlacementLaneClick } from '../tutorialEngine.js';
 import { GameState } from '../../state/gameState.js';
 import {
+  checkIsEasyAI,
   hasSkill,
   getSeededRandom,
   shuffleArray,
@@ -677,7 +678,7 @@ export async function waitPlayerEnemyLaneSelection(
       delete GameState.aiDecision.cardTokenLanes;
     }
 
-    if (GameState.aiLevel <= 1) {
+    if (checkIsEasyAI()) {
       // Easy AI: パワーが高いカードを優先して狙う
       const sortedLanes = [...validLanes].sort((a, b) => {
         const pA = targetBoard[a] ? targetBoard[a].currentPower : -1;
@@ -1485,7 +1486,7 @@ export async function waitSkillChoice(
       await sleep(AI_THINKING_DURATION);
 
       // Easy AI: ランダム選択
-      if (GameState.aiLevel <= 1) {
+      if (checkIsEasyAI()) {
         const shuffled = shuffleArray([...choices]);
         return shuffled.slice(0, Math.min(maxChoices, choices.length));
       }
@@ -1579,7 +1580,7 @@ export async function waitSkillChoice(
       delete GameState.aiDecision.choiceIndex;
     }
 
-    if (GameState.aiLevel <= 1) {
+    if (checkIsEasyAI()) {
       // Easy AI: ランダム
       const shuffled = shuffleArray([...choices]);
       return shuffled.slice(0, Math.min(maxChoices, choices.length));
