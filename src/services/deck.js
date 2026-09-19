@@ -886,13 +886,20 @@ export function loadDeck() {
     if (defenseSaved) {
       try {
         GameState.decks = [JSON.parse(defenseSaved)];
-        // キャラクター選択直後の場合は選択されたリーダーを強制適用する
+        // キャラクター選択直後の場合は選択されたリーダーおよびスキンを強制適用する
         if (
           GameState.playerConfig &&
           GameState.playerConfig.id &&
           GameState.appState === 'select_player'
         ) {
           GameState.decks[0].leaderId = GameState.playerConfig.id;
+          if (GameState.playerSkins?.[GameState.playerConfig.id]) {
+            if (!GameState.decks[0].playerSkins) {
+              GameState.decks[0].playerSkins = {};
+            }
+            GameState.decks[0].playerSkins[GameState.playerConfig.id] =
+              GameState.playerSkins[GameState.playerConfig.id];
+          }
         }
       } catch {
         GameState.decks = [];
@@ -1024,7 +1031,9 @@ export function loadDeck() {
       GameState.gameMode === 'battle_dungeon' ||
       GameState.gameMode === 'tournament'
     ) {
-      createNewDeck('knight');
+      const fallbackLeader =
+        GameState.playerConfig?.id || GameState.pendingCharId || 'android';
+      createNewDeck(fallbackLeader);
       if (GameState.gameMode === 'defense_register') {
         GameState.decks[0].name = DEFENSE_DECK_NAME;
         GameState.decks[0].id = DEFENSE_DECK_ID;

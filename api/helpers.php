@@ -512,15 +512,37 @@ function savePlayerData(string $uuid, array $playerData, ?string $dir = null): b
                     $backup = stream_get_contents($fp);
                     rewind($fp);
                     ftruncate($fp, 0);
-                    $w = fwrite($fp, $jsonString);
+
+                    $wOffset = 0;
+                    $jsonLength = strlen($jsonString);
+                    while ($wOffset < $jsonLength) {
+                        $written = fwrite($fp, substr($jsonString, $wOffset));
+                        if ($written === false || $written === 0) {
+                            break;
+                        }
+                        $wOffset += $written;
+                    }
                     fflush($fp);
-                    $saved = ($w === strlen($jsonString));
-                    // 部分書き込み等で保存に失敗した場合は退避データを書き戻して復元
+                    $saved = ($wOffset === $jsonLength);
+
+                    // 部分書き込み等で保存に失敗した場合は退避データを全バイト書き戻して復元
                     if (!$saved && $backup !== false && $backup !== '') {
                         ftruncate($fp, 0);
                         rewind($fp);
-                        fwrite($fp, $backup);
+                        $offset = 0;
+                        $backupLength = strlen($backup);
+                        while ($offset < $backupLength) {
+                            $written = fwrite($fp, substr($backup, $offset));
+                            if ($written === false || $written === 0) {
+                                break;
+                            }
+                            $offset += $written;
+                        }
                         fflush($fp);
+                        if ($offset !== $backupLength) {
+                            // 復元不能時は破損を検出可能な状態で扱う
+                            $saved = false;
+                        }
                     }
                     flock($fp, LOCK_UN);
                 }

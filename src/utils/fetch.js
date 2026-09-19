@@ -98,7 +98,8 @@ export async function asyncGet(url, params = {}, config = {}) {
 
 /**
  * 値がブラウザまたは実行環境ネイティブのバイナリ／フォームデータ型であるかを判定します。
- * FormData, Blob, ArrayBuffer 等に該当する場合は、axios にそのまま渡すため JSON 文字列化を抑止します。
+ * FormData, Blob, ArrayBuffer, URLSearchParams, ArrayBufferView 等に該当する場合は、
+ * axios にそのまま渡すため JSON 文字列化を抑止します。
  *
  * @param {any} value - 判定対象の値
  * @return {boolean} ネイティブのボディ型であれば true、それ以外は false
@@ -114,6 +115,15 @@ function isNativeBinaryOrFormData(value) {
     return true;
   }
   if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return true;
+  }
+  if (
+    typeof URLSearchParams !== 'undefined' &&
+    value instanceof URLSearchParams
+  ) {
+    return true;
+  }
+  if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(value)) {
     return true;
   }
   return false;
@@ -135,21 +145,19 @@ export async function asyncPost(url, data = null, config = {}) {
   const targetUrl = normalizeApiUrl(url);
   const { keepalive, fetchOptions, ...restConfig } = config;
 
-  // keepalive が指定されている場合は Fetch アダプタを使用してブラウザの keepalive 機能を有効化。
-  // keepalive 未指定時でも、呼び出し側から fetchOptions が指定されている場合は設定を破棄せず維持する。
+  // keepalive または fetchOptions が指定されている場合は Fetch アダプタを選択し、
+  // fetchOptions の設定およびブラウザの keepalive 機能を確実に有効化・維持する。
   const requestConfig = {
     ...restConfig,
-    ...(keepalive
+    ...(keepalive || fetchOptions
       ? {
           adapter: 'fetch',
           fetchOptions: {
             ...(fetchOptions || {}),
-            keepalive: true,
+            ...(keepalive ? { keepalive: true } : {}),
           },
         }
-      : fetchOptions
-        ? { fetchOptions }
-        : {}),
+      : {}),
   };
 
   // axios 内部の mergeConfig (utils.merge) におけるプロトタイプ汚染対策で、

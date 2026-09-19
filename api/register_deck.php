@@ -58,8 +58,15 @@ $stage = $hasStage ? preg_replace('/[^a-z0-9_]/', '', (string)$data['stage']) : 
 $hasSkin = array_key_exists('skin', $data) && $data['skin'] !== null;
 $skin = $hasSkin ? preg_replace('/[^a-z0-9_]/', '', (string)$data['skin']) : null;
 
+// プレイマットのサニタイズ判定
+// プレイマットは未設定（なし）状態が存在するため、null が正規の初期値および解除値となる。
+// 空文字列やサニタイズ後に空となった不正文字列は null に正規化してクリア操作として扱う。
 $hasPlaymat = array_key_exists('playmat', $data);
-$playmat = $hasPlaymat && $data['playmat'] !== null ? preg_replace('/[^a-z0-9_]/', '', (string)$data['playmat']) : null;
+$playmat = null;
+if ($hasPlaymat && $data['playmat'] !== null) {
+    $cleanedPlaymat = preg_replace('/[^a-z0-9_]/', '', (string)$data['playmat']);
+    $playmat = $cleanedPlaymat !== '' ? $cleanedPlaymat : null;
+}
 
 $hasIcon = array_key_exists('icon', $data) && $data['icon'] !== null;
 $icon = $hasIcon ? preg_replace('/[^a-z0-9_]/', '', (string)$data['icon']) : null;
@@ -106,7 +113,8 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$player_data, a
         $player_data['stage'] = ($hasStage && $stage !== '') ? $stage : 'plain';
         $player_data['skin'] = ($hasSkin && $skin !== '') ? $skin : 'default';
         $player_data['icon'] = ($hasIcon && $icon !== '') ? $icon : 'player';
-        $player_data['playmat'] = $playmat;
+        // プレイマットは未指定時または解除時は null が正規値（空文字は事前に null へ正規化済み）
+        $player_data['playmat'] = $hasPlaymat ? $playmat : null;
         $player_data['skins'] = $skins;
     } else {
         // 既存プレイヤーの場合は、明示的に送信されたオプション項目のみを上書き更新し、未送信項目は既存値を維持する
@@ -120,6 +128,7 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$player_data, a
             $player_data['icon'] = $icon;
         }
         if ($hasPlaymat) {
+            // null は意図的なプレイマット解除操作として正常に反映（空文字は事前に null へ正規化済み）
             $player_data['playmat'] = $playmat;
         }
         if ($hasSkins) {

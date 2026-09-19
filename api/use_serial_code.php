@@ -60,6 +60,10 @@ if (!isset($serials_config[$code])) {
 }
 
 $reward = $serials_config[$code];
+if (!is_array($reward) || !isset($reward['rewardType']) || !isset($reward['rewardValue'])) {
+    echo json_encode(['success' => false, 'error' => 'config_corrupt']);
+    exit;
+}
 $rewardType = $reward['rewardType'];
 $rewardValue = $reward['rewardValue'];
 $rewardName = $reward['rewardName'] ?? '';

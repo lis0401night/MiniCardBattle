@@ -34,6 +34,8 @@ import {
 } from '../utils/gameUtils.js';
 import { AUDIO_INSTANCES, SOUNDS } from '../utils/sounds.js';
 import {
+  DEFENSE_DECK_ID,
+  DEFENSE_DECK_NAME,
   createNewDeck,
   loadDeck,
   renderDeckEdit,
@@ -1275,6 +1277,12 @@ export function startDefenseBattle() {
   showDefenseMenu();
 }
 
+/**
+ * キャラクター選択画面でキャラクター・スキンを決定した際の確定処理を実行します。
+ * ゲームモード（防衛デッキ登録、ストーリー、トーナメント、オンライン編集等）に応じた画面遷移や初期化を行います。
+ *
+ * @return {void}
+ */
 export function confirmCharSelect() {
   playSound(SOUNDS.seClick);
   if (GameState.appState === 'create_deck_select_char') {
@@ -1353,67 +1361,109 @@ export function confirmCharSelect() {
       GameState.gameMode === 'online_deck_edit'
     ) {
       // 防衛登録 / オンライン：ステージ選択を省略してすぐデッキ編集へ移行
-      GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
-      const chosenSkin = GameState.playerSkins[GameState.pendingCharId];
-      startBattleFlow();
-      if (chosenSkin) {
-        GameState.playerSkins[GameState.pendingCharId] = chosenSkin;
-        // 選択されたスキンに対応する画像を playerConfig に適用する
-        if (typeof getSkinImage === 'function' && GameState.playerConfig) {
-          const templateChar = CHARACTERS[GameState.pendingCharId];
-          if (templateChar) {
-            // スキン画像を取得し、存在しない場合はテンプレート画像にフォールバック
-            GameState.playerConfig.image =
-              getSkinImage(templateChar, chosenSkin, 'image') ||
-              templateChar.image;
-            GameState.playerConfig.imageLose =
-              getSkinImage(templateChar, chosenSkin, 'imageLose') ||
-              templateChar.imageLose;
-            GameState.playerConfig.icon =
-              getSkinImage(templateChar, chosenSkin, 'icon') ||
-              templateChar.icon;
-            GameState.playerConfig.iconDamage =
-              getSkinImage(templateChar, chosenSkin, 'iconDamage') ||
-              templateChar.iconDamage;
+      const selectedLeaderId = GameState.pendingCharId;
+      const chosenSkin =
+        GameState.playerSkins?.[selectedLeaderId] || 'default';
+
+      if (!GameState.playerSkins) GameState.playerSkins = {};
+      GameState.playerSkins[selectedLeaderId] = chosenSkin;
+
+      // 選択されたリーダーおよびスキン画像を playerConfig に先行反映
+      GameState.playerConfig = { ...CHARACTERS[selectedLeaderId] };
+      if (typeof getSkinImage === 'function') {
+        const templateChar = CHARACTERS[selectedLeaderId];
+        if (templateChar) {
+          GameState.playerConfig.image =
+            getSkinImage(templateChar, chosenSkin, 'image') ||
+            templateChar.image;
+          GameState.playerConfig.imageLose =
+            getSkinImage(templateChar, chosenSkin, 'imageLose') ||
+            templateChar.imageLose ||
+            templateChar.image;
+          GameState.playerConfig.icon =
+            getSkinImage(templateChar, chosenSkin, 'icon') ||
+            templateChar.icon;
+          GameState.playerConfig.iconDamage =
+            getSkinImage(templateChar, chosenSkin, 'iconDamage') ||
+            templateChar.iconDamage ||
+            templateChar.icon;
+        }
+      }
+
+      if (GameState.gameMode === 'defense_register') {
+        let defenseDeck = null;
+        const defenseSaved = localStorage.getItem(
+          'mini_card_battle_defense_deck_obj'
+        );
+        if (defenseSaved) {
+          try {
+            defenseDeck = JSON.parse(defenseSaved);
+          } catch (e) {
+            console.error('Failed to parse defense deck object:', e);
+            defenseDeck = null;
           }
         }
-        if (
-          GameState.gameMode === 'defense_register' &&
-          GameState.defenseDeck
-        ) {
-          if (!GameState.defenseDeck.playerSkins)
-            GameState.defenseDeck.playerSkins = {};
-          GameState.defenseDeck.playerSkins[GameState.pendingCharId] =
-            chosenSkin;
-          if (!GameState.decks) GameState.decks = [];
-          GameState.decks[0] = GameState.defenseDeck;
+        if (!defenseDeck) {
+          // 旧データ形式からの移行チェック
+          const oldDef = localStorage.getItem('mini_card_battle_deck_defense');
+          let cardsArr = [];
+          if (oldDef) {
+            try {
+              cardsArr = JSON.parse(oldDef);
+            } catch {
+              cardsArr = [];
+            }
+          }
+          defenseDeck = {
+            id: DEFENSE_DECK_ID,
+            name: DEFENSE_DECK_NAME,
+            leaderId: selectedLeaderId,
+            playmatId:
+              localStorage.getItem('mini_card_battle_playmat_defense') || null,
+            playerSkins: {},
+            premiumCards: [...(GameState.premiumCards || [])],
+            cards:
+              Array.isArray(cardsArr) && cardsArr.length > 0 ? cardsArr : [],
+          };
+        }
+
+        // リーダーIDとスキン情報を防衛デッキに確実に設定
+        defenseDeck.leaderId = selectedLeaderId;
+        if (!defenseDeck.playerSkins) defenseDeck.playerSkins = {};
+        defenseDeck.playerSkins[selectedLeaderId] = chosenSkin;
+
+        // メモリ上のデッキ配列とローカルストレージへ即時永続化
+        GameState.decks = [defenseDeck];
+        GameState.currentDeckIndex = 0;
+        localStorage.setItem(
+          'mini_card_battle_defense_deck_obj',
+          JSON.stringify(defenseDeck)
+        );
+        if (Array.isArray(defenseDeck.cards)) {
           localStorage.setItem(
-            'mini_card_battle_defense_deck_obj',
-            JSON.stringify(GameState.defenseDeck)
+            'mini_card_battle_deck_defense',
+            JSON.stringify(defenseDeck.cards)
           );
         }
+      } else if (GameState.gameMode === 'online_deck_edit') {
         if (
           GameState.decks &&
           GameState.currentDeckIndex >= 0 &&
           GameState.decks.length > GameState.currentDeckIndex
         ) {
-          if (!GameState.decks[GameState.currentDeckIndex].playerSkins) {
-            GameState.decks[GameState.currentDeckIndex].playerSkins = {};
-          }
-          GameState.decks[GameState.currentDeckIndex].playerSkins[
-            GameState.pendingCharId
-          ] = chosenSkin;
-          if (
-            GameState.gameMode !== 'defense_register' &&
-            GameState.gameMode !== 'battle_dungeon'
-          ) {
-            saveSafeNormalDecks(GameState.decks);
-          }
+          const targetDeck = GameState.decks[GameState.currentDeckIndex];
+          targetDeck.leaderId = selectedLeaderId;
+          if (!targetDeck.playerSkins) targetDeck.playerSkins = {};
+          targetDeck.playerSkins[selectedLeaderId] = chosenSkin;
+          saveSafeNormalDecks(GameState.decks);
         }
-        setTimeout(() => {
-          if (typeof renderDeckEdit === 'function') renderDeckEdit();
-        }, 50);
       }
+
+      // ストレージおよびメモリ上のデータ同期が完了した状態でデッキ編成画面へ移行
+      startBattleFlow();
+      setTimeout(() => {
+        if (typeof renderDeckEdit === 'function') renderDeckEdit();
+      }, 50);
     } else if (GameState.gameMode === 'defense_attack') {
       // 攻撃側：キャラクター選択後は対戦相手選択をスキップして即デッキ編成へ
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
