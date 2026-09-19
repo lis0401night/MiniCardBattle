@@ -141,7 +141,11 @@ export async function asyncPost(url, data = null, config = {}) {
     !(data instanceof ArrayBuffer)
   ) {
     requestData = JSON.stringify(data);
-  } else if (data !== null && typeof data === 'object' && typeof FormData === 'undefined') {
+  } else if (
+    data !== null &&
+    typeof data === 'object' &&
+    typeof FormData === 'undefined'
+  ) {
     // Node.js等 FormData 等のブラウザAPIが存在しない環境向けフォールバック
     requestData = JSON.stringify(data);
   }

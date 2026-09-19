@@ -246,7 +246,8 @@ export async function executeEnemyAI() {
  * @param {number} count - 配置を決定するレーン数
  * @param {boolean} [canCancel=false] - 配置キャンセル（スキップ）を許可するかどうか
  * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点等）を検証するかどうか
- * @returns {Array<number>} 決定された配置レーンインデックス配列
+ * @param {Array<object>} [pendingSkills=[]] - 後続で待機している未解決スキル群
+ * @returns {Array<number>} 決定されたレーンインデックス配列
  */
 export function evaluateBestLanesForToken(
   allLanes,
@@ -254,7 +255,8 @@ export function evaluateBestLanesForToken(
   tokenCard,
   count,
   canCancel = false,
-  checkConstraints = true
+  checkConstraints = true,
+  pendingSkills = []
 ) {
   if (owner === 'blue') return shuffleArray([...allLanes]).slice(0, count);
 
@@ -279,7 +281,8 @@ export function evaluateBestLanesForToken(
       tokenCard,
       count,
       canCancel,
-      checkConstraints
+      checkConstraints,
+      pendingSkills
     );
   }
 }

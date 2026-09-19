@@ -70,6 +70,7 @@ import {
   waitPlayerLaneSelection,
   waitSkillChoice,
   triggerRetaliateSkill,
+  getValidSummonLanes,
 } from './battle/index.js';
 import {
   applyActiveSkillLogic,
@@ -305,6 +306,7 @@ async function executeGroupDestruction(targets) {
  * @param {string} skillId 発動するスキルの識別子
  * @param {number|undefined} skillValue スキル効果値（パワーや対象枚数など）
  * @param {object|null} [skObj=null] スキル定義オブジェクト（省略時は c.skills からフォールバック解決）
+ * @param {Array<object>} [remainingSkills=[]] 後続で待機している未解決スキル群
  * @returns {Promise<void>}
  */
 export async function resolveActiveSkillEffect(
@@ -313,8 +315,17 @@ export async function resolveActiveSkillEffect(
   c,
   skillId,
   skillValue,
-  skObj = null
+  skObj = null,
+  remainingSkills = []
 ) {
+  // 後続で待機している未解決スキル群（引数、またはカードの pendingSkills プロパティから取得）
+  const pendingSkills =
+    Array.isArray(remainingSkills) && remainingSkills.length > 0
+      ? remainingSkills
+      : Array.isArray(c?.pendingSkills)
+        ? c.pendingSkills
+        : [];
+
   const currentSkill =
     skObj ||
     (Array.isArray(c?.skills) ? c.skills.find((s) => s.id === skillId) : null);
@@ -660,11 +671,29 @@ export async function resolveActiveSkillEffect(
       consumeAIAction(skillId);
 
       if (GameState.aiLevel === 1) {
-        // Easy AI: 条件を満たす最初のカードを選択
+        // Easy AI: 条件を満たす最初のカードを選択し、合法なレーンへ安全に召喚
         const foundIdx = h.findIndex((card) => isValidSummonCard(card));
         if (foundIdx !== -1) {
           selectedIdx = foundIdx;
-          selectedLane = l;
+          const pickedCard = h[foundIdx];
+          const validLanes = getValidSummonLanes(o, pickedCard);
+          if (validLanes.length > 0) {
+            const emptyL = validLanes.find(
+              (lane) => GameState.enemyBoard[lane] === null
+            );
+            if (emptyL !== undefined) {
+              selectedLane = emptyL;
+            } else {
+              validLanes.sort(
+                (a, b) =>
+                  (GameState.enemyBoard[a]?.currentPower || 0) -
+                  (GameState.enemyBoard[b]?.currentPower || 0)
+              );
+              selectedLane = validLanes[0];
+            }
+          } else {
+            selectedLane = l;
+          }
         }
       } else {
         // Normal以上: 常に最新の盤面・手札状況に基づき、直前シミュレーションで最善カードと配置レーンを決定
@@ -1242,7 +1271,8 @@ export async function resolveActiveSkillEffect(
       power: pValue,
       currentPower: pValue,
       basePower: pValue,
-      skills: [],
+      skills: tC.skills ? JSON.parse(JSON.stringify(tC.skills)) : [],
+      isAmbush: skillId === 'ambush', // 奇襲による即時攻撃フラグ
     };
     // AIの場合：actionQueueのtoken_placementからservant用のレーン指定を取り出す（cloneと同パターン）
     let summonPredefinedLanes = null;
@@ -1268,6 +1298,7 @@ export async function resolveActiveSkillEffect(
     }
 
     if (!aiSummonCancelled) {
+      simulatedToken.pendingSkills = pendingSkills;
       // 個数(count)には 1 を指定（召喚はパワー指定スキルのため）
       const selectedLanes = await waitPlayerLaneSelection(
         1,
@@ -1276,7 +1307,10 @@ export async function resolveActiveSkillEffect(
         false,
         summonPredefinedLanes,
         false, // ルール：スキルによる「使役/奇襲」は「配置(Place)」扱いのため、制約チェックは無視する
-        true // canCancel: 動的シミュレーションでパスが最善の場合は空配列を許容
+        true, // canCancel: 動的シミュレーションでパスが最善の場合は空配列を許容
+        '配置完了',
+        false,
+        pendingSkills
       );
       if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける
 
@@ -1454,6 +1488,7 @@ export async function resolveActiveSkillEffect(
       ? clonePredefinedLanes.filter((lane) => adjacentLanes.includes(lane))
       : adjacentLanes;
 
+    simulatedToken.pendingSkills = pendingSkills;
     const selectedLanes = await waitPlayerLaneSelection(
       count,
       o,
@@ -1461,7 +1496,10 @@ export async function resolveActiveSkillEffect(
       false,
       restrictLanes,
       false,
-      true
+      true,
+      '配置完了',
+      false,
+      pendingSkills
     );
     if (!selectedLanes || selectedLanes.length === 0) return; // キャンセル時はスキル終了
     if (GameState.gameMode !== 'online' && o !== 'blue') await sleep(600); // 敵AIの場合のみ間を空ける

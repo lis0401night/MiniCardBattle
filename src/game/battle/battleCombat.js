@@ -1574,9 +1574,24 @@ export async function resolveOnPlaySkill(o, l, c) {
       return orderA - orderB;
     });
 
-    for (const sk of skillsToResolve) {
+    for (let i = 0; i < skillsToResolve.length; i++) {
+      const sk = skillsToResolve[i];
       if (ACTIVE_SKILLS.includes(sk.id)) {
-        await resolveActiveSkillEffect(o, l, c, sk.id, sk.value, sk);
+        // 現在処理中のスキルの後続で待機している未解決のアクティブスキル群を抽出
+        const remainingSkills = skillsToResolve
+          .slice(i + 1)
+          .filter((s) => ACTIVE_SKILLS.includes(s.id));
+        c.pendingSkills = remainingSkills;
+
+        await resolveActiveSkillEffect(
+          o,
+          l,
+          c,
+          sk.id,
+          sk.value,
+          sk,
+          remainingSkills
+        );
 
         // 1つのスキル解決完了時に当該スキルを発動済みとし、盤面バッジ（集約カウント含む）を即座に更新
         if (typeof sk === 'object' && sk !== null) {
@@ -1592,11 +1607,13 @@ export async function resolveOnPlaySkill(o, l, c) {
 
     // 全ての召喚時スキルが完了したらフラグを立てる（ボード上でのバッジ非表示用）
     c.skillTriggered = true;
+    delete c.pendingSkills;
     renderBoard();
 
     // スキル解決によって破壊されたカード（自分自身含む）を除去
     await cleanupDestroyedCards();
   } finally {
+    delete c.pendingSkills;
     // 処理が完了したらフラグを解除する
     c.isSkillResolving = false;
   }

@@ -35,6 +35,8 @@ import {
   processDestructionTriggers,
   quietDiscardFromBoard,
   VALKYRIA_GUARD_TURNS,
+  getBestSimulatedPlacementLane,
+  registerPlacementEvaluator,
 } from './engine.js';
 
 /**
@@ -1393,6 +1395,17 @@ export function processActionSequence(
           !simState.enemyBoard[lIdx].isSkillResolving
         ) {
           simState.enemyBoard[lIdx] = null;
+        }
+
+        // 【奇襲（ambush）】play_adhocで配置されたカードが奇襲を持つ場合、または奇襲トークンとして配置された場合、ただちに単体戦闘と破壊トリガーをシミュレート
+        if (
+          action.type === 'play_adhoc' &&
+          (action.isAmbush || hasSkill(playedCard, 'ambush')) &&
+          simState.enemyBoard[lIdx]
+        ) {
+          simState.enemyBoard[lIdx].isSkillResolving = false;
+          applySingleCombat(simState, 'red', lIdx, []);
+          processDestructionTriggers(simState, []);
         }
       }
 
@@ -3028,13 +3041,17 @@ export function getBestSimulatedMove() {
             ].includes(s.id)
           );
           if (hasActiveSkills) {
-            // リーダーカードの配置レーンを推定（tokenLanes[0]、またはデフォルトの空きレーン）
+            // リーダーカードの配置レーンを推定（tokenLanes[0]、または最適化レーン評価）
             const leaderLane =
               tokenLanes && Array.isArray(tokenLanes) && tokenLanes.length > 0
                 ? tokenLanes[0]
-                : ([0, 2, 1].find(
-                    (l) => mySealedLanes[l] === 0 && myBoard[l] === null
-                  ) ?? 1);
+                : getBestSimulatedPlacementLane(
+                    GameState,
+                    'red',
+                    leaderCard,
+                    [0, 1, 2],
+                    false
+                  );
 
             const trialPalaceLeaderSkillContext = {
               action: action,
@@ -4467,11 +4484,1300 @@ export function simulateCardPlacementOnBoard(
 }
 
 /**
+ * アドホックシミュレーションで決定された最善ブランチ（アクションシーケンス）の
+ * 選択肢情報（choices / choices2）および連鎖アクションを GameState.aiDecision に同期する。
+ *
+ * @param {Array<object>} bestBranch - 最善アクションシーケンス
+ */
+export function syncAdhocDecision(bestBranch) {
+  if (!bestBranch || bestBranch.length === 0) return;
+  if (!GameState.aiDecision) {
+    GameState.aiDecision = {};
+  }
+  if (!GameState.aiDecision.actionQueue) {
+    GameState.aiDecision.actionQueue = [];
+  }
+  if (!GameState.aiDecision.choiceIndexQueue) {
+    GameState.aiDecision.choiceIndexQueue = [];
+  }
+
+  // 1. 親アクション（インデックス0）が choices を持つ場合、choiceIndexQueue に登録
+  const rootAct = bestBranch[0];
+  if (rootAct) {
+    if (rootAct.choices !== undefined) {
+      GameState.aiDecision.choiceIndexQueue.unshift(rootAct.choices);
+    }
+    if (rootAct.choices2 !== undefined) {
+      GameState.aiDecision.choiceIndexQueue.unshift(rootAct.choices2);
+    }
+  }
+
+  // 2. 連鎖アクション（インデックス1以降）を actionQueue の先頭に追加
+  const chainActions = bestBranch.slice(1);
+  const reversedChain = [...chainActions].reverse();
+  reversedChain.forEach((act) => {
+    GameState.aiDecision.actionQueue.unshift(act);
+    if (act.type === 'choice' || act.type === 'force') {
+      if (act.choices !== undefined) {
+        GameState.aiDecision.choiceIndexQueue.unshift(act.choices);
+      }
+    }
+  });
+}
+
+/**
+ * アドホック（直前）シミュレーション用のスキル分岐展開共通関数。
+ * カードプレイまたはオンプレイによって誘発するスキル群（choice, force, ambush, clone, servant, puppet, resurrect, leap, forge, inspire, protection, dominate, execute, berserk等）
+ * を再帰的にアクションキューとして展開する。
+ *
+ * @param {Array<object>} currentSkills - 解決対象のスキル配列
+ * @param {number[]} currentUsedHand - 使用済み手札インデックス
+ * @param {number[]} currentUsedDiscard - 使用済み墓地インデックス
+ * @param {number} currentDepth - 再帰深さ
+ * @param {Array<object>} currentDiscard - 一時的に墓地に送られたカード配列
+ * @param {number} laneIdx - 親カードが置かれたレーン
+ * @param {Array<object|null>} currentEnemyBoard - シミュレーション上のAI(red)盤面
+ * @param {Array<object|null>} currentPlayerBoard - シミュレーション上のプレイヤー(blue)盤面
+ * @param {object|null} [parentCard=null] - 親カードオブジェクト（choice/forceの選択肢取得やselfId特定用）
+ * @param {'red' | 'blue'} [owner='red'] - 発動陣営
+ * @param {object} [leaderSkillContext=undefined] - リーダースキルコンテキスト
+ * @return {Array<Array<object>>} アクションシーケンスの配列
+ */
+export function buildSkillBranchAdhoc(
+  currentSkills,
+  currentUsedHand,
+  currentUsedDiscard,
+  currentDepth,
+  currentDiscard = [],
+  laneIdx,
+  currentEnemyBoard = null,
+  currentPlayerBoard = null,
+  parentCard = null,
+  owner = 'red',
+  leaderSkillContext = undefined
+) {
+  if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
+
+  const isRed = owner === 'red';
+  const sealedLanes = isRed
+    ? GameState.enemySealedLanes || [0, 0, 0]
+    : GameState.playerSealedLanes || [0, 0, 0];
+
+  const activeEnemyBoard =
+    currentEnemyBoard ||
+    (GameState.enemyBoard ? [...GameState.enemyBoard] : [null, null, null]);
+  const activePlayerBoard =
+    currentPlayerBoard ||
+    (GameState.playerBoard ? [...GameState.playerBoard] : [null, null, null]);
+  const activeMyBoard = isRed ? activeEnemyBoard : activePlayerBoard;
+  const activeOppBoard = isRed ? activePlayerBoard : activeEnemyBoard;
+
+  const myHand = isRed ? GameState.enemyHand || [] : GameState.playerHand || [];
+  const myDiscard = isRed
+    ? GameState.enemyDiscard || []
+    : GameState.playerDiscard || [];
+  const oppDiscard = isRed
+    ? GameState.playerDiscard || []
+    : GameState.enemyDiscard || [];
+  const myDeck = isRed ? GameState.enemyDeck || [] : GameState.playerDeck || [];
+
+  let sk = currentSkills[0];
+  let remainingSkills = currentSkills.slice(1);
+  let results = [];
+
+  const isPlacementSkill = [
+    'clone',
+    'servant',
+    'ambush',
+    'puppet',
+    'resurrect',
+    'execute',
+    'inspire',
+    'protection',
+    'dominate',
+  ].includes(sk.id);
+  if (!isPlacementSkill) {
+    results.push(
+      ...buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscard,
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard,
+        parentCard,
+        owner,
+        leaderSkillContext
+      )
+    );
+  }
+
+  if (sk.id === 'invite') {
+    for (let i = 0; i < myHand.length; i++) {
+      if (currentUsedHand.includes(i)) continue;
+      let childCard = myHand[i];
+      let children = buildCardPlayTreeAdhoc(
+        childCard,
+        i,
+        'invite',
+        myHand,
+        myDiscard,
+        [...currentUsedHand, i],
+        currentUsedDiscard,
+        currentDepth + 1,
+        laneIdx,
+        leaderSkillContext,
+        owner,
+        true
+      );
+      for (let cNode of children) {
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          [...currentUsedHand, i],
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([...cNode, ...nb]);
+        }
+      }
+    }
+  } else if (sk.id === 'summon') {
+    const selfId = parentCard ? parentCard.baseId || parentCard.id : null;
+    const isExcludeBoard = Boolean(sk.excludeBoard);
+    const presentBoardIds = isExcludeBoard
+      ? activeMyBoard
+          .filter(Boolean)
+          .flatMap((c) => [c.id, c.baseId])
+          .filter(Boolean)
+      : [];
+
+    for (let i = 0; i < myHand.length; i++) {
+      if (currentUsedHand.includes(i)) continue;
+      let childCard = myHand[i];
+
+      if (
+        !matchesSummonTarget(childCard, sk, {
+          selfId,
+          presentBoardIds,
+        })
+      ) {
+        continue;
+      }
+
+      let children = buildCardPlayTreeAdhoc(
+        childCard,
+        i,
+        'summon',
+        myHand,
+        myDiscard,
+        [...currentUsedHand, i],
+        currentUsedDiscard,
+        currentDepth + 1,
+        undefined,
+        leaderSkillContext,
+        owner,
+        true
+      );
+      for (let cNode of children) {
+        const summonLane = cNode[0]?.laneIdx;
+        const nextEnemyBoard = isRed ? [...activeEnemyBoard] : activeEnemyBoard;
+        const nextPlayerBoard = !isRed
+          ? [...activePlayerBoard]
+          : activePlayerBoard;
+        if (summonLane !== undefined && summonLane >= 0 && summonLane < 3) {
+          if (isRed) nextEnemyBoard[summonLane] = childCard;
+          else nextPlayerBoard[summonLane] = childCard;
+        }
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          [...currentUsedHand, i],
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          nextEnemyBoard,
+          nextPlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([...cNode, ...nb]);
+        }
+      }
+    }
+  } else if (sk.id === 'assemble') {
+    const isSelf = Boolean(sk.self || sk.targetSelf);
+    const selfId = parentCard ? parentCard.baseId || parentCard.id : null;
+    const targetIds = sk.targetIds || (sk.targetId ? [sk.targetId] : null);
+    const targetKeyword = sk.targetKeyword;
+    const rawSkillIds = Array.isArray(sk.targetSkills)
+      ? sk.targetSkills.filter(Boolean)
+      : typeof sk.targetSkills === 'string' && sk.targetSkills.trim() !== ''
+        ? [sk.targetSkills.trim()]
+        : sk.targetSkill
+          ? [sk.targetSkill]
+          : [];
+    const targetSkills = [...new Set(rawSkillIds)];
+    const reqP = sk.value;
+    const isExcludeBoard = Boolean(sk.excludeBoard);
+    const presentBoardIds = isExcludeBoard
+      ? activeMyBoard
+          .filter(Boolean)
+          .flatMap((c) => [c.id, c.baseId])
+          .filter(Boolean)
+      : [];
+
+    const seenKeys = new Set();
+
+    for (let i = 0; i < myDeck.length; i++) {
+      let childCard = myDeck[i];
+      if (!childCard) continue;
+
+      const cardKey = childCard.baseId || childCard.id;
+      if (seenKeys.has(cardKey)) continue;
+
+      if (isExcludeBoard) {
+        if (
+          presentBoardIds.includes(childCard.id) ||
+          (childCard.baseId && presentBoardIds.includes(childCard.baseId))
+        ) {
+          continue;
+        }
+      }
+
+      let matches = true;
+      if (isSelf && selfId) {
+        matches = matchesCardId(childCard, selfId);
+      } else if (Array.isArray(targetIds) && targetIds.length > 0) {
+        matches = matchesCardIds(childCard, targetIds);
+      } else if (typeof targetKeyword === 'string' && targetKeyword) {
+        matches = matchesCardKeyword(childCard, targetKeyword);
+      } else if (Array.isArray(targetSkills) && targetSkills.length > 0) {
+        const masterCard = CARD_MASTER?.find((m) => m.id === childCard.id);
+        matches = targetSkills.some(
+          (sId) =>
+            hasSkillDeep(childCard, sId) ||
+            (masterCard && hasSkillDeep(masterCard, sId))
+        );
+      } else if (reqP !== undefined && reqP !== null) {
+        matches = (childCard.power || 0) <= reqP;
+      }
+
+      if (!matches) continue;
+      seenKeys.add(cardKey);
+
+      const masterData = CARD_MASTER.find(
+        (m) => m.id === (childCard.baseId || childCard.id)
+      );
+      const assembleCard = masterData
+        ? cloneCard(masterData)
+        : cloneCard(childCard);
+      assembleCard.uid = childCard.uid || childCard.id;
+      assembleCard.baseId = childCard.baseId || childCard.id;
+      assembleCard.basePower = assembleCard.power;
+      assembleCard.currentPower = assembleCard.power;
+
+      let children = buildCardPlayTreeAdhoc(
+        assembleCard,
+        i,
+        'assemble',
+        myHand,
+        myDiscard,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth + 1,
+        undefined,
+        leaderSkillContext,
+        owner,
+        true
+      );
+      for (let cNode of children) {
+        const assembleLane = cNode[0]?.laneIdx;
+        const nextEnemyBoard = isRed ? [...activeEnemyBoard] : activeEnemyBoard;
+        const nextPlayerBoard = !isRed
+          ? [...activePlayerBoard]
+          : activePlayerBoard;
+        if (
+          assembleLane !== undefined &&
+          assembleLane >= 0 &&
+          assembleLane < 3
+        ) {
+          if (isRed) nextEnemyBoard[assembleLane] = assembleCard;
+          else nextPlayerBoard[assembleLane] = assembleCard;
+        }
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          nextEnemyBoard,
+          nextPlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([...cNode, ...nb]);
+        }
+      }
+    }
+  } else if (sk.id === 'forge') {
+    for (let i = 0; i < myHand.length; i++) {
+      if (currentUsedHand.includes(i)) continue;
+      let childCard = myHand[i];
+
+      const isEquip = hasSkill(childCard, 'equip');
+      let validLanes = [];
+      for (let j = 0; j < 3; j++) {
+        if (activeMyBoard[j] !== null) {
+          if (isEquip || hasSkill(activeMyBoard[j], 'arm_self')) {
+            validLanes.push(j);
+          }
+        }
+      }
+
+      for (let vLane of validLanes) {
+        let children = buildCardPlayTreeAdhoc(
+          childCard,
+          i,
+          'forge',
+          myHand,
+          myDiscard,
+          [...currentUsedHand, i],
+          currentUsedDiscard,
+          currentDepth + 1,
+          vLane,
+          leaderSkillContext,
+          owner,
+          true
+        );
+        for (let cNode of children) {
+          let nextBranches = buildSkillBranchAdhoc(
+            remainingSkills,
+            [...currentUsedHand, i],
+            currentUsedDiscard,
+            currentDepth,
+            currentDiscard,
+            laneIdx,
+            activeEnemyBoard,
+            activePlayerBoard,
+            parentCard,
+            owner,
+            leaderSkillContext
+          );
+          for (let nb of nextBranches) {
+            results.push([...cNode, ...nb]);
+          }
+        }
+      }
+    }
+
+    let nextBranches = buildSkillBranchAdhoc(
+      remainingSkills,
+      currentUsedHand,
+      currentUsedDiscard,
+      currentDepth,
+      currentDiscard,
+      laneIdx,
+      activeEnemyBoard,
+      activePlayerBoard,
+      parentCard,
+      owner,
+      leaderSkillContext
+    );
+    for (let nb of nextBranches) {
+      results.push([{ type: 'forge', targetIdx: -1, laneIdx: -1 }, ...nb]);
+    }
+  } else if (sk.id === 'leap') {
+    let leapBranch = buildSkillBranchAdhoc(
+      remainingSkills,
+      currentUsedHand,
+      currentUsedDiscard,
+      currentDepth,
+      currentDiscard,
+      laneIdx,
+      activeEnemyBoard,
+      activePlayerBoard,
+      parentCard,
+      owner,
+      leaderSkillContext
+    );
+    for (let nb of leapBranch) {
+      results.push([{ type: 'leap' }, ...nb]);
+    }
+  } else if (sk.id === 'resurrect') {
+    const hasSpecificTarget =
+      (Array.isArray(sk.targetIds) && sk.targetIds.length > 0) ||
+      sk.targetId ||
+      (typeof sk.targetKeyword === 'string' && sk.targetKeyword);
+    const maxP = hasSpecificTarget
+      ? undefined
+      : sk.value !== undefined && sk.value !== null
+        ? sk.value
+        : 1;
+    const candidates = [...myDiscard, ...currentDiscard];
+    const isExcludeBoard = Boolean(sk.excludeBoard);
+    const presentBoardIds = isExcludeBoard
+      ? activeMyBoard
+          .filter(Boolean)
+          .flatMap((c) => [c.id, c.baseId])
+          .filter(Boolean)
+      : [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      if (currentUsedDiscard.includes(i)) continue;
+      let resCard = candidates[i];
+
+      if (
+        !matchesResurrectTarget(resCard, sk, {
+          presentBoardIds,
+        })
+      ) {
+        continue;
+      }
+
+      for (let j = 0; j < 3; j++) {
+        if (sealedLanes[j] > 0) continue;
+        let resNode = {
+          type: 'resurrect',
+          targetIdx: i,
+          targetUid: resCard.uid,
+          laneIdx: j,
+          maxP: maxP,
+        };
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          [...currentUsedDiscard, i],
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([resNode, ...nb]);
+        }
+      }
+    }
+
+    let cancelNode = {
+      type: 'resurrect',
+      targetIdx: -1,
+      laneIdx: -1,
+    };
+    let cancelBranches = buildSkillBranchAdhoc(
+      remainingSkills,
+      currentUsedHand,
+      currentUsedDiscard,
+      currentDepth,
+      currentDiscard,
+      laneIdx,
+      activeEnemyBoard,
+      activePlayerBoard,
+      parentCard,
+      owner,
+      leaderSkillContext
+    );
+    for (let nb of cancelBranches) {
+      results.push([cancelNode, ...nb]);
+    }
+  } else if (sk.id === 'execute') {
+    let occupiedLanes = [];
+    for (let j = 0; j < 3; j++) {
+      const simulatedBoardCard = j === laneIdx ? parentCard : activeMyBoard[j];
+      if (simulatedBoardCard !== null) {
+        occupiedLanes.push(j);
+      }
+    }
+
+    if (occupiedLanes.length > 0) {
+      for (let tgtLane of occupiedLanes) {
+        let execNode = {
+          type: 'execute',
+          targetLane: tgtLane,
+        };
+        const destroyedCard =
+          tgtLane === laneIdx ? parentCard : activeMyBoard[tgtLane];
+        const projectedState = createGuardProjectedState();
+        const isDestroyable =
+          destroyedCard &&
+          canCardBeDestroyed(projectedState, destroyedCard, owner);
+        let newlyDiscarded = [...currentDiscard];
+        if (
+          destroyedCard &&
+          !destroyedCard.isToken &&
+          !hasSkill(destroyedCard, 'split') &&
+          isDestroyable
+        ) {
+          newlyDiscarded.push(destroyedCard);
+        }
+
+        const nextEnemyBoard = activeEnemyBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const nextPlayerBoard = activePlayerBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const nextMyBoard = isRed ? nextEnemyBoard : nextPlayerBoard;
+        if (isDestroyable) {
+          const canPlaceSplitToken = !sealedLanes || sealedLanes[tgtLane] === 0;
+          nextMyBoard[tgtLane] =
+            hasSkill(destroyedCard, 'split') && canPlaceSplitToken
+              ? createSplitSimToken(destroyedCard, tgtLane, owner)
+              : null;
+        }
+
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          newlyDiscarded,
+          laneIdx,
+          nextEnemyBoard,
+          nextPlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([execNode, ...nb]);
+        }
+      }
+    } else {
+      return buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscard,
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard,
+        parentCard,
+        owner,
+        leaderSkillContext
+      );
+    }
+  } else if (sk.id === 'berserk') {
+    const bVal = sk.value || 2;
+    const adjLanes = laneIdx === 1 ? [0, 2] : [1];
+    let newlyDiscarded = [...currentDiscard];
+    adjLanes.forEach((j) => {
+      const adjCard = activeMyBoard[j];
+      if (adjCard && !adjCard.isToken) {
+        const isImmune = hasSkill(adjCard, 'immune');
+        const currentP = adjCard.currentPower ?? adjCard.power ?? 0;
+        if (!isImmune && currentP <= bVal) {
+          newlyDiscarded.push(adjCard);
+        }
+      }
+    });
+
+    return buildSkillBranchAdhoc(
+      remainingSkills,
+      currentUsedHand,
+      currentUsedDiscard,
+      currentDepth,
+      newlyDiscarded,
+      laneIdx,
+      activeEnemyBoard,
+      activePlayerBoard,
+      parentCard,
+      owner,
+      leaderSkillContext
+    );
+  } else if (sk.id === 'dominate') {
+    const maxP = sk.value || 0;
+    let validOppLanes = [];
+    for (let j = 0; j < 3; j++) {
+      if (
+        activeOppBoard[j] &&
+        (activeOppBoard[j].currentPower ?? activeOppBoard[j].power ?? 0) <=
+          maxP &&
+        sealedLanes[j] === 0
+      ) {
+        validOppLanes.push(j);
+      }
+    }
+
+    for (let i of validOppLanes) {
+      const myL = i;
+      if (sealedLanes[myL] > 0) continue;
+      let domNode = {
+        type: 'dominate',
+        oppLaneIdx: i,
+        myLaneIdx: myL,
+        maxP: maxP,
+      };
+
+      const nextEnemyBoard = activeEnemyBoard.map((c) => (c ? { ...c } : null));
+      const nextPlayerBoard = activePlayerBoard.map((c) =>
+        c ? { ...c } : null
+      );
+      const nextMyBoard = isRed ? nextEnemyBoard : nextPlayerBoard;
+      const nextOppBoard = isRed ? nextPlayerBoard : nextEnemyBoard;
+
+      const stolenCard = nextOppBoard[i];
+      if (stolenCard) {
+        nextMyBoard[myL] = {
+          ...stolenCard,
+          owner: owner,
+        };
+        nextOppBoard[i] = null;
+      }
+
+      let nextBranches = buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscard,
+        laneIdx,
+        nextEnemyBoard,
+        nextPlayerBoard,
+        parentCard,
+        owner,
+        leaderSkillContext
+      );
+      for (let nb of nextBranches) {
+        results.push([domNode, ...nb]);
+      }
+    }
+
+    let cancelNode = {
+      type: 'dominate',
+      oppLaneIdx: -1,
+      myLaneIdx: -1,
+      maxP: maxP,
+    };
+    let cancelBranches = buildSkillBranchAdhoc(
+      remainingSkills,
+      currentUsedHand,
+      currentUsedDiscard,
+      currentDepth,
+      currentDiscard,
+      laneIdx,
+      activeEnemyBoard,
+      activePlayerBoard,
+      parentCard,
+      owner,
+      leaderSkillContext
+    );
+    for (let nb of cancelBranches) {
+      results.push([cancelNode, ...nb]);
+    }
+  } else if (sk.id === 'inspire') {
+    const bVal = sk.value || 1;
+    const otherOccupiedLanes = [0, 1, 2].filter(
+      (j) => activeMyBoard[j] !== null && j !== laneIdx
+    );
+    if (otherOccupiedLanes.length > 0 && bVal !== 0) {
+      for (let tgtLane of otherOccupiedLanes) {
+        let inspireNode = {
+          type: 'inspire',
+          targetLane: tgtLane,
+          value: bVal,
+        };
+        const nextEnemyBoard = activeEnemyBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const nextPlayerBoard = activePlayerBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const nextMyBoard = isRed ? nextEnemyBoard : nextPlayerBoard;
+        if (nextMyBoard[tgtLane]) {
+          nextMyBoard[tgtLane].currentPower =
+            (nextMyBoard[tgtLane].currentPower || 0) + bVal;
+        }
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          nextEnemyBoard,
+          nextPlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([inspireNode, ...nb]);
+        }
+      }
+    } else {
+      return buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscard,
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard,
+        parentCard,
+        owner,
+        leaderSkillContext
+      );
+    }
+  } else if (sk.id === 'protection') {
+    const occupiedLanes = [0, 1, 2].filter((j) => activeMyBoard[j] !== null);
+    if (occupiedLanes.length > 0) {
+      for (let tgtLane of occupiedLanes) {
+        let protectNode = {
+          type: 'protection',
+          targetLane: tgtLane,
+        };
+        const nextEnemyBoard = activeEnemyBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const nextPlayerBoard = activePlayerBoard.map((c) =>
+          c ? { ...c } : null
+        );
+        const nextMyBoard = isRed ? nextEnemyBoard : nextPlayerBoard;
+        if (nextMyBoard[tgtLane]) {
+          nextMyBoard[tgtLane].valkyriaGuard = true;
+        }
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          nextEnemyBoard,
+          nextPlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([protectNode, ...nb]);
+        }
+      }
+    } else {
+      return buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscard,
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard,
+        parentCard,
+        owner,
+        leaderSkillContext
+      );
+    }
+  } else if (sk.id === 'convert' || sk.id === 'draw' || sk.id === 'reinforce') {
+    const count = sk.value || 1;
+    let handIndices = [];
+    for (let i = 0; i < myHand.length; i++) {
+      if (!currentUsedHand.includes(i)) handIndices.push(i);
+    }
+
+    if (handIndices.length > 0) {
+      const actualCount = Math.min(count, handIndices.length);
+      let combinations = getCombinations(handIndices, actualCount);
+      for (let combo of combinations) {
+        let discardNodes = combo.map((idx) => ({
+          type: 'discard',
+          targetIdx: idx,
+        }));
+        let newlyDiscarded = combo.map((idx) => myHand[idx]);
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          [...currentUsedHand, ...combo],
+          currentUsedDiscard,
+          currentDepth,
+          [...currentDiscard, ...newlyDiscarded],
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([...discardNodes, ...nb]);
+        }
+      }
+    }
+  } else if (['clone', 'servant', 'ambush'].includes(sk.id)) {
+    const count = sk.id === 'clone' ? sk.value || 1 : 1;
+    const generateLaneCombos = (remainingCount) => {
+      if (remainingCount <= 0) return [[]];
+      let combos = [];
+      let subCombos = generateLaneCombos(remainingCount - 1);
+      const allowedLanes =
+        sk.id === 'clone' ? (laneIdx === 1 ? [0, 2] : [1]) : [0, 1, 2];
+      for (let j of allowedLanes) {
+        if (sealedLanes[j] > 0) continue;
+        for (let sc of subCombos) {
+          combos.push([j, ...sc]);
+        }
+      }
+      return combos;
+    };
+
+    let allCombos = [[]]; // 配置しない選択肢
+    for (let c = 1; c <= count; c++) {
+      allCombos.push(...generateLaneCombos(c));
+    }
+    for (let combo of allCombos) {
+      let tokenNode = {
+        type: 'token_placement',
+        skillId: sk.id,
+        skillValue: sk.value,
+        summonId: sk.summonId,
+        lanes: combo,
+      };
+      let nextBranches = buildSkillBranchAdhoc(
+        remainingSkills,
+        currentUsedHand,
+        currentUsedDiscard,
+        currentDepth,
+        currentDiscard,
+        laneIdx,
+        activeEnemyBoard,
+        activePlayerBoard,
+        parentCard,
+        owner,
+        leaderSkillContext
+      );
+      for (let nb of nextBranches) {
+        results.push([tokenNode, ...nb]);
+      }
+    }
+  } else if (sk.id === 'puppet') {
+    const maxP = sk.value || 1;
+    const candidates = [...oppDiscard];
+
+    for (let i = 0; i < candidates.length; i++) {
+      let resCard = candidates[i];
+      if (!resCard || resCard.isToken) continue;
+
+      const master = CARD_MASTER.find(
+        (m) => m.id === resCard.id || m.id === resCard.baseId
+      );
+      const baseP = master ? master.power : resCard.power || 0;
+      if (baseP > maxP) continue;
+
+      for (let j = 0; j < 3; j++) {
+        if (sealedLanes[j] > 0) continue;
+        let puppetNode = {
+          type: 'puppet',
+          targetIdx: i,
+          targetUid: resCard.uid,
+          laneIdx: j,
+          maxP: maxP,
+        };
+        let nextBranches = buildSkillBranchAdhoc(
+          remainingSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([puppetNode, ...nb]);
+        }
+      }
+    }
+
+    let cancelNode = {
+      type: 'puppet',
+      targetIdx: -1,
+      laneIdx: -1,
+      maxP: maxP,
+    };
+    let cancelBranches = buildSkillBranchAdhoc(
+      remainingSkills,
+      currentUsedHand,
+      currentUsedDiscard,
+      currentDepth,
+      currentDiscard,
+      laneIdx,
+      activeEnemyBoard,
+      activePlayerBoard,
+      parentCard,
+      owner,
+      leaderSkillContext
+    );
+    for (let nb of cancelBranches) {
+      results.push([cancelNode, ...nb]);
+    }
+  } else if (sk.id === 'choice') {
+    const cc = sk.value || 1;
+    const cArr =
+      sk.choiceGroup === 2 ? parentCard?.choices2 : parentCard?.choices;
+    if (cArr) {
+      let combinations = getUniqueChoiceCombinations(
+        cArr,
+        Math.min(cArr.length, cc)
+      );
+      for (let combo of combinations) {
+        const chosenSkills = combo.map((idx) => cArr[idx]);
+        let nextSkills = [...chosenSkills, ...remainingSkills];
+        let choiceNode = {
+          type: 'choice',
+          choices: combo,
+          choiceGroup: sk.choiceGroup,
+        };
+        let nextBranches = buildSkillBranchAdhoc(
+          nextSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([choiceNode, ...nb]);
+        }
+      }
+    }
+  } else if (sk.id === 'force') {
+    const fc = sk.value || 1;
+    const fArr =
+      sk.choiceGroup === 2 ? parentCard?.choices2 : parentCard?.choices;
+    if (fArr) {
+      let combinations = getUniqueChoiceCombinations(
+        fArr,
+        Math.min(fArr.length, fc)
+      );
+      for (let combo of combinations) {
+        const chosenSkills = combo.map((idx) => fArr[idx]);
+        let nextSkills = [...chosenSkills, ...remainingSkills];
+        let forceNode = {
+          type: 'force',
+          choices: combo,
+          choiceGroup: sk.choiceGroup,
+        };
+        let nextBranches = buildSkillBranchAdhoc(
+          nextSkills,
+          currentUsedHand,
+          currentUsedDiscard,
+          currentDepth,
+          currentDiscard,
+          laneIdx,
+          activeEnemyBoard,
+          activePlayerBoard,
+          parentCard,
+          owner,
+          leaderSkillContext
+        );
+        for (let nb of nextBranches) {
+          results.push([forceNode, ...nb]);
+        }
+      }
+    }
+  } else {
+    return buildSkillBranchAdhoc(
+      remainingSkills,
+      currentUsedHand,
+      currentUsedDiscard,
+      currentDepth,
+      currentDiscard,
+      laneIdx,
+      activeEnemyBoard,
+      activePlayerBoard,
+      parentCard,
+      owner,
+      leaderSkillContext
+    );
+  }
+  return results;
+}
+
+/**
+ * アドホック（直前）シミュレーション用の子カードプレイツリー構築共通関数。
+ *
+ * @param {object} card - プレイ対象カード
+ * @param {number} sourceIdx - 手札/デッキ/墓地のインデックス
+ * @param {string} sourceType - アクションタイプ ('play' | 'summon' | 'assemble' | 'invite' | 'resurrect' | 'puppet' | 'forge' | 'play_adhoc' 等)
+ * @param {Array<object>} originalHand - 手札配列
+ * @param {Array<object>} originalDiscard - 墓地配列
+ * @param {number[]} usedHand - 使用済み手札インデックス
+ * @param {number[]} usedDiscard - 使用済み墓地インデックス
+ * @param {number} depth - ツリー深さ
+ * @param {number} [forcedLane=undefined] - 配置レーン強制
+ * @param {object} [leaderSkillContext=undefined] - リーダースキルコンテキスト
+ * @param {'red' | 'blue'} [owner='red'] - 発動陣営
+ * @param {boolean} [checkConstraints=true] - 召喚制約をチェックするか（召喚はtrue、配置はfalse）
+ * @param {Array<object>} [pendingSkills=[]] - カードプレイ後に解決すべき待機スキル群
+ * @return {Array<Array<object>>} アクションシーケンスの配列
+ */
+export function buildCardPlayTreeAdhoc(
+  card,
+  sourceIdx,
+  sourceType,
+  originalHand,
+  originalDiscard,
+  usedHand,
+  usedDiscard,
+  depth,
+  forcedLane = undefined,
+  leaderSkillContext = undefined,
+  owner = 'red',
+  checkConstraints = true,
+  pendingSkills = []
+) {
+  if (depth >= 4) return [[]];
+
+  const isRed = owner === 'red';
+  const sealedLanes = isRed
+    ? GameState.enemySealedLanes || [0, 0, 0]
+    : GameState.playerSealedLanes || [0, 0, 0];
+  const myBoard = isRed ? GameState.enemyBoard : GameState.playerBoard;
+  const opBoard = isRed ? GameState.playerBoard : GameState.enemyBoard;
+
+  let availableLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
+
+  if (forcedLane !== undefined) {
+    if (sealedLanes[forcedLane] > 0) return [[]];
+    availableLanes = [forcedLane];
+  } else if (depth > 0) {
+    availableLanes.push(-1);
+  }
+
+  if (
+    checkConstraints &&
+    (sourceType === 'play' ||
+      sourceType === 'invite' ||
+      sourceType === 'summon' ||
+      sourceType === 'assemble')
+  ) {
+    if (GameState.turnCount === 1 && GameState.firstPlayer === owner) {
+      availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
+    }
+
+    if (hasSkill(card, 'challenge')) {
+      availableLanes = availableLanes.filter(
+        (l) => l === -1 || opBoard[l] !== null
+      );
+    }
+    if (hasSkill(card, 'legendary')) {
+      availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
+    }
+    if (sourceType !== 'invite') {
+      if (hasSkill(card, 'takeover')) {
+        availableLanes = availableLanes.filter((l) => {
+          if (l === -1) return true;
+          const hasExisting = myBoard[l] !== null;
+          const willBeSummoned = isLaneOccupiedByLeaderSkill(
+            l,
+            leaderSkillContext
+          );
+          return hasExisting || willBeSummoned;
+        });
+      }
+      if (hasSkill(card, 'apex')) {
+        availableLanes = availableLanes.filter((l) => {
+          if (l === -1) return true;
+          const hasLegendaryOnBoard =
+            myBoard[l] && hasSkill(myBoard[l], 'legendary');
+          const willLegendaryBeSummoned = isLegendarySummonedByLeaderSkill(
+            l,
+            leaderSkillContext
+          );
+          return hasLegendaryOnBoard || willLegendaryBeSummoned;
+        });
+      }
+    }
+  }
+
+  if (
+    availableLanes.filter((l) => l !== -1).length === 0 &&
+    !availableLanes.includes(-1)
+  )
+    return [[]];
+
+  let choiceCombinations = [undefined];
+  let choice2Combinations = [undefined];
+  if (
+    checkConstraints &&
+    (hasSkill(card, 'choice') || hasSkill(card, 'force'))
+  ) {
+    if (Array.isArray(card.choices)) {
+      let cc = 1;
+      if (card.skills) {
+        const c = card.skills.find(
+          (s) => s.id === 'choice' || s.id === 'force'
+        );
+        if (c) cc = c.value || 1;
+      }
+      cc = Math.min(cc, card.choices.length);
+      choiceCombinations = getUniqueChoiceCombinations(card.choices, cc);
+    }
+    if (Array.isArray(card.choices2)) {
+      let cc2 = 1;
+      const c2 = card.skills
+        ? card.skills.find((s) => s.id === 'choice' && s.choiceGroup === 2)
+        : null;
+      if (c2) cc2 = c2.value || 1;
+      cc2 = Math.min(cc2, card.choices2.length);
+      choice2Combinations = getUniqueChoiceCombinations(card.choices2, cc2);
+    }
+  }
+
+  let branches = [];
+  for (let lane of availableLanes) {
+    for (let c1 of choiceCombinations) {
+      for (let c2 of choice2Combinations) {
+        let node = {
+          type: sourceType,
+          targetIdx: sourceIdx,
+          targetUid: card.uid || card.id,
+          laneIdx: lane,
+          choices: c1 !== undefined ? [...c1] : undefined,
+          choices2: c2 !== undefined ? [...c2] : undefined,
+        };
+        if (lane === -1) {
+          branches.push([node]);
+          continue;
+        }
+
+        let effectiveSkills = [];
+        const isSummonAction =
+          checkConstraints &&
+          [
+            'play',
+            'call',
+            'invite',
+            'forge',
+            'summon',
+            'assemble',
+            'play_adhoc',
+          ].includes(sourceType);
+        if (isSummonAction) {
+          if (Array.isArray(card.skills)) {
+            card.skills.forEach((s) => {
+              if (
+                [
+                  'invite',
+                  'resurrect',
+                  'convert',
+                  'draw',
+                  'reinforce',
+                  'clone',
+                  'servant',
+                  'summon',
+                  'assemble',
+                  'ambush',
+                  'puppet',
+                  'leap',
+                  'forge',
+                  'inspire',
+                  'protection',
+                  'dominate',
+                  'execute',
+                  'berserk',
+                ].includes(s.id)
+              )
+                effectiveSkills.push(s);
+            });
+          }
+          if (c1)
+            c1.forEach((idx) => {
+              if (card.choices && card.choices[idx])
+                effectiveSkills.push(card.choices[idx]);
+            });
+          if (c2)
+            c2.forEach((idx) => {
+              if (card.choices2 && card.choices2[idx])
+                effectiveSkills.push(card.choices2[idx]);
+            });
+        }
+
+        if (Array.isArray(pendingSkills) && pendingSkills.length > 0) {
+          pendingSkills.forEach((s) => {
+            if (s && s.id !== 'choice' && s.id !== 'force') {
+              effectiveSkills.push(s);
+            }
+          });
+        }
+
+        if (depth < 4 && effectiveSkills.length > 0) {
+          let initialDiscarded = [];
+          if (lane !== -1 && myBoard[lane] !== null && !myBoard[lane].isToken) {
+            initialDiscarded.push(myBoard[lane]);
+          }
+          const nextEnemyBoard = isRed
+            ? GameState.enemyBoard.map((c) => (c ? { ...c } : null))
+            : GameState.enemyBoard;
+          const nextPlayerBoard = !isRed
+            ? GameState.playerBoard.map((c) => (c ? { ...c } : null))
+            : GameState.playerBoard;
+          if (isRed) {
+            nextEnemyBoard[lane] = { ...card, owner: 'red' };
+          } else {
+            nextPlayerBoard[lane] = { ...card, owner: 'blue' };
+          }
+
+          let skillChains = buildSkillBranchAdhoc(
+            effectiveSkills,
+            usedHand,
+            usedDiscard,
+            depth,
+            initialDiscarded,
+            lane,
+            nextEnemyBoard,
+            nextPlayerBoard,
+            card,
+            owner,
+            leaderSkillContext
+          );
+          for (let chain of skillChains) {
+            branches.push([node, ...chain]);
+          }
+        } else {
+          branches.push([node]);
+        }
+      }
+    }
+  }
+  return branches.filter((b) => b.length > 0);
+}
+
+/**
  * 復活（resurrect）および傀儡（puppet）のアドホック（解決時）シミュレーション評価。
- * 相手の誘発（trigger）等で戦況が変化した場合や、事前計画キューが存在しない場合に、
- * 墓地の候補カード群と現在の最新盤面をシミュレートし、最も盤面スコアが高くなる
- * { selectedCard, laneIdx } を決定する。
- * （配置しない方が良い場合は selectedCard: null を返し、自爆を防止する）
+ *
+ * 【手抜き簡易シミュレーションの完全削除と完全多段シミュレーション化】
+ * 墓地の候補カードそれぞれについて、配置後の連鎖スキルを多段ツリー展開（buildCardPlayTreeAdhoc）し、
+ * processActionSequence による完全シミュレーションを実行。
+ * 最善カードと配置レーンを決定し、後続アクションを同期する。
  *
  * @param {Array<object>} validCards - 墓地内の有効な復活・傀儡対象カード群
  * @param {'red' | 'blue'} [owner='red'] - スキル発動者 ('red' | 'blue')
@@ -4490,7 +5796,7 @@ export function evaluateBestResurrectChoice(
   const initialSimState = buildInitialSimState();
   const isRed = owner === 'red';
 
-  // 1. 「配置しない（パス）」基準スコアを算出
+  // 1. パス基準スコア（何もしない状態のスコア）を算出
   let passScore;
   {
     const passSimState = structuredClone(initialSimState);
@@ -4498,84 +5804,88 @@ export function evaluateBestResurrectChoice(
   }
   let bestScore = passScore;
   let bestChoice = { selectedCard: null, laneIdx: null };
+  let bestBranch = null;
 
   const sealedLanes = isRed
     ? initialSimState.enemySealedLanes || [0, 0, 0]
     : initialSimState.playerSealedLanes || [0, 0, 0];
 
-  // 封印されていない全レーン（0, 1, 2）
-  // ルール厳守: 「復活」「傀儡」は配置（Place）のため、制約チェック（legendary/takeover等）はなし
   const candidateLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
   if (candidateLanes.length === 0) {
     return { selectedCard: null, laneIdx: null };
   }
 
-  // 封印されていない全候補レーン（空き枠・上書き配置問わず）を平等にシミュレーション
-  const lanesToTest = candidateLanes;
-
   const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 }; // 左(1) > 右(2) > 中央(3)
-
-  // 候補カードの重複探索を排除（ID + power + skills が同一のものはスキップ）
   const seenSignatures = new Set();
 
-  for (const card of validCards) {
+  for (let cardIdx = 0; cardIdx < validCards.length; cardIdx++) {
+    const card = validCards[cardIdx];
     if (!card) continue;
     const sig = `${card.id || card.baseId}_${card.power || 0}_${(card.skills || []).map((s) => s.id).join(',')}`;
     if (seenSignatures.has(sig)) continue;
     seenSignatures.add(sig);
 
-    for (const lane of lanesToTest) {
-      const simState = structuredClone(initialSimState);
-      const targetDiscard = isRed
-        ? isPuppet
-          ? simState.playerDiscard
-          : simState.enemyDiscard
-        : isPuppet
-          ? simState.enemyDiscard
-          : simState.playerDiscard;
-
-      // 墓地からカードを取り除く
-      const dIdx = targetDiscard.findIndex(
-        (c) =>
-          c &&
-          (c.uid === card.uid ||
-            c.id === card.id ||
-            c.baseId === (card.baseId || card.id))
+    for (const lane of candidateLanes) {
+      // 復活・傀儡は「配置（Place）」のため checkConstraints = false
+      const actionBranches = buildCardPlayTreeAdhoc(
+        card,
+        cardIdx,
+        isPuppet ? 'puppet' : 'resurrect',
+        isRed ? initialSimState.enemyHand : initialSimState.playerHand,
+        isRed ? initialSimState.enemyDiscard : initialSimState.playerDiscard,
+        [],
+        [cardIdx],
+        0,
+        lane,
+        undefined,
+        owner,
+        false
       );
-      if (dIdx !== -1) {
-        targetDiscard.splice(dIdx, 1);
-      }
 
-      // カードを配置（共通シミュレーション処理: 装備・合体・通常上書きに対応、配置のため isSummon = false）
-      simulateCardPlacementOnBoard(simState, owner, lane, card, false);
+      for (const branch of actionBranches) {
+        if (!branch || branch.length === 0) continue;
 
-      // 破壊クリーンアップ
-      processDestructionTriggers(simState, []);
+        const simState = processActionSequence(
+          branch,
+          false,
+          null,
+          null,
+          'before',
+          null,
+          null,
+          structuredClone(initialSimState)
+        );
+        if (!simState) continue;
 
-      // 評価スコア計算
-      const rawScore = evaluateTurnOutcome(simState, owner);
+        const rawScore = evaluateTurnOutcome(simState, owner);
 
-      // 【手が少ないもの（パス）を選ぶ原則】
-      // 基礎スコアがパス（配置しない）と同等以下であれば、タイブレークによってパスを逆転しないよう除外
-      if (isRed ? rawScore <= passScore : rawScore >= passScore) {
-        continue;
-      }
-
-      // タイブレーク（左 > 右 > 中央）
-      let score = rawScore + (isRed ? 0.001 : -0.001) / lanePriorityOrder[lane];
-
-      if (isRed) {
-        if (score > bestScore) {
-          bestScore = score;
-          bestChoice = { selectedCard: card, laneIdx: lane };
+        // パス以下ならスキップ
+        if (isRed ? rawScore <= passScore : rawScore >= passScore) {
+          continue;
         }
-      } else {
-        if (score < bestScore) {
-          bestScore = score;
-          bestChoice = { selectedCard: card, laneIdx: lane };
+
+        const score =
+          rawScore + (isRed ? 0.001 : -0.001) / lanePriorityOrder[lane];
+
+        if (isRed) {
+          if (score > bestScore) {
+            bestScore = score;
+            bestChoice = { selectedCard: card, laneIdx: lane };
+            bestBranch = branch;
+          }
+        } else {
+          if (score < bestScore) {
+            bestScore = score;
+            bestChoice = { selectedCard: card, laneIdx: lane };
+            bestBranch = branch;
+          }
         }
       }
     }
+  }
+
+  if (bestChoice.selectedCard && bestBranch) {
+    syncAdhocDecision(bestBranch);
   }
 
   return bestChoice;
@@ -4584,7 +5894,11 @@ export function evaluateBestResurrectChoice(
 /**
  * 招来（invite）のアドホック（解決時）シミュレーション評価。
  * 同一レーン（laneIdx）に手札から召喚する最善カードをシミュレートする。
- * （召喚しない方が良い場合は selectedIdx: -1 を返す）
+ *
+ * 【手抜き簡易シミュレーションの完全削除と完全多段シミュレーション化】
+ * 手札候補カードの選択スキルや後続スキルを多段ツリー展開（buildCardPlayTreeAdhoc）し、
+ * processActionSequence による完全シミュレーションを実行。
+ * 最善手札インデックスを決定し、後続アクションを同期する。
  *
  * @param {Array<object>} hand - 手札カード配列
  * @param {number} laneIdx - 召喚先レーン番号
@@ -4599,44 +5913,79 @@ export function evaluateAdhocInviteMove(hand, laneIdx, owner = 'red') {
   const initialSimState = buildInitialSimState();
   const isRed = owner === 'red';
 
-  // 1. パス基準スコア
-  let bestScore;
+  let passScore;
   {
     const passSimState = structuredClone(initialSimState);
-    bestScore = evaluateTurnOutcome(passSimState, owner);
+    passScore = evaluateTurnOutcome(passSimState, owner);
   }
+  let bestScore = passScore;
   let bestIdx = -1;
+  let bestBranch = null;
+
+  const seenSignatures = new Set();
 
   for (let i = 0; i < hand.length; i++) {
     const card = hand[i];
     if (!card) continue;
 
-    // 召喚制約チェック（召喚なので制約チェックあり）
+    // 招来は同一レーンへの召喚（制約チェックあり）
     const validLanes = getValidSummonLanes(owner, card, initialSimState);
     if (!validLanes.includes(laneIdx)) continue;
 
-    const simState = structuredClone(initialSimState);
-    const targetHand = isRed ? simState.enemyHand : simState.playerHand;
-    const consumedCard = targetHand.splice(i, 1)[0];
-    if (!consumedCard) continue;
+    const sig = getCardSignature(card);
+    if (seenSignatures.has(sig)) continue;
+    seenSignatures.add(sig);
 
-    // カードを召喚（共通シミュレーション処理: 装備・合体・通常上書きに対応、召喚のため isSummon = true）
-    simulateCardPlacementOnBoard(simState, owner, laneIdx, consumedCard, true);
+    const actionBranches = buildCardPlayTreeAdhoc(
+      card,
+      i,
+      'invite',
+      isRed ? initialSimState.enemyHand : initialSimState.playerHand,
+      isRed ? initialSimState.enemyDiscard : initialSimState.playerDiscard,
+      [i],
+      [],
+      0,
+      laneIdx,
+      undefined,
+      owner,
+      true
+    );
 
-    processDestructionTriggers(simState, []);
+    for (const branch of actionBranches) {
+      if (!branch || branch.length === 0) continue;
 
-    let score = evaluateTurnOutcome(simState, owner);
-    if (isRed) {
-      if (score > bestScore) {
-        bestScore = score;
-        bestIdx = i;
-      }
-    } else {
-      if (score < bestScore) {
-        bestScore = score;
-        bestIdx = i;
+      const simState = processActionSequence(
+        branch,
+        false,
+        null,
+        null,
+        'before',
+        null,
+        null,
+        structuredClone(initialSimState)
+      );
+      if (!simState) continue;
+
+      const score = evaluateTurnOutcome(simState, owner);
+
+      if (isRed) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestIdx = i;
+          bestBranch = branch;
+        }
+      } else {
+        if (score < bestScore) {
+          bestScore = score;
+          bestIdx = i;
+          bestBranch = branch;
+        }
       }
     }
+  }
+
+  if (bestIdx !== -1 && bestBranch) {
+    syncAdhocDecision(bestBranch);
   }
 
   return { selectedIdx: bestIdx };
@@ -4972,7 +6321,11 @@ export function evaluateAdhocCullChoice(
 
 /**
  * 召喚（summon）のアドホック（発動直前）シミュレーション評価。
- * 最新の盤面・手札に基づき、手札から召喚条件を満たす最善カードと配置レーンを決定する。
+ *
+ * 【手抜き簡易シミュレーションの完全削除と完全多段シミュレーション化】
+ * 手札内の有効候補カードそれぞれについて、選択スキル（choice/force）や後続スキル（ambush, servant等）
+ * を多段ツリー展開（buildCardPlayTreeAdhoc）し、processActionSequence による完全シミュレーションを実行。
+ * 最善カード、配置レーン、選択肢（choices）、および後続連鎖アクションを決定・同期する。
  *
  * @param {Array<object>} hand - 手札配列
  * @param {object} skObj - スキル定義オブジェクト
@@ -4994,8 +6347,8 @@ export function evaluateAdhocSummonMove(
     return { selectedIdx: -1, laneIdx: defaultLane };
   }
 
-  const initialSimState = buildInitialSimState();
   const isRed = owner === 'red';
+  const initialSimState = buildInitialSimState();
   const sealed = isRed
     ? initialSimState.enemySealedLanes
     : initialSimState.playerSealedLanes;
@@ -5005,14 +6358,17 @@ export function evaluateAdhocSummonMove(
     return { selectedIdx: -1, laneIdx: defaultLane };
   }
 
-  // 1. パス基準スコア
+  // 1. パス基準スコア（何もしない状態のスコア）を算出
   let bestScore;
   {
     const passSimState = structuredClone(initialSimState);
     bestScore = evaluateTurnOutcome(passSimState, owner);
   }
   let bestIdx = -1;
-  let bestLane = availableLanes[0];
+  let bestLane = defaultLane;
+  let bestBranch = null;
+
+  const seenSignatures = new Set();
 
   for (let i = 0; i < hand.length; i++) {
     const card = hand[i];
@@ -5020,43 +6376,77 @@ export function evaluateAdhocSummonMove(
     if (!matchesSummonTarget(card, skObj, { selfId, presentBoardIds }))
       continue;
 
-    // 召喚制約チェック
+    const sig = getCardSignature(card);
+    if (seenSignatures.has(sig)) continue;
+    seenSignatures.add(sig);
+
+    // 召喚制約の事前チェック
     const validLanes = getValidSummonLanes(owner, card, initialSimState);
-    const candidateLanes = availableLanes.filter((l) => validLanes.includes(l));
-    if (candidateLanes.length === 0) continue;
+    if (validLanes.length === 0) continue;
 
-    for (const laneIdx of candidateLanes) {
-      const simState = structuredClone(initialSimState);
-      const targetHand = isRed ? simState.enemyHand : simState.playerHand;
-      const consumedCard = targetHand.splice(i, 1)[0];
-      if (!consumedCard) continue;
+    // 多段ツリー展開（選択スキルや後続スキルを完全展開）
+    const actionBranches = buildCardPlayTreeAdhoc(
+      card,
+      i,
+      'summon',
+      isRed ? initialSimState.enemyHand : initialSimState.playerHand,
+      isRed ? initialSimState.enemyDiscard : initialSimState.playerDiscard,
+      [i],
+      [],
+      0,
+      undefined,
+      undefined,
+      owner,
+      true
+    );
 
-      // カードを召喚（共通シミュレーション処理: 装備・合体・通常上書きに対応、召喚のため isSummon = true）
-      simulateCardPlacementOnBoard(
-        simState,
-        owner,
-        laneIdx,
-        consumedCard,
-        true
+    for (const branch of actionBranches) {
+      if (!branch || branch.length === 0) continue;
+      const summonLane = branch[0].laneIdx;
+      if (summonLane === -1 || !availableLanes.includes(summonLane)) continue;
+
+      // アクションシーケンスを完全シミュレーション実行
+      const simState = processActionSequence(
+        branch,
+        false,
+        null,
+        null,
+        'before',
+        null,
+        null,
+        structuredClone(initialSimState)
       );
+      if (!simState) continue;
 
-      processDestructionTriggers(simState, []);
       const score = evaluateTurnOutcome(simState, owner);
 
+      // タイブレーク：左(1) > 右(2) > 中央(3)
+      const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
+      const tieBreaker =
+        (isRed ? 0.001 : -0.001) / lanePriorityOrder[summonLane];
+      const evaluatedScore = score + tieBreaker;
+
       if (isRed) {
-        if (score > bestScore) {
-          bestScore = score;
+        if (evaluatedScore > bestScore) {
+          bestScore = evaluatedScore;
           bestIdx = i;
-          bestLane = laneIdx;
+          bestLane = summonLane;
+          bestBranch = branch;
         }
       } else {
-        if (score < bestScore) {
-          bestScore = score;
+        if (evaluatedScore < bestScore) {
+          bestScore = evaluatedScore;
           bestIdx = i;
-          bestLane = laneIdx;
+          bestLane = summonLane;
+          bestBranch = branch;
         }
       }
     }
+  }
+
+  // 最善手が見つかった場合、GameState.aiDecision に選択情報と連鎖アクションを同期
+  if (bestIdx !== -1 && bestBranch) {
+    syncAdhocDecision(bestBranch);
   }
 
   return { selectedIdx: bestIdx, laneIdx: bestLane };
@@ -5065,18 +6455,10 @@ export function evaluateAdhocSummonMove(
 /**
  * 召集（assemble）のアドホック（発動直前）シミュレーション評価。
  *
- * 【直前シミュレーション原則】
- * 実際の対局中、カードが場に出て「召集」が発動する瞬間に最新の盤面・相手の妨害（雷撃被弾等）・
- * 最新デッキ残数に基づき、最善の召集カードをリアルタイムに決定する。
- *
- * 【重複排除（枝刈り）原則】
- * 手札探索や選択スキルと同様に、カードシグネチャ（ID・パワー・スキル構成）に基づく重複シミュレーションを
- * 排除し、実質的に同一ステータス・同一能力の重複候補を枝刈りすることで探索コストを極小化する。
- * 同名カードであってもパワーや能力が異なる場合は正当に別候補として評価される。
- *
- * 【全合法レーン網羅検証原則】
- * 恣意的なレーン除外を行わず、空き枠・上書き配置を問わずすべての合法レーンを網羅的にシミュレートし、
- * evaluateTurnOutcome による総合スコア評価（盤面戦力、生存数、与ダメージ等）によって客観的に最善手を決定する。
+ * 【手抜き簡易シミュレーションの完全削除と完全多段シミュレーション化】
+ * デッキ内の有効候補カードそれぞれについて、選択スキル（choice/force）や後続スキル（ambush, summon等）
+ * を多段ツリー展開（buildCardPlayTreeAdhoc）し、processActionSequence による完全シミュレーションを実行。
+ * 最善カードを決定し、後続アクションを同期する。
  *
  * @param {Array<object>} deck - デッキ配列
  * @param {object} skObj - スキル定義オブジェクト
@@ -5098,15 +6480,12 @@ export function evaluateAdhocAssembleMove(
     return null;
   }
 
-  // 実戦（skillLogic.js）と完全に同一の対象判定ロジック（matchesAssembleTarget）で候補を抽出
   const validCards = deck.filter((card) =>
     matchesAssembleTarget(card, skObj, { selfId, presentBoardIds })
   );
 
   if (validCards.length === 0) return null;
-  if (validCards.length === 1) return validCards[0];
 
-  // カードシグネチャ（ID・パワー・スキル構成）に基づく重複シミュレーションの排除
   const seenCards = new Set();
   const uniqueCards = [];
   for (const card of validCards) {
@@ -5116,108 +6495,75 @@ export function evaluateAdhocAssembleMove(
       uniqueCards.push(card);
     }
   }
-  if (uniqueCards.length === 1) return uniqueCards[0];
 
   const initialSimState = buildInitialSimState();
   const isRed = owner === 'red';
   const sealed = isRed
     ? initialSimState.enemySealedLanes
     : initialSimState.playerSealedLanes;
-
-  // 封印されていないレーン
   const unsealedLanes = [0, 1, 2].filter((l) => !sealed || sealed[l] === 0);
+
+  if (unsealedLanes.length === 0) return uniqueCards[0];
 
   let bestScore = isRed ? -Infinity : Infinity;
   let bestCard = uniqueCards[0];
+  let bestBranch = null;
 
   for (const card of uniqueCards) {
-    // 召喚制約のチェック（伝説、挑戦、生贄、頂点等）
-    const validSummonLanes = getValidSummonLanes(owner, card, initialSimState);
-    let candidateLanes = unsealedLanes.filter((l) =>
-      validSummonLanes.includes(l)
+    const dIdx = deck.indexOf(card);
+    const actionBranches = buildCardPlayTreeAdhoc(
+      card,
+      dIdx !== -1 ? dIdx : 0,
+      'assemble',
+      isRed ? initialSimState.enemyHand : initialSimState.playerHand,
+      isRed ? initialSimState.enemyDiscard : initialSimState.playerDiscard,
+      [],
+      [],
+      0,
+      undefined,
+      undefined,
+      owner,
+      true
     );
 
-    if (candidateLanes.length === 0) {
-      // 合法配置レーンがない場合はデフォルトレーンをフォールバック候補とする
-      candidateLanes = [defaultLane];
-    }
+    for (const branch of actionBranches) {
+      if (!branch || branch.length === 0) continue;
+      const assembleLane = branch[0].laneIdx;
+      if (assembleLane === -1 || !unsealedLanes.includes(assembleLane))
+        continue;
 
-    // 各候補レーン（空き枠・上書き配置問わず全合法レーン）に配置した盤面をシミュレート
-    for (const targetLane of candidateLanes) {
-      const simState = structuredClone(initialSimState);
-      const targetBoard = isRed ? simState.enemyBoard : simState.playerBoard;
-
-      // カードを召喚（共通シミュレーション処理: 装備・合体・通常上書きに対応、召喚のため isSummon = true）
-      const { activeCard: assembleCard } = simulateCardPlacementOnBoard(
-        simState,
-        owner,
-        targetLane,
-        card,
-        true
+      const simState = processActionSequence(
+        branch,
+        false,
+        null,
+        null,
+        'before',
+        null,
+        null,
+        structuredClone(initialSimState)
       );
+      if (!simState) continue;
 
-      processDestructionTriggers(simState, []);
-      let score = evaluateTurnOutcome(simState, owner);
-
-      // 【召集連鎖の評価】
-      // 候補カード自身が「召集（assemble）」スキルを持ち、デッキにさらに対象カードが存在し、
-      // かつ次のカードを展開して盤面をさらに改善できる余地（空き枠または弱体化味方の戦力向上）がある場合、連鎖価値を加算
-      const assembleSk = assembleCard?.skills?.find((s) => s.id === 'assemble');
-      if (assembleSk) {
-        const childSelfId = assembleCard?.baseId || assembleCard?.id;
-        const isChildSelf = Boolean(assembleSk.self || assembleSk.targetSelf);
-        const nextTargets = deck.filter((dc) => {
-          if (
-            dc.id === card.id ||
-            (Boolean(card.baseId) && dc.baseId === card.baseId)
-          ) {
-            const countInDeck = deck.filter(
-              (c) => (c.baseId || c.id) === (card.baseId || card.id)
-            ).length;
-            if (countInDeck <= 1 && !hasSkill(dc, 'all_forms')) return false;
-          }
-          if (isChildSelf && childSelfId) {
-            return matchesCardId(dc, childSelfId);
-          }
-          return false;
-        });
-
-        if (nextTargets.length > 0) {
-          const maxNextPower = Math.max(
-            ...nextTargets.map((t) => t.power || 0)
-          );
-          // targetLane 配置後の盤面において、別の空きレーンがあるか、
-          // または被弾・デバフ等で弱体化（currentPower < basePower）しており戦力向上が見込める味方がいるか判定
-          const hasRoomForImprovement = unsealedLanes.some((l) => {
-            if (l === targetLane) return false;
-            const occupant = targetBoard[l];
-            if (occupant === null) return true; // 空きレーンあり
-            const isWeakened =
-              (occupant.currentPower || 0) <
-              (occupant.basePower || occupant.power || 0);
-            return isWeakened && (occupant.currentPower || 0) < maxNextPower; // 弱体化味方の戦力改善
-          });
-
-          if (hasRoomForImprovement) {
-            const bonus = 1500;
-            if (isRed) score += bonus;
-            else score -= bonus;
-          }
-        }
-      }
+      const score = evaluateTurnOutcome(simState, owner);
 
       if (isRed) {
         if (score > bestScore) {
           bestScore = score;
           bestCard = card;
+          bestBranch = branch;
         }
       } else {
         if (score < bestScore) {
           bestScore = score;
           bestCard = card;
+          bestBranch = branch;
         }
       }
     }
+  }
+
+  if (bestBranch) {
+    syncAdhocDecision(bestBranch);
   }
 
   return bestCard;
@@ -5285,43 +6631,76 @@ export function simulateAdhocChoiceSummon(
 
   if (candidateLanes.length === 0) return;
 
-  // 最善の（カード, レーン）を探索
   let bestHandIdx = validHandIndices[0];
   let bestPlacementLane = candidateLanes[0];
   let bestScore = isRed ? -Infinity : Infinity;
+  let bestSimState = null;
 
   for (const hIdx of validHandIndices) {
     const testCard = simHand[hIdx];
-    for (const candLane of candidateLanes) {
-      const testState = structuredClone(simState);
-      simulateCardPlacementOnBoard(testState, owner, candLane, testCard, true);
-      processDestructionTriggers(testState, []);
-      const subScore = evaluateTurnOutcome(testState, owner);
+    const actionBranches = buildCardPlayTreeAdhoc(
+      testCard,
+      hIdx,
+      choiceSkill.id === 'invite' ? 'invite' : 'summon',
+      simHand,
+      isRed ? simState.enemyDiscard : simState.playerDiscard,
+      [hIdx],
+      [],
+      0,
+      choiceSkill.id === 'invite' ? sourceLane : undefined,
+      undefined,
+      owner,
+      true
+    );
+
+    for (const branch of actionBranches) {
+      if (!branch || branch.length === 0) continue;
+      const lane = branch[0].laneIdx;
+      if (!candidateLanes.includes(lane)) continue;
+
+      const subState = processActionSequence(
+        branch,
+        false,
+        null,
+        null,
+        'before',
+        null,
+        null,
+        structuredClone(simState)
+      );
+      if (!subState) continue;
+
+      const subScore = evaluateTurnOutcome(subState, owner);
       if (isRed) {
         if (subScore > bestScore) {
           bestScore = subScore;
           bestHandIdx = hIdx;
-          bestPlacementLane = candLane;
+          bestPlacementLane = lane;
+          bestSimState = subState;
         }
       } else {
         if (subScore < bestScore) {
           bestScore = subScore;
           bestHandIdx = hIdx;
-          bestPlacementLane = candLane;
+          bestPlacementLane = lane;
+          bestSimState = subState;
         }
       }
     }
   }
 
-  // 決定した最善カードを手札から消費し、シミュレーション盤面に召喚
-  const [chosenCard] = simHand.splice(bestHandIdx, 1);
-  simulateCardPlacementOnBoard(
-    simState,
-    owner,
-    bestPlacementLane,
-    chosenCard,
-    true
-  );
+  if (bestSimState) {
+    Object.assign(simState, bestSimState);
+  } else {
+    const [chosenCard] = simHand.splice(bestHandIdx, 1);
+    simulateCardPlacementOnBoard(
+      simState,
+      owner,
+      bestPlacementLane,
+      chosenCard,
+      true
+    );
+  }
 
   // 召喚スキル固有の「虚空」トークン手札補充
   const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void');
@@ -5384,38 +6763,73 @@ export function simulateAdhocChoiceAssemble(
   let bestDeckIdx = validDeckIndices[0];
   let bestPlacementLane = candidateLanes[0];
   let bestScore = isRed ? -Infinity : Infinity;
+  let bestSimState = null;
 
   for (const dIdx of validDeckIndices) {
     const testCard = simDeck[dIdx];
-    for (const candLane of candidateLanes) {
-      const testState = structuredClone(simState);
-      simulateCardPlacementOnBoard(testState, owner, candLane, testCard, true);
-      processDestructionTriggers(testState, []);
-      const subScore = evaluateTurnOutcome(testState, owner);
+    const actionBranches = buildCardPlayTreeAdhoc(
+      testCard,
+      dIdx,
+      'assemble',
+      isRed ? simState.enemyHand : simState.playerHand,
+      isRed ? simState.enemyDiscard : simState.playerDiscard,
+      [],
+      [],
+      0,
+      undefined,
+      undefined,
+      owner,
+      true
+    );
+
+    for (const branch of actionBranches) {
+      if (!branch || branch.length === 0) continue;
+      const lane = branch[0].laneIdx;
+      if (!candidateLanes.includes(lane)) continue;
+
+      const subState = processActionSequence(
+        branch,
+        false,
+        null,
+        null,
+        'before',
+        null,
+        null,
+        structuredClone(simState)
+      );
+      if (!subState) continue;
+
+      const subScore = evaluateTurnOutcome(subState, owner);
       if (isRed) {
         if (subScore > bestScore) {
           bestScore = subScore;
           bestDeckIdx = dIdx;
-          bestPlacementLane = candLane;
+          bestPlacementLane = lane;
+          bestSimState = subState;
         }
       } else {
         if (subScore < bestScore) {
           bestScore = subScore;
           bestDeckIdx = dIdx;
-          bestPlacementLane = candLane;
+          bestPlacementLane = lane;
+          bestSimState = subState;
         }
       }
     }
   }
 
-  const [chosenCard] = simDeck.splice(bestDeckIdx, 1);
-  simulateCardPlacementOnBoard(
-    simState,
-    owner,
-    bestPlacementLane,
-    chosenCard,
-    true
-  );
+  if (bestSimState) {
+    Object.assign(simState, bestSimState);
+  } else {
+    const [chosenCard] = simDeck.splice(bestDeckIdx, 1);
+    simulateCardPlacementOnBoard(
+      simState,
+      owner,
+      bestPlacementLane,
+      chosenCard,
+      true
+    );
+  }
 }
 
 /**
@@ -5461,39 +6875,73 @@ export function simulateAdhocChoiceResurrect(
   let bestDiscardIdx = validDiscardIndices[0];
   let bestPlacementLane = candidateLanes[0];
   let bestScore = isRed ? -Infinity : Infinity;
+  let bestSimState = null;
 
   for (const dIdx of validDiscardIndices) {
     const testCard = simDiscard[dIdx];
-    for (const candLane of candidateLanes) {
-      const testState = structuredClone(simState);
-      // 復活は「配置（Place）」のため isSummon = false
-      simulateCardPlacementOnBoard(testState, owner, candLane, testCard, false);
-      processDestructionTriggers(testState, []);
-      const subScore = evaluateTurnOutcome(testState, owner);
+    const actionBranches = buildCardPlayTreeAdhoc(
+      testCard,
+      dIdx,
+      'resurrect',
+      isRed ? simState.enemyHand : simState.playerHand,
+      simDiscard,
+      [],
+      [dIdx],
+      0,
+      undefined,
+      undefined,
+      owner,
+      false
+    );
+
+    for (const branch of actionBranches) {
+      if (!branch || branch.length === 0) continue;
+      const lane = branch[0].laneIdx;
+      if (!candidateLanes.includes(lane)) continue;
+
+      const subState = processActionSequence(
+        branch,
+        false,
+        null,
+        null,
+        'before',
+        null,
+        null,
+        structuredClone(simState)
+      );
+      if (!subState) continue;
+
+      const subScore = evaluateTurnOutcome(subState, owner);
       if (isRed) {
         if (subScore > bestScore) {
           bestScore = subScore;
           bestDiscardIdx = dIdx;
-          bestPlacementLane = candLane;
+          bestPlacementLane = lane;
+          bestSimState = subState;
         }
       } else {
         if (subScore < bestScore) {
           bestScore = subScore;
           bestDiscardIdx = dIdx;
-          bestPlacementLane = candLane;
+          bestPlacementLane = lane;
+          bestSimState = subState;
         }
       }
     }
   }
 
-  const [chosenCard] = simDiscard.splice(bestDiscardIdx, 1);
-  simulateCardPlacementOnBoard(
-    simState,
-    owner,
-    bestPlacementLane,
-    chosenCard,
-    false
-  );
+  if (bestSimState) {
+    Object.assign(simState, bestSimState);
+  } else {
+    const [chosenCard] = simDiscard.splice(bestDiscardIdx, 1);
+    simulateCardPlacementOnBoard(
+      simState,
+      owner,
+      bestPlacementLane,
+      chosenCard,
+      false
+    );
+  }
 }
 
 /**
@@ -5592,7 +7040,6 @@ export function evaluateAdhocSkillChoice(
               null,
               candLane
             );
-            processDestructionTriggers(testState, []);
             const subScore = evaluateTurnOutcome(testState, owner);
             if (isRed) {
               if (subScore > bestSubScore) {
@@ -5692,13 +7139,15 @@ export function evaluateAdhocSkillChoice(
  * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）を適用するか
  * @param {boolean} [canCancel=false] - 配置キャンセルを候補に含めるか
  * @param {number[]|null} [candidateLanes=null] - 配置候補レーンの配列（分身の隣接レーン制限など）
+ * @param {Array<object>} [pendingSkills=[]] - 後続で待機している未解決スキル群
  * @return {number[]|null} 最善レーンの配列。キャンセルが最善の場合は null、候補なしの場合は空配列
  */
 export function evaluateAdhocTokenLanes(
   tokenCard,
   checkConstraints = true,
   canCancel = false,
-  candidateLanes = null
+  candidateLanes = null,
+  pendingSkills = []
 ) {
   /*
   console.log(`[AI CALL Debug] evaluateAdhocTokenLanes start.
@@ -5750,1126 +7199,6 @@ export function evaluateAdhocTokenLanes(
   if (validLanes.length === 0) return [];
 
   // ==========================================
-  // 【号令アドホックシミュレーション用 ツリー展開ロジック】
-  // ==========================================
-
-  // 連鎖するスキルをシミュレーション上のアクションキューとして展開するローカル関数
-  const buildSkillBranchAdhoc = (
-    currentSkills,
-    currentUsedHand,
-    currentUsedDiscard,
-    currentDepth,
-    currentDiscard = [],
-    laneIdx, // めくれた親カードが置かれるレーン
-    currentEnemyBoard = null,
-    currentPlayerBoard = null,
-    leaderSkillContext = undefined
-  ) => {
-    if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
-
-    const activeEnemyBoard = currentEnemyBoard || GameState.enemyBoard;
-    const activePlayerBoard = currentPlayerBoard || GameState.playerBoard;
-
-    let sk = currentSkills[0];
-    let remainingSkills = currentSkills.slice(1);
-    let results = [];
-
-    const isPlacementSkill = [
-      'clone',
-      'servant',
-      'ambush',
-      'puppet',
-      'resurrect',
-      'execute', // 処刑を追加
-      'inspire',
-      'protection',
-      'dominate',
-    ].includes(sk.id);
-    if (!isPlacementSkill) {
-      // 配置系スキル以外は常に「このスキルをキャンセル/スキップする」選択肢を考慮する
-      results.push(
-        ...buildSkillBranchAdhoc(
-          remainingSkills,
-          currentUsedHand,
-          currentUsedDiscard,
-          currentDepth,
-          currentDiscard,
-          laneIdx,
-          activeEnemyBoard,
-          activePlayerBoard,
-          leaderSkillContext
-        )
-      );
-    }
-
-    if (sk.id === 'invite') {
-      const originalHand = GameState.enemyHand || [];
-      const originalDiscard = GameState.enemyDiscard || [];
-      for (let i = 0; i < originalHand.length; i++) {
-        if (currentUsedHand.includes(i)) continue;
-        let childCard = originalHand[i];
-        // 【招来】同じレーンに召喚する仕様のため、forcedLane = laneIdx を渡す
-        let children = buildCardPlayTreeAdhoc(
-          childCard,
-          i,
-          'invite',
-          originalHand,
-          originalDiscard,
-          [...currentUsedHand, i],
-          currentUsedDiscard,
-          currentDepth + 1,
-          laneIdx
-        );
-        for (let cNode of children) {
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            [...currentUsedHand, i],
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            activeEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([...cNode, ...nb]);
-          }
-        }
-      }
-    } else if (sk.id === 'summon') {
-      const selfId = tokenCard ? tokenCard.baseId || tokenCard.id : null;
-      const originalHand = GameState.enemyHand || [];
-      const originalDiscard = GameState.enemyDiscard || [];
-      const isExcludeBoard = Boolean(sk.excludeBoard);
-      const presentBoardIds = isExcludeBoard
-        ? activeEnemyBoard
-            .filter(Boolean)
-            .flatMap((c) => [c.id, c.baseId])
-            .filter(Boolean)
-        : [];
-
-      for (let i = 0; i < originalHand.length; i++) {
-        if (currentUsedHand.includes(i)) continue;
-        let childCard = originalHand[i];
-
-        // skillLogic.js の isValidSummonCard と同一の判定順序・論理（matchesSummonTarget）で評価
-        if (
-          !matchesSummonTarget(childCard, sk, {
-            selfId,
-            presentBoardIds,
-          })
-        ) {
-          continue;
-        }
-
-        let children = buildCardPlayTreeAdhoc(
-          childCard,
-          i,
-          'summon',
-          originalHand,
-          originalDiscard,
-          [...currentUsedHand, i],
-          currentUsedDiscard,
-          currentDepth + 1
-        );
-        for (let cNode of children) {
-          const summonLane = cNode[0]?.laneIdx;
-          const nextEnemyBoard = [...activeEnemyBoard];
-          if (summonLane !== undefined && summonLane >= 0 && summonLane < 3) {
-            nextEnemyBoard[summonLane] = childCard;
-          }
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            [...currentUsedHand, i],
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            nextEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([...cNode, ...nb]);
-          }
-        }
-      }
-    } else if (sk.id === 'assemble') {
-      const isSelf = Boolean(sk.self || sk.targetSelf);
-      const selfId = tokenCard ? tokenCard.baseId || tokenCard.id : null;
-      const originalHand = GameState.enemyHand || [];
-      const originalDiscard = GameState.enemyDiscard || [];
-      const targetIds = sk.targetIds || (sk.targetId ? [sk.targetId] : null);
-      const targetKeyword = sk.targetKeyword;
-      const rawSkillIds = Array.isArray(sk.targetSkills)
-        ? sk.targetSkills.filter(Boolean)
-        : typeof sk.targetSkills === 'string' && sk.targetSkills.trim() !== ''
-          ? [sk.targetSkills.trim()]
-          : sk.targetSkill
-            ? [sk.targetSkill]
-            : [];
-      const targetSkills = [...new Set(rawSkillIds)];
-      const reqP = sk.value;
-      const isExcludeBoard = Boolean(sk.excludeBoard);
-      const presentBoardIds = isExcludeBoard
-        ? activeEnemyBoard
-            .filter(Boolean)
-            .flatMap((c) => [c.id, c.baseId])
-            .filter(Boolean)
-        : [];
-
-      const originalDeck = GameState.enemyDeck || [];
-      const seenKeys = new Set();
-
-      for (let i = 0; i < originalDeck.length; i++) {
-        let childCard = originalDeck[i];
-        if (!childCard) continue;
-
-        const cardKey = childCard.baseId || childCard.id;
-        if (seenKeys.has(cardKey)) continue;
-
-        if (isExcludeBoard) {
-          if (
-            presentBoardIds.includes(childCard.id) ||
-            (childCard.baseId && presentBoardIds.includes(childCard.baseId))
-          ) {
-            continue;
-          }
-        }
-
-        let matches = true;
-        if (isSelf && selfId) {
-          matches = matchesCardId(childCard, selfId);
-        } else if (Array.isArray(targetIds) && targetIds.length > 0) {
-          matches = matchesCardIds(childCard, targetIds);
-        } else if (typeof targetKeyword === 'string' && targetKeyword) {
-          matches = matchesCardKeyword(childCard, targetKeyword);
-        } else if (Array.isArray(targetSkills) && targetSkills.length > 0) {
-          const masterCard = CARD_MASTER?.find((m) => m.id === childCard.id);
-          matches = targetSkills.some(
-            (sId) =>
-              hasSkillDeep(childCard, sId) ||
-              (masterCard && hasSkillDeep(masterCard, sId))
-          );
-        } else if (reqP !== undefined && reqP !== null) {
-          matches = (childCard.power || 0) <= reqP;
-        }
-
-        if (!matches) continue;
-        seenKeys.add(cardKey);
-
-        const masterData = CARD_MASTER.find(
-          (m) => m.id === (childCard.baseId || childCard.id)
-        );
-        const assembleCard = masterData
-          ? cloneCard(masterData)
-          : cloneCard(childCard);
-        assembleCard.uid = childCard.uid || childCard.id;
-        assembleCard.baseId = childCard.baseId || childCard.id;
-        assembleCard.basePower = assembleCard.power;
-        assembleCard.currentPower = assembleCard.power;
-
-        let children = buildCardPlayTreeAdhoc(
-          assembleCard,
-          i,
-          'assemble',
-          originalHand,
-          originalDiscard,
-          currentUsedHand,
-          currentUsedDiscard,
-          currentDepth + 1
-        );
-        for (let cNode of children) {
-          const assembleLane = cNode[0]?.laneIdx;
-          const nextEnemyBoard = [...activeEnemyBoard];
-          if (
-            assembleLane !== undefined &&
-            assembleLane >= 0 &&
-            assembleLane < 3
-          ) {
-            nextEnemyBoard[assembleLane] = assembleCard;
-          }
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            currentUsedHand,
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            nextEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([...cNode, ...nb]);
-          }
-        }
-      }
-    } else if (sk.id === 'forge') {
-      const originalHand = GameState.enemyHand || [];
-      const originalDiscard = GameState.enemyDiscard || [];
-      for (let i = 0; i < originalHand.length; i++) {
-        if (currentUsedHand.includes(i)) continue;
-        let childCard = originalHand[i];
-
-        const isEquip = hasSkill(childCard, 'equip');
-        let validLanes = [];
-        for (let j = 0; j < 3; j++) {
-          if (activeEnemyBoard[j] !== null) {
-            if (isEquip || hasSkill(activeEnemyBoard[j], 'arm_self')) {
-              validLanes.push(j);
-            }
-          }
-        }
-
-        for (let vLane of validLanes) {
-          let children = buildCardPlayTreeAdhoc(
-            childCard,
-            i,
-            'forge',
-            originalHand,
-            originalDiscard,
-            [...currentUsedHand, i],
-            currentUsedDiscard,
-            currentDepth + 1,
-            vLane
-          );
-          for (let cNode of children) {
-            let nextBranches = buildSkillBranchAdhoc(
-              remainingSkills,
-              [...currentUsedHand, i],
-              currentUsedDiscard,
-              currentDepth,
-              currentDiscard,
-              laneIdx,
-              activeEnemyBoard,
-              activePlayerBoard,
-              leaderSkillContext
-            );
-            for (let nb of nextBranches) {
-              results.push([...cNode, ...nb]);
-            }
-          }
-        }
-      }
-
-      // スキップのブランチ
-      let nextBranches = buildSkillBranchAdhoc(
-        remainingSkills,
-        currentUsedHand,
-        currentUsedDiscard,
-        currentDepth,
-        currentDiscard,
-        laneIdx,
-        activeEnemyBoard,
-        activePlayerBoard,
-        leaderSkillContext
-      );
-      for (let nb of nextBranches) {
-        results.push([{ type: 'forge', targetIdx: -1, laneIdx: -1 }, ...nb]);
-      }
-    } else if (sk.id === 'leap') {
-      let leapBranch = buildSkillBranchAdhoc(
-        remainingSkills,
-        currentUsedHand,
-        currentUsedDiscard,
-        currentDepth,
-        currentDiscard,
-        laneIdx,
-        activeEnemyBoard,
-        activePlayerBoard,
-        leaderSkillContext
-      );
-      for (let nb of leapBranch) {
-        results.push([{ type: 'leap' }, ...nb]);
-      }
-    } else if (sk.id === 'resurrect') {
-      const originalDiscard = GameState.enemyDiscard || [];
-      // 【重要】特定対象（targetIds / targetKeyword）が指定されている復活スキルの場合、
-      // パワー制限（sk.value）は存在しないため maxP を undefined としてパワー上限チェックを解除する。
-      // （sk.value が未指定の場合に 1 と誤認してパワー1超のカードを不正棄却するバグを防止）
-      const hasSpecificTarget =
-        (Array.isArray(sk.targetIds) && sk.targetIds.length > 0) ||
-        sk.targetId ||
-        (typeof sk.targetKeyword === 'string' && sk.targetKeyword);
-      const maxP = hasSpecificTarget
-        ? undefined
-        : sk.value !== undefined && sk.value !== null
-          ? sk.value
-          : 1;
-      const candidates = [...originalDiscard, ...currentDiscard];
-      const isExcludeBoard = Boolean(sk.excludeBoard);
-      const presentBoardIds = isExcludeBoard
-        ? activeEnemyBoard
-            .filter(Boolean)
-            .flatMap((c) => [c.id, c.baseId])
-            .filter(Boolean)
-        : [];
-
-      for (let i = 0; i < candidates.length; i++) {
-        if (currentUsedDiscard.includes(i)) continue;
-        let resCard = candidates[i];
-
-        // skillLogic.js の実戦判定（matchesResurrectTarget）と同一ロジックで評価
-        if (
-          !matchesResurrectTarget(resCard, sk, {
-            presentBoardIds,
-          })
-        ) {
-          continue;
-        }
-
-        for (let j = 0; j < 3; j++) {
-          if (sealedLanes[j] > 0) continue;
-          let resNode = {
-            type: 'resurrect',
-            targetIdx: i,
-            targetUid: resCard.uid,
-            laneIdx: j,
-            maxP: maxP,
-          };
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            currentUsedHand,
-            [...currentUsedDiscard, i],
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            activeEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([resNode, ...nb]);
-          }
-        }
-      }
-
-      // 復活のキャンセル分岐
-      let cancelNode = {
-        type: 'resurrect',
-        targetIdx: -1,
-        laneIdx: -1,
-      };
-      let cancelBranches = buildSkillBranchAdhoc(
-        remainingSkills,
-        currentUsedHand,
-        currentUsedDiscard,
-        currentDepth,
-        currentDiscard,
-        laneIdx,
-        activeEnemyBoard,
-        activePlayerBoard,
-        leaderSkillContext
-      );
-      for (let nb of cancelBranches) {
-        results.push([cancelNode, ...nb]);
-      }
-    } else if (sk.id === 'execute') {
-      // 【処刑】自分の通常カード1枚を選択して破壊する（トークンは除外）
-      let occupiedLanes = [];
-      for (let j = 0; j < 3; j++) {
-        const simulatedBoardCard =
-          j === laneIdx ? tokenCard : activeEnemyBoard[j];
-        if (simulatedBoardCard !== null) {
-          occupiedLanes.push(j);
-        }
-      }
-
-      if (occupiedLanes.length > 0) {
-        for (let tgtLane of occupiedLanes) {
-          let execNode = {
-            type: 'execute',
-            targetLane: tgtLane,
-          };
-          const destroyedCard =
-            tgtLane === laneIdx ? tokenCard : activeEnemyBoard[tgtLane];
-          // canCardBeDestroyed が参照するのは加護カウンターのみのため軽量オブジェクトを生成
-          const projectedState = createGuardProjectedState();
-          const isDestroyable =
-            destroyedCard &&
-            canCardBeDestroyed(projectedState, destroyedCard, 'red');
-          let newlyDiscarded = [...currentDiscard];
-          if (
-            destroyedCard &&
-            !destroyedCard.isToken &&
-            !hasSkill(destroyedCard, 'split') &&
-            isDestroyable
-          ) {
-            newlyDiscarded.push(destroyedCard);
-          }
-
-          // 破壊された後の盤面を生成して引き継ぐ（splitスキルの場合は封印されていないレーンのみトークンを残留させる）
-          const nextEnemyBoard = activeEnemyBoard.map((c) =>
-            c ? { ...c } : null
-          );
-          if (isDestroyable) {
-            const canPlaceSplitToken =
-              !sealedLanes || sealedLanes[tgtLane] === 0;
-            nextEnemyBoard[tgtLane] =
-              hasSkill(destroyedCard, 'split') && canPlaceSplitToken
-                ? createSplitSimToken(destroyedCard, tgtLane, 'red')
-                : null;
-          }
-
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            currentUsedHand,
-            currentUsedDiscard,
-            currentDepth,
-            newlyDiscarded,
-            laneIdx,
-            nextEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([execNode, ...nb]);
-          }
-        }
-      } else {
-        return buildSkillBranchAdhoc(
-          remainingSkills,
-          currentUsedHand,
-          currentUsedDiscard,
-          currentDepth,
-          currentDiscard,
-          laneIdx,
-          activeEnemyBoard,
-          activePlayerBoard,
-          leaderSkillContext
-        );
-      }
-    } else if (sk.id === 'berserk') {
-      // 【狂乱】隣接レーンの自分の通常カードが破壊されるかを予測し、バッファに追加
-      const bVal = sk.value || 2;
-      const adjLanes = laneIdx === 1 ? [0, 2] : [1];
-      let newlyDiscarded = [...currentDiscard];
-      adjLanes.forEach((j) => {
-        const adjCard = activeEnemyBoard[j];
-        if (adjCard && !adjCard.isToken) {
-          const isImmune = hasSkill(adjCard, 'immune');
-          const currentP = adjCard.currentPower ?? adjCard.power ?? 0;
-          if (!isImmune && currentP <= bVal) {
-            newlyDiscarded.push(adjCard);
-          }
-        }
-      });
-
-      return buildSkillBranchAdhoc(
-        remainingSkills,
-        currentUsedHand,
-        currentUsedDiscard,
-        currentDepth,
-        newlyDiscarded,
-        laneIdx,
-        activeEnemyBoard,
-        activePlayerBoard,
-        leaderSkillContext
-      );
-    } else if (sk.id === 'dominate') {
-      const maxP = sk.value || 0;
-      const oppBoard = activePlayerBoard; // AI(自分)から見た相手は playerBoard
-      let validOppLanes = [];
-      for (let j = 0; j < 3; j++) {
-        if (
-          oppBoard[j] &&
-          (oppBoard[j].currentPower ?? oppBoard[j].power ?? 0) <= maxP &&
-          sealedLanes[j] === 0 // 自分側の同じレーンが封印されていないこと！
-        ) {
-          validOppLanes.push(j);
-        }
-      }
-
-      // 相手の対象レーンのみを展開（配置レーンは相手の対象レーン i と同じ正面対面レーンに固定）
-      for (let i of validOppLanes) {
-        const myL = i; // 奪うカードの正面（対面する同じレーン番号）！
-        if (sealedLanes[myL] > 0) continue;
-        let domNode = {
-          type: 'dominate',
-          oppLaneIdx: i,
-          myLaneIdx: myL,
-          maxP: maxP,
-        };
-
-        // 支配（強奪）を反映した盤面を生成して引き継ぐ
-        const nextEnemyBoard = activeEnemyBoard.map((c) =>
-          c ? { ...c } : null
-        );
-        const nextPlayerBoard = activePlayerBoard.map((c) =>
-          c ? { ...c } : null
-        );
-        const stolenCard = nextPlayerBoard[i];
-        if (stolenCard) {
-          nextEnemyBoard[myL] = {
-            ...stolenCard,
-            owner: 'red', // 自分が奪ったので自分(red)のもの
-          };
-          nextPlayerBoard[i] = null;
-        }
-
-        let nextBranches = buildSkillBranchAdhoc(
-          remainingSkills,
-          currentUsedHand,
-          currentUsedDiscard,
-          currentDepth,
-          currentDiscard,
-          laneIdx,
-          nextEnemyBoard,
-          nextPlayerBoard,
-          leaderSkillContext
-        );
-        for (let nb of nextBranches) {
-          results.push([domNode, ...nb]);
-        }
-      }
-
-      // キャンセル（支配しない）の分岐
-      let cancelNode = {
-        type: 'dominate',
-        oppLaneIdx: -1,
-        myLaneIdx: -1,
-        maxP: maxP,
-      };
-      let cancelBranches = buildSkillBranchAdhoc(
-        remainingSkills,
-        currentUsedHand,
-        currentUsedDiscard,
-        currentDepth,
-        currentDiscard,
-        laneIdx,
-        activeEnemyBoard,
-        activePlayerBoard,
-        leaderSkillContext
-      );
-      for (let nb of cancelBranches) {
-        results.push([cancelNode, ...nb]);
-      }
-    } else if (sk.id === 'inspire') {
-      const bVal = sk.value || 1;
-      const otherOccupiedLanes = [0, 1, 2].filter(
-        (j) => activeEnemyBoard[j] !== null && j !== laneIdx
-      );
-      if (otherOccupiedLanes.length > 0 && bVal !== 0) {
-        for (let tgtLane of otherOccupiedLanes) {
-          let inspireNode = {
-            type: 'inspire',
-            targetLane: tgtLane,
-            value: bVal,
-          };
-          const nextEnemyBoard = activeEnemyBoard.map((c) =>
-            c ? { ...c } : null
-          );
-          if (nextEnemyBoard[tgtLane]) {
-            nextEnemyBoard[tgtLane].currentPower =
-              (nextEnemyBoard[tgtLane].currentPower || 0) + bVal;
-          }
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            currentUsedHand,
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            nextEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([inspireNode, ...nb]);
-          }
-        }
-      } else {
-        return buildSkillBranchAdhoc(
-          remainingSkills,
-          currentUsedHand,
-          currentUsedDiscard,
-          currentDepth,
-          currentDiscard,
-          laneIdx,
-          activeEnemyBoard,
-          activePlayerBoard,
-          leaderSkillContext
-        );
-      }
-    } else if (sk.id === 'protection') {
-      const occupiedLanes = [0, 1, 2].filter(
-        (j) => activeEnemyBoard[j] !== null
-      );
-      if (occupiedLanes.length > 0) {
-        for (let tgtLane of occupiedLanes) {
-          let protectNode = {
-            type: 'protection',
-            targetLane: tgtLane,
-          };
-          const nextEnemyBoard = activeEnemyBoard.map((c) =>
-            c ? { ...c } : null
-          );
-          if (nextEnemyBoard[tgtLane]) {
-            nextEnemyBoard[tgtLane].valkyriaGuard = true;
-          }
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            currentUsedHand,
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            nextEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([protectNode, ...nb]);
-          }
-        }
-      } else {
-        return buildSkillBranchAdhoc(
-          remainingSkills,
-          currentUsedHand,
-          currentUsedDiscard,
-          currentDepth,
-          currentDiscard,
-          laneIdx,
-          activeEnemyBoard,
-          activePlayerBoard,
-          leaderSkillContext
-        );
-      }
-    } else if (
-      sk.id === 'convert' ||
-      sk.id === 'draw' ||
-      sk.id === 'reinforce'
-    ) {
-      const originalHand = GameState.enemyHand || [];
-      const count = sk.value || 1;
-      let handIndices = [];
-      for (let i = 0; i < originalHand.length; i++) {
-        if (!currentUsedHand.includes(i)) handIndices.push(i);
-      }
-
-      if (handIndices.length > 0) {
-        const actualCount = Math.min(count, handIndices.length);
-        let combinations = getCombinations(handIndices, actualCount);
-        for (let combo of combinations) {
-          let discardNodes = combo.map((idx) => ({
-            type: 'discard',
-            targetIdx: idx,
-          }));
-          let newlyDiscarded = combo.map((idx) => originalHand[idx]);
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            [...currentUsedHand, ...combo],
-            currentUsedDiscard,
-            currentDepth,
-            [...currentDiscard, ...newlyDiscarded],
-            laneIdx,
-            activeEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([...discardNodes, ...nb]);
-          }
-        }
-      }
-    } else if (['clone', 'servant', 'ambush'].includes(sk.id)) {
-      const count = sk.id === 'clone' ? sk.value || 1 : 1;
-      const generateLaneCombos = (remainingCount) => {
-        if (remainingCount <= 0) return [[]];
-        let combos = [];
-        let subCombos = generateLaneCombos(remainingCount - 1);
-        // 分身スキルの調整：元のレーン laneIdx の隣接レーンのみを対象とする
-        const allowedLanes =
-          sk.id === 'clone' ? (laneIdx === 1 ? [0, 2] : [1]) : [0, 1, 2];
-        for (let j of allowedLanes) {
-          if (sealedLanes[j] > 0) continue;
-          for (let sc of subCombos) {
-            combos.push([j, ...sc]);
-          }
-        }
-        return combos;
-      };
-
-      let allCombos = [[]]; // 配置しない（空配列）という明示的な意思
-      for (let c = 1; c <= count; c++) {
-        allCombos.push(...generateLaneCombos(c));
-      }
-      for (let combo of allCombos) {
-        let tokenNode = {
-          type: 'token_placement',
-          skillId: sk.id,
-          skillValue: sk.value,
-          summonId: sk.summonId,
-          lanes: combo,
-        };
-        let nextBranches = buildSkillBranchAdhoc(
-          remainingSkills,
-          currentUsedHand,
-          currentUsedDiscard,
-          currentDepth,
-          currentDiscard,
-          laneIdx,
-          activeEnemyBoard,
-          activePlayerBoard,
-          leaderSkillContext
-        );
-        for (let nb of nextBranches) {
-          results.push([tokenNode, ...nb]);
-        }
-      }
-    } else if (sk.id === 'puppet') {
-      const originalDiscard = GameState.playerDiscard || []; // 相手の墓地
-      const maxP = sk.value || 1;
-      const candidates = [...originalDiscard];
-
-      for (let i = 0; i < candidates.length; i++) {
-        let resCard = candidates[i];
-        if (!resCard || resCard.isToken) continue;
-
-        const master = CARD_MASTER.find(
-          (m) => m.id === resCard.id || m.id === resCard.baseId
-        );
-        const baseP = master ? master.power : resCard.power || 0;
-        if (baseP > maxP) continue;
-
-        for (let j = 0; j < 3; j++) {
-          if (sealedLanes[j] > 0) continue;
-          let puppetNode = {
-            type: 'puppet',
-            targetIdx: i,
-            targetUid: resCard.uid,
-            laneIdx: j,
-            maxP: maxP,
-          };
-          let nextBranches = buildSkillBranchAdhoc(
-            remainingSkills,
-            currentUsedHand,
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            activeEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([puppetNode, ...nb]);
-          }
-        }
-      }
-
-      // 傀儡のキャンセル分岐
-      let cancelNode = {
-        type: 'puppet',
-        targetIdx: -1,
-        laneIdx: -1,
-        maxP: maxP,
-      };
-      let cancelBranches = buildSkillBranchAdhoc(
-        remainingSkills,
-        currentUsedHand,
-        currentUsedDiscard,
-        currentDepth,
-        currentDiscard,
-        laneIdx,
-        activeEnemyBoard,
-        activePlayerBoard,
-        leaderSkillContext
-      );
-      for (let nb of cancelBranches) {
-        results.push([cancelNode, ...nb]);
-      }
-    } else if (sk.id === 'choice') {
-      const cc = sk.value || 1;
-      const cArr =
-        sk.choiceGroup === 2 ? tokenCard.choices2 : tokenCard.choices;
-      if (cArr) {
-        const idxs = cArr.map((_, i) => i);
-        let combinations = getCombinations(idxs, Math.min(idxs.length, cc));
-        for (let combo of combinations) {
-          const chosenSkills = combo.map((idx) => cArr[idx]);
-          let nextSkills = [...chosenSkills, ...remainingSkills];
-          let choiceNode = {
-            type: 'choice',
-            choices: combo,
-            choiceGroup: sk.choiceGroup,
-          };
-          let nextBranches = buildSkillBranchAdhoc(
-            nextSkills,
-            currentUsedHand,
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            activeEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([choiceNode, ...nb]);
-          }
-        }
-      }
-    } else if (sk.id === 'force') {
-      const fc = sk.value || 1;
-      const fArr =
-        sk.choiceGroup === 2 ? tokenCard.choices2 : tokenCard.choices;
-      if (fArr) {
-        const idxs = fArr.map((_, i) => i);
-        let combinations = getCombinations(idxs, Math.min(idxs.length, fc));
-        for (let combo of combinations) {
-          const chosenSkills = combo.map((idx) => fArr[idx]);
-          let nextSkills = [...chosenSkills, ...remainingSkills];
-          let forceNode = {
-            type: 'force',
-            choices: combo,
-            choiceGroup: sk.choiceGroup,
-          };
-          let nextBranches = buildSkillBranchAdhoc(
-            nextSkills,
-            currentUsedHand,
-            currentUsedDiscard,
-            currentDepth,
-            currentDiscard,
-            laneIdx,
-            activeEnemyBoard,
-            activePlayerBoard,
-            leaderSkillContext
-          );
-          for (let nb of nextBranches) {
-            results.push([forceNode, ...nb]);
-          }
-        }
-      }
-    } else {
-      return buildSkillBranchAdhoc(
-        remainingSkills,
-        currentUsedHand,
-        currentUsedDiscard,
-        currentDepth,
-        currentDiscard,
-        laneIdx,
-        activeEnemyBoard,
-        activePlayerBoard,
-        leaderSkillContext
-      );
-    }
-    return results;
-  };
-
-  // 連鎖召喚用の子カードプレイツリーを構築するローカル関数
-  function buildCardPlayTreeAdhoc(
-    card,
-    sourceIdx,
-    sourceType,
-    originalHand,
-    originalDiscard,
-    usedHand,
-    usedDiscard,
-    depth,
-    forcedLane = undefined,
-    leaderSkillContext = undefined
-  ) {
-    if (depth >= 4) return [[]];
-
-    let availableLanes = [0, 1, 2].filter((l) => sealedLanes[l] === 0);
-
-    if (forcedLane !== undefined) {
-      if (sealedLanes[forcedLane] > 0) return [[]];
-      availableLanes = [forcedLane];
-    } else if (depth > 0) {
-      availableLanes.push(-1);
-    }
-
-    if (
-      sourceType === 'play' ||
-      sourceType === 'invite' ||
-      sourceType === 'summon' ||
-      sourceType === 'assemble'
-    ) {
-      if (GameState.turnCount === 1 && GameState.firstPlayer === 'red') {
-        availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
-      }
-
-      if (hasSkill(card, 'challenge')) {
-        availableLanes = availableLanes.filter(
-          (l) => l === -1 || GameState.playerBoard[l] !== null
-        );
-      }
-      if (hasSkill(card, 'legendary')) {
-        availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
-      }
-      if (sourceType !== 'invite') {
-        if (hasSkill(card, 'takeover')) {
-          availableLanes = availableLanes.filter((l) => {
-            if (l === -1) return true;
-            const hasExisting = GameState.enemyBoard[l] !== null;
-            const willBeSummoned = isLaneOccupiedByLeaderSkill(
-              l,
-              leaderSkillContext
-            );
-            return hasExisting || willBeSummoned;
-          });
-        }
-        if (hasSkill(card, 'apex')) {
-          availableLanes = availableLanes.filter((l) => {
-            if (l === -1) return true;
-            const hasLegendaryOnBoard =
-              GameState.enemyBoard[l] &&
-              hasSkill(GameState.enemyBoard[l], 'legendary');
-            const willLegendaryBeSummoned = isLegendarySummonedByLeaderSkill(
-              l,
-              leaderSkillContext
-            );
-            return hasLegendaryOnBoard || willLegendaryBeSummoned;
-          });
-        }
-      }
-    }
-
-    if (
-      availableLanes.filter((l) => l !== -1).length === 0 &&
-      !availableLanes.includes(-1)
-    )
-      return [[]];
-
-    let choiceCombinations = [undefined];
-    let choice2Combinations = [undefined];
-    if (hasSkill(card, 'choice') || hasSkill(card, 'force')) {
-      if (Array.isArray(card.choices)) {
-        let cc = 1;
-        if (card.skills) {
-          const c = card.skills.find(
-            (s) => s.id === 'choice' || s.id === 'force'
-          );
-          if (c) cc = c.value || 1;
-        }
-        cc = Math.min(cc, card.choices.length);
-        const idxs = card.choices.map((_, i) => i);
-        choiceCombinations = getCombinations(idxs, Math.min(idxs.length, cc));
-      }
-      if (Array.isArray(card.choices2)) {
-        let cc2 = 1;
-        const c2 = card.skills
-          ? card.skills.find((s) => s.id === 'choice' && s.choiceGroup === 2)
-          : null;
-        if (c2) cc2 = c2.value || 1;
-        cc2 = Math.min(cc2, card.choices2.length);
-        const idxs2 = card.choices2.map((_, i) => i);
-        choice2Combinations = getCombinations(
-          idxs2,
-          Math.min(idxs2.length, cc2)
-        );
-      }
-    }
-
-    let branches = [];
-    for (let lane of availableLanes) {
-      for (let c1 of choiceCombinations) {
-        for (let c2 of choice2Combinations) {
-          let node = {
-            type: sourceType,
-            targetIdx: sourceIdx,
-            targetUid: card.uid || card.id,
-            laneIdx: lane,
-            choices: c1 !== undefined ? [...c1] : undefined,
-            choices2: c2 !== undefined ? [...c2] : undefined,
-          };
-          if (lane === -1) {
-            branches.push([node]);
-            continue;
-          }
-
-          let effectiveSkills = [];
-          const isSummonAction = [
-            'play',
-            'call',
-            'invite',
-            'forge',
-            'summon',
-            'assemble',
-          ].includes(sourceType);
-          if (isSummonAction) {
-            if (Array.isArray(card.skills)) {
-              card.skills.forEach((s) => {
-                if (
-                  [
-                    'invite',
-                    'resurrect',
-                    'convert',
-                    'draw',
-                    'reinforce',
-                    'clone',
-                    'servant',
-                    'summon',
-                    'assemble',
-                    'ambush',
-                    'puppet',
-                    'leap',
-                    'forge',
-                    'inspire',
-                    'protection',
-                    'dominate',
-                  ].includes(s.id)
-                )
-                  effectiveSkills.push(s);
-              });
-            }
-            if (c1)
-              c1.forEach((idx) => {
-                if (card.choices && card.choices[idx])
-                  effectiveSkills.push(card.choices[idx]);
-              });
-            if (c2)
-              c2.forEach((idx) => {
-                if (card.choices2 && card.choices2[idx])
-                  effectiveSkills.push(card.choices2[idx]);
-              });
-          }
-
-          if (depth < 4 && effectiveSkills.length > 0) {
-            // 上書き配置されるカード（通常カードのみ）があれば、一時墓地バッファの初期値として渡す
-            let initialDiscarded = [];
-            if (
-              lane !== -1 &&
-              GameState.enemyBoard[lane] !== null &&
-              !GameState.enemyBoard[lane].isToken
-            ) {
-              initialDiscarded.push(GameState.enemyBoard[lane]);
-            }
-            const nextEnemyBoard = GameState.enemyBoard.map((c) =>
-              c ? { ...c } : null
-            );
-            nextEnemyBoard[lane] = {
-              ...card,
-              owner: 'red',
-            };
-
-            let skillChains = buildSkillBranchAdhoc(
-              effectiveSkills,
-              usedHand,
-              usedDiscard,
-              depth,
-              initialDiscarded,
-              lane,
-              nextEnemyBoard,
-              GameState.playerBoard
-            );
-            for (let chain of skillChains) {
-              branches.push([node, ...chain]);
-            }
-          } else {
-            branches.push([node]);
-          }
-        }
-      }
-    }
-    return branches.filter((b) => b.length > 0);
-  }
-
-  // ==========================================
   // 【シミュレーションの実行と最善解の決定】
   // ==========================================
 
@@ -6885,11 +7214,12 @@ export function evaluateAdhocTokenLanes(
       card: tokenCard,
       laneIdx: l,
       checkConstraints: checkConstraints,
+      isAmbush: Boolean(tokenCard?.isAmbush),
     };
 
-    // 発動するスキルを収集
+    // 発動するスキルを収集（「配置(Place)」の場合はオンプレイ能力が発動しないため、checkConstraints === true の場合のみ収集）
     let effectiveSkills = [];
-    if (Array.isArray(tokenCard.skills)) {
+    if (checkConstraints && Array.isArray(tokenCard.skills)) {
       tokenCard.skills.forEach((s) => {
         if (s.id !== 'choice' && s.id !== 'force') {
           effectiveSkills.push(s);
@@ -6897,10 +7227,28 @@ export function evaluateAdhocTokenLanes(
       });
     }
 
-    // 選択スキルの選択肢展開
+    // 後続で待機している未解決スキル群（親カードの後続スキル等）を追加し、後続能力も含めた多段シミュレーションを実行する
+    const effectivePending =
+      Array.isArray(pendingSkills) && pendingSkills.length > 0
+        ? pendingSkills
+        : Array.isArray(tokenCard?.pendingSkills)
+          ? tokenCard.pendingSkills
+          : [];
+    if (effectivePending.length > 0) {
+      effectivePending.forEach((s) => {
+        if (s && s.id !== 'choice' && s.id !== 'force') {
+          effectiveSkills.push(s);
+        }
+      });
+    }
+
+    // 選択スキルの選択肢展開（「配置」時はオンプレイスキルは不発のため、checkConstraints === true のみ展開）
     let choiceCombinations = [undefined];
     let choice2Combinations = [undefined];
-    if (hasSkill(tokenCard, 'choice') || hasSkill(tokenCard, 'force')) {
+    if (
+      checkConstraints &&
+      (hasSkill(tokenCard, 'choice') || hasSkill(tokenCard, 'force'))
+    ) {
       if (Array.isArray(tokenCard.choices)) {
         let cc = 1;
         if (tokenCard.skills) {
@@ -6979,7 +7327,9 @@ export function evaluateAdhocTokenLanes(
           initialDiscarded,
           l,
           nextEnemyBoard,
-          GameState.playerBoard
+          GameState.playerBoard,
+          tokenCard,
+          'red'
         );
 
         for (let chain of skillChains) {
@@ -6998,16 +7348,11 @@ export function evaluateAdhocTokenLanes(
           );
           if (!simState) continue;
 
-          let score = evaluateSimState(simState);
-          // タイブレーク：左 > 右 > 中央
-          score += 0.1 / lanePriorityOrder[l];
+          // 戦闘フェーズを解決して客観的総合評価を算出
+          let score = evaluateTurnOutcome(simState, 'red');
 
-          /*
-          console.log(`[AI CALL Debug] Lane ${l} simulation:
-          ActionQueue: ${JSON.stringify(actionQueue)}
-          Score: ${score}
-          `);
-          */
+          // タイブレーク：左 > 右 > 中央
+          score += 0.001 / lanePriorityOrder[l];
 
           if (score > maxScore) {
             maxScore = score;
@@ -7033,7 +7378,7 @@ export function evaluateAdhocTokenLanes(
       structuredClone(initialSimState)
     );
     if (simState) {
-      let score = evaluateSimState(simState) + 0.05; // キャンセル優先ボーナス
+      let score = evaluateTurnOutcome(simState, 'red') + 0.0005; // キャンセル時のタイブレーク微調整
       if (score > maxScore) {
         maxScore = score;
         bestBranch = [{ type: 'play_adhoc', card: null, laneIdx: -1 }];
@@ -7054,44 +7399,7 @@ export function evaluateAdhocTokenLanes(
   // 【シミュレーション結果の GameState 同期（マージ）】
   // ==========================================
   if (bestBranch) {
-    if (!GameState.aiDecision) {
-      GameState.aiDecision = {};
-    }
-    if (!GameState.aiDecision.actionQueue) {
-      GameState.aiDecision.actionQueue = [];
-    }
-    if (!GameState.aiDecision.choiceIndexQueue) {
-      GameState.aiDecision.choiceIndexQueue = [];
-    }
-    if (!GameState.aiDecision.cardTokenLanes) {
-      GameState.aiDecision.cardTokenLanes = [];
-    }
-
-    // 最初の `play_adhoc` を除いた連鎖アクション（インデックス1以降）を `GameState.aiDecision.actionQueue` の先頭に unshift
-    const chainActions = bestBranch.slice(1);
-    const reversedChain = [...chainActions].reverse();
-    reversedChain.forEach((act) => {
-      GameState.aiDecision.actionQueue.unshift(act);
-
-      // 選択スキル（choice / force）の選択肢情報は choiceIndexQueue に割り込み登録する
-      // ※ token_placement / resurrect / dominate などのレーン指定は actionQueue の各アクションオブジェクト自身が保持し、
-      //    実処理部（skillLogic.js の servant/clone/resurrect 等）が actionQueue から直接取り出して消費するため、
-      //    cardTokenLanes に二重登録してはならない（未消費のゴミが残り後続のアドホック召喚を誤バイパスする原因となるため）。
-      if (act.type === 'choice' || act.type === 'force') {
-        if (act.choices !== undefined) {
-          GameState.aiDecision.choiceIndexQueue.unshift(act.choices);
-        }
-      }
-    });
-
-    // めくれたカード自身が選択肢を持つ場合、その選択も choiceIndexQueue に登録する
-    const adhocPlayAct = bestBranch[0];
-    if (adhocPlayAct && adhocPlayAct.choices !== undefined) {
-      GameState.aiDecision.choiceIndexQueue.unshift(adhocPlayAct.choices);
-    }
-    if (adhocPlayAct && adhocPlayAct.choices2 !== undefined) {
-      GameState.aiDecision.choiceIndexQueue.unshift(adhocPlayAct.choices2);
-    }
+    syncAdhocDecision(bestBranch);
   }
 
   // 以前の evaluateAdhocTokenLanes に合わせて、最善レーンの配列形式で統一
@@ -7129,6 +7437,7 @@ export function evaluateAdhocTokenLanes(
  * @param {number} count - 配置要求数
  * @param {boolean} [canCancel=false] - 配置キャンセル可能フラグ
  * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）の適用フラグ
+ * @param {Array<object>} [pendingSkills=[]] - 後続で待機している未解決スキル群
  * @return {Array<number>} 決定された配置レーン配列
  */
 export function getNormalTokenLanes(
@@ -7137,21 +7446,23 @@ export function getNormalTokenLanes(
   tokenCard,
   count,
   canCancel = false,
-  checkConstraints = true
+  checkConstraints = true,
+  pendingSkills = []
 ) {
   if (owner === 'red') {
-    // 常に最新の盤面状況と判明したカード情報に基づき、アドホックにシミュレーションして決定する
+    // 常に最新の盤面状況と後続待機スキル情報に基づき、アドホックにシミュレーションして決定する
     const results = evaluateAdhocTokenLanes(
       tokenCard,
       checkConstraints,
       canCancel,
-      allLanes
+      allLanes,
+      pendingSkills
     );
     if (results === null) return []; // キャンセル判定
     if (results.length > 0) {
       if (results.length >= count) return results.slice(0, count);
 
-      // count > 1（分身等）の場合：残りの候補レーンから空き枠を優先して追加選択する
+      // count > 1（分身等）の場合：残りの候補レーンから、仮想配置盤面を客観的総合評価関数（evaluateTurnOutcome）でシミュレートして順次最善レーンを選択する
       const remainingLanes = allLanes.filter((l) => !results.includes(l));
       const validRemaining = remainingLanes.filter((l) => {
         if (checkConstraints && tokenCard) {
@@ -7179,30 +7490,58 @@ export function getNormalTokenLanes(
         return sealedLanes[l] === 0;
       });
 
-      // 1. 空きレーンを最優先で追加
-      const emptyLanes = validRemaining.filter(
-        (l) => GameState.enemyBoard[l] === null
-      );
-      for (const el of emptyLanes) {
-        if (results.length < count) {
-          results.push(el);
-        }
-      }
+      // 2体目以降のトークンについて、各候補レーンに配置した盤面を実際にシミュレートし、evaluateTurnOutcome の客観的スコアを比較して最善レーンを順次決定する
+      while (results.length < count && validRemaining.length > 0) {
+        let bestSubScore = -Infinity;
+        let bestSubLane = -1;
 
-      // 2. キャンセル不可（!canCancel）で枠が不足している場合のみ、味方上書きも許容して補充
-      if (!canCancel && results.length < count) {
-        const occupiedLanes = validRemaining.filter(
-          (l) => GameState.enemyBoard[l] !== null
-        );
-        occupiedLanes.sort(
-          (a, b) =>
-            (GameState.enemyBoard[a]?.currentPower || 0) -
-            (GameState.enemyBoard[b]?.currentPower || 0)
-        );
-        for (const ol of occupiedLanes) {
-          if (results.length < count) {
-            results.push(ol);
+        // パス基準スコア（配置しない場合のスコア）
+        let passScore = -Infinity;
+        if (canCancel) {
+          const passSim = buildInitialSimState();
+          for (const prevL of results) {
+            simulateCardPlacementOnBoard(
+              passSim,
+              owner,
+              prevL,
+              tokenCard,
+              false
+            );
           }
+          passScore = evaluateTurnOutcome(passSim, owner);
+        }
+
+        for (const l of validRemaining) {
+          const testSim = buildInitialSimState();
+          for (const prevL of results) {
+            simulateCardPlacementOnBoard(
+              testSim,
+              owner,
+              prevL,
+              tokenCard,
+              false
+            );
+          }
+          simulateCardPlacementOnBoard(testSim, owner, l, tokenCard, false);
+          const score = evaluateTurnOutcome(testSim, owner);
+
+          if (score > bestSubScore) {
+            bestSubScore = score;
+            bestSubLane = l;
+          }
+        }
+
+        // キャンセル可能な場合、追加配置によってスコアが下がる（自爆する）なら配置を終了
+        if (canCancel && bestSubScore < passScore) {
+          break;
+        }
+
+        if (bestSubLane !== -1) {
+          results.push(bestSubLane);
+          const remIdx = validRemaining.indexOf(bestSubLane);
+          if (remIdx !== -1) validRemaining.splice(remIdx, 1);
+        } else {
+          break;
         }
       }
 
@@ -7311,13 +7650,7 @@ export function evaluateAIMoves(currentState) {
         if (c) opPow += c.currentPower || 0;
       });
       score += myPow - opPow;
-      const currentAllyCount = currentState.enemyBoard.filter(
-        (c) => c !== null
-      ).length;
-      const newAllyCount = boardMap.filter((c) => c !== null).length;
-      if (currentAllyCount > newAllyCount)
-        score -= (currentAllyCount - newAllyCount) * 10;
-      score -= currentMoves.length * 0.1;
+      score -= currentMoves.length * 0.1; // 不要な移動を防ぐための微小なタイブレーク
       if (score > bestScore) {
         bestScore = score;
         bestMoves = currentMoves;
@@ -7626,3 +7959,6 @@ export function simulateMove(
   }
   return simState;
 }
+
+// engine.js のトークン・カード配置シミュレーション評価器として、戦闘フェーズ・ターン進行を含む客観的総合評価関数（evaluateTurnOutcome）を注入・登録する
+registerPlacementEvaluator((state, owner) => evaluateTurnOutcome(state, owner));

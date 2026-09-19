@@ -51,6 +51,7 @@ import { battleEvents } from './events/battleEventEmitter.js';
  * @param {boolean} [canCancel=false] - キャンセル可能かどうかのフラグ
  * @param {string} [buttonText='配置終了'] - 決定ボタンのテキスト
  * @param {boolean} [_skipImmediateDiscard=false] - 即時破棄スキップフラグ
+ * @param {Array<object>} [pendingSkills=[]] - 後続で待機している未解決スキル群
  * @returns {Promise<Array<number>|null>} 選択されたレーンインデックスの配列（キャンセルの場合はnull）
  */
 export async function waitPlayerLaneSelection(
@@ -62,7 +63,8 @@ export async function waitPlayerLaneSelection(
   checkConstraints = true,
   canCancel = false,
   buttonText = '配置完了',
-  _skipImmediateDiscard = false // 【追加】後続の playCard 等で破棄を行う場合、この関数内での即時破棄をスキップするフラグ
+  _skipImmediateDiscard = false, // 【追加】後続の playCard 等で破棄を行う場合、この関数内での即時破棄をスキップするフラグ
+  pendingSkills = []
 ) {
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const sealedLanes =
@@ -221,13 +223,20 @@ export async function waitPlayerLaneSelection(
       }
 
       // 事前計画の固定レーン再生ではなく、常に最新盤面に基づいた直前シミュレーションを実行して最善レーンを決定する
+      const effectivePending =
+        Array.isArray(pendingSkills) && pendingSkills.length > 0
+          ? pendingSkills
+          : Array.isArray(tokenCard?.pendingSkills)
+            ? tokenCard.pendingSkills
+            : [];
       selectedLanes = evaluateBestLanesForToken(
         availableAI,
         owner,
         tokenCard,
         count,
         canCancel,
-        checkConstraints
+        checkConstraints,
+        effectivePending
       );
     }
 

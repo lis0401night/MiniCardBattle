@@ -537,6 +537,117 @@ export function quietDiscardFromBoard(state, owner, lane) {
   b[lane] = null;
 }
 
+let placementEvaluator = null;
+
+/**
+ * 盤面シミュレーション評価関数を登録する（ai_normal.js から依存性注入される）。
+ * @param {function(object, 'blue' | 'red'): number} fn - 盤面総合評価関数 (state, owner) => score
+ */
+export function registerPlacementEvaluator(fn) {
+  placementEvaluator = fn;
+}
+
+/**
+ * シミュレーション内において、カードやトークンの最適な配置先レーンを決定する共通関数。
+ * 各候補レーンに配置した仮想盤面を作成して総合評価関数（evaluateTurnOutcome等）を実行し、
+ * 戦闘フェーズおよびターン進行後の最終的な盤面評価スコアを客観的に比較して最善のレーンを選択・返却する。
+ *
+ * @param {object} state - シミュレーション中のゲーム状態
+ * @param {'blue' | 'red'} owner - 配置を行う側のプレイヤー ('blue' | 'red')
+ * @param {object} cardToPlace - 配置対象のカードまたはトークンオブジェクト
+ * @param {Array<number>} [candidateLanes=[0, 1, 2]] - 候補レーン配列（分身の隣接制限など）
+ * @param {boolean} [checkConstraints=false] - 召喚制約（伝説・生贄等）をチェックするか
+ * @returns {number} 決定されたレーンインデックス (0〜2)、配置不可なら -1
+ */
+export function getBestSimulatedPlacementLane(
+  state,
+  owner,
+  cardToPlace,
+  candidateLanes = [0, 1, 2],
+  checkConstraints = false
+) {
+  if (!state || !cardToPlace) return -1;
+  const b = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+  const oppB = owner === 'blue' ? state.enemyBoard : state.playerBoard;
+  const sealedLanes =
+    owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
+
+  // 封印レーンの除外
+  const validLanes = candidateLanes.filter(
+    (l) => l >= 0 && l <= 2 && (!sealedLanes || sealedLanes[l] === 0)
+  );
+  if (validLanes.length === 0) return -1;
+
+  // 制約チェックが必要な場合（召喚扱いの場合）
+  const constrainedLanes = validLanes.filter((l) => {
+    if (!checkConstraints) return true;
+    if (hasSkill(cardToPlace, 'legendary') && l !== 1) return false;
+    if (hasSkill(cardToPlace, 'takeover') && b[l] === null) return false;
+    if (hasSkill(cardToPlace, 'challenge') && oppB[l] === null) return false;
+    if (
+      hasSkill(cardToPlace, 'apex') &&
+      (!b[l] || !hasSkill(b[l], 'legendary'))
+    )
+      return false;
+    return true;
+  });
+  if (constrainedLanes.length === 0) return -1;
+  if (constrainedLanes.length === 1) return constrainedLanes[0];
+
+  // 各候補レーンにカードを配置した仮想盤面を作成し、総合評価関数を実行して最もスコアが高いレーンを決定する
+  let bestScore = -Infinity;
+  let bestLane = constrainedLanes[0];
+
+  for (const l of constrainedLanes) {
+    const testState = structuredClone(state);
+    testState.playerDiscard = testState.playerDiscard || [];
+    testState.enemyDiscard = testState.enemyDiscard || [];
+    testState.playerBoard = testState.playerBoard || [null, null, null];
+    testState.enemyBoard = testState.enemyBoard || [null, null, null];
+    testState.playerHP = testState.playerHP ?? 25;
+    testState.enemyHP = testState.enemyHP ?? 25;
+    testState.playerSealedLanes = testState.playerSealedLanes || [0, 0, 0];
+    testState.enemySealedLanes = testState.enemySealedLanes || [0, 0, 0];
+
+    const testCard = JSON.parse(JSON.stringify(cardToPlace));
+    testCard.owner = owner;
+    testCard.currentPower = testCard.currentPower ?? testCard.power ?? 0;
+    testCard.basePower = testCard.basePower ?? testCard.power ?? 0;
+
+    processPlacementOrEquip(testState, owner, l, testCard, 'sim_placement', []);
+
+    // 奇襲（ambush）を持つトークンの場合、配置後の即時単体戦闘もシミュレート
+    const targetB =
+      owner === 'blue' ? testState.playerBoard : testState.enemyBoard;
+    if (hasSkill(testCard, 'ambush') && targetB[l]) {
+      targetB[l].isSkillResolving = false;
+      applySingleCombat(testState, owner, l, []);
+      processDestructionTriggers(testState, []);
+    }
+
+    let score;
+    if (typeof placementEvaluator === 'function') {
+      score = placementEvaluator(testState, owner);
+    } else {
+      // フォールバック（評価関数未登録時）: 盤面の純粋な合計パワー差分
+      const myPow = (
+        owner === 'blue' ? testState.playerBoard : testState.enemyBoard
+      ).reduce((sum, c) => sum + (c ? (c.currentPower ?? c.power ?? 0) : 0), 0);
+      const oppPow = (
+        owner === 'blue' ? testState.enemyBoard : testState.playerBoard
+      ).reduce((sum, c) => sum + (c ? (c.currentPower ?? c.power ?? 0) : 0), 0);
+      score = myPow - oppPow;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestLane = l;
+    }
+  }
+
+  return bestLane;
+}
+
 export function processPlacementOrEquip(
   state,
   owner,
@@ -1923,20 +2034,14 @@ export function applyActiveSkillLogic(
         } else if (Array.isArray(simulatedTokenLanes)) {
           targetLane = -1;
         } else {
-          const sealedLanes =
-            owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-          const emptyLanes = [0, 2, 1].filter(
-            (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
+          // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+          targetLane = getBestSimulatedPlacementLane(
+            state,
+            owner,
+            sTC,
+            [0, 1, 2],
+            false
           );
-          if (emptyLanes.length > 0) {
-            targetLane = emptyLanes[0];
-          } else {
-            const validOccupiedLanes = [0, 2, 1].filter(
-              (j) => !sealedLanes || sealedLanes[j] === 0
-            );
-            if (validOccupiedLanes.length > 0)
-              targetLane = validOccupiedLanes[0];
-          }
         }
 
         if (targetLane !== -1) {
@@ -2043,20 +2148,14 @@ export function applyActiveSkillLogic(
       } else if (Array.isArray(simulatedTokenLanes)) {
         targetLaneRes = -1;
       } else {
-        const sealedLanes =
-          owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-        const emptyLanesRes = [0, 2, 1].filter(
-          (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
+        // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+        targetLaneRes = getBestSimulatedPlacementLane(
+          state,
+          owner,
+          simResCard,
+          [0, 1, 2],
+          false
         );
-        if (emptyLanesRes.length > 0) {
-          targetLaneRes = emptyLanesRes[0];
-        } else {
-          const validOccupiedLanes = [0, 2, 1].filter(
-            (j) => !sealedLanes || sealedLanes[j] === 0
-          );
-          if (validOccupiedLanes.length > 0)
-            targetLaneRes = validOccupiedLanes[0];
-        }
       }
 
       if (targetLaneRes !== -1) {
@@ -2169,19 +2268,14 @@ export function applyActiveSkillLogic(
       } else if (Array.isArray(simulatedTokenLanes)) {
         targetLanePuppet = -1;
       } else {
-        const sealedLanes =
-          owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
-        const emptyLanesPuppet = [0, 2, 1].filter(
-          (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
+        // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+        targetLanePuppet = getBestSimulatedPlacementLane(
+          state,
+          owner,
+          simPuppetCard,
+          [0, 1, 2],
+          false
         );
-        if (emptyLanesPuppet.length > 0) {
-          targetLanePuppet = emptyLanesPuppet[0];
-        } else {
-          const validOccupied = [0, 2, 1].filter(
-            (j) => !sealedLanes || sealedLanes[j] === 0
-          );
-          if (validOccupied.length > 0) targetLanePuppet = validOccupied[0];
-        }
       }
 
       if (targetLanePuppet !== -1) {
@@ -2231,22 +2325,16 @@ export function applyActiveSkillLogic(
         } else if (Array.isArray(simulatedTokenLanes)) {
           targetLane = -1;
         } else {
-          const sealedLanes =
-            owner === 'blue' ? state.playerSealedLanes : state.enemySealedLanes;
           // 分身スキルの調整：元のレーン l の隣接レーンのみを対象とする
           const adjacentLanes = l === 1 ? [0, 2] : [1];
-          const emptyLanes = adjacentLanes.filter(
-            (j) => b[j] === null && (!sealedLanes || sealedLanes[j] === 0)
+          // 隣接候補レーンに対する盤面シミュレーション評価に基づき客観的最適レーンを決定
+          targetLane = getBestSimulatedPlacementLane(
+            state,
+            owner,
+            tC,
+            adjacentLanes,
+            false
           );
-          if (emptyLanes.length > 0) {
-            targetLane = emptyLanes[0];
-          } else {
-            const validOccupiedLanes = adjacentLanes.filter(
-              (j) => !sealedLanes || sealedLanes[j] === 0
-            );
-            if (validOccupiedLanes.length > 0)
-              targetLane = validOccupiedLanes[0];
-          }
         }
 
         if (targetLane !== -1) {
@@ -2997,8 +3085,20 @@ export function applyLeaderSkillLogic(
       for (let i = 0; i < repeatCount; i++) {
         if (state.playerHP <= 0 || state.enemyHP <= 0) break;
 
-        const targetLane =
-          tokenLanes && tokenLanes[i] !== undefined ? tokenLanes[i] : 0;
+        let targetLane = -1;
+        if (tokenLanes && tokenLanes[i] !== undefined) {
+          targetLane = tokenLanes[i];
+        } else {
+          // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+          targetLane = getBestSimulatedPlacementLane(
+            state,
+            owner,
+            automataTpl,
+            [0, 1, 2],
+            false
+          );
+        }
+        if (targetLane === -1) break;
 
         // 1. オートマタの配置 or 起動消滅
         const existing = board[targetLane];
@@ -3354,38 +3454,27 @@ export function applyLeaderSkillLogic(
 
     // Summon Hitodamas
     let allyTargets = [];
-    const mySealedLanes = isBlue
-      ? state.playerSealedLanes
-      : state.enemySealedLanes;
-
-    if (tokenLanes && tokenLanes.allied) {
-      allyTargets = [...tokenLanes.allied].slice(0, 1);
-    } else {
-      // AI Selection Logic for Allied
-      let availableLanes = [0, 2, 1].filter(
-        (i) => !mySealedLanes || mySealedLanes[i] === 0
-      );
-      let emptyLanes = availableLanes.filter((i) => board[i] === null);
-      let occupiedLanes = availableLanes
-        .filter((i) => board[i] !== null)
-        .sort(
-          (a, b) =>
-            (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0)
-        );
-
-      allyTargets = [...emptyLanes];
-      if (allyTargets.length < 1) {
-        allyTargets = allyTargets.concat(
-          occupiedLanes.slice(0, 1 - allyTargets.length)
-        );
-      }
-      allyTargets = allyTargets.slice(0, 1);
-    }
 
     const tM = CARD_MASTER.find((m) => m.id === 'token_soul') || {
       name: '人魂',
       power: 1,
     };
+
+    if (tokenLanes && tokenLanes.allied) {
+      allyTargets = [...tokenLanes.allied].slice(0, 1);
+    } else {
+      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+      const bestAllyLane = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        tM,
+        [0, 1, 2],
+        false
+      );
+      if (bestAllyLane !== -1) {
+        allyTargets = [bestAllyLane];
+      }
+    }
     for (let idx = 0; idx < allyTargets.length; idx++) {
       const lane = allyTargets[idx];
       const newToken = {
@@ -3445,51 +3534,43 @@ export function applyLeaderSkillLogic(
 
     // 効果②：自分のレーンにイグニストークン(P:7/伝説)を「配置」（制約チェックなし）
     let dragonRitualLane = -1;
+    const tM = CARD_MASTER.find((m) => m.id === 'token_ignis');
     if (tokenLanes && tokenLanes.length > 0) {
       dragonRitualLane = tokenLanes[0];
-    } else {
-      const sealedLanes = isBlue
-        ? state.playerSealedLanes
-        : state.enemySealedLanes;
-      const emptyLanes = [0, 2, 1].filter(
-        (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
+    } else if (tM) {
+      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+      dragonRitualLane = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        { ...tM, power: 7, currentPower: 7 },
+        [0, 1, 2],
+        false
       );
-      if (emptyLanes.length > 0) dragonRitualLane = emptyLanes[0];
     }
-    if (dragonRitualLane !== -1) {
-      const tM = CARD_MASTER.find((m) => m.id === 'token_ignis');
-      if (tM) {
-        const newToken = {
-          ...JSON.parse(JSON.stringify(tM)),
-          id: `tk_dr_${Math.floor(getSeededRandom() * 1000000000)}`,
-          baseId: tM.id,
-          owner,
-          currentPower: 7,
-          rarity: tM.rarity || 1,
-          // imgUrl は getCardImgUrl がスキンを参照して解決する
-        };
-        if (
-          !tryEquipToken(
-            state,
-            board,
-            dragonRitualLane,
-            newToken,
-            owner,
-            events
-          )
-        ) {
-          if (board[dragonRitualLane] !== null) {
-            quietDiscardFromBoard(state, owner, dragonRitualLane);
-          }
-          board[dragonRitualLane] = newToken;
-          events.push({
-            type: 'summon_token',
-            side: owner,
-            lane: dragonRitualLane,
-            card: JSON.parse(JSON.stringify(newToken)),
-            source: 'dragon_high_ritual',
-          });
+    if (dragonRitualLane !== -1 && tM) {
+      const newToken = {
+        ...JSON.parse(JSON.stringify(tM)),
+        id: `tk_dr_${Math.floor(getSeededRandom() * 1000000000)}`,
+        baseId: tM.id,
+        owner,
+        currentPower: 7,
+        rarity: tM.rarity || 1,
+        // imgUrl は getCardImgUrl がスキンを参照して解決する
+      };
+      if (
+        !tryEquipToken(state, board, dragonRitualLane, newToken, owner, events)
+      ) {
+        if (board[dragonRitualLane] !== null) {
+          quietDiscardFromBoard(state, owner, dragonRitualLane);
         }
+        board[dragonRitualLane] = newToken;
+        events.push({
+          type: 'summon_token',
+          side: owner,
+          lane: dragonRitualLane,
+          card: JSON.parse(JSON.stringify(newToken)),
+          source: 'dragon_high_ritual',
+        });
       }
     }
   } else if (action === 'evil_march') {
@@ -3506,21 +3587,35 @@ export function applyLeaderSkillLogic(
       }
     }
 
-    // 指定レーンがあれば優先し、なければ空いている且つ封印されていないレーンへ
-    let targetLanes = [];
-    if (tokenLanes && tokenLanes.length > 0) {
-      targetLanes = tokenLanes.slice(0, 2);
-    } else {
-      const emptyValidLanes = availableLanes.filter((i) => board[i] === null);
-      targetLanes = emptyValidLanes.slice(0, 2);
-      // Capped at 2. If 0 or 1 empty, it just returns that amount.
-      // If less than 2 empty lanes, we don't force overwrite for '配置' unless requested, but here we place directly.
-    }
-
     const tM = CARD_MASTER.find((m) => m.id === 'token_knight') || {
       name: '騎士',
       power: 2,
     };
+
+    // 指定レーンがあれば優先し、なければ客観的評価に基づいて最大2体を順次選定
+    let targetLanes = [];
+    if (tokenLanes && tokenLanes.length > 0) {
+      targetLanes = tokenLanes.slice(0, 2);
+    } else {
+      // 盤面シミュレーション評価に基づき各騎士の客観的最適レーンを決定
+      const candidateLanes = [...availableLanes];
+      for (let k = 0; k < 2; k++) {
+        if (candidateLanes.length === 0) break;
+        const bestL = getBestSimulatedPlacementLane(
+          state,
+          owner,
+          tM,
+          candidateLanes,
+          false
+        );
+        if (bestL !== -1) {
+          targetLanes.push(bestL);
+          // 同一レーンに2体重ねるのを避けるため選出済みレーンを除外
+          const remIdx = candidateLanes.indexOf(bestL);
+          if (remIdx !== -1) candidateLanes.splice(remIdx, 1);
+        }
+      }
+    }
 
     for (let idx = 0; idx < targetLanes.length; idx++) {
       const lane = targetLanes[idx];
@@ -3704,28 +3799,18 @@ export function applyLeaderSkillLogic(
           targetLane = i;
         }
       }
-      // 配置レーンの決定
-      const mySealedLanes = isBlue
-        ? state.playerSealedLanes
-        : state.enemySealedLanes;
-      let emptyLanes = [];
-      let possibleLanes = [];
-      for (let i = 0; i < 3; i++) {
-        if (!mySealedLanes || mySealedLanes[i] === 0) {
-          possibleLanes.push(i);
-          if (!board[i]) emptyLanes.push(i);
-        }
-      }
-      if (emptyLanes.length > 0) {
-        myLane = emptyLanes[0];
-      } else if (possibleLanes.length > 0) {
-        // 上書き：もっともパワーの低いレーンを選択
-        possibleLanes.sort(
-          (a, b) =>
-            (board[a]?.currentPower || 0) - (board[b]?.currentPower || 0)
-        );
-        myLane = possibleLanes[0];
-      }
+      // 盤面シミュレーション評価に基づきヴォイテク配置の客観的最適レーンを決定
+      const tBear = CARD_MASTER.find((m) => m.id === 'token_polarbear') || {
+        name: 'ヴォイテク',
+        power: 4,
+      };
+      myLane = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        tBear,
+        [0, 1, 2],
+        false
+      );
     }
 
     if (targetLane !== -1 || myLane !== -1) {
@@ -3903,14 +3988,15 @@ export function applyLeaderSkillLogic(
       let l = -1;
       if (tokenLanes && tokenLanes.length > 0) {
         l = tokenLanes[0];
-      } else {
-        const sealedLanes = isBlue
-          ? state.playerSealedLanes
-          : state.enemySealedLanes;
-        const emptyLanes = [0, 2, 1].filter(
-          (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
+      } else if (selectedCard) {
+        // 盤面シミュレーション評価に基づき客観的最適レーンを決定（配置スキルのため制約チェックなし）
+        l = getBestSimulatedPlacementLane(
+          state,
+          owner,
+          selectedCard,
+          [0, 1, 2],
+          false
         );
-        if (emptyLanes.length > 0) l = emptyLanes[0];
       }
       if (l !== -1) {
         const decision = {
@@ -4020,9 +4106,6 @@ export function applyLeaderSkillLogic(
     // 【オーバードライブ】自分の墓地 → tokenLanes[0] に配置、相手の墓地 → tokenLanes[1] に配置
     const myDiscard = isBlue ? state.playerDiscard : state.enemyDiscard;
     const oppDiscard = isBlue ? state.enemyDiscard : state.playerDiscard;
-    const sealedLanes = isBlue
-      ? state.playerSealedLanes
-      : state.enemySealedLanes;
 
     let mySelectedCard = null;
     let oppSelectedCard = null;
@@ -4061,13 +4144,27 @@ export function applyLeaderSkillLogic(
     };
 
     // 自分の墓地 → tokenLanes[0] (forcedTargetIdx が指定されている場合はその優先)
+    const myCandidates = myDiscard.filter((card) => card && !card.isToken);
+    const targetMyCard =
+      forcedTargetIdx !== null &&
+      myDiscard[forcedTargetIdx] &&
+      !myDiscard[forcedTargetIdx].isToken
+        ? myDiscard[forcedTargetIdx]
+        : [...myCandidates].sort((a, b) => (b.power || 0) - (a.power || 0))[0];
+
     let lane1 = tokenLanes && tokenLanes.length > 0 ? tokenLanes[0] : -1;
-    if (lane1 === -1) {
-      const emptyLanes = [0, 2, 1].filter(
-        (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
+    if (lane1 === -1 && targetMyCard) {
+      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+      lane1 = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        targetMyCard,
+        [0, 1, 2],
+        false
       );
-      lane1 = emptyLanes.length > 0 ? emptyLanes[0] : 0;
     }
+    if (lane1 === -1) lane1 = 0;
+
     if (
       forcedTargetIdx !== null &&
       myDiscard[forcedTargetIdx] &&
@@ -4099,16 +4196,27 @@ export function applyLeaderSkillLogic(
     }
 
     // 相手の墓地 → tokenLanes[1]
+    const oppCandidates = oppDiscard.filter((card) => card && !card.isToken);
+    const targetOppCard =
+      forcedOppTargetIdx !== null &&
+      oppDiscard[forcedOppTargetIdx] &&
+      !oppDiscard[forcedOppTargetIdx].isToken
+        ? oppDiscard[forcedOppTargetIdx]
+        : [...oppCandidates].sort((a, b) => (b.power || 0) - (a.power || 0))[0];
+
     let lane2 = tokenLanes && tokenLanes.length > 1 ? tokenLanes[1] : -1;
-    if (lane2 === -1) {
-      const emptyLanes = [0, 2, 1].filter(
-        (i) =>
-          board[i] === null &&
-          (!sealedLanes || sealedLanes[i] === 0) &&
-          i !== lane1
+    if (lane2 === -1 && targetOppCard) {
+      const remainingLanes = [0, 1, 2].filter((l) => l !== lane1);
+      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+      lane2 = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        targetOppCard,
+        remainingLanes,
+        false
       );
-      lane2 = emptyLanes.length > 0 ? emptyLanes[0] : lane1 !== 0 ? 0 : 1;
     }
+    if (lane2 === -1) lane2 = lane1 !== 0 ? 0 : 1;
     // 相手墓地のカード選択: forcedOppTargetIdx が指定されている場合はその優先
     if (
       forcedOppTargetIdx !== null &&
@@ -4180,15 +4288,15 @@ export function applyLeaderSkillLogic(
       ) {
         targetLane = requestedLane;
       }
-    } else {
-      // AI予測等で指定がない場合の自動選択（空いている且つ封印されていないレーン優先、なければ上書き可能な適当な非封印レーン）
-      const nonSealedLanes = [0, 1, 2].filter(
-        (i) => !sealedLanes || sealedLanes[i] === 0
+    } else if (skeletonTpl) {
+      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+      targetLane = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        skeletonTpl,
+        [0, 1, 2],
+        false
       );
-      if (nonSealedLanes.length > 0) {
-        const emptyLanes = nonSealedLanes.filter((i) => board[i] === null);
-        targetLane = emptyLanes.length > 0 ? emptyLanes[0] : nonSealedLanes[0];
-      }
     }
 
     // 2. スケルトンを配置 or 起動
@@ -4306,34 +4414,38 @@ export function applyLeaderSkillLogic(
       power = lc ? lc.power || 0 : 6;
     }
 
+    let tM = null;
+    if (action === 'satan_avatar') {
+      tM = CARD_MASTER.find((m) => m.id === 'token_satan');
+    } else if (action === 'dragon_summon') {
+      tM = CARD_MASTER.find((m) => m.id === 'token_ignis');
+    } else if (action === 'dungeon_summon_leader') {
+      const config = isBlue ? state.playerConfig : state.enemyConfig;
+      if (config && config.leaderCardId) {
+        tM = CARD_MASTER.find((m) => m.id === config.leaderCardId);
+      }
+    }
+
+    if (!tM) return events;
+
     let l = -1;
     if (tokenLanes && tokenLanes.length > 0) {
       l = tokenLanes[0];
     } else {
-      const sealedLanes = isBlue
-        ? state.playerSealedLanes
-        : state.enemySealedLanes;
-      const emptyLanes = [0, 2, 1].filter(
-        (i) => board[i] === null && (!sealedLanes || sealedLanes[i] === 0)
+      // 盤面シミュレーション評価に基づき客観的最適レーンを決定
+      // 試練の宮殿は「召喚」（制約あり）、サタン・竜王は「配置」（制約無視）
+      const checkConstraints = action === 'dungeon_summon_leader';
+      l = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        { ...tM, power, currentPower: power },
+        [0, 1, 2],
+        checkConstraints
       );
-      if (emptyLanes.length > 0) l = emptyLanes[0];
     }
 
     if (l !== -1) {
       events.push({ type: 'leader_skill', skill: action, side: owner });
-      let tM = null;
-      if (action === 'satan_avatar') {
-        tM = CARD_MASTER.find((m) => m.id === 'token_satan');
-      } else if (action === 'dragon_summon') {
-        tM = CARD_MASTER.find((m) => m.id === 'token_ignis');
-      } else if (action === 'dungeon_summon_leader') {
-        const config = isBlue ? state.playerConfig : state.enemyConfig;
-        if (config && config.leaderCardId) {
-          tM = CARD_MASTER.find((m) => m.id === config.leaderCardId);
-        }
-      }
-
-      if (!tM) return events;
 
       const newToken = {
         ...JSON.parse(JSON.stringify(tM)),
@@ -4571,12 +4683,27 @@ export function applyLeaderSkillLogic(
         count++;
       }
     } else {
-      const sealedLanes = isBlue
-        ? state.playerSealedLanes
-        : state.enemySealedLanes;
-      for (let i = 0; i < 3 && count < 2; i++) {
-        if (board[i] === null && (!sealedLanes || sealedLanes[i] === 0))
-          addKnight(i);
+      const tK = CARD_MASTER.find((m) => m.id === 'token_knight') || {
+        name: '騎士',
+        power: 2,
+      };
+      const candidateLanes = [0, 1, 2];
+      while (count < 2 && candidateLanes.length > 0) {
+        // 盤面シミュレーション評価に基づき客観的最適レーンを順次決定
+        const bestL = getBestSimulatedPlacementLane(
+          state,
+          owner,
+          tK,
+          candidateLanes,
+          false
+        );
+        if (bestL !== -1) {
+          addKnight(bestL);
+          const remIdx = candidateLanes.indexOf(bestL);
+          if (remIdx !== -1) candidateLanes.splice(remIdx, 1);
+        } else {
+          break;
+        }
       }
     }
     // 全体バフ+2

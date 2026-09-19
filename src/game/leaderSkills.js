@@ -245,16 +245,17 @@ export async function executeLeaderSkillAction(
     const tS = CARD_MASTER.find((m) => m.id === 'token_satan');
     const tI = CARD_MASTER.find((m) => m.id === 'token_ignis');
     const token = action === 'satan_avatar' ? tS : tI;
-    const checkConstraints = action !== 'dragon_high_ritual';
-    let successSatan = false;
-    while (!successSatan) {
+    let successPlacement = false;
+    while (!successPlacement) {
       const selectedLanes = await waitPlayerLaneSelection(
         1,
         owner,
         token,
-        checkConstraints,
+        true, // _isLeaderSkill
         tokenLanes,
-        false
+        false, // checkConstraints（配置スキルのため制約チェックなし）
+        true, // canCancel
+        '配置完了' // buttonText
       );
       if (!selectedLanes || selectedLanes.length === 0) return; // キャンセルされた場合
       const l = selectedLanes[0];
@@ -264,7 +265,7 @@ export async function executeLeaderSkillAction(
         continue;
       }
       tokenLanes = selectedLanes;
-      successSatan = true;
+      successPlacement = true;
     }
   } else if (action === 'dungeon_summon_leader') {
     const config =
@@ -401,10 +402,11 @@ export async function executeLeaderSkillAction(
           1,
           owner,
           tSoul,
-          false,
-          null,
-          false,
-          '配置完了'
+          false, // _isLeaderSkill
+          null, // tokenLanes
+          false, // checkConstraints（配置なので制約なし）
+          true, // canCancel
+          '配置完了' // buttonText
         );
         if (selectedAlliedLanes === null) return;
         if (selectedAlliedLanes.length === 0) {
@@ -439,9 +441,11 @@ export async function executeLeaderSkillAction(
       2,
       owner,
       tK,
-      true,
+      true, // _isLeaderSkill
       tokenLanes,
-      false
+      false, // checkConstraints（配置なので制約なし）
+      true, // canCancel
+      '配置完了' // buttonText
     );
     if (!selectedLanes) return;
     const validSelectedLanes = [];
