@@ -1774,7 +1774,9 @@ export function getBestSimulatedMove() {
               currentDiscarded = [],
               currentEnemyBoard = null,
               currentPlayerBoard = null,
-              currentUsedDeck = []
+              currentUsedDeck = [],
+              minTokenLane = 0,
+              lastTokenSkillKey = null
             ) => {
               if (currentSkills.length === 0 || currentDepth >= 4) return [[]];
 
@@ -2321,6 +2323,20 @@ export function getBestSimulatedMove() {
                 //   召喚時のtoken_placementとしては扱わない。シミュレーション上は元のパワーのまま評価される。
               } else if (['clone', 'servant', 'ambush'].includes(sk.id)) {
                 const count = sk.id === 'clone' ? sk.value || 1 : 1;
+                // 同一のトークン配置スキル（ambush または servant）が連続する場合、
+                // トークン配置順序の入れ替えによる無駄な同一盤面重複計算（順列）を排除するため
+                // レーンインデックスを非減少順（j >= effectiveMinLane）に制限して重複組み合わせ化する。
+                const isContinuousTokenSkill =
+                  sk.id === 'ambush' || sk.id === 'servant';
+                const currentTokenKey = isContinuousTokenSkill
+                  ? `${sk.id}_${sk.summonId || ''}`
+                  : null;
+                const effectiveMinLane =
+                  isContinuousTokenSkill &&
+                  lastTokenSkillKey === currentTokenKey
+                    ? minTokenLane
+                    : 0;
+
                 // レーン選択の全組み合わせを生成するヘルパー
                 // 同一レーンへの複数配置は武装カードへの装備等で有効な戦略のため、
                 // 重複レーンを含む全パターンを生成する（例: [0,0]も有効）
@@ -2330,7 +2346,9 @@ export function getBestSimulatedMove() {
                   let subCombos = generateLaneCombos(remainingCount - 1);
                   // 分身スキルの調整：元のレーン lane の隣接レーンのみを対象とする
                   const allowedLanes =
-                    sk.id === 'clone' ? (lane === 1 ? [0, 2] : [1]) : [0, 1, 2];
+                    sk.id === 'clone'
+                      ? (lane === 1 ? [0, 2] : [1])
+                      : [0, 1, 2].filter((j) => j >= effectiveMinLane);
                   for (let j of allowedLanes) {
                     if (mySealedLanes[j] > 0) continue;
                     for (let sc of subCombos) {
@@ -2340,10 +2358,14 @@ export function getBestSimulatedMove() {
                   return combos;
                 };
 
-                let allCombos = [[]]; // 配置しない（空配列）という明示的な意思
-                // 部分的な配置キャンセル（1体だけ置くなど）をシミュレーションするため、1〜count までの全パターンを生成
+                let allCombos = [];
+                // 1〜count までの全配置パターンを生成（未封印レーンが存在する場合は必ず配置する）
                 for (let c = 1; c <= count; c++) {
                   allCombos.push(...generateLaneCombos(c));
+                }
+                // 全レーン封印等で配置可能レーンが0件の場合のみ、スキップ扱いとして空配列を許可
+                if (allCombos.length === 0) {
+                  allCombos = [[]];
                 }
                 for (let combo of allCombos) {
                   let tokenNode = {
@@ -2354,6 +2376,13 @@ export function getBestSimulatedMove() {
                     lanes: combo,
                     owner: sk.owner,
                   };
+                  const nextMinLane =
+                    isContinuousTokenSkill && combo.length > 0
+                      ? combo[combo.length - 1]
+                      : 0;
+                  const nextTokenKey = isContinuousTokenSkill
+                    ? currentTokenKey
+                    : null;
                   let nextBranches = buildSkillBranch(
                     remainingSkills,
                     currentUsedHand,
@@ -2361,7 +2390,10 @@ export function getBestSimulatedMove() {
                     currentDepth,
                     currentDiscarded,
                     activeEnemyBoard,
-                    activePlayerBoard
+                    activePlayerBoard,
+                    currentUsedDeck,
+                    nextMinLane,
+                    nextTokenKey
                   );
                   for (let nb of nextBranches) {
                     results.push([tokenNode, ...nb]);
@@ -2734,6 +2766,7 @@ export function getBestSimulatedMove() {
 
   // 手札内の同一カードの重複探索を排除（先頭の1枚のみを探索して計算量を削減）
   const seenHandCards = new Set();
+  const cachedNormalHandTrees = new Map();
   for (let i = 0; i < hand.length; i++) {
     let card = hand[i];
     if (!card) continue;
@@ -2742,6 +2775,7 @@ export function getBestSimulatedMove() {
     seenHandCards.add(cardSig);
 
     let queues = buildCardPlayTree(card, i, 'play', hand, discard, [i], [], 0);
+    cachedNormalHandTrees.set(i, queues);
 
     for (let actionQ of queues) {
       if (actionQ.length === 0) continue;
@@ -2830,23 +2864,71 @@ export function getBestSimulatedMove() {
       const avail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
       let patterns = [];
       const repeatCount = action === 'last_battalion' ? 5 : 3;
-      if (repeatCount === 3) {
-        for (let l1 of avail) {
-          for (let l2 of avail) {
-            for (let l3 of avail) {
-              patterns.push([l1, l2, l3]);
+      const set = new Set();
+      const addPattern = (p) => {
+        const k = p.join(',');
+        if (!set.has(k)) {
+          set.add(k);
+          patterns.push(p);
+        }
+      };
+
+      if (avail.length > 0) {
+        // 1. 各レーン集中突破: [l, l, l, ...] (リーダー直接攻撃、または強敵集中削り)
+        for (const l of avail) {
+          addPattern(Array(repeatCount).fill(l));
+        }
+
+        // 2. 全レーン散開 (制圧・盤面展開)
+        if (avail.length >= 2) {
+          const spread = [];
+          for (let idx = 0; idx < repeatCount; idx++) {
+            spread.push(avail[idx % avail.length]);
+          }
+          addPattern(spread);
+        }
+
+        // 3. 敵カードがいるレーンへの重点削り (2回集中 + 1回空き枠・他敵)
+        const enemyLanes = avail.filter((l) => opBoard[l] !== null);
+        const emptyOppLanes = avail.filter((l) => opBoard[l] === null);
+
+        if (repeatCount === 3) {
+          for (const el of enemyLanes) {
+            const other =
+              emptyOppLanes.length > 0
+                ? emptyOppLanes[0]
+                : avail.find((l) => l !== el);
+            if (other !== undefined) {
+              addPattern([el, el, other]);
             }
           }
-        }
-      } else if (repeatCount === 5) {
-        for (let l1 of avail) {
-          for (let l2 of avail) {
-            for (let l3 of avail) {
-              for (let l4 of avail) {
-                for (let l5 of avail) {
-                  patterns.push([l1, l2, l3, l4, l5]);
-                }
-              }
+          // 4. 空きレーンからのリーダー連打 (2回リーダー + 1回敵カード)
+          for (const emptyL of emptyOppLanes) {
+            const other =
+              enemyLanes.length > 0
+                ? enemyLanes[0]
+                : avail.find((l) => l !== emptyL);
+            if (other !== undefined) {
+              addPattern([emptyL, emptyL, other]);
+            }
+          }
+        } else if (repeatCount === 5) {
+          for (const el of enemyLanes) {
+            const other =
+              emptyOppLanes.length > 0
+                ? emptyOppLanes[0]
+                : avail.find((l) => l !== el);
+            if (other !== undefined) {
+              addPattern([el, el, el, other, other]);
+            }
+          }
+          for (const emptyL of emptyOppLanes) {
+            const other =
+              enemyLanes.length > 0
+                ? enemyLanes[0]
+                : avail.find((l) => l !== emptyL);
+            if (other !== undefined) {
+              addPattern([emptyL, emptyL, emptyL, other, other]);
             }
           }
         }
@@ -2947,6 +3029,59 @@ export function getBestSimulatedMove() {
       tokenLanePatterns = avail.length > 0 ? avail.map((l) => [l]) : [null];
     }
 
+    const config = GameState.enemyConfig;
+    const leaderCard =
+      action === 'dungeon_summon_leader' && config?.leaderCardId
+        ? CARD_MASTER.find((m) => m.id === config.leaderCardId)
+        : null;
+    const isDngResurrect =
+      leaderCard &&
+      leaderCard.skills &&
+      leaderCard.skills.some((s) => s.id === 'resurrect');
+
+    const isResurrectLeaderSkill =
+      action === 'devilhunter_resurrect' ||
+      action === 'overdrive' ||
+      isDngResurrect;
+
+    // 墓地が空、またはトークンしかない場合でもリーダー召喚自体は行えるように -1 を含める
+    const validResurrectIndices = discard
+      .map((card, idx) => ({ card, idx }))
+      .filter(({ card }) => card && !card.isToken)
+      .map(({ idx }) => idx);
+    // overdriveでは-1（自動選択）を含めない: 全カードを明示インデックスで試し、
+    // leaderSkillTargetUidが確実に設定されるようにする（-1だとnullになりランダムフォールバックに落ちる）
+    // 墓地が空の場合のみ-1を使用（相手墓地からの復活だけでも機能するため）
+    let dIdxLoop;
+    if (action === 'overdrive' || action === 'devilhunter_resurrect') {
+      dIdxLoop =
+        validResurrectIndices.length > 0 ? validResurrectIndices : [-1];
+    } else if (isDngResurrect) {
+      // dungeon_summon_leader の resurrect は buildSkillBranch で処理するため外側ループでは [-1] のみ
+      dIdxLoop = [-1];
+    } else {
+      dIdxLoop = isResurrectLeaderSkill
+        ? [-1, ...validResurrectIndices]
+        : [-1];
+    }
+
+    // オーバードライブ用: 相手墓地のカードも全通りシミュレーションする
+    const oppDiscard = GameState.playerDiscard
+      ? GameState.playerDiscard.map(cloneCard)
+      : [];
+    const validOppResurrectIndices =
+      action === 'overdrive'
+        ? oppDiscard
+            .map((card, idx) => ({ card, idx }))
+            .filter(({ card }) => card && !card.isToken)
+            .map(({ idx }) => idx)
+        : [];
+    // overdriveでは-1を含めない（同理由: leaderSkillOppTargetUidがnullになるのを防ぐ）
+    const oppDIdxLoop =
+      action === 'overdrive' && validOppResurrectIndices.length > 0
+        ? validOppResurrectIndices
+        : [-1];
+
     // リーダースキル併用時も手札内の同一カードの重複探索を排除（先頭の1枚のみ探索）
     const seenSkillHandCards = new Set();
     for (let i = 0; i < hand.length; i++) {
@@ -2955,60 +3090,46 @@ export function getBestSimulatedMove() {
       const cardSig = getCardSignature(card);
       if (seenSkillHandCards.has(cardSig)) continue;
       seenSkillHandCards.add(cardSig);
+
+      // 【手札ツリー事前キャッシュ最適化】
+      // 生贄(takeover)や頂点(apex)などのリーダースキル配置先に依存するスキルを持たず、
+      // 復活リーダースキルや試練の宮殿のリーダー独自スキル分岐でない場合、
+      // 手札ツリーは通常プレイ時に生成済みの cachedNormalHandTrees と100%同一のため、そのまま再利用する。
+      const needsLeaderContext =
+        (hasSkill(card, 'takeover') || hasSkill(card, 'apex')) &&
+        [
+          'holy_march',
+          'evil_march',
+          'satan_avatar',
+          'dragon_summon',
+          'dragon_high_ritual',
+          'devilhunter_resurrect',
+          'dungeon_summon_leader',
+          'warlock_place_demons',
+          'night_parade',
+          'overdrive',
+        ].includes(action);
+      let cachedCardPlayTree = null;
+      if (
+        !needsLeaderContext &&
+        !isResurrectLeaderSkill &&
+        action !== 'dungeon_summon_leader'
+      ) {
+        cachedCardPlayTree =
+          cachedNormalHandTrees.get(i) ||
+          buildCardPlayTree(
+            card,
+            i,
+            'play',
+            hand,
+            discard,
+            [i],
+            [],
+            0
+          );
+      }
+
       for (let tokenLanes of tokenLanePatterns) {
-        const config = GameState.enemyConfig;
-        const leaderCard =
-          action === 'dungeon_summon_leader' && config?.leaderCardId
-            ? CARD_MASTER.find((m) => m.id === config.leaderCardId)
-            : null;
-        const isDngResurrect =
-          leaderCard &&
-          leaderCard.skills &&
-          leaderCard.skills.some((s) => s.id === 'resurrect');
-
-        let isResurrectLeaderSkill =
-          action === 'devilhunter_resurrect' ||
-          action === 'overdrive' ||
-          isDngResurrect;
-
-        // 墓地が空、またはトークンしかない場合でもリーダー召喚自体は行えるように -1 を含める
-        const validResurrectIndices = discard
-          .map((card, idx) => ({ card, idx }))
-          .filter(({ card }) => card && !card.isToken)
-          .map(({ idx }) => idx);
-        // overdriveでは-1（自動選択）を含めない: 全カードを明示インデックスで試し、
-        // leaderSkillTargetUidが確実に設定されるようにする（-1だとnullになりランダムフォールバックに落ちる）
-        // 墓地が空の場合のみ-1を使用（相手墓地からの復活だけでも機能するため）
-        let dIdxLoop;
-        if (action === 'overdrive' || action === 'devilhunter_resurrect') {
-          dIdxLoop =
-            validResurrectIndices.length > 0 ? validResurrectIndices : [-1];
-        } else if (isDngResurrect) {
-          // dungeon_summon_leader の resurrect は buildSkillBranch で処理するため外側ループでは [-1] のみ
-          dIdxLoop = [-1];
-        } else {
-          dIdxLoop = isResurrectLeaderSkill
-            ? [-1, ...validResurrectIndices]
-            : [-1];
-        }
-
-        // オーバードライブ用: 相手墓地のカードも全通りシミュレーションする
-        const oppDiscard = GameState.playerDiscard
-          ? GameState.playerDiscard.map(cloneCard)
-          : [];
-        const validOppResurrectIndices =
-          action === 'overdrive'
-            ? oppDiscard
-                .map((card, idx) => ({ card, idx }))
-                .filter(({ card }) => card && !card.isToken)
-                .map(({ idx }) => idx)
-            : [];
-        // overdriveでは-1を含めない（同理由: leaderSkillOppTargetUidがnullになるのを防ぐ）
-        const oppDIdxLoop =
-          action === 'overdrive' && validOppResurrectIndices.length > 0
-            ? validOppResurrectIndices
-            : [-1];
-
         // 【試練の宮殿（Trial Palace）敵リーダースキル専用】
         // 敵リーダーカードが配置される際のアクティブスキル分岐（召喚・復活・分身・傀儡等）を手札カードと同一のスコープ/条件でシミュレートするため、
         // buildCardPlayTree をダミー実行し、最初のアクション（dungeon_summon_leader）を切り落としてアクティブスキルの子アクションチェーンのみを抽出する。
@@ -3129,20 +3250,23 @@ export function getBestSimulatedMove() {
                       ? resLane
                       : null,
               };
-              let qs = buildCardPlayTree(
-                card,
-                i,
-                'play',
-                hand,
-                discard,
-                [i],
-                isResurrectLeaderSkill && dIdxForTree !== -1
-                  ? [dIdxForTree]
-                  : [],
-                0,
-                undefined,
-                leaderSkillContext
-              );
+              let qs = cachedCardPlayTree;
+              if (!qs) {
+                qs = buildCardPlayTree(
+                  card,
+                  i,
+                  'play',
+                  hand,
+                  discard,
+                  [i],
+                  isResurrectLeaderSkill && dIdxForTree !== -1
+                    ? [dIdxForTree]
+                    : [],
+                  0,
+                  undefined,
+                  leaderSkillContext
+                );
+              }
               for (let actionQ of qs) {
                 if (actionQ.length === 0) continue;
                 const fA = actionQ[0];
