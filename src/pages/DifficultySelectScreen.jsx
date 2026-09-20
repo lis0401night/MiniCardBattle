@@ -111,6 +111,42 @@ export default function DifficultySelectScreen() {
   };
 
   /**
+   * 初級（EASY）の敵デッキプレビューモーダルを開くハンドラ。
+   *
+   * @return {void}
+   */
+  const handleOpenEasyDeckPreview = () => {
+    openEnemyDeckPreview?.(DIFFICULTY.EASY);
+  };
+
+  /**
+   * 中級（NORMAL）の敵デッキプレビューモーダルを開くハンドラ。
+   *
+   * @return {void}
+   */
+  const handleOpenNormalDeckPreview = () => {
+    openEnemyDeckPreview?.(DIFFICULTY.NORMAL);
+  };
+
+  /**
+   * 上級（HARD）の敵デッキプレビューモーダルを開くハンドラ。
+   *
+   * @return {void}
+   */
+  const handleOpenHardDeckPreview = () => {
+    openEnemyDeckPreview?.(DIFFICULTY.HARD);
+  };
+
+  /**
+   * 高難易度（超級）または運命の邂逅（特級）の敵デッキプレビューモーダルを開くハンドラ。
+   *
+   * @return {void}
+   */
+  const handleOpenSpecialDeckPreview = () => {
+    openEnemyDeckPreview?.(isFortuneMode ? 'fortune' : 'high');
+  };
+
+  /**
    * デッキの所持コンプリートチェック（プレイヤーがデッキの全カードを4枚以上所持しているか）。
    *
    * @param {Array<string>} deckCardIds - デッキに含まれるカードID配列
@@ -252,9 +288,7 @@ export default function DifficultySelectScreen() {
               <button
                 className="btn-check-deck"
                 style={{ display: 'flex' }}
-                onClick={() =>
-                  openEnemyDeckPreview?.(isFortuneMode ? 'fortune' : 'high')
-                }
+                onClick={handleOpenSpecialDeckPreview}
                 title="デッキ確認"
               >
                 🔍
@@ -275,7 +309,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.EASY)}
+                  onClick={handleOpenEasyDeckPreview}
                   title="デッキ確認"
                 >
                   🔍
@@ -294,7 +328,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.NORMAL)}
+                  onClick={handleOpenNormalDeckPreview}
                   title="デッキ確認"
                 >
                   🔍
@@ -313,7 +347,7 @@ export default function DifficultySelectScreen() {
                 <button
                   className="btn-check-deck"
                   style={{ display: 'flex' }}
-                  onClick={() => openEnemyDeckPreview?.(DIFFICULTY.HARD)}
+                  onClick={handleOpenHardDeckPreview}
                   title="デッキ確認"
                 >
                   🔍

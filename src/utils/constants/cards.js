@@ -281,7 +281,7 @@ export const CARD_MASTER = [
     name: '旧式マンティス',
     rarity: 1,
     power: 4,
-    skills: [{ id: 'deteriorate', value: 2 }, { id: 'quick' }],
+    skills: [{ id: 'quick' }, { id: 'growth', value: -2 }],
     voiceCategory: 'machine_old',
     flavor:
       '旧式の巨大なカマキリのロボット。鋭い鎌で獲物を伏せるが、過負荷による出力低下が激しい。',
@@ -292,7 +292,7 @@ export const CARD_MASTER = [
     name: '旧式タイタン',
     rarity: 1,
     power: 8,
-    skills: [{ id: 'deteriorate', value: 2 }],
+    skills: [{ id: 'growth', value: -2 }],
     voiceCategory: 'machine_old',
     flavor:
       '古代文明の造兵兵器。旧式ながらもその重厚な装甲は今なお健在である。',
@@ -2656,7 +2656,7 @@ export const CARD_MASTER = [
     power: 5,
     skills: [
       { id: 'sacrifice', value: 2 },
-      { id: 'deteriorate', value: 1 },
+      { id: 'growth', value: -1 },
       { id: 'soul_bind', value: 4 },
     ],
     voiceCategory: 'undead',
@@ -3664,7 +3664,7 @@ export const CARD_MASTER = [
     name: 'トラペゾヘドロン',
     rarity: 4,
     power: 0,
-    skills: [{ id: 'invite' }],
+    skills: [{ id: 'summon' }],
     voiceCategory: 'magic',
     flavor:
       '異なる次元への扉を開く多面体。深淵を覗き込むとき、そこから恐るべきものが呼び出される。',

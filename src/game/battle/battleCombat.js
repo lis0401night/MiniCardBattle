@@ -39,6 +39,7 @@ import {
   isProtectedZeroPowerCard,
   shuffleArray,
   matchesUnionMaterial,
+  clearAllCardStatuses,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { playCardVoice } from '../../utils/constants/voices.js';
@@ -462,7 +463,7 @@ export async function triggerReanimateSkill(owner, card) {
 
 /**
  * 誘発（trigger）による召喚のフォールバック用関数（非推奨）。
- * 通常の手札プレイ・招来・召喚と同様に playCard へ統合されました。
+ * 通常の手札プレイ・召喚と同様に playCard へ統合されました。
  *
  * @deprecated 共通召喚処理（playCard）に統合されたため非推奨です。
  * @param {string} owner - 所有者 ('blue' | 'red')
@@ -482,7 +483,7 @@ export async function executeTriggerSummon(owner, card, targetLane) {
 
 /**
  * 相手がカードを召喚したとき、手札の「誘発（trigger）」スキルを持つカードを検知して召喚する。
- * 通常の手札プレイや「招来（invite）」「召喚（summon）」等と同じく、手札選択・レーン選択を経て
+ * 通常の手札プレイや「召喚（summon）」等と同じく、手札選択・レーン選択を経て
  * 共通の召喚処理（playCard）を実行する。
  * playCard 内部で相手の checkAndTriggerCounter が自動的に呼ばれるため、自然にチェーン連鎖が解決される。
  *
@@ -633,7 +634,7 @@ export async function checkAndTriggerCounter(
   renderHand();
   await sleep(200);
 
-  // 招来や召喚と同様、共通の標準召喚関数 playCard を呼び出して召喚を実行
+  // 召喚と同様、共通の標準召喚関数 playCard を呼び出して召喚を実行
   // （playCard 内部で手札消費、配置アニメーション、上書き、オンプレイ能力解決、相手の誘発チェックが自然に連鎖する）
   await playCard(triggerOwner, selectedIdx, chosenLane, depth + 1);
   return true;
@@ -870,8 +871,6 @@ export async function discardCard(
 
   // スキル発動フラグをリセット
   card.skillTriggered = false;
-  card.stunTurns = 0;
-  card.stunAppliedThisTurn = false;
   if (Array.isArray(card.skills)) {
     card.skills.forEach((sk) => {
       if (sk && typeof sk === 'object') {
@@ -880,13 +879,8 @@ export async function discardCard(
     });
   }
 
-  // 一時的な状態・スキルの除去（無敵・加護・スタンなど）
-  if (Array.isArray(card.skills)) {
-    card.skills = card.skills.filter((sk) => sk.id !== 'invincible');
-  }
-  delete card.invincibleTurns;
-  delete card.valkyriaGuard;
-  delete card.valkyriaGuardTurns;
+  // 一時的な状態（無敵・加護・スタン・攻撃不能・腐食等）を共通APIで一括解除
+  clearAllCardStatuses(card);
 
   // 変相の復帰処理
   if (card.originalCardId) {

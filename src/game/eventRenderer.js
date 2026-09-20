@@ -744,10 +744,13 @@ export async function playEvents(events) {
         if (targetCard) {
           // STATUSES に定義された状態（invincible等）の場合は独立した状態エントリとして付与
           if (STATUSES[ev.skillId]) {
-            grantCardStatus(targetCard, ev.skillId, ev.value || 1);
+            grantCardStatus(targetCard, ev.skillId, ev.value ?? 1);
           } else {
             if (!Array.isArray(targetCard.skills)) targetCard.skills = [];
-            targetCard.skills.push({ id: ev.skillId, value: ev.value || 1 });
+            targetCard.skills.push({ id: ev.skillId, value: ev.value ?? 1 });
+          }
+          if (window.updateCardVisualsReact) {
+            window.updateCardVisualsReact(ev.lane, sidePrefix);
           }
         }
 
@@ -773,7 +776,10 @@ export async function playEvents(events) {
         const targetCard = board ? board[ev.lane] : null;
         // STATUSES マスターを参照し、定義されている全状態（corrosion, valkyria_guard, stun, invincible, cant_attack等）を汎用的に付与
         if (targetCard && STATUSES[ev.status]) {
-          grantCardStatus(targetCard, ev.status, ev.value || 1);
+          grantCardStatus(targetCard, ev.status, ev.value ?? 1);
+          if (window.updateCardVisualsReact) {
+            window.updateCardVisualsReact(ev.lane, sidePrefix);
+          }
         }
         break;
       }
@@ -784,6 +790,11 @@ export async function playEvents(events) {
         // 「解放」スキルによる防御スキルの喪失およびスタン状態・バッジの完全解除
         if (targetCard) {
           applyUnleashSkill(targetCard);
+          if (window.updateCardVisualsReact) {
+            window.updateCardVisualsReact(ev.lane, sidePrefix);
+          } else {
+            renderBoard();
+          }
         }
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
@@ -792,7 +803,6 @@ export async function playEvents(events) {
           createDamagePopup(cEl, '解放', '#38bdf8');
           playSound(SOUNDS.seSkill);
         }
-        renderBoard();
         await sleep(200);
         break;
       }

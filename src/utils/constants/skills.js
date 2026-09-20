@@ -573,12 +573,15 @@ export const SKILLS = {
     desc: (val) =>
       `召喚時、自身を${val}ターンの間「スタン」状態（攻撃せず、敵カードや敵リーダーにダメージを与えられない）にする。`,
   },
+  /*
+  // 【未実装】劣化能力は現時点では実装を見送り
   deteriorate: {
     name: '劣化',
     icon: '🟤',
     desc: (val) =>
       `召喚時、自身を「腐食${val || 1}」状態（自分のターン開始時、パワー-${val || 1}）にする。`,
   },
+  */
   artillery: {
     name: '砲撃',
     icon: '💥',
@@ -1005,19 +1008,6 @@ export const SKILLS = {
     desc: (val) =>
       `召喚時、相手の埋まっているレーンにつきパワーを${val >= 0 ? '+' : ''}${val}する`,
   },
-  invite: {
-    name: '招来',
-    icon: '🌌',
-    desc: () => [
-      {
-        type: 'text',
-        value:
-          '召喚時、同じレーンに手札から1枚カードを召喚できる。そうした場合、手札に',
-      },
-      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
-      { type: 'text', value: 'を加える。' },
-    ],
-  },
   forge: {
     name: '鍛造',
     icon: '⚒️',
@@ -1377,7 +1367,7 @@ export const ACTIVE_SKILLS = [
   'salvage',
   'reinforce',
   'toxic',
-  'deteriorate',
+  // 'deteriorate', // 【未実装】劣化能力は現時点では実装を見送り
   'convert',
   'invade',
   'petrify',
@@ -1391,7 +1381,6 @@ export const ACTIVE_SKILLS = [
   'replicate',
   'crush',
   'adversity',
-  'invite',
   'double_power',
   'explore',
   'decay',
@@ -1507,7 +1496,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '召喚',
-        skills: ['summon', 'assemble', 'call', 'invite', 'forge'],
+        skills: ['summon', 'assemble', 'call', 'forge'],
       },
       {
         name: '配置',
@@ -1582,7 +1571,7 @@ export const SKILL_CATEGORIES = [
           'loss',
           'spend',
           'standby',
-          'deteriorate',
+          // 'deteriorate', // 【未実装】劣化能力は現時点では実装を見送り
           'execute',
           'decay',
         ],

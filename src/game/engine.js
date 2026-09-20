@@ -899,7 +899,7 @@ export function applyActiveSkillLogic(
     'invade',
     'replicate',
     'standby',
-    'deteriorate',
+    // 'deteriorate', // 【未実装】劣化能力は現時点では実装を見送り
     'stealth',
     'invincible',
     'buff_void',
@@ -912,7 +912,6 @@ export function applyActiveSkillLogic(
     'metamorph',
     'assemble',
     'summon',
-    'invite',
     'forge',
   ];
   if (!c && requiresCard.includes(sid)) return events;
@@ -1612,6 +1611,8 @@ export function applyActiveSkillLogic(
         });
       }
       break;
+    /*
+    // 【未実装】劣化能力は現時点では実装を見送り
     case 'deteriorate': {
       const pVal = val || 1;
       // 【劣化スキル: 自身の腐食状態付与】
@@ -1627,6 +1628,7 @@ export function applyActiveSkillLogic(
       });
       break;
     }
+    */
     case 'spread': {
       const spVal = val || 2;
       [l - 1, l, l + 1].forEach((j) => {
@@ -2911,32 +2913,6 @@ export function applyActiveSkillLogic(
         lane: l,
         amount: summonBonus,
         source: 'summon',
-      });
-      break;
-    }
-    case 'invite': {
-      // 【招来(invite)スキル処理】
-      // 召喚時、同じレーンに手札から1枚カードを召喚し、「虚空（パワー0）」を手札に加える
-      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
-      if (!myHand || myHand.length === 0) break;
-      const inviteBonus = 3;
-      c.currentPower += inviteBonus;
-      const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-        name: '虚空',
-        power: 0,
-      };
-      myHand.push({
-        ...voidTpl,
-        isToken: true,
-        baseId: 'token_void',
-        uid: `${owner}_sim_void_${Math.floor(getSeededRandom() * 1000000000)}`,
-      });
-      events.push({
-        type: 'power_change',
-        side: owner,
-        lane: l,
-        amount: inviteBonus,
-        source: 'invite',
       });
       break;
     }
@@ -6088,6 +6064,15 @@ export function applyPassiveSkillLogic(
         }
 
         // 2. お互いに3枚引く
+        /**
+         * 【輪廻】指定陣営にカードを1枚ドローさせるシミュレーションヘルパー。
+         * 輪廻スキルの「お互いにカードを3枚引く」処理において各陣営ごとに3回呼び出され、合計3枚ドローを実現する。
+         * 手札上限（MAX_HAND_SIZE_DURING_TURN）に達している場合はドローをスキップする。
+         * デッキが空の場合は墓地をデッキへ戻してシャッフルし、当該陣営のHPを半減する。
+         *
+         * @param {'blue'|'red'} p - ドローする陣営
+         * @returns {void}
+         */
         const drawSim = (p) => {
           const h = p === 'blue' ? state.playerHand : state.enemyHand;
           const d = p === 'blue' ? state.playerDeck : state.enemyDeck;

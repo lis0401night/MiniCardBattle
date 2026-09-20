@@ -984,6 +984,42 @@ export function removeCardStatus(card, statusId) {
 }
 
 /**
+ * 対象カードに付与されているすべての一時状態（ステータス: valkyria_guard, invincible, stun, cant_attack, corrosion等）を一括解除します。
+ *
+ * カードの墓地送り時やリセット時に呼び出され、
+ * STATUSES マスターに定義された全状態の直接プロパティ（invincibleTurns, stunTurns, corrosion, cantAttackTurns, valkyriaGuard, valkyriaGuardTurns 等）
+ * および card.skills 内の状態スロット（isStatus: true または STATUSES に含まれる状態ID）を完全に消去します。
+ * また、付随する一時フラグ（stunAppliedThisTurn 等）もリセットします。
+ *
+ * @param {object|null} card - 対象カード
+ * @returns {void}
+ */
+export function clearAllCardStatuses(card) {
+  if (!card) return;
+
+  // 1. STATUSES 定義に基づく全状態の解除・プロパティ消去
+  for (const statusId of Object.keys(STATUSES)) {
+    removeCardStatus(card, statusId);
+  }
+
+  // 2. card.skills 内の状態スロット（isStatusフラグ付き、またはSTATUSESキー一致）を安全に除去
+  if (Array.isArray(card.skills)) {
+    card.skills = card.skills.filter(
+      (s) => !s || (!s.isStatus && !STATUSES[s.id || s])
+    );
+  }
+
+  // 3. 付随する一時フラグ・プロパティの安全消去
+  card.stunAppliedThisTurn = false;
+  card.stunTurns = 0;
+  delete card.valkyriaGuard;
+  delete card.valkyriaGuardTurns;
+  delete card.invincibleTurns;
+  delete card.cantAttackTurns;
+  delete card.corrosion;
+}
+
+/**
  * 対象カードの持続ターン型状態（無敵・スタン・攻撃不能・加護等）を1ターン分減衰させ、
  * ターン数が終了した状態をカードおよびスキル枠から解除します。
  *
@@ -1530,6 +1566,12 @@ export function renderSkillTag(
           : false));
 
   // 1. スキル枠（card.skills）のスロット順（付与順）にバッジアイテムを生成
+  /**
+   * スキル対象カードID配列から比較・重複マージ用のキー文字列を生成する。
+   *
+   * @param {Array<string>|null|undefined} ids - 対象カードID配列
+   * @returns {string} カンマ区切りのID文字列（配列でない場合は空文字列）
+   */
   const targetIdsKey = (ids) => (Array.isArray(ids) ? ids.join(',') : '');
   const slotItems = [];
 
@@ -2676,23 +2718,36 @@ export function matchesUnionMaterial(card, unionSkill) {
 }
 
 /**
- * 盤面に存在するカードID配列（またはカードオブジェクト配列）の中に「万相（all_forms）」スキルを持つカードが含まれているか判定する。
+ * 盤面に存在するカード（またはカードID）の中に有効な「万相（all_forms）」スキルを持つカードが含まれているか判定する。
  * 万相を持つカードが自陣盤面に存在する場合、そのカードはすべてのカード名・カードIDと同じとして扱われるため、
  * 「唯一（excludeBoard / 自分の場にいない）」効果を持つスキルにおいて、あらゆるカードが「既に自分の場に存在する」とみなされ、
  * 他のカードの名前をすべて占有して場に出す対象から除外する。
  *
- * @param {Array<string|object>} [presentBoardIds=[]] - 盤面のカードID配列またはカードオブジェクト配列
- * @returns {boolean} 万相を持つカードが存在する場合は true、それ以外は false
+ * 【重要】「沈黙（oblivion）」「忘却（silence）」等で能力消去（clearCardAbilities）されたカードは万相能力を喪失しているため、
+ * マスターデータではなく実盤面カードオブジェクトの現在のスキル状態（hasSkillDeep）を最優先で評価する。
+ *
+ * @param {Array<object|string>} [boardCardsOrIds=[]] - 盤面のカードオブジェクト配列（推奨）またはカードID配列
+ * @returns {boolean} 有効な万相を持つカードが存在する場合は true、それ以外は false
  */
-export function checkHasAllFormsOnBoard(presentBoardIds = []) {
-  if (!Array.isArray(presentBoardIds) || presentBoardIds.length === 0) {
+export function checkHasAllFormsOnBoard(boardCardsOrIds = []) {
+  if (!Array.isArray(boardCardsOrIds) || boardCardsOrIds.length === 0) {
     return false;
   }
-  return presentBoardIds.some((item) => {
+  // 実カードオブジェクトが1枚でも含まれている場合は、実オブジェクトの現在のスキル状態のみを厳密に評価する（能力消去を反映するため、マスターデータへのフォールバックは行わない）
+  const hasCardObjects = boardCardsOrIds.some(
+    (item) => item && typeof item === 'object'
+  );
+
+  if (hasCardObjects) {
+    return boardCardsOrIds.some(
+      (item) =>
+        item && typeof item === 'object' && hasSkillDeep(item, 'all_forms')
+    );
+  }
+
+  // 文字列IDのみが渡された場合のフォールバック（マスターデータを参照）
+  return boardCardsOrIds.some((item) => {
     if (!item) return false;
-    if (typeof item === 'object') {
-      return hasSkillDeep(item, 'all_forms');
-    }
     const masterCard = CARD_MASTER?.find((c) => c.id === item);
     return Boolean(masterCard && hasSkillDeep(masterCard, 'all_forms'));
   });
@@ -2707,6 +2762,7 @@ export function checkHasAllFormsOnBoard(presentBoardIds = []) {
  * @param {object} [options={}] - 判定用オプション
  * @param {string|null} [options.selfId=null] - 発動元カードのIDまたはbaseId（self/targetSelf 指定時の照合用）
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard 指定時の除外用）
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
  * @returns {boolean} 対象として有効であれば true、そうでなければ false
  */
 export function matchesHandOrDeckTarget(card, skill, options = {}) {
@@ -2719,22 +2775,42 @@ export function matchesHandOrDeckTarget(card, skill, options = {}) {
     return false;
   }
 
-  const { selfId = null, presentBoardIds = [] } = options;
+  const {
+    selfId = null,
+    presentBoardIds = [],
+    presentBoardCards = [],
+  } = options;
+
+  // 盤面IDリストの正規化（presentBoardIds が空で presentBoardCards が提供されている場合は自動補完）
+  const resolvedBoardIds =
+    Array.isArray(presentBoardIds) && presentBoardIds.length > 0
+      ? presentBoardIds
+      : Array.isArray(presentBoardCards)
+        ? presentBoardCards
+            .filter(Boolean)
+            .flatMap((c) => [c.id, c.baseId])
+            .filter(Boolean)
+        : [];
 
   // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
   // 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
   // あらゆるカードが「既に場に存在する」とみなされて召喚・召集の対象から除外される。
   if (
     skill.excludeBoard &&
-    Array.isArray(presentBoardIds) &&
-    presentBoardIds.length > 0
+    (resolvedBoardIds.length > 0 ||
+      (Array.isArray(presentBoardCards) && presentBoardCards.length > 0))
   ) {
-    if (checkHasAllFormsOnBoard(presentBoardIds)) {
+    const boardTarget =
+      Array.isArray(presentBoardCards) && presentBoardCards.length > 0
+        ? presentBoardCards
+        : resolvedBoardIds;
+
+    if (checkHasAllFormsOnBoard(boardTarget)) {
       return false;
     }
     if (
-      presentBoardIds.includes(card.id) ||
-      (card.baseId && presentBoardIds.includes(card.baseId))
+      resolvedBoardIds.includes(card.id) ||
+      (card.baseId && resolvedBoardIds.includes(card.baseId))
     ) {
       return false;
     }
@@ -2809,6 +2885,7 @@ export function matchesHandOrDeckTarget(card, skill, options = {}) {
  * @param {object} [options={}] - 判定用オプション
  * @param {string|null} [options.selfId=null] - 発動元カードのIDまたはbaseId
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
  * @returns {boolean} 召喚対象として有効であれば true、そうでなければ false
  */
 export function matchesSummonTarget(card, skill, options = {}) {
@@ -2823,6 +2900,7 @@ export function matchesSummonTarget(card, skill, options = {}) {
  * @param {object} [options={}] - 判定用オプション
  * @param {string|null} [options.selfId=null] - 召集元カードのIDまたはbaseId
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
  * @returns {boolean} 召集対象として有効であれば true、そうでなければ false
  */
 export function matchesAssembleTarget(card, skill, options = {}) {
@@ -2844,6 +2922,7 @@ export function matchesAssembleTarget(card, skill, options = {}) {
  * @param {object|null|undefined} skill - スキル定義オブジェクト（targetIds, targetKeyword, value 等）
  * @param {object} [options={}] - 判定用オプション
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard 指定時の除外用）
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
  * @returns {boolean} 墓地配置対象として有効であれば true、そうでなければ false
  */
 export function matchesGraveyardTarget(card, skill, options = {}) {
@@ -2859,22 +2938,38 @@ export function matchesGraveyardTarget(card, skill, options = {}) {
   // 1. トークンカードは墓地配置不可
   if (card.isToken) return false;
 
-  const { presentBoardIds = [] } = options;
+  const { presentBoardIds = [], presentBoardCards = [] } = options;
+
+  // 盤面IDリストの正規化（presentBoardIds が空で presentBoardCards が提供されている場合は自動補完）
+  const resolvedBoardIds =
+    Array.isArray(presentBoardIds) && presentBoardIds.length > 0
+      ? presentBoardIds
+      : Array.isArray(presentBoardCards)
+        ? presentBoardCards
+            .filter(Boolean)
+            .flatMap((c) => [c.id, c.baseId])
+            .filter(Boolean)
+        : [];
 
   // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
   // 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
   // あらゆるカードが「既に場に存在する」とみなされて復活・傀儡の対象から除外される。
   if (
     skill.excludeBoard &&
-    Array.isArray(presentBoardIds) &&
-    presentBoardIds.length > 0
+    (resolvedBoardIds.length > 0 ||
+      (Array.isArray(presentBoardCards) && presentBoardCards.length > 0))
   ) {
-    if (checkHasAllFormsOnBoard(presentBoardIds)) {
+    const boardTarget =
+      Array.isArray(presentBoardCards) && presentBoardCards.length > 0
+        ? presentBoardCards
+        : resolvedBoardIds;
+
+    if (checkHasAllFormsOnBoard(boardTarget)) {
       return false;
     }
     if (
-      presentBoardIds.includes(card.id) ||
-      (card.baseId && presentBoardIds.includes(card.baseId))
+      resolvedBoardIds.includes(card.id) ||
+      (card.baseId && resolvedBoardIds.includes(card.baseId))
     ) {
       return false;
     }
@@ -2912,6 +3007,7 @@ export function matchesGraveyardTarget(card, skill, options = {}) {
  * @param {object|null|undefined} skill - 復活スキル定義オブジェクト
  * @param {object} [options={}] - 判定用オプション
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
  * @returns {boolean} 復活対象として有効であれば true、そうでなければ false
  */
 export function matchesResurrectTarget(card, skill, options = {}) {
@@ -2925,6 +3021,7 @@ export function matchesResurrectTarget(card, skill, options = {}) {
  * @param {object|null|undefined} skill - 傀儡スキル定義オブジェクト
  * @param {object} [options={}] - 判定用オプション
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
  * @returns {boolean} 傀儡対象として有効であれば true、そうでなければ false
  */
 export function matchesPuppetTarget(card, skill, options = {}) {

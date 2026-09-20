@@ -94,7 +94,6 @@ import { hideMessage, showMessage } from './tutorialEngine.js';
 import { evaluateBestLanesForToken } from './ai.js';
 import {
   evaluateBestResurrectChoice,
-  evaluateAdhocInviteMove,
   evaluateAdhocInspireChoice,
   evaluateAdhocProtectionChoice,
   evaluateAdhocExecuteChoice,
@@ -420,7 +419,6 @@ export async function resolveActiveSkillEffect(
       treason: '反逆',
       adversity: '逆境',
       double_power: '倍化',
-      invite: '招来',
       decay: '減衰',
       puppet: '傀儡',
       leap: '跳躍',
@@ -444,7 +442,7 @@ export async function resolveActiveSkillEffect(
       fate: '運命',
       reinforce: '増援',
       toxic: '有毒',
-      deteriorate: '劣化',
+      // deteriorate: '劣化', // 【未実装】劣化能力は現時点では実装を見送り
       convert: '対価',
       invade: '侵略',
       petrify: '石化',
@@ -507,122 +505,6 @@ export async function resolveActiveSkillEffect(
     valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
   };
 
-  // 特殊な選択が必要なスキルは個別に扱う (draw, clone, quick, choice, metamorph等)
-  if (skillId === 'invite') {
-    let selectedIdx = -1;
-    let selectedLane = -1;
-    const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-
-    if (
-      o === 'red' &&
-      GameState.gameMode !== 'online' &&
-      GameState.gameMode !== 'pvp'
-    ) {
-      // 事前計画キューに残骸があれば消費（クリーンアップ）する
-      consumeAIAction(skillId);
-
-      if (checkIsEasyAI()) {
-        // Easy AI: 手札の先頭で配置可能なカードを選択
-        for (let i = 0; i < h.length; i++) {
-          if (h[i]) {
-            selectedIdx = i;
-            selectedLane = l;
-            break;
-          }
-        }
-      } else {
-        // Normal以上: 常に最新の盤面・手札状況に基づき、直前シミュレーションで招来最善カードを評価決定
-        const inviteMove = evaluateAdhocInviteMove(h, l, o);
-        selectedIdx = inviteMove ? inviteMove.selectedIdx : -1;
-        if (selectedIdx !== -1) {
-          selectedLane = l;
-        }
-      }
-    } else {
-      // 【プレイヤーの場合】
-      if (h.length > 0) {
-        let success = false;
-        while (!success) {
-          // 手札からカードを選択
-          const promptMsg = '招来: 召喚するカードを1枚まで選んでください';
-          let arr = await waitPlayerHandSelection(1, o, false, promptMsg);
-          if (!arr || arr.length === 0) {
-            break; // キャンセル
-          }
-          const sIdx = arr[0];
-          const pickedCard = h[sIdx];
-
-          // 2) レーン選択（ハイライト表示付き・招来: 同じレーンのみ候補）
-          const restrictLanes = [l];
-          GameState.placementMessage = `招来: 「${pickedCard.name}」を召喚するレーンを選んでください`;
-          const lanes = await waitPlayerLaneSelection(
-            1,
-            o,
-            pickedCard,
-            false, // isLeaderSkill
-            restrictLanes, // tokenLanes（招来: 同じレーンのみ）
-            true, // checkConstraints（制約チェック有効）
-            true, // canCancel（キャンセル可能）
-            'キャンセル'
-          );
-          GameState.placementMessage = null;
-
-          if (lanes && lanes.length > 0) {
-            // 根本的リファクタリング：招来・詠唱による上書き配置時も、合体・装備・破棄の確認モーダルを一貫して表示する
-            const proceed = await confirmOverwrittenLane(
-              o,
-              pickedCard,
-              lanes[0]
-            );
-            if (!proceed) {
-              // React の再レンダリング競合を防止するためディレイを挟む
-              await sleep(200);
-              // キャンセルされた場合は手札選択からやり直す
-              continue;
-            }
-            selectedIdx = sIdx;
-            selectedLane = lanes[0];
-            success = true;
-          } else {
-            // React の再レンダリング競合を防止するためディレイを挟む
-            await sleep(200);
-            // レーン選択キャンセル → 手札選択からやり直し
-            continue;
-          }
-        }
-      }
-    }
-
-    if (selectedIdx !== -1 && selectedLane !== -1) {
-      // 虚空トークンを手札に追加（playCardの前に追加し、召喚時スキル発動前に手札にある状態にする）
-      const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
-        name: '虚空',
-        power: 0,
-      };
-      const voidToken = {
-        ...voidTpl,
-        id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_${skillId}`,
-        uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void${skillId}`,
-        baseId: 'token_void',
-        filter: voidTpl.filter,
-        power: voidTpl.power,
-        currentPower: voidTpl.power,
-        basePower: voidTpl.power,
-        voiceCategory: voidTpl.voiceCategory || 'stone',
-        isToken: true,
-        isMorphToken: true,
-      };
-      const currentHand =
-        o === 'blue' ? GameState.playerHand : GameState.enemyHand;
-      currentHand.push(voidToken);
-      renderHand();
-      await sleep(300);
-
-      await playCard(o, selectedIdx, selectedLane);
-    }
-    return;
-  }
-
   if (skillId === 'summon') {
     let selectedIdx = -1;
     let selectedLane = -1;
@@ -650,9 +532,11 @@ export async function resolveActiveSkillEffect(
     const selfId = c ? c.baseId || c.id : null;
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const presentBoardCards = isExcludeBoard
+      ? myBoard.filter((card) => Boolean(card))
+      : [];
     const presentBoardIds = isExcludeBoard
-      ? myBoard
-          .filter((card) => Boolean(card))
+      ? presentBoardCards
           .flatMap((card) => [card.id, card.baseId])
           .filter(Boolean)
       : [];
@@ -664,7 +548,11 @@ export async function resolveActiveSkillEffect(
      * @returns {boolean} 召喚対象として有効であれば true
      */
     const isValidSummonCard = (card) =>
-      matchesSummonTarget(card, currentSkill, { selfId, presentBoardIds });
+      matchesSummonTarget(card, currentSkill, {
+        selfId,
+        presentBoardIds,
+        presentBoardCards,
+      });
 
     if (
       o === 'red' &&
@@ -707,7 +595,8 @@ export async function resolveActiveSkillEffect(
           selfId,
           presentBoardIds,
           l,
-          o
+          o,
+          presentBoardCards
         );
         if (summonMove && summonMove.selectedIdx !== -1) {
           selectedIdx = summonMove.selectedIdx;
@@ -747,7 +636,7 @@ export async function resolveActiveSkillEffect(
             if (typeof window.showAlertModal === 'function') {
               const isAlreadyOnBoard =
                 isExcludeBoard &&
-                (checkHasAllFormsOnBoard(presentBoardIds) ||
+                (checkHasAllFormsOnBoard(presentBoardCards) ||
                   presentBoardIds.includes(pickedCard.id) ||
                   (pickedCard.baseId &&
                     presentBoardIds.includes(pickedCard.baseId)));
@@ -2290,6 +2179,8 @@ export async function resolveActiveSkillEffect(
     grantCardStatus(c, 'stun', turns);
     renderBoard();
     await sleep(400);
+    /*
+  // 【未実装】劣化能力は現時点では実装を見送り
   } else if (skillId === 'deteriorate') {
     const pVal = skillValue || 1;
     // 【劣化スキル: 自身の腐食状態付与】
@@ -2297,6 +2188,7 @@ export async function resolveActiveSkillEffect(
     grantCardStatus(c, 'corrosion', pVal);
     renderBoard();
     await sleep(400);
+  */
   } else if (skillId === 'decay') {
     // パワーを半分にする
     const currentP =
@@ -2325,16 +2217,21 @@ export async function resolveActiveSkillEffect(
 
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const presentBoardCards = isExcludeBoard
+      ? myBoard.filter((card) => Boolean(card))
+      : [];
     const presentBoardIds = isExcludeBoard
-      ? myBoard
-          .filter((card) => Boolean(card))
+      ? presentBoardCards
           .flatMap((card) => [card.id, card.baseId])
           .filter(Boolean)
       : [];
 
     // 墓地内の有効な復活対象カード判定（共通関数 matchesResurrectTarget に委譲）
     const validCards = discard.filter((card) =>
-      matchesResurrectTarget(card, currentSkill, { presentBoardIds })
+      matchesResurrectTarget(card, currentSkill, {
+        presentBoardIds,
+        presentBoardCards,
+      })
     );
     let tokenLanes = null;
 
@@ -2526,15 +2423,20 @@ export async function resolveActiveSkillEffect(
       o === 'blue' ? GameState.enemyDiscard : GameState.playerDiscard;
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const presentBoardCards = isExcludeBoard
+      ? myBoard.filter((card) => Boolean(card))
+      : [];
     const presentBoardIds = isExcludeBoard
-      ? myBoard
-          .filter((card) => Boolean(card))
+      ? presentBoardCards
           .flatMap((card) => [card.id, card.baseId])
           .filter(Boolean)
       : [];
 
     const validCards = oppDiscard.filter((card) =>
-      matchesPuppetTarget(card, currentSkill, { presentBoardIds })
+      matchesPuppetTarget(card, currentSkill, {
+        presentBoardIds,
+        presentBoardCards,
+      })
     );
     let tokenLanes = null;
 
@@ -2912,15 +2814,21 @@ export async function resolveActiveSkillEffect(
     const selfId = c ? c.baseId || c.id : null;
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const presentBoardCards = isExcludeBoard
+      ? myBoard.filter((card) => Boolean(card))
+      : [];
     const presentBoardIds = isExcludeBoard
-      ? myBoard
-          .filter((card) => Boolean(card))
+      ? presentBoardCards
           .flatMap((card) => [card.id, card.baseId])
           .filter(Boolean)
       : [];
 
     const validCards = deck.filter((card) =>
-      matchesAssembleTarget(card, currentSkill, { selfId, presentBoardIds })
+      matchesAssembleTarget(card, currentSkill, {
+        selfId,
+        presentBoardIds,
+        presentBoardCards,
+      })
     );
 
     if (validCards.length > 0) {
@@ -2960,7 +2868,8 @@ export async function resolveActiveSkillEffect(
             selfId,
             l,
             o,
-            presentBoardIds
+            presentBoardIds,
+            presentBoardCards
           );
         }
       } else {

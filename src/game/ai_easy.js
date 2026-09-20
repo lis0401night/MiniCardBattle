@@ -213,7 +213,6 @@ export function isImmediatelySelfDestructiveOnPlay(
     'summon', // 召喚（追加ユニット召喚）
     'assemble', // 召集（デッキからの召喚）
     'call', // 号令（デッキトップ召喚）
-    'invite', // 招来（同一レーン召喚）
     'clone', // 分身（隣接分身配置）
     'resurrect', // 復活（自墓地配置）
     'puppet', // 傀儡（敵墓地配置）
@@ -329,8 +328,8 @@ export function canResolveStandaloneSkill(
       if (deck.length === 0) return false;
 
       const selfId = card.baseId || card.id;
-      const presentBoardIds = (myBoard || [])
-        .filter(Boolean)
+      const presentBoardCards = (myBoard || []).filter(Boolean);
+      const presentBoardIds = presentBoardCards
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
 
@@ -338,6 +337,7 @@ export function canResolveStandaloneSkill(
         matchesAssembleTarget(candidate, skObj || { id: 'assemble' }, {
           selfId,
           presentBoardIds,
+          presentBoardCards,
         })
       );
     }
@@ -346,8 +346,8 @@ export function canResolveStandaloneSkill(
       // 召喚（手札から条件合致カードを召喚）: 自分以外の手札に対象カードが存在するか判定
       const hand = myHand || [];
       const selfId = card.baseId || card.id;
-      const presentBoardIds = (myBoard || [])
-        .filter(Boolean)
+      const presentBoardCards = (myBoard || []).filter(Boolean);
+      const presentBoardIds = presentBoardCards
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
 
@@ -356,6 +356,7 @@ export function canResolveStandaloneSkill(
         return matchesSummonTarget(hCard, skObj || { id: 'summon' }, {
           selfId,
           presentBoardIds,
+          presentBoardCards,
         });
       });
     }
@@ -365,14 +366,15 @@ export function canResolveStandaloneSkill(
       const discard = myDiscard || [];
       if (discard.length === 0) return false;
 
-      const presentBoardIds = (myBoard || [])
-        .filter(Boolean)
+      const presentBoardCards = (myBoard || []).filter(Boolean);
+      const presentBoardIds = presentBoardCards
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
 
       return discard.some((dCard) =>
         matchesResurrectTarget(dCard, skObj || { id: 'resurrect' }, {
           presentBoardIds,
+          presentBoardCards,
         })
       );
     }
@@ -382,14 +384,15 @@ export function canResolveStandaloneSkill(
       const oppDiscardCards = oppDiscard || [];
       if (oppDiscardCards.length === 0) return false;
 
-      const presentBoardIds = (myBoard || [])
-        .filter(Boolean)
+      const presentBoardCards = (myBoard || []).filter(Boolean);
+      const presentBoardIds = presentBoardCards
         .flatMap((c) => [c.id, c.baseId])
         .filter(Boolean);
 
       return oppDiscardCards.some((candidate) =>
         matchesPuppetTarget(candidate, skObj || { id: 'puppet' }, {
           presentBoardIds,
+          presentBoardCards,
         })
       );
     }

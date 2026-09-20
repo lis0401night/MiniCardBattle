@@ -179,10 +179,13 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 2 / 3,
   },
+  /*
+  // 【未実装】劣化能力は現時点では実装を見送り
   deteriorate: {
     base: 0,
     multiplier: -2 / 3,
   },
+  */
   convert: {
     base: 0,
     multiplier: -1,
@@ -300,10 +303,6 @@ export const SKILL_POINTS = {
   adversity: {
     base: 0,
     multiplier: 1,
-  },
-  invite: {
-    base: 4,
-    multiplier: 0,
   },
   // double_power: 特殊計算（パワー×2 + 1）のためポイント定義不要
   explore: {
