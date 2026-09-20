@@ -747,13 +747,15 @@ export async function discardCardsFromDeck(owner, cards) {
 }
 
 /**
- * カードを墓地に送り、破棄アニメーション・音声・変身解除・ミッション進捗（生贄カウント）等を処理する。
+ * カードを盤面または手札から破棄し、必要な誘発処理と墓地送りを実行する。
+ * 墓地送りの前に、カードへ付与された一時状態（無敵・加護・スタン・腐食・攻撃不能等）をすべて解除し、
+ * 付属物（装備品・合体素材）の個別返却および変身・変相の解除・初期化を安全に行う。
  * 手札からの破棄時かつ「狂気」スキルを所持している場合は、レーンへの召喚処理を実行する。
  *
- * @param {string} owner - カード所有者 ('blue' | 'red')
+ * @param {'blue'|'red'} owner - カードの所有者 ('blue' | 'red')
  * @param {object} card - 破棄対象のカードオブジェクト
- * @param {number} [lane] - 破棄が行われたレーンインデックス
- * @param {boolean} [isDestroyed=true] - 破壊による破棄かどうかのフラグ
+ * @param {number|null|undefined} [lane] - カードが存在するレーンインデックス
+ * @param {boolean} [isDestroyed=true] - 破壊による破棄かどうかのフラグ（破壊時スキルの処理有無）
  * @param {boolean} [fromHand=false] - 手札からの破棄かどうかのフラグ
  * @returns {Promise<boolean>} 分裂等により盤面が既に置換済み、または狂気により召喚された場合は true
  */

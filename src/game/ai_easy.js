@@ -296,6 +296,10 @@ export function canResolveStandaloneSkill(
   const myDiscard = isBlue ? gameState.playerDiscard : gameState.enemyDiscard;
   const oppDiscard = isBlue ? gameState.enemyDiscard : gameState.playerDiscard;
   const myBoard = isBlue ? gameState.playerBoard : gameState.enemyBoard;
+  const presentBoardCards = (myBoard || []).filter(Boolean);
+  const presentBoardIds = presentBoardCards
+    .flatMap((c) => [c.id, c.baseId])
+    .filter(Boolean);
 
   switch (skillId) {
     case 'call': {
@@ -328,10 +332,6 @@ export function canResolveStandaloneSkill(
       if (deck.length === 0) return false;
 
       const selfId = card.baseId || card.id;
-      const presentBoardCards = (myBoard || []).filter(Boolean);
-      const presentBoardIds = presentBoardCards
-        .flatMap((c) => [c.id, c.baseId])
-        .filter(Boolean);
 
       return deck.some((candidate) =>
         matchesAssembleTarget(candidate, skObj || { id: 'assemble' }, {
@@ -346,10 +346,6 @@ export function canResolveStandaloneSkill(
       // 召喚（手札から条件合致カードを召喚）: 自分以外の手札に対象カードが存在するか判定
       const hand = myHand || [];
       const selfId = card.baseId || card.id;
-      const presentBoardCards = (myBoard || []).filter(Boolean);
-      const presentBoardIds = presentBoardCards
-        .flatMap((c) => [c.id, c.baseId])
-        .filter(Boolean);
 
       return hand.some((hCard) => {
         if (!hCard || hCard === card) return false;
@@ -366,11 +362,6 @@ export function canResolveStandaloneSkill(
       const discard = myDiscard || [];
       if (discard.length === 0) return false;
 
-      const presentBoardCards = (myBoard || []).filter(Boolean);
-      const presentBoardIds = presentBoardCards
-        .flatMap((c) => [c.id, c.baseId])
-        .filter(Boolean);
-
       return discard.some((dCard) =>
         matchesResurrectTarget(dCard, skObj || { id: 'resurrect' }, {
           presentBoardIds,
@@ -383,11 +374,6 @@ export function canResolveStandaloneSkill(
       // 傀儡（相手墓地からカードを配置）: 相手の墓地に有効な対象カードが存在するか判定
       const oppDiscardCards = oppDiscard || [];
       if (oppDiscardCards.length === 0) return false;
-
-      const presentBoardCards = (myBoard || []).filter(Boolean);
-      const presentBoardIds = presentBoardCards
-        .flatMap((c) => [c.id, c.baseId])
-        .filter(Boolean);
 
       return oppDiscardCards.some((candidate) =>
         matchesPuppetTarget(candidate, skObj || { id: 'puppet' }, {

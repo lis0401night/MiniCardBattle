@@ -5553,28 +5553,32 @@ export function buildCardPlayTreeAdhoc(
     if (hasSkill(card, 'legendary')) {
       availableLanes = availableLanes.filter((l) => l === -1 || l === 1);
     }
-    if (hasSkill(card, 'takeover')) {
-      availableLanes = availableLanes.filter((l) => {
-        if (l === -1) return true;
-        const hasExisting = myBoard[l] !== null;
-        const willBeSummoned = isLaneOccupiedByLeaderSkill(
-          l,
-          leaderSkillContext
-        );
-        return hasExisting || willBeSummoned;
-      });
-    }
-    if (hasSkill(card, 'apex')) {
-      availableLanes = availableLanes.filter((l) => {
-        if (l === -1) return true;
-        const hasLegendaryOnBoard =
-          myBoard[l] && hasSkill(myBoard[l], 'legendary');
-        const willLegendaryBeSummoned = isLegendarySummonedByLeaderSkill(
-          l,
-          leaderSkillContext
-        );
-        return hasLegendaryOnBoard || willLegendaryBeSummoned;
-      });
+    // 生贄・頂点: summon/assemble時は親カードが配置済みだがmyBoardには未反映のため、
+    // プリフィルタをスキップしprocessActionSequenceの正確なsimStateチェックに委ねる（buildCardPlayTreeと同様）
+    if (sourceType !== 'summon' && sourceType !== 'assemble') {
+      if (hasSkill(card, 'takeover')) {
+        availableLanes = availableLanes.filter((l) => {
+          if (l === -1) return true;
+          const hasExisting = myBoard[l] !== null;
+          const willBeSummoned = isLaneOccupiedByLeaderSkill(
+            l,
+            leaderSkillContext
+          );
+          return hasExisting || willBeSummoned;
+        });
+      }
+      if (hasSkill(card, 'apex')) {
+        availableLanes = availableLanes.filter((l) => {
+          if (l === -1) return true;
+          const hasLegendaryOnBoard =
+            myBoard[l] && hasSkill(myBoard[l], 'legendary');
+          const willLegendaryBeSummoned = isLegendarySummonedByLeaderSkill(
+            l,
+            leaderSkillContext
+          );
+          return hasLegendaryOnBoard || willLegendaryBeSummoned;
+        });
+      }
     }
   }
 

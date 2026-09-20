@@ -743,6 +743,7 @@ export async function playEvents(events) {
         const targetCard = board ? board[ev.lane] : null;
         if (targetCard) {
           // STATUSES に定義された状態（invincible等）の場合は独立した状態エントリとして付与
+          // （非正値0以下が渡された場合は grantCardStatus により安全に解除扱いとなり、値0の状態スロット生成を防止）
           if (STATUSES[ev.skillId]) {
             grantCardStatus(targetCard, ev.skillId, ev.value ?? 1);
           } else {
@@ -775,6 +776,7 @@ export async function playEvents(events) {
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const targetCard = board ? board[ev.lane] : null;
         // STATUSES マスターを参照し、定義されている全状態（corrosion, valkyria_guard, stun, invincible, cant_attack等）を汎用的に付与
+        // （非正値0以下が渡された場合は grantCardStatus により安全に解除扱いとなり、値0の状態スロット生成を防止）
         if (targetCard && STATUSES[ev.status]) {
           grantCardStatus(targetCard, ev.status, ev.value ?? 1);
           if (window.updateCardVisualsReact) {

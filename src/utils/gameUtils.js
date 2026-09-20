@@ -860,7 +860,16 @@ export function isCardInvincible(card) {
   if ((card.invincibleTurns || 0) > 0) return true;
   if (
     Array.isArray(card.skills) &&
-    card.skills.some((s) => s && (s.id === 'invincible' || s === 'invincible'))
+    card.skills.some((s) => {
+      if (!s) return false;
+      const sid = typeof s === 'string' ? s : s.id;
+      if (sid !== 'invincible') return false;
+      // 状態スロット（isStatus）または数値を持つスキルの場合は値が0以下なら無敵ではない
+      if (s.isStatus || (s.value !== undefined && s.value !== null)) {
+        return (s.value ?? 0) > 0;
+      }
+      return true;
+    })
   ) {
     return true;
   }
@@ -916,14 +925,23 @@ function applyStatusProperties(card, statusId, value) {
  * 新規付与時はスキル枠（card.skills）の末尾（下のスロット）に追加され、
  * 重ね掛け時は高い方を優先（Math.max）して既存スロットの位置を維持したまま値を更新します。
  * 直接プロパティ（card.corrosion, card.stunTurns 等）とも完全に同期します。
+ * ※非正値（0以下）が指定された場合は、状態スロットの追加を行わず解除（removeCardStatus）として統一処理し、0を返します。
  *
  * @param {object|null} card - 対象カード
  * @param {string} statusId - 状態ID ('corrosion' | 'stun' | 'invincible' | 'valkyria_guard' | 'cant_attack')
- * @param {number} [value=1] - 付与する値（腐食の減少値、または持続ターン数）
- * @returns {number} 最終的に設定された値
+ * @param {number} [value=1] - 付与する値（腐食の減少値、または持続ターン数）。0以下の場合は解除
+ * @returns {number} 最終的に設定された値（解除時は0）
  */
 export function grantCardStatus(card, statusId, value = 1) {
   if (!card) return 0;
+
+  const normalizedValue = value !== undefined && value !== null ? value : 1;
+  // 非正値（0以下）の指定は状態の解除として統一処理（値0のスロット生成を防止）
+  if (normalizedValue <= 0) {
+    removeCardStatus(card, statusId);
+    return 0;
+  }
+
   if (!Array.isArray(card.skills)) {
     card.skills = [];
   }
@@ -942,10 +960,7 @@ export function grantCardStatus(card, statusId, value = 1) {
   }
 
   // Bの仕様（高い方を優先、Math.max）
-  const finalValue = Math.max(
-    currentVal,
-    value !== undefined && value !== null ? value : 1
-  );
+  const finalValue = Math.max(currentVal, normalizedValue);
 
   if (existingIdx !== -1) {
     // 既存スロットの値を更新（スロット順序・位置は維持）
@@ -1591,7 +1606,7 @@ export function renderSkillTag(
 
       if (isStatusEntry) {
         if (!renderedStatuses.has(id)) {
-          let val = sk.value || 1;
+          let val = sk.value !== undefined && sk.value !== null ? sk.value : 1;
           // 直接プロパティがあれば最新値を同期（未所持や0の場合は確実に0とする）
           if (id === 'corrosion')
             val = card.corrosion !== undefined ? card.corrosion : val;
