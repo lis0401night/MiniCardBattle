@@ -29,6 +29,7 @@ import {
 } from '../../services/uiBattle.js';
 import {
   applyEquipment,
+  consumeStartupSkill,
   getSkillValue,
   getSeededRandom,
   playSound,
@@ -1339,10 +1340,8 @@ export async function playCard(o, hI, l, depth = 0) {
     // 0. 起動（startup）の特別処理（合体や装備に優先して処理される）
     if (hasSkill(b[l], 'startup')) {
       const existingCard = b[l];
-      // 起動消滅の特別処理：起動と防御を剥ぎ取る
-      existingCard.skills = existingCard.skills.filter(
-        (s) => s.id !== 'startup' && s.id !== 'defender'
-      );
+      // 起動消滅の特別処理：起動と防御を剥ぎ取り、スタン状態・バッジを確実に解除する
+      consumeStartupSkill(existingCard);
 
       // 手札から重ねようとしたカード（playingCard）を消費して直接墓地に送る
       const consumedCard = h.splice(hI, 1)[0];

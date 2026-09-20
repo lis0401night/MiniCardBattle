@@ -179,7 +179,7 @@ export const SKILL_POINTS = {
     base: 0,
     multiplier: 2 / 3,
   },
-  corrosion: {
+  deteriorate: {
     base: 0,
     multiplier: -2 / 3,
   },

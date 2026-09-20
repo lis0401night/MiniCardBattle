@@ -5,8 +5,10 @@ import {
   FATE_ESTIMATED_DAMAGE,
   METAMORPH_ESTIMATED_POWER,
 } from '../utils/constants/skills.js';
+import { MAX_HAND_SIZE_DURING_TURN } from '../utils/constants/config.js';
 import {
   applyEquipment,
+  applyUnleashSkill,
   clearCardAbilities,
   getSeededRandom,
   getSkillValue,
@@ -897,7 +899,7 @@ export function applyActiveSkillLogic(
     'invade',
     'replicate',
     'standby',
-    'corrosion',
+    'deteriorate',
     'stealth',
     'invincible',
     'buff_void',
@@ -1153,7 +1155,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void'))
+            .length
         : 0;
       if (voidCount > 0) {
         const bonus = (val || 0) * voidCount;
@@ -1172,7 +1175,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void'))
+            .length
         : 0;
       if (voidCount > 0) {
         const baseDmg = val || 4;
@@ -1207,7 +1211,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void'))
+            .length
         : 0;
       if (voidCount > 0) {
         const hAmt = (val || 3) * voidCount;
@@ -1219,7 +1224,8 @@ export function applyActiveSkillLogic(
       const hand = owner === 'blue' ? state.playerHand : state.enemyHand;
       // 万相（all_forms）スキル所持カード（ミミック等）も虚空としてカウントするため matchesCardId を使用
       const voidCount = hand
-        ? hand.filter((card) => card && matchesCardId(card, 'token_void')).length
+        ? hand.filter((card) => card && matchesCardId(card, 'token_void'))
+            .length
         : 0;
       if (voidCount > 0) {
         const adjVal = (val || 2) * voidCount;
@@ -1418,11 +1424,8 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'unleash': {
-      // 召喚時、自身の防御（待機・拘束状態によるスタンターンおよび防御スキル）をなくす
-      c.stunTurns = 0;
-      if (Array.isArray(c.skills)) {
-        c.skills = c.skills.filter((s) => s.id !== 'defender');
-      }
+      // 召喚時、自身の防御能力を除去し、スタン状態・バッジを完全解除する
+      applyUnleashSkill(c);
       events.push({
         type: 'unleash',
         side: owner,
@@ -1595,32 +1598,32 @@ export function applyActiveSkillLogic(
     case 'toxic':
       if (eB[l]) {
         const toxVal = val || 1;
-        // 【有毒スキル: 毒状態の付与】
-        // 成長スキルの付与ではなく独立した「毒（poison）」状態を付与する。
+        // 【有毒スキル: 腐食状態の付与】
+        // 成長スキルの付与ではなく独立した「腐食（corrosion）」状態を付与する。
         // 重ね掛け時はBの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
-        grantCardStatus(eB[l], 'poison', toxVal);
+        grantCardStatus(eB[l], 'corrosion', toxVal);
         events.push({
           type: 'add_status',
           side: oppOwner,
           lane: l,
-          status: 'poison',
-          value: eB[l].poison,
+          status: 'corrosion',
+          value: eB[l].corrosion,
           source: 'toxic',
         });
       }
       break;
-    case 'corrosion': {
+    case 'deteriorate': {
       const pVal = val || 1;
-      // 【腐食スキル: 自身の毒状態付与】
-      // 召喚時、自身に毒を付与する。Bの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
-      grantCardStatus(c, 'poison', pVal);
+      // 【劣化スキル: 自身の腐食状態付与】
+      // 召喚時、自身に腐食を付与する。Bの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
+      grantCardStatus(c, 'corrosion', pVal);
       events.push({
         type: 'add_status',
         side: owner,
         lane: l,
-        status: 'poison',
-        value: c.poison,
-        source: 'corrosion',
+        status: 'corrosion',
+        value: c.corrosion,
+        source: 'deteriorate',
       });
       break;
     }
@@ -5969,13 +5972,6 @@ export function applyPassiveSkillLogic(
 
     // スキルおよび状態の時系列スロット順（付与順）に順次解決
     const cardSkills = Array.isArray(c.skills) ? [...c.skills] : [];
-    // レガシー互換: 直接プロパティに毒が存在するが skills に未登録の場合は末尾に追加
-    if (
-      (c.poison || 0) > 0 &&
-      !cardSkills.some((s) => s && (s.id === 'poison' || s === 'poison'))
-    ) {
-      cardSkills.push({ id: 'poison', value: c.poison, isStatus: true });
-    }
 
     for (const sk of cardSkills) {
       if (!sk) continue;
@@ -5993,16 +5989,16 @@ export function applyPassiveSkillLogic(
           amount: v,
           source: 'growth',
         });
-      } else if (skId === 'poison') {
-        // 【毒状態（debuff）のターン開始時処理】
-        const pVal = skVal || c.poison || 1;
+      } else if (skId === 'corrosion') {
+        // 【腐食状態（debuff）のターン開始時処理】
+        const pVal = skVal || c.corrosion || 1;
         c.currentPower -= pVal;
         events.push({
           type: 'power_change',
           side,
           lane: i,
           amount: -pVal,
-          source: 'poison',
+          source: 'corrosion',
         });
       } else if (skId === 'intercept') {
         // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
@@ -6098,7 +6094,8 @@ export function applyPassiveSkillLogic(
           const ds = p === 'blue' ? state.playerDiscard : state.enemyDiscard;
 
           if (!h || !d) return;
-          if (h.length >= 4) return;
+          // 手札上限は実戦の通常ドロー処理（drawCard）と同一の定数を参照
+          if (h.length >= MAX_HAND_SIZE_DURING_TURN) return;
 
           if (d.length === 0 && ds && ds.length > 0) {
             // 墓地を戻す

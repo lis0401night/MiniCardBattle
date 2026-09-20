@@ -221,7 +221,7 @@ export function isImmediatelySelfDestructiveOnPlay(
     'reanimate', // 反魂
     'snipe', // 狙撃（敵ユニット/リーダー直接攻撃）
     'artillery', // 砲撃（全体攻撃）
-    'poison', // 毒（敵継続ダメージ）
+    'corrosion', // 腐食（敵継続ダメージ）
     'plague', // 疫病（敵弱体化）
     'bind', // 拘束（敵足止め）
     'freeze', // 氷結（敵凍結）

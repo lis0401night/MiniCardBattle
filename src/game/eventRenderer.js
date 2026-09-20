@@ -10,13 +10,16 @@ import {
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
+  MAX_HAND_CAPACITY,
   PLACE_ANIMATION_DURATION,
   VALKYRIA_GUARD_POPUP_COLOR,
 } from '../utils/constants/config.js';
+import { STATUSES } from '../utils/constants/statuses.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
   addDamagePopupHook,
   applyEquipMerge,
+  applyUnleashSkill,
   clearCardAbilities,
   createDamagePopup,
   getSeededRandom,
@@ -256,6 +259,7 @@ export async function playEvents(events) {
 
           let label = `${prefix}${ev.amount}`;
           if (ev.source === 'growth') label = `成長 ${label}`;
+          else if (ev.source === 'corrosion') label = `腐食 ${label}`;
           else if (ev.source === 'soul_bind') label = `魂縛 ${label}`;
           else if (ev.source === 'retaliate') label = `報復 ${label}`;
 
@@ -602,7 +606,7 @@ export async function playEvents(events) {
       case 'add_hand': {
         const hand =
           ev.side === 'blue' ? GameState.playerHand : GameState.enemyHand;
-        if (hand.length < 5) {
+        if (hand.length < MAX_HAND_CAPACITY) {
           if (!ev.card.uid) {
             ev.card.uid = `${ev.side}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
           }
@@ -736,10 +740,11 @@ export async function playEvents(events) {
       case 'add_skill': {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-        const targetCard = board[ev.lane];
+        const targetCard = board ? board[ev.lane] : null;
         if (targetCard) {
-          if (ev.skillId === 'invincible') {
-            grantCardStatus(targetCard, 'invincible', ev.value || 1);
+          // STATUSES に定義された状態（invincible等）の場合は独立した状態エントリとして付与
+          if (STATUSES[ev.skillId]) {
+            grantCardStatus(targetCard, ev.skillId, ev.value || 1);
           } else {
             if (!Array.isArray(targetCard.skills)) targetCard.skills = [];
             targetCard.skills.push({ id: ev.skillId, value: ev.value || 1 });
@@ -766,15 +771,29 @@ export async function playEvents(events) {
         const board =
           ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
         const targetCard = board ? board[ev.lane] : null;
-        if (targetCard) {
-          if (ev.status === 'poison') {
-            grantCardStatus(targetCard, 'poison', ev.value || 1);
-          } else if (ev.status === 'valkyria_guard') {
-            grantCardStatus(targetCard, 'valkyria_guard', ev.value || 1);
-          } else if (ev.status === 'stun') {
-            grantCardStatus(targetCard, 'stun', ev.value || 1);
-          }
+        // STATUSES マスターを参照し、定義されている全状態（corrosion, valkyria_guard, stun, invincible, cant_attack等）を汎用的に付与
+        if (targetCard && STATUSES[ev.status]) {
+          grantCardStatus(targetCard, ev.status, ev.value || 1);
         }
+        break;
+      }
+      case 'unleash': {
+        const board =
+          ev.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+        const targetCard = board ? board[ev.lane] : null;
+        // 「解放」スキルによる防御スキルの喪失およびスタン状態・バッジの完全解除
+        if (targetCard) {
+          applyUnleashSkill(targetCard);
+        }
+        const cEl = document.querySelector(
+          `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '解放', '#38bdf8');
+          playSound(SOUNDS.seSkill);
+        }
+        renderBoard();
+        await sleep(200);
         break;
       }
       case 'invincible_block': {

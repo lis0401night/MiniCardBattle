@@ -20,7 +20,9 @@ export const STATUSES = {
     name: '加護',
     icon: '🔆',
     type: 'buff',
-    property: 'valkyriaGuard',
+    hasTurns: true,
+    property: 'valkyriaGuardTurns',
+    flagProperty: 'valkyriaGuard',
     turnsProperty: 'valkyriaGuardTurns',
     badgeClass: 'badge-valkyria-guard',
     /**
@@ -43,6 +45,7 @@ export const STATUSES = {
     name: '無敵',
     icon: '🌟',
     type: 'buff',
+    hasTurns: true,
     property: 'invincibleTurns',
     turnsProperty: 'invincibleTurns',
     badgeClass: 'badge-invincible',
@@ -63,6 +66,7 @@ export const STATUSES = {
     name: 'スタン',
     icon: '💫',
     type: 'debuff',
+    hasTurns: true,
     property: 'stunTurns',
     turnsProperty: 'stunTurns',
     badgeClass: 'badge-stun',
@@ -84,9 +88,10 @@ export const STATUSES = {
     name: '攻撃不能',
     icon: '',
     type: 'debuff',
+    hasTurns: true,
     property: 'cantAttackTurns',
     turnsProperty: 'cantAttackTurns',
-    badgeClass: '',
+    badgeClass: 'badge-cant-attack',
     /**
      * 攻撃不能の説明文を生成する
      * @param {number} [turns=1] - 残り持続ターン数
@@ -96,19 +101,21 @@ export const STATUSES = {
   },
 
   /**
-   * 毒状態
+   * 腐食状態
    * 「成長」スキルの対となる状態異常。自分のターン開始時、自身のパワーを減少させる。
+   * ※腐食は持続ターン数を持たず（hasTurns: false）、パワー減少量（値）として永続付与されます。
    */
-  poison: {
-    id: 'poison',
-    name: '毒',
+  corrosion: {
+    id: 'corrosion',
+    name: '腐食',
     icon: '💀',
     type: 'debuff',
-    property: 'poison',
-    turnsProperty: 'poisonTurns',
-    badgeClass: 'badge-poison',
+    hasTurns: false,
+    property: 'corrosion',
+    valueProperty: 'corrosion',
+    badgeClass: 'badge-corrosion',
     /**
-     * 毒の説明文を生成する
+     * 腐食の説明文を生成する
      * 自分のターン開始時、パワーを減少させる。
      * @param {number} [val=1] - ターン開始時に減少するパワー値
      * @returns {string} 説明文
@@ -122,6 +129,11 @@ export const STATUSES = {
 
 /** 全状態IDのリスト */
 export const STATUS_IDS = Object.keys(STATUSES);
+
+/** 持続ターンを持つ状態IDのリスト */
+export const TURN_BASED_STATUS_IDS = Object.values(STATUSES)
+  .filter((s) => s.hasTurns)
+  .map((s) => s.id);
 
 /** バフ系状態IDのリスト */
 export const BUFF_STATUS_IDS = Object.values(STATUSES)

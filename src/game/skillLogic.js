@@ -22,13 +22,14 @@ import {
 } from '../utils/constants/skills.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
+  applyUnleashSkill,
   checkIsEasyAI,
   clearCardAbilities,
+  consumeStartupSkill,
   createDamagePopup,
+  decayCardStatus,
   getCardImgUrl,
   grantCardStatus,
-  removeCardStatus,
-  syncCardStatuses,
   getSeededRandom,
   getSkillTargetLabel,
   getSkillValue,
@@ -120,11 +121,8 @@ export async function handleStartupDispelled(
 ) {
   if (!existingCard) return;
 
-  // 1. 起動カードから startup / defender を除去してスタンを解除
-  existingCard.skills = existingCard.skills.filter(
-    (s) => s.id !== 'startup' && s.id !== 'defender'
-  );
-  existingCard.stunTurns = 0;
+  // 1. 起動カードから startup / defender を除去し、スタン状態・バッジを確実に解除
+  consumeStartupSkill(existingCard);
 
   // 2. 消滅したカードを安全に墓地に送る（付属物の墓地返却・ステータス初期化を含む）
   if (cardToDiscard) {
@@ -446,7 +444,7 @@ export async function resolveActiveSkillEffect(
       fate: '運命',
       reinforce: '増援',
       toxic: '有毒',
-      corrosion: '腐食',
+      deteriorate: '劣化',
       convert: '対価',
       invade: '侵略',
       petrify: '石化',
@@ -1688,10 +1686,10 @@ export async function resolveActiveSkillEffect(
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     if (eB[l]) {
       const toxVal = skillValue || 1;
-      // 【有毒スキル: 毒状態の付与】
-      // 成長スキルの付与ではなく独立した「毒（poison）」状態を付与する。
+      // 【有毒スキル: 腐食状態の付与】
+      // 成長スキルの付与ではなく独立した「腐食（corrosion）」状態を付与する。
       // 重ね掛け時はBの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
-      grantCardStatus(eB[l], 'poison', toxVal);
+      grantCardStatus(eB[l], 'corrosion', toxVal);
 
       const tgtSide = o === 'blue' ? 'enemy' : 'player';
 
@@ -2292,11 +2290,11 @@ export async function resolveActiveSkillEffect(
     grantCardStatus(c, 'stun', turns);
     renderBoard();
     await sleep(400);
-  } else if (skillId === 'corrosion') {
+  } else if (skillId === 'deteriorate') {
     const pVal = skillValue || 1;
-    // 【腐食スキル: 自身の毒状態付与】
-    // 召喚時、自身に毒を付与する。Bの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
-    grantCardStatus(c, 'poison', pVal);
+    // 【劣化スキル: 自身の腐食状態付与】
+    // 召喚時、自身に腐食を付与する。Bの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
+    grantCardStatus(c, 'corrosion', pVal);
     renderBoard();
     await sleep(400);
   } else if (skillId === 'decay') {
@@ -4175,11 +4173,8 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'unleash') {
     // 【「解放」スキル処理】
-    // 召喚時、自身の防御（待機・拘束状態によるスタンターンおよび防御スキル）をなくす
-    c.stunTurns = 0;
-    if (Array.isArray(c.skills)) {
-      c.skills = c.skills.filter((s) => s.id !== 'defender');
-    }
+    // 召喚時、自身の防御能力を除去し、スタン状態（待機・拘束・スロットエントリ）を完全解除する
+    applyUnleashSkill(c);
 
     playSound(SOUNDS.seSkill);
     if (cEl) {
@@ -4219,27 +4214,8 @@ export async function triggerStartTurnPassive(owner, lane) {
   let triggered = false;
   let events = [];
 
-  // Engine 内の個別処理を真似て状態更新ログを作成（スロット順解決）
-  let skillsToResolve = Array.isArray(c.skills) ? [...c.skills] : [];
-  // レガシー互換: 直接プロパティに毒または無敵が存在するが skills 配列に未登録の場合は末尾に追加
-  if (
-    (c.poison || 0) > 0 &&
-    !skillsToResolve.some((s) => s && (s.id === 'poison' || s === 'poison'))
-  ) {
-    skillsToResolve.push({ id: 'poison', value: c.poison, isStatus: true });
-  }
-  if (
-    (c.invincibleTurns || 0) > 0 &&
-    !skillsToResolve.some(
-      (s) => s && (s.id === 'invincible' || s === 'invincible')
-    )
-  ) {
-    skillsToResolve.push({
-      id: 'invincible',
-      value: c.invincibleTurns,
-      isStatus: true,
-    });
-  }
+  // 状態・スキルのスロット順解決
+  const skillsToResolve = Array.isArray(c.skills) ? [...c.skills] : [];
 
   for (const sk of skillsToResolve) {
     if (!sk) continue;
@@ -4248,50 +4224,34 @@ export async function triggerStartTurnPassive(owner, lane) {
       typeof sk === 'object' && sk.value !== undefined ? sk.value : null;
 
     // 【無敵（状態）のターン経過減衰処理】
+    // 共通API（decayCardStatus）を用いて持続ターン数を1減衰し、直接プロパティおよびスロットを同期。
+    // ターン満了で解除された場合はUI演出（「無敵終了」ポップアップ）を表示する。
     if (skId === 'invincible') {
-      if (c.invincibleTurns > 0) {
-        c.invincibleTurns--;
-        if (c.invincibleTurns <= 0) {
-          removeCardStatus(c, 'invincible');
-          const cEl = document.querySelector(
-            `#${side}-lanes .cell[data-lane="${lane}"] .card`
-          );
-          if (cEl) {
-            createDamagePopup(cEl, '無敵終了', '#94a3b8');
-            await sleep(150);
-          }
-        } else {
-          syncCardStatuses(c);
+      const expired = decayCardStatus(c, 'invincible');
+      if (expired) {
+        const cEl = document.querySelector(
+          `#${side}-lanes .cell[data-lane="${lane}"] .card`
+        );
+        if (cEl) {
+          createDamagePopup(cEl, '無敵終了', '#94a3b8');
+          await sleep(150);
         }
-        triggered = true;
-      } else if (skVal > 0) {
-        sk.value--;
-        if (sk.value <= 0) {
-          removeCardStatus(c, 'invincible');
-          const cEl = document.querySelector(
-            `#${side}-lanes .cell[data-lane="${lane}"] .card`
-          );
-          if (cEl) {
-            createDamagePopup(cEl, '無敵終了', '#94a3b8');
-            await sleep(150);
-          }
-        }
-        triggered = true;
       }
+      triggered = true;
       continue;
     }
 
-    // 【毒（状態）のパワー減少処理】
-    // 「成長」スキルの対となる状態異常。自分のターン開始時、付与されている毒の値分パワーを減少させる
-    if (skId === 'poison') {
-      const pVal = skVal || c.poison || 1;
+    // 【腐食（状態）のパワー減少処理】
+    // 「成長」スキルの対となる状態異常。自分のターン開始時、付与されている腐食の値分パワーを減少させる
+    if (skId === 'corrosion') {
+      const pVal = skVal || c.corrosion || 1;
       c.power -= pVal; // RendererがcurrentPowerを処理するためpowerを減算
       events.push({
         type: 'power_change',
         side: owner,
         lane,
         amount: -pVal,
-        source: 'poison',
+        source: 'corrosion',
       });
       triggered = true;
       continue;

@@ -868,15 +868,58 @@ export function isCardInvincible(card) {
 }
 
 /**
- * 対象カードに状態（ステータス / バフ・デバフ）を付与または更新します。
- * スキル枠（card.skills）の末尾（下のスロット）に { id: statusId, value: finalValue, isStatus: true } を追加します。
- * 既に同種の状態が存在する場合は、重ね掛け仕様（Bの仕様: Math.maxで高い方を優先）に従って値を更新します（スロット位置は維持）。
- * 同時に後方互換性のため、直接プロパティ（card.poison, card.stunTurns 等）も同期更新します。
- * ※「無効（immune）」はスキルであり、状態ではないため本関数の対象外です。
+ * 状態マスター（STATUSES）の定義に従い、カードの直接プロパティから現在の状態値を取得する内部ヘルパー。
+ *
+ * @param {object} card - 対象カード
+ * @param {string} statusId - 状態ID
+ * @returns {number} 状態値（未付与時は0）
+ */
+function getCardStatusPropertyValue(card, statusId) {
+  if (!card) return 0;
+  const def = STATUSES[statusId];
+  if (!def) return 0;
+  if (statusId === 'valkyria_guard') {
+    return card.valkyriaGuardTurns || (card.valkyriaGuard ? 1 : 0);
+  }
+  return card[def.property] || 0;
+}
+
+/**
+ * 状態マスター（STATUSES）の定義に従い、カードの直接プロパティへ状態値を反映または削除する内部ヘルパー。
+ *
+ * @param {object} card - 対象カード
+ * @param {string} statusId - 状態ID
+ * @param {number|null} value - 設定する値。null または 0 以下の場合はプロパティをリセット・削除する
+ * @returns {void}
+ */
+function applyStatusProperties(card, statusId, value) {
+  if (!card) return;
+  const def = STATUSES[statusId];
+  if (!def) return;
+
+  if (value === null || value <= 0) {
+    if (def.flagProperty) delete card[def.flagProperty];
+    if (def.property) delete card[def.property];
+    if (def.turnsProperty) delete card[def.turnsProperty];
+    if (statusId === 'stun') card.stunTurns = 0; // スタンは 0 リセット互換を保持
+    return;
+  }
+
+  if (def.flagProperty) card[def.flagProperty] = true;
+  if (def.property) card[def.property] = value;
+  if (def.turnsProperty) card[def.turnsProperty] = value;
+}
+
+/**
+ * カードに状態（ステータス: corrosion, stun, invincible, valkyria_guard, cant_attack）を付与する共通関数。
+ * 既存の通常スキルとは独立した「状態エントリ（isStatus: true）」として管理します。
+ * 新規付与時はスキル枠（card.skills）の末尾（下のスロット）に追加され、
+ * 重ね掛け時は高い方を優先（Math.max）して既存スロットの位置を維持したまま値を更新します。
+ * 直接プロパティ（card.corrosion, card.stunTurns 等）とも完全に同期します。
  *
  * @param {object|null} card - 対象カード
- * @param {string} statusId - 状態ID ('poison' | 'stun' | 'invincible' | 'valkyria_guard' | 'cant_attack')
- * @param {number} [value=1] - 付与する値（毒の減少値、または持続ターン数）
+ * @param {string} statusId - 状態ID ('corrosion' | 'stun' | 'invincible' | 'valkyria_guard' | 'cant_attack')
+ * @param {number} [value=1] - 付与する値（腐食の減少値、または持続ターン数）
  * @returns {number} 最終的に設定された値
  */
 export function grantCardStatus(card, statusId, value = 1) {
@@ -895,12 +938,7 @@ export function grantCardStatus(card, statusId, value = 1) {
   if (existingIdx !== -1) {
     currentVal = card.skills[existingIdx].value || 0;
   } else {
-    if (statusId === 'poison') currentVal = card.poison || 0;
-    else if (statusId === 'stun') currentVal = card.stunTurns || 0;
-    else if (statusId === 'invincible') currentVal = card.invincibleTurns || 0;
-    else if (statusId === 'valkyria_guard')
-      currentVal = card.valkyriaGuardTurns || (card.valkyriaGuard ? 1 : 0);
-    else if (statusId === 'cant_attack') currentVal = card.cantAttackTurns || 0;
+    currentVal = getCardStatusPropertyValue(card, statusId);
   }
 
   // Bの仕様（高い方を優先、Math.max）
@@ -923,18 +961,7 @@ export function grantCardStatus(card, statusId, value = 1) {
   }
 
   // 直接プロパティの同期（後方互換性および判定ロジック用）
-  if (statusId === 'poison') {
-    card.poison = finalValue;
-  } else if (statusId === 'stun') {
-    card.stunTurns = finalValue;
-  } else if (statusId === 'invincible') {
-    card.invincibleTurns = finalValue;
-  } else if (statusId === 'valkyria_guard') {
-    card.valkyriaGuard = true;
-    card.valkyriaGuardTurns = finalValue;
-  } else if (statusId === 'cant_attack') {
-    card.cantAttackTurns = finalValue;
-  }
+  applyStatusProperties(card, statusId, finalValue);
 
   return finalValue;
 }
@@ -953,22 +980,54 @@ export function removeCardStatus(card, statusId) {
       (s) => !(s && s.isStatus && s.id === statusId)
     );
   }
-  if (statusId === 'poison') {
-    delete card.poison;
-  } else if (statusId === 'stun') {
-    card.stunTurns = 0;
-  } else if (statusId === 'invincible') {
-    delete card.invincibleTurns;
-  } else if (statusId === 'valkyria_guard') {
-    delete card.valkyriaGuard;
-    delete card.valkyriaGuardTurns;
-  } else if (statusId === 'cant_attack') {
-    delete card.cantAttackTurns;
+  applyStatusProperties(card, statusId, null);
+}
+
+/**
+ * 対象カードの持続ターン型状態（無敵・スタン・攻撃不能・加護等）を1ターン分減衰させ、
+ * ターン数が終了した状態をカードおよびスキル枠から解除します。
+ *
+ * 直接プロパティ（card.invincibleTurns, card.stunTurns 等）と
+ * スキル枠（card.skills 内の状態スロット）の双方を同期して一元的に減衰処理を行います。
+ *
+ * @param {object|null} card - 対象カード
+ * @param {string} statusId - 減衰させる状態ID ('invincible' | 'stun' | 'cant_attack' | 'valkyria_guard' 等)
+ * @returns {boolean} 状態が存在し、減衰によって持続時間が終了して解除された場合は true、継続中または未付与時は false
+ */
+export function decayCardStatus(card, statusId) {
+  if (!card) return false;
+  const def = STATUSES[statusId];
+  // 状態マスターに未定義、または持続ターンを持たない状態（毒等）は減衰対象外
+  if (!def || def.hasTurns === false) return false;
+
+  // 直接プロパティおよびスロット値から現在の残りターン数を取得
+  let currentVal = getCardStatusPropertyValue(card, statusId);
+  const slot = Array.isArray(card.skills)
+    ? card.skills.find((s) => s && s.isStatus && s.id === statusId)
+    : null;
+  if (slot && (slot.value || 0) > currentVal) {
+    currentVal = slot.value;
+  }
+
+  // 既にターン数が0または未付与の場合は何もしない
+  if (currentVal <= 0) return false;
+
+  const nextVal = currentVal - 1;
+
+  if (nextVal <= 0) {
+    // 持続ターン終了: 状態を完全に解除
+    removeCardStatus(card, statusId);
+    return true;
+  } else {
+    // 持続中: 直接プロパティとスキル枠スロットの値を更新・同期
+    applyStatusProperties(card, statusId, nextVal);
+    syncCardStatuses(card);
+    return false;
   }
 }
 
 /**
- * 対象カードの直接プロパティ（stunTurns, poison等）の変動を card.skills 内の状態スロットと同期します。
+ * 対象カードの直接プロパティ（stunTurns, corrosion等）の変動を card.skills 内の状態スロットと同期します。
  * ターン経過によるカウントダウンや外部プロパティ更新後に呼び出すことで、スロットとの不整合を防ぎます。
  *
  * @param {object|null} card - 対象カード
@@ -977,72 +1036,61 @@ export function syncCardStatuses(card) {
   if (!card) return;
   if (!Array.isArray(card.skills)) return;
 
-  // 1. stun (stunTurns)
-  if ((card.stunTurns || 0) <= 0) {
-    card.skills = card.skills.filter(
-      (s) => !(s && s.isStatus && s.id === 'stun')
-    );
-  } else {
-    const sEntry = card.skills.find(
-      (s) => s && s.isStatus && s.id === 'stun'
-    );
-    if (sEntry) sEntry.value = card.stunTurns;
+  for (const statusId of Object.keys(STATUSES)) {
+    const val = getCardStatusPropertyValue(card, statusId);
+    if (val <= 0) {
+      card.skills = card.skills.filter(
+        (s) => !(s && s.isStatus && s.id === statusId)
+      );
+    } else {
+      const sEntry = card.skills.find(
+        (s) => s && s.isStatus && s.id === statusId
+      );
+      if (sEntry) {
+        sEntry.value = val;
+      }
+    }
   }
+}
 
-  // 2. invincible (invincibleTurns)
-  if ((card.invincibleTurns || 0) <= 0) {
+/**
+ * 起動（startup）能力を持つカードから「起動」および「防御」能力を除去し、「スタン」状態を解除します。
+ * カードの上に別のカードを配置した際の起動消滅処理を一元化し、
+ * 防御能力の喪失およびスタン状態（待機・拘束・スロットエントリ）の完全消去を保証します。
+ *
+ * @param {object|null} card - 対象カード
+ * @returns {void}
+ */
+export function consumeStartupSkill(card) {
+  if (!card) return;
+  if (Array.isArray(card.skills)) {
     card.skills = card.skills.filter(
-      (s) => !(s && s.isStatus && s.id === 'invincible')
+      (s) => s && s.id !== 'startup' && s.id !== 'defender'
     );
-  } else {
-    const sEntry = card.skills.find(
-      (s) => s && s.isStatus && s.id === 'invincible'
-    );
-    if (sEntry) sEntry.value = card.invincibleTurns;
   }
+  removeCardStatus(card, 'stun');
+}
 
-  // 3. poison
-  if ((card.poison || 0) <= 0) {
-    card.skills = card.skills.filter(
-      (s) => !(s && s.isStatus && s.id === 'poison')
-    );
-  } else {
-    const sEntry = card.skills.find(
-      (s) => s && s.isStatus && s.id === 'poison'
-    );
-    if (sEntry) sEntry.value = card.poison;
+/**
+ * 解放（unleash）能力を持つカードから「防御」能力を除去し、「スタン」状態を解除します。
+ * 召喚時に自身の防御スキルとスタン状態（待機・拘束・スロットエントリ）を完全消去し、
+ * カードが即座に行動可能な状態へ遷移することを保証します。
+ *
+ * @param {object|null} card - 対象カード
+ * @returns {void}
+ */
+export function applyUnleashSkill(card) {
+  if (!card) return;
+  if (Array.isArray(card.skills)) {
+    card.skills = card.skills.filter((s) => s && s.id !== 'defender');
   }
-
-  // 4. valkyria_guard
-  if (!card.valkyriaGuard && (card.valkyriaGuardTurns || 0) <= 0) {
-    card.skills = card.skills.filter(
-      (s) => !(s && s.isStatus && s.id === 'valkyria_guard')
-    );
-  } else {
-    const sEntry = card.skills.find(
-      (s) => s && s.isStatus && s.id === 'valkyria_guard'
-    );
-    if (sEntry && card.valkyriaGuardTurns)
-      sEntry.value = card.valkyriaGuardTurns;
-  }
-
-  // 5. cant_attack (cantAttackTurns)
-  if ((card.cantAttackTurns || 0) <= 0) {
-    card.skills = card.skills.filter(
-      (s) => !(s && s.isStatus && s.id === 'cant_attack')
-    );
-  } else {
-    const sEntry = card.skills.find(
-      (s) => s && s.isStatus && s.id === 'cant_attack'
-    );
-    if (sEntry) sEntry.value = card.cantAttackTurns;
-  }
+  removeCardStatus(card, 'stun');
 }
 
 /**
  * 対象カードの全能力と一時効果を消去する共通処理（沈黙・忘却等で共用）。
  * スキル配列、選択肢、召喚ID、スキル解決中フラグ等を初期化します。
- * ※状態（ステータス: isStatus === true / stunTurns / invincibleTurns / poison 等）は能力ではないため消去されず、スロット内に保護されます。
+ * ※状態（ステータス: isStatus === true / stunTurns / invincibleTurns / corrosion 等）は能力ではないため消去されず、スロット内に保護されます。
  *
  * @param {object|null} targetCard - 対象カード
  */
@@ -1442,13 +1490,11 @@ export function getSkillBadgeInfo(sk) {
 function createStatusBadgeHtml(statusId, value = 1) {
   const def = STATUSES[statusId];
   if (!def) return '';
-  if (statusId === 'cant_attack') {
-    return `<div class="card-skill" style="border-color: #ef4444; color: #fecdd3;">${def.name}${value}</div>`;
-  }
+  const iconStr = def.icon ? `${def.icon} ` : '';
   if (statusId === 'valkyria_guard') {
-    return `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}</div>`;
+    return `<div class="card-skill ${def.badgeClass}">${iconStr}${def.name}</div>`;
   }
-  return `<div class="card-skill ${def.badgeClass}">${def.icon} ${def.name}${value}</div>`;
+  return `<div class="card-skill ${def.badgeClass}">${iconStr}${def.name}${value}</div>`;
 }
 
 /**
@@ -1496,7 +1542,7 @@ export function renderSkillTag(
       const isStatusEntry =
         Boolean(sk.isStatus) ||
         id === 'invincible' ||
-        id === 'poison' ||
+        id === 'corrosion' ||
         id === 'stun' ||
         id === 'valkyria_guard' ||
         id === 'cant_attack';
@@ -1504,15 +1550,22 @@ export function renderSkillTag(
       if (isStatusEntry) {
         if (!renderedStatuses.has(id)) {
           let val = sk.value || 1;
-          // 直接プロパティがあれば最新値を同期
-          if (id === 'poison' && card.poison) val = card.poison;
-          else if (id === 'stun' && card.stunTurns) val = card.stunTurns;
-          else if (id === 'invincible' && card.invincibleTurns)
-            val = card.invincibleTurns;
-          else if (id === 'cant_attack' && card.cantAttackTurns)
-            val = card.cantAttackTurns;
+          // 直接プロパティがあれば最新値を同期（未所持や0の場合は確実に0とする）
+          if (id === 'corrosion')
+            val = card.corrosion !== undefined ? card.corrosion : val;
+          else if (id === 'stun')
+            val = card.stunTurns !== undefined ? card.stunTurns : val;
+          else if (id === 'invincible')
+            val =
+              card.invincibleTurns !== undefined ? card.invincibleTurns : val;
+          else if (id === 'cant_attack')
+            val =
+              card.cantAttackTurns !== undefined ? card.cantAttackTurns : val;
 
-          if (val > 0 || id === 'valkyria_guard') {
+          // 加護は盤面全体の加護判定（isGuardActive）を考慮し、それ以外の状態異常は正の値（val > 0）のみ表示
+          const shouldShow = id === 'valkyria_guard' ? isGuardActive : val > 0;
+
+          if (shouldShow) {
             slotItems.push({
               type: 'status',
               statusId: id,
@@ -1605,9 +1658,9 @@ export function renderSkillTag(
     renderedStatuses.add('stun');
   }
 
-  if ((card.poison || 0) > 0 && !renderedStatuses.has('poison')) {
-    badges.push(createStatusBadgeHtml('poison', card.poison));
-    renderedStatuses.add('poison');
+  if ((card.corrosion || 0) > 0 && !renderedStatuses.has('corrosion')) {
+    badges.push(createStatusBadgeHtml('corrosion', card.corrosion));
+    renderedStatuses.add('corrosion');
   }
 
   if (card.cantAttackTurns > 0 && !renderedStatuses.has('cant_attack')) {
@@ -2189,10 +2242,7 @@ export function resolveStartupFade(
   popupSourceCard,
   events
 ) {
-  existingCard.skills = existingCard.skills.filter(
-    (s) => s.id !== 'startup' && s.id !== 'defender'
-  );
-  existingCard.stunTurns = 0;
+  consumeStartupSkill(existingCard);
   events.push({
     type: 'skill_popup',
     side: owner,
@@ -2641,15 +2691,10 @@ export function checkHasAllFormsOnBoard(presentBoardIds = []) {
   return presentBoardIds.some((item) => {
     if (!item) return false;
     if (typeof item === 'object') {
-      return hasSkill(item, 'all_forms') || hasSkillDeep(item, 'all_forms');
+      return hasSkillDeep(item, 'all_forms');
     }
-    if (item === 'mimic') return true;
     const masterCard = CARD_MASTER?.find((c) => c.id === item);
-    return Boolean(
-      masterCard &&
-        (hasSkill(masterCard, 'all_forms') ||
-          hasSkillDeep(masterCard, 'all_forms'))
-    );
+    return Boolean(masterCard && hasSkillDeep(masterCard, 'all_forms'));
   });
 }
 

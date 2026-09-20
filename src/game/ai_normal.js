@@ -14,9 +14,10 @@ import {
   matchesCardKeyword,
   matchesResurrectTarget,
   matchesSummonTarget,
+  consumeStartupSkill,
+  decayCardStatus,
   matchesUnionMaterial,
   setCurrentRNG,
-  syncCardStatuses,
 } from '../utils/gameUtils.js';
 import {
   applyEquipment,
@@ -873,9 +874,7 @@ export function processActionSequence(
             // トークンは墓地に送られ、起動カードからstartupとdefenderが除去されて盤面に残る
             const existingCard = targetBoard[tLane];
             if (existingCard && hasSkill(existingCard, 'startup')) {
-              existingCard.skills = existingCard.skills.filter(
-                (s) => s.id !== 'startup' && s.id !== 'defender'
-              );
+              consumeStartupSkill(existingCard);
               if (!newToken.isToken) {
                 targetDiscard.push(newToken);
               }
@@ -1102,9 +1101,7 @@ export function processActionSequence(
       let skillWasHandledByEquip = false;
       if (existingCard && hasSkill(existingCard, 'startup')) {
         skillWasHandledByEquip = true;
-        existingCard.skills = existingCard.skills.filter(
-          (s) => s.id !== 'startup' && s.id !== 'defender'
-        );
+        consumeStartupSkill(existingCard);
         simState.enemyDiscard.push(playedCard);
         actionQueue.length = 0; // 起動消滅したため、このカードによる後続の連鎖アクションをすべてキャンセル
       } else if (existingCard && canEquipCard(playedCard, existingCard)) {
@@ -4007,19 +4004,12 @@ export function simulateCombatStep(simState, attackerSide) {
   applyPassiveSkillLogic(simState, attackerSide);
 
   // 2. 状態異常の持続ターン減衰（ターン開始時にターンプレイヤー側の盤面状態を減衰）
+  // 共通API（decayCardStatus）を用いて直接プロパティとスキル枠スロットの同期・減衰・解除を一元処理する
   board.forEach((c) => {
     if (c) {
-      if (c.stunTurns > 0) c.stunTurns--;
-      if (c.cantAttackTurns > 0) c.cantAttackTurns--;
-      // 無敵（invincibleTurns）のターン経過減衰処理
-      if ((c.invincibleTurns || 0) > 0) {
-        c.invincibleTurns--;
-        if (c.invincibleTurns <= 0) {
-          delete c.invincibleTurns;
-        }
-      }
-      // スキル枠（c.skills）内の状態エントリと同期
-      syncCardStatuses(c);
+      decayCardStatus(c, 'stun');
+      decayCardStatus(c, 'cant_attack');
+      decayCardStatus(c, 'invincible');
     }
   });
 
@@ -4410,9 +4400,7 @@ export function simulateCardPlacementOnBoard(
 
   // 1. 起動（startup）スキルの解除判定
   if (existing && hasSkill(existing, 'startup')) {
-    existing.skills = existing.skills.filter(
-      (s) => s.id !== 'startup' && s.id !== 'defender'
-    );
+    consumeStartupSkill(existing);
     targetDiscard.push(placedCard);
     return {
       activeCard: existing,
@@ -7934,9 +7922,7 @@ export function simulateMove(
       if (playedCard) {
         const existingCard = simState.enemyBoard[laneIdx];
         if (existingCard && hasSkill(existingCard, 'startup')) {
-          existingCard.skills = existingCard.skills.filter(
-            (s) => s.id !== 'startup' && s.id !== 'defender'
-          );
+          consumeStartupSkill(existingCard);
           simState.enemyDiscard.push(playedCard);
         } else if (existingCard && canEquipCard(playedCard, existingCard)) {
           const targetCard = existingCard;

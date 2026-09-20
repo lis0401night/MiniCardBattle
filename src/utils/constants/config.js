@@ -77,6 +77,8 @@ export const MAX_DISCARD_PREVIEW_COUNT = 999; // 墓地確認モーダルで全�
 export const MAX_HAND_SIZE_DURING_TURN = 4;
 /** ターン終了時に保持できる手札枚数の上限 */
 export const MAX_HAND_SIZE_END_TURN = 3;
+/** 手札枠の最大保持可能枚数（スキル・効果による手札追加時の物理的上限） */
+export const MAX_HAND_CAPACITY = 5;
 /** ゲーム開始時の初期ドロー枚数 */
 export const INITIAL_DRAW_COUNT = 3;
 export const RELOAD_CACHE_CLEAR_TIMEOUT_MS = 5000; // キャッシュクリア強制リロード時のタイムアウト時間 (ms)

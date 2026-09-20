@@ -19,12 +19,13 @@ import {
   MAX_HAND_SIZE_END_TURN,
 } from '../../utils/constants/config.js';
 import {
+  consumeStartupSkill,
   createDamagePopup,
+  decayCardStatus,
   getSeededRandom,
   hasSkill,
   playSound,
   sleep,
-  syncCardStatuses,
   matchesUnionMaterial,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -77,9 +78,7 @@ async function resolveMoveDestination(
 
   // 1. 起動消滅 (startup) スキルの判定
   if (existingCard && hasSkill(existingCard, 'startup')) {
-    existingCard.skills = existingCard.skills.filter(
-      (s) => s.id !== 'startup' && s.id !== 'defender'
-    );
+    consumeStartupSkill(existingCard);
     await discardCard(owner, movingCard, fromLane, false);
 
     const targetEl = document.querySelector(
@@ -311,7 +310,8 @@ export async function handleMoveSkills(owner) {
 }
 
 /**
- * ターン開始時におけるユニットの状態異常（スタン・攻撃不能・無効ターン）カウントを減算する。
+ * ターン開始時におけるユニットの状態異常（スタン・攻撃不能等）カウントを減算する。
+ * 共通API（decayCardStatus）を用いて直接プロパティとスキル枠スロットの同期・解除を行う。
  * @param {string} owner - プレイヤー種別 ('blue' | 'red')
  */
 function decrementStatusCounters(owner) {
@@ -319,14 +319,8 @@ function decrementStatusCounters(owner) {
     owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   myBoard.forEach((c) => {
     if (!c) return;
-    if (c.stunTurns > 0) {
-      c.stunTurns--;
-    }
-    if (c.cantAttackTurns > 0) {
-      c.cantAttackTurns--;
-    }
-    // スキル枠（c.skills）内の状態エントリと同期
-    syncCardStatuses(c);
+    decayCardStatus(c, 'stun');
+    decayCardStatus(c, 'cant_attack');
   });
 }
 

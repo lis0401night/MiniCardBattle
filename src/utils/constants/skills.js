@@ -573,11 +573,11 @@ export const SKILLS = {
     desc: (val) =>
       `召喚時、自身を${val}ターンの間「スタン」状態（攻撃せず、敵カードや敵リーダーにダメージを与えられない）にする。`,
   },
-  corrosion: {
-    name: '腐食',
+  deteriorate: {
+    name: '劣化',
     icon: '🟤',
     desc: (val) =>
-      `召喚時、自身を「毒${val || 1}」状態（自分のターン開始時、パワー-${val || 1}）にする。`,
+      `召喚時、自身を「腐食${val || 1}」状態（自分のターン開始時、パワー-${val || 1}）にする。`,
   },
   artillery: {
     name: '砲撃',
@@ -698,7 +698,7 @@ export const SKILLS = {
     name: '有毒',
     icon: '🧪',
     desc: (val) =>
-      `召喚時、正面のカードを「毒${val || 1}」状態（自分のターン開始時、パワー-${val || 1}）にする。`,
+      `召喚時、正面のカードを「腐食${val || 1}」状態（自分のターン開始時、パワー-${val || 1}）にする。`,
   },
   convert: {
     name: '対価',
@@ -1377,7 +1377,7 @@ export const ACTIVE_SKILLS = [
   'salvage',
   'reinforce',
   'toxic',
-  'corrosion',
+  'deteriorate',
   'convert',
   'invade',
   'petrify',
@@ -1582,7 +1582,7 @@ export const SKILL_CATEGORIES = [
           'loss',
           'spend',
           'standby',
-          'corrosion',
+          'deteriorate',
           'execute',
           'decay',
         ],
