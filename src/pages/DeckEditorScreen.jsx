@@ -1502,17 +1502,7 @@ export default function DeckEditorScreen({ switchScreen }) {
               deckSelection.length === DECK_SIZE && !hasBannedCard ? 1 : 0.5,
           }}
           onClick={handleFinish}
-          label={
-            isDefenseConfig ||
-            GameState.gameMode === 'create_deck' ||
-            GameState.gameMode === 'free_deck_edit' ||
-            GameState.gameMode === 'online_deck_edit' ||
-            GameState.gameMode === 'tournament'
-              ? '編成完了'
-              : GameState.gameMode === 'free'
-                ? 'ステージ選択へ'
-                : 'バトル開始！'
-          }
+          label="編成完了"
         />
 
         {/* 右：ボーナス確認ボタン */}

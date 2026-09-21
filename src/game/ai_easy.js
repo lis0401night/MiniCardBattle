@@ -262,7 +262,7 @@ export function isImmediatelySelfDestructiveOnPlay(
 }
 
 /**
- * 単独発動系スキル（号令、召集、召喚、復活、傀儡等）が、現在のゲーム状況において
+ * 単独発動系スキル（号令、召集、召喚、復活、傀儡、有毒、沈黙、忘却等）が、現在のゲーム状況において
  * 実際に解決可能（対象となるカードが存在し、不発にならない）かどうかを判定する。
  * 実戦（skillLogic.js）の対象判定条件と同一ロジックで評価する。
  *
@@ -295,12 +295,30 @@ export function canResolveStandaloneSkill(
   const myDiscard = isBlue ? gameState.playerDiscard : gameState.enemyDiscard;
   const oppDiscard = isBlue ? gameState.enemyDiscard : gameState.playerDiscard;
   const myBoard = isBlue ? gameState.playerBoard : gameState.enemyBoard;
+  const oppBoard = isBlue ? gameState.enemyBoard : gameState.playerBoard;
   const presentBoardCards = (myBoard || []).filter(Boolean);
   const presentBoardIds = presentBoardCards
     .flatMap((c) => [c.id, c.baseId])
     .filter(Boolean);
 
   switch (skillId) {
+    case 'toxic':
+      // 有毒（正面のカードを腐食状態にする）: 相手盤面に1枚でもカードが存在するか判定
+      return (oppBoard || []).some(Boolean);
+
+    case 'oblivion':
+    case 'silence':
+      // 沈黙（お互いの場の全カードの全能力無効）/ 忘却（正面のカードの全能力無効）:
+      // 相手盤面に無効化対象となるスキルを持つカードが存在するか判定
+      return (oppBoard || []).some(
+        (target) =>
+          target &&
+          Array.isArray(target.skills) &&
+          target.skills.some((skill) =>
+            typeof skill === 'string' ? skill !== 'none' : skill?.id !== 'none'
+          )
+      );
+
     case 'call': {
       // 号令（デッキトップから召喚）: 自身のデッキトップに対象カードが存在するか判定
       const deck = myDeck || [];

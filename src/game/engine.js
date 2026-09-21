@@ -5906,7 +5906,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
  * @param {'blue'|'red'} side - 発動陣営
  * @param {Set<string>} teleportMovedIds - 当該ターン移動済みカードIDの集合
  * @param {Array<object>} events - イベント配列
- * @returns {void}
+ * @returns {number} 移動後の有効レーンインデックス（移動しなかった場合は元の lane）
  */
 function handleTeleportSimulation(
   state,
@@ -5922,7 +5922,7 @@ function handleTeleportSimulation(
     (c.stunTurns || 0) > 0 ||
     teleportMovedIds.has(c.uid || c.id)
   ) {
-    return;
+    return lane;
   }
 
   const sealedLanes =
@@ -5947,7 +5947,9 @@ function handleTeleportSimulation(
       to: targetLane,
       source: 'teleport',
     });
+    return targetLane;
   }
+  return lane;
 }
 
 /**
@@ -6125,7 +6127,105 @@ function handleContractPassive(state, skVal, side, skipContract, events) {
 }
 
 /**
+ * 手札から破棄されたカード群のシミュレーション処理を行う共通関数。
+ * 実戦側の discardCardsFromHand と同じ挙動・仕様に基づき、通常カードを quietDiscardCard で初期化して墓地に送り、
+ * 狂気（madness）を持つカードが存在する場合は召喚シミュレーションを実行する。
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} side - カードを破棄する陣営
+ * @param {Array<object>} cards - 破棄対象の手札カード配列
+ * @param {Array<object>} events - イベント配列
+ * @returns {void}
+ */
+export function simulateDiscardCardsFromHand(state, side, cards, events = []) {
+  if (!Array.isArray(cards) || cards.length === 0) return;
+
+  const madnessCards = [];
+  const normalCards = [];
+
+  for (const card of cards) {
+    if (!card) continue;
+    if (hasSkill(card, 'madness') && !card.isToken) {
+      madnessCards.push(card);
+    } else {
+      normalCards.push(card);
+    }
+  }
+
+  // 1. 通常カードを初期化して墓地へ送る
+  for (const card of normalCards) {
+    quietDiscardCard(state, card, side);
+    events.push({
+      type: 'discard',
+      side,
+      card: JSON.parse(JSON.stringify(card)),
+    });
+  }
+
+  // 2. 狂気（madness）カードの召喚シミュレーション
+  for (const madnessCard of madnessCards) {
+    // 召喚可能レーンの探索（制約チェック有効）
+    const targetLane = getBestSimulatedPlacementLane(
+      state,
+      side,
+      madnessCard,
+      [0, 1, 2],
+      true
+    );
+
+    if (targetLane !== -1) {
+      madnessCard.uid =
+        madnessCard.uid ||
+        `${side}_sim_madness_${Math.floor(getSeededRandom() * 1000000000)}`;
+      madnessCard.owner = side;
+      madnessCard.currentPower =
+        madnessCard.currentPower ?? madnessCard.power ?? 0;
+      madnessCard.basePower = madnessCard.basePower ?? madnessCard.power ?? 0;
+
+      processPlacementOrEquip(
+        state,
+        side,
+        targetLane,
+        madnessCard,
+        'madness',
+        events
+      );
+
+      // 召喚時スキル（オンプレイ能力）の解決
+      const cardSkills = Array.isArray(madnessCard.skills)
+        ? [...madnessCard.skills]
+        : [];
+      for (const sk of cardSkills) {
+        if (!sk) continue;
+        const skId = typeof sk === 'string' ? sk : sk.id;
+        const skVal =
+          typeof sk === 'object' && sk.value !== undefined ? sk.value : null;
+        applyActiveSkillLogic(
+          state,
+          side,
+          targetLane,
+          skId,
+          skVal,
+          events,
+          [],
+          targetLane
+        );
+      }
+    } else {
+      // 召喚不可の場合は通常通り墓地へ送る
+      quietDiscardCard(state, madnessCard, side);
+      events.push({
+        type: 'discard',
+        side,
+        card: JSON.parse(JSON.stringify(madnessCard)),
+      });
+    }
+  }
+}
+
+/**
  * 【輪廻】ターン開始時、お互いの手札を全て破棄し、お互いにカードを3枚引くパッシブをシミュレートする。
+ * 手札破棄は simulateDiscardCardsFromHand を用いて状態初期化および狂気（madness）処理を通過させる。
  *
  * @param {object} state - バトル状態オブジェクト
  * @param {'blue'|'red'} side - 発動陣営
@@ -6136,26 +6236,14 @@ function handleContractPassive(state, skVal, side, skipContract, events) {
 function handleSamsaraPassive(state, side, lane, events) {
   const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
   const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
-  const myDiscard = side === 'blue' ? state.playerDiscard : state.enemyDiscard;
-  const opDiscard = side === 'blue' ? state.enemyDiscard : state.playerDiscard;
+  const oppSide = side === 'blue' ? 'red' : 'blue';
 
-  // 1. お互いの手札を全て捨てる（トークンは除外）
-  if (myHand) {
-    while (myHand.length > 0) {
-      const card = myHand.pop();
-      if (card && !card.isToken && myDiscard) {
-        myDiscard.push(card);
-      }
-    }
-  }
-  if (opHand) {
-    while (opHand.length > 0) {
-      const card = opHand.pop();
-      if (card && !card.isToken && opDiscard) {
-        opDiscard.push(card);
-      }
-    }
-  }
+  // 1. お互いの手札を全て捨てる（共通ヘルパーにより状態初期化および狂気スキルを正確に解決）
+  const myDropped = myHand ? myHand.splice(0, myHand.length) : [];
+  const opDropped = opHand ? opHand.splice(0, opHand.length) : [];
+
+  simulateDiscardCardsFromHand(state, side, myDropped, events);
+  simulateDiscardCardsFromHand(state, oppSide, opDropped, events);
 
   // 2. お互いに3枚引く
   for (let k = 0; k < 3; k++) {
@@ -6244,12 +6332,22 @@ export function applyPassiveSkillLogic(
 
   const b = side === 'blue' ? state.playerBoard : state.enemyBoard;
   const teleportMovedIds = new Set();
+  const processedCards = new Set();
   for (let i = 0; i < 3; i++) {
     const c = b[i];
-    if (!c) continue;
+    if (!c || processedCards.has(c)) continue;
 
     // 神出 (teleport): 空きレーンが1つの時に確定移動をシミュレート
-    handleTeleportSimulation(state, b, c, i, side, teleportMovedIds, events);
+    const activeLane = handleTeleportSimulation(
+      state,
+      b,
+      c,
+      i,
+      side,
+      teleportMovedIds,
+      events
+    );
+    processedCards.add(c);
 
     // スキルおよび状態の時系列スロット順（付与順）に順次解決
     const cardSkills = Array.isArray(c.skills) ? [...c.skills] : [];
@@ -6261,15 +6359,15 @@ export function applyPassiveSkillLogic(
         typeof sk === 'object' && sk.value !== undefined ? sk.value : null;
 
       if (skId === 'growth') {
-        handleGrowthPassive(c, skVal, side, i, events);
+        handleGrowthPassive(c, skVal, side, activeLane, events);
       } else if (skId === 'corrosion') {
-        handleCorrosionPassive(c, skVal, side, i, events);
+        handleCorrosionPassive(c, skVal, side, activeLane, events);
       } else if (skId === 'intercept') {
-        handleInterceptPassive(state, c, skVal, side, i, events);
+        handleInterceptPassive(state, c, skVal, side, activeLane, events);
       } else if (skId === 'contract') {
         handleContractPassive(state, skVal, side, skipContract, events);
       } else if (skId === 'samsara') {
-        handleSamsaraPassive(state, side, i, events);
+        handleSamsaraPassive(state, side, activeLane, events);
       } else if (skId === 'awake' || skId === 'awake_legendary') {
         const replaced = handleAwakePassive(
           state,
@@ -6278,7 +6376,7 @@ export function applyPassiveSkillLogic(
           skId,
           skVal,
           side,
-          i,
+          activeLane,
           events
         );
         if (replaced) {

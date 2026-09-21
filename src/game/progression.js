@@ -36,7 +36,10 @@ export function startPreparedBattle() {
 }
 
 /**
- * ダイアログ終了後などの「次のステップ」を判定して実行する
+ * 現在のゲームモードとアプリ状態に応じて、次の進行処理を実行する。
+ * バトル前会話の完了時は、対象モードのバトル開始処理へ遷移する。
+ *
+ * @returns {void}
  */
 export function handleProgressionNextStep() {
   // gameModeが設定されていない場合は安全にモード選択画面に戻る
@@ -167,7 +170,10 @@ export function handleProgressionNextStep() {
 }
 
 /**
- * フリーバトルの進行管理
+ * フリーバトルのアプリ状態に応じて、敵選択またはバトル開始へ遷移する。
+ * 戦闘前会話の完了時は、選択済みデッキでバトルを開始する。
+ *
+ * @returns {void}
  */
 export function handleFreeBattleProgression() {
   if (GameState.appState === 'post_dialogue') {

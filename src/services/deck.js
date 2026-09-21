@@ -706,6 +706,13 @@ export function migrateAllSaveData() {
 }
 
 window.loadDeck = loadDeck;
+
+/**
+ * 保存データとモード固有のスナップショットからデッキ設定を読み込み、GameStateへ反映する。
+ * ダンジョンとトーナメントでは専用スナップショットを優先し、通常モードでは通常デッキのみを復元する。
+ *
+ * @returns {void}
+ */
 export function loadDeck() {
   // 自動マイグレーションを実行
   migrateAllSaveData();
@@ -1087,6 +1094,13 @@ export function loadDeck() {
   }
 }
 
+/**
+ * 指定したリーダーの初期構成で新規デッキを作成する。
+ * ダンジョンモード以外では、作成後に通常デッキ保存領域へ安全に保存する。
+ *
+ * @param {string} leaderId - 新規デッキに設定するリーダーID
+ * @returns {number|false} 作成したデッキのインデックス。作成できない場合は false。
+ */
 export function createNewDeck(leaderId) {
   if (!GameState.decks) GameState.decks = [];
   if (GameState.decks.length >= MAX_DECK_SLOTS) return false;

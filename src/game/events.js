@@ -120,7 +120,10 @@ export function initFortuneEventMode(playerCharId, enemyCharId) {
 }
 
 /**
- * イベントモード進行管理
+ * イベントモードのアプリ状態に応じて、対峙会話、バトル開始、勝敗後画面遷移を実行する。
+ * 戦闘前会話の完了時は、選択済みデッキで共通バトル開始処理を実行する。
+ *
+ * @returns {void}
  */
 export function handleEventProgression() {
   if (GameState.appState === 'story_intro') {

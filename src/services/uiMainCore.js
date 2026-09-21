@@ -1343,11 +1343,11 @@ export function startDefenseBattle() {
 }
 
 /**
- * デッキ一覧画面（DeckListScreen）でプレイヤーがデッキを選択・確定した際のアクションを実行します。
- * ゲームモード（防衛登録、オンライン対戦設定、フリー対戦、ストーリー等）に応じた適切な次画面への遷移を行います。
+ * 指定した通常デッキを確定し、リーダー、スキン、プレイマットをGameStateへ反映する。
+ * 現在のゲームモードに応じて、デッキ編成、対戦準備、またはステージ選択へ遷移する。
  *
- * @param {number} index - 選択されたデッキのインデックス（0〜9）
- * @return {void}
+ * @param {number} index - 確定するデッキのインデックス（0〜9）
+ * @returns {void}
  */
 export function confirmDeckSelect(index) {
   if (!GameState.decks || index < 0 || index >= GameState.decks.length) {
