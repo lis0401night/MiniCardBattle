@@ -14,6 +14,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// User-Agent によるクローラー・bot判定（botアクセス時はデータ保存を行わず即時終了）
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+if (
+    empty($userAgent) ||
+    preg_match('/bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu|headless|lighthouse|ptst/i', $userAgent)
+) {
+    echo json_encode(['success' => true, 'bot' => true]);
+    exit;
+}
+
+
 // JSONデータを取得
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);

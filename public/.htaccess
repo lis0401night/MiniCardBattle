@@ -11,3 +11,11 @@
   Header set Pragma "no-cache"
   Header set Expires "0"
 </Files>
+
+# クローラー・botからの /api/ への直接アクセスを遮断（多重防御）
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_URI} ^.*/?api/ [NC]
+  RewriteCond %{HTTP_USER_AGENT} (bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu|headless) [NC]
+  RewriteRule ^ - [F,L]
+</IfModule>

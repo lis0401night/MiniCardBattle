@@ -898,14 +898,51 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
 }
 
 /**
- * アプリ起動時のハートビートをサーバに送信します。
+ * 現在の実行環境がクローラー、bot、またはヘッドレス自動操作環境であるかを判定します。
+ * サーバへの不要なデータ作成や負荷を防ぐために使用します。
+ *
+ * @returns {boolean} botまたは自動操作環境と判定された場合は true、通常ブラウザなら false
+ */
+export function isBotOrAutomatedEnvironment() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return true;
+  }
+
+  // 自動化ツール（Headless Chrome, Puppeteer, Playwright, Selenium等）のフラグ判定
+  if (navigator.webdriver) {
+    return true;
+  }
+
+  // クローラー・検索エンジンbot等の一般的なUser-Agent判定
+  const ua = navigator.userAgent || '';
+  if (
+    /bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu|headless|lighthouse|ptst/i.test(
+      ua
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * ゲームプレイ時のハートビートをサーバに送信します。
  * プレイヤーの存在・プロフィール・所持カード・プレミアム解放・全登録デッキをサーバに登録・同期し、
  * 最終アクセス日時（タイムスタンプ）を更新します。
+ *
+ * 【ガード仕様】
+ * - クローラー・bot・ヘッドレス環境の場合は送信を即座にスキップします。
  *
  * @returns {Promise<boolean>} 送信成功したかどうか
  */
 export async function sendHeartbeat() {
   try {
+    // クローラー・bot・自動操作ツールの場合はサーバーデータ作成を完全に抑止
+    if (isBotOrAutomatedEnvironment()) {
+      return false;
+    }
+
     const uuid = getOrCreateUUID();
     if (!uuid) return false;
 

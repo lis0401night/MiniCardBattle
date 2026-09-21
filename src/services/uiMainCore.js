@@ -57,6 +57,8 @@ export function navigateToDeckList(appState = 'select_deck') {
   if (window.forceUpdateDeckList) window.forceUpdateDeckList();
   switchScreen('screen-deck-list');
 }
+
+import { sendHeartbeat } from '../utils/apiUtils.js';
 import { setPlayerReadyOnly } from './multiplayer.js';
 import { setupDialogueScreen } from './uiDialogue.js';
 import {
@@ -108,10 +110,19 @@ const DEBUG_CLICK_THRESHOLD =
   }, 100);
 })();
 
+/**
+ * タイトル画面からモード選択画面へ遷移します。
+ * ゲームプレイ開始の契機として、サーバーへハートビート（プレイヤー同期）をバックグラウンド送信します。
+ *
+ * @returns {void}
+ */
 export function goToModeSelect() {
   playSound(SOUNDS.seClick);
   playSound(AUDIO_INSTANCES.bgmTitle);
   switchScreen('screen-mode-select');
+
+  // ゲーム開始時にサーバーへハートビートを送信（fire-and-forget、botガード付き）
+  sendHeartbeat();
 }
 
 export function showTutorialSelect() {

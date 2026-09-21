@@ -80,7 +80,6 @@ import {
   showNextDialogue,
 } from './services/uiDialogue.js';
 import { appendVersionQuery } from './utils/constants/config.js';
-import { sendHeartbeat } from './utils/apiUtils.js';
 import {
   executeSwitchScreen,
   playSound,
@@ -291,9 +290,6 @@ export default function App() {
     if (typeof loadDeck === 'function') loadDeck();
     if (typeof window.loadAchievements === 'function')
       window.loadAchievements();
-
-    // サーバにハートビートを送信（1日1回制限、fire-and-forget）
-    sendHeartbeat();
   }, []);
 
   const screenEntry = SCREEN_COMPONENTS[currentScreen];
