@@ -747,10 +747,11 @@ export function goBackFromDeckList() {
     // 防衛戦（攻撃側）：対戦相手リストへ戻る
     switchScreen('screen-defense-battle-list');
   } else if (
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_high')
+    GameState.gameMode === 'event_satan' ||
+    (GameState.gameMode?.startsWith('event_') &&
+      GameState.gameMode?.endsWith('_high'))
   ) {
-    // 高難易度イベント：難易度選択へ戻る
+    // 高難易度イベント（サタン戦含む）：難易度選択へ戻る
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
   } else if (
@@ -846,6 +847,13 @@ export function goBackFromStage() {
   }
 }
 
+/**
+ * デッキ編集画面（DeckEditorScreen）の「戻る」ボタン押下時の画面遷移を実行する。
+ * 各ゲームモードのフローに応じて適切な直前画面（デッキ一覧、ダンジョン画面、キャラクター選択など）へ遷移する。
+ *
+ * @param {boolean} [isCancel=false] - キャンセル操作による戻りかどうかのフラグ
+ * @returns {void}
+ */
 export function goBackFromDeckEdit(isCancel = false) {
   playSound(SOUNDS.seClick);
   if (
@@ -895,12 +903,13 @@ export function goBackFromDeckEdit(isCancel = false) {
     // デッキ編集画面からは常にデッキ選択一覧画面に戻る
     navigateToDeckList('select_deck');
   } else if (
+    GameState.gameMode === 'event_satan' ||
     (GameState.gameMode?.startsWith('event_') &&
       GameState.gameMode?.endsWith('_high')) ||
     (GameState.gameMode?.startsWith('event_') &&
       GameState.gameMode?.endsWith('_fortune'))
   ) {
-    // 高難易度/運命の邂逅：デッキ一覧画面に戻る
+    // 高難易度/運命の邂逅/サタン戦：デッキ一覧画面に戻る
     navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'battle_dungeon') {
     GameState.dungeonState = 'select_opponent';

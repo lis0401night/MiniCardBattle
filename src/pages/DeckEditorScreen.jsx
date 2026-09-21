@@ -479,6 +479,12 @@ export default function DeckEditorScreen({ switchScreen }) {
 
   const hasBannedCard = deckSelection.some((c) => isCardBannedByFortune(c));
 
+  /**
+   * デッキ編成を確定し、現在のゲームモードに応じた次画面へ遷移する。
+   * デッキ枚数（20枚）および特級目標の禁止カードの有無を検証し、正常な場合のみローカル保存を実行して各モード固有の次画面へ遷移する。
+   *
+   * @returns {void}
+   */
   const handleFinish = () => {
     if (deckSelection.length !== DECK_SIZE) {
       showAlertModal?.(`デッキを${DECK_SIZE}枚にしてください！`);
@@ -490,7 +496,7 @@ export default function DeckEditorScreen({ switchScreen }) {
       return;
     }
 
-    // グローバルなsaveDeckを呼び出し
+    // グローバルなsaveDeckを呼び出して現在の編成を保存
     if (typeof saveDeck === 'function') {
       saveDeck();
     }
@@ -500,6 +506,7 @@ export default function DeckEditorScreen({ switchScreen }) {
       GameState.gameMode === 'online_deck_edit' ||
       GameState.gameMode === 'free'
     ) {
+      // 防衛デッキ登録・オンラインデッキ設定・フリー対戦：ステージ選択画面へ遷移
       GameState.appState = 'select_stage';
       if (typeof window.initStageSelectScreen === 'function')
         window.initStageSelectScreen();
@@ -511,6 +518,7 @@ export default function DeckEditorScreen({ switchScreen }) {
           GameState.gameMode?.endsWith('_fortune'))) ||
       GameState.gameMode === 'event_satan'
     ) {
+      // 高難易度イベント・運命の邂逅・サタンイベント：各イベントモードの初期化を実行
       const enemyCharId = getEventEnemyCharId(GameState.gameMode);
       const playerCharId =
         GameState.pendingCharId || GameState.playerConfig?.id || 'android';
@@ -524,8 +532,10 @@ export default function DeckEditorScreen({ switchScreen }) {
       GameState.gameMode === 'free_deck_edit' ||
       GameState.gameMode === 'tournament'
     ) {
+      // 新規デッキ作成・マイデッキ編集・トーナメント：前の画面へ戻る
       if (typeof goBackFromDeckEdit === 'function') goBackFromDeckEdit(false);
     } else {
+      // 通常バトル（ストーリー等）：バトル状態に設定し対戦準備を開始
       GameState.appState = 'battle';
       if (typeof prepareBattle === 'function') {
         prepareBattle();

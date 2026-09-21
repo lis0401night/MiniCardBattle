@@ -17,7 +17,6 @@ import {
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
   applyEquipment,
-  consumeStartupSkill,
   createDamagePopup,
   getCardImgUrl,
   getDialogue,
@@ -339,9 +338,7 @@ export async function executeLeaderSkillAction(
 
         if (tokenCard) playCardVoice(tokenCard, 'play');
       } else if (b[l] && hasSkill(b[l], 'startup')) {
-        // 起動消滅の特別処理：起動と防御を除去しスタンを完全解除
-        consumeStartupSkill(b[l]);
-
+        // 起動消滅（起動・防御の除去とスタン解除）は resolveStartupFade 内で一元処理される
         events.push({ type: 'leader_skill', skill: action, side: owner });
         const deepClonedToken = JSON.parse(JSON.stringify(tokenCard));
         const deadToken = {
@@ -1382,9 +1379,7 @@ export async function executeLeaderSkillAction(
       const l = tokenLanes[0];
       if (mySealedLanes && mySealedLanes[l] > 0) return;
       if (board[l] && hasSkill(board[l], 'startup')) {
-        // 起動消滅の特別処理：起動と防御を除去しスタンを完全解除
-        consumeStartupSkill(board[l]);
-
+        // 起動消滅（起動・防御の除去とスタン解除）は resolveStartupFade 内で一元処理される
         const deepClonedSk = JSON.parse(JSON.stringify(skeletonTpl));
         const skImg =
           getCardImgUrl({ ...skeletonTpl, owner }) ||
@@ -1444,9 +1439,7 @@ export async function executeLeaderSkillAction(
       // 自分のカードが存在し、かつ封印されていないレーン
       if (board[l] !== null && mySealedLanes[l] === 0) {
         if (hasSkill(board[l], 'startup')) {
-          // 起動消滅の特別処理：起動と防御を除去しスタンを完全解除
-          consumeStartupSkill(board[l]);
-
+          // 起動消滅（起動・防御の除去とスタン解除）は resolveStartupFade 内で一元処理される
           const deepClonedToken = JSON.parse(JSON.stringify(daemonTpl));
           const imgUrl =
             getCardImgUrl({ ...daemonTpl, owner }) ||

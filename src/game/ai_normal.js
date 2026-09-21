@@ -115,6 +115,19 @@ function hasActiveSkill(c) {
 }
 
 /**
+ * 対象カードが連続プレイを伴う出現時連鎖召喚スキル（forge / summon / assemble）を保持しているか判定する。
+ *
+ * @param {object|null|undefined} c - 判定対象のカードオブジェクト
+ * @returns {boolean} 連鎖召喚スキルを持つ場合は true
+ */
+function hasChainSummonSkill(c) {
+  if (!c) return false;
+  return (
+    hasSkill(c, 'forge') || hasSkill(c, 'summon') || hasSkill(c, 'assemble')
+  );
+}
+
+/**
  * AIシミュレーション内で分裂(split)スキル発動時に生成されるトークンカードオブジェクトを生成する。
  * 実行処理と分岐評価処理の両方で同じトークン構造（isToken: true, baseId）を保証する。
  * @param {object} execCard - 分裂スキルを持つカード
@@ -1244,10 +1257,7 @@ export function processActionSequence(
           // battle.js の resolveOnPlaySkill と同じ実行順序を再現するため、
           // 連鎖スキルを持つカードでは即時スキルを _pendingSimSkills に保留し、
           // アクションキュー上で連鎖子アクションが処理される際に発動させる。
-          const hasChainSkill =
-            hasSkill(activeCardForSkills, 'forge') ||
-            hasSkill(activeCardForSkills, 'summon') ||
-            hasSkill(activeCardForSkills, 'assemble');
+          const hasChainSkill = hasChainSummonSkill(activeCardForSkills);
 
           skills.forEach((sk) => {
             if (
@@ -1343,10 +1353,7 @@ export function processActionSequence(
         // 【召喚・召集・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
         // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
         if (activeCardForSkills) {
-          const hasChainSummon =
-            hasSkill(activeCardForSkills, 'summon') ||
-            hasSkill(activeCardForSkills, 'assemble') ||
-            hasSkill(activeCardForSkills, 'forge');
+          const hasChainSummon = hasChainSummonSkill(activeCardForSkills);
           if (!hasChainSummon) {
             activeCardForSkills.isSkillResolving = false;
           }
@@ -6764,37 +6771,19 @@ export function simulateAdhocChoiceResurrect(
     ? presentBoardCards.flatMap((c) => [c.id, c.baseId]).filter(Boolean)
     : [];
 
-  // 【重要】特定対象（targetIds / targetKeyword / targetId）が指定されている復活スキルの場合、
-  // パワー制限（choiceSkill.value）は存在しないため maxPower を null としてパワー上限チェックを解除する。
-  // （choiceSkill.value が未指定の場合に 1 と誤認してパワー1超の正規対象カードを不正棄却するバグを防止）
-  const hasSpecificTarget =
-    (Array.isArray(choiceSkill.targetIds) &&
-      choiceSkill.targetIds.length > 0) ||
-    choiceSkill.targetId ||
-    (typeof choiceSkill.targetKeyword === 'string' &&
-      choiceSkill.targetKeyword);
-  const maxPower = hasSpecificTarget
-    ? null
-    : choiceSkill.value !== undefined && choiceSkill.value !== null
-      ? choiceSkill.value
-      : 1;
-
+  // パワー上限および特定対象（targetIds / targetKeyword / targetId）の判定は
+  // 共通関数 matchesResurrectTarget（matchesGraveyardTarget）に一元委譲する
   const validDiscardIndices = [];
   for (let i = 0; i < simDiscard.length; i++) {
     const dCard = simDiscard[i];
     if (
       dCard &&
-      !dCard.isToken &&
-      (maxPower === null || (dCard.power || 0) <= maxPower)
+      matchesResurrectTarget(dCard, choiceSkill, {
+        presentBoardIds,
+        presentBoardCards,
+      })
     ) {
-      if (
-        matchesResurrectTarget(dCard, choiceSkill, {
-          presentBoardIds,
-          presentBoardCards,
-        })
-      ) {
-        validDiscardIndices.push(i);
-      }
+      validDiscardIndices.push(i);
     }
   }
 
@@ -7855,11 +7844,10 @@ export function simulateMove(
             activeCard.skillTriggered = true;
           }
           // スキル解決が終わったため、保護フラグを解除する
-          // 【召喚・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
+          // 【召喚・召集・鍛造】これらの連続プレイを伴う出現時スキルの場合は、
           // 次の追加プレイアクションが実行されるまで保護フラグ（isSkillResolving）を維持する
           if (activeCard) {
-            const hasChainSummon =
-              hasSkill(activeCard, 'summon') || hasSkill(activeCard, 'forge');
+            const hasChainSummon = hasChainSummonSkill(activeCard);
             if (!hasChainSummon) {
               activeCard.isSkillResolving = false;
             }
