@@ -1367,7 +1367,14 @@ export function confirmDeckSelect(index) {
   GameState.currentDeckIndex = index;
   loadDeck();
 
-  const selectedDeck = GameState.decks[index];
+  const selectedDeck =
+    GameState.decks?.[GameState.currentDeckIndex] ??
+    GameState.decks?.[index] ??
+    GameState.decks?.[0];
+  if (!selectedDeck) {
+    console.error('confirmDeckSelect: No valid deck found for index', index);
+    return;
+  }
   const selectedLeaderId = selectedDeck.leaderId || 'android';
   GameState.pendingCharId = selectedLeaderId;
 
@@ -1396,10 +1403,8 @@ export function confirmDeckSelect(index) {
     }
   }
 
-  // プレイマット情報の反映
-  if (selectedDeck.playmatId) {
-    GameState.selectedPlaymatId = selectedDeck.playmatId;
-  }
+  // プレイマット情報の反映（未設定デッキを選択した場合は確実に null でリセット）
+  GameState.selectedPlaymatId = selectedDeck.playmatId || null;
 
   if (
     GameState.gameMode === 'defense_register' ||

@@ -1600,13 +1600,13 @@ export function applyActiveSkillLogic(
         // 【有毒スキル: 腐食状態の付与】
         // 成長スキルの付与ではなく独立した「腐食（corrosion）」状態を付与する。
         // 重ね掛け時はBの仕様（高い方を優先、Math.max）で管理し、スロット順に追加
-        grantCardStatus(eB[l], 'corrosion', toxVal);
+        const appliedCorrosion = grantCardStatus(eB[l], 'corrosion', toxVal);
         events.push({
           type: 'add_status',
           side: oppOwner,
           lane: l,
           status: 'corrosion',
-          value: eB[l].corrosion,
+          value: appliedCorrosion,
           source: 'toxic',
         });
       }
@@ -5897,8 +5897,341 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
 }
 
 /**
+ * 【神出（teleport）】空きレーンが1つのみ存在する場合の移動をシミュレートする。
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {Array<object|null>} b - 対象陣営の盤面配列
+ * @param {object} c - 発動カードオブジェクト
+ * @param {number} lane - 現在のレーンインデックス
+ * @param {'blue'|'red'} side - 発動陣営
+ * @param {Set<string>} teleportMovedIds - 当該ターン移動済みカードIDの集合
+ * @param {Array<object>} events - イベント配列
+ * @returns {void}
+ */
+function handleTeleportSimulation(
+  state,
+  b,
+  c,
+  lane,
+  side,
+  teleportMovedIds,
+  events
+) {
+  if (
+    !hasSkill(c, 'teleport') ||
+    (c.stunTurns || 0) > 0 ||
+    teleportMovedIds.has(c.uid || c.id)
+  ) {
+    return;
+  }
+
+  const sealedLanes =
+    side === 'blue'
+      ? state.playerSealedLanes || [0, 0, 0]
+      : state.enemySealedLanes || [0, 0, 0];
+  const emptyLanes = [];
+  for (let j = 0; j < 3; j++) {
+    if (b[j] === null && sealedLanes[j] === 0) {
+      emptyLanes.push(j);
+    }
+  }
+  if (emptyLanes.length === 1) {
+    const targetLane = emptyLanes[0];
+    b[targetLane] = c;
+    b[lane] = null;
+    teleportMovedIds.add(c.uid || c.id);
+    events.push({
+      type: 'teleport_simulation',
+      side,
+      from: lane,
+      to: targetLane,
+      source: 'teleport',
+    });
+  }
+}
+
+/**
+ * 【輪廻】指定陣営にカードを1枚ドローさせるシミュレーションヘルパー。
+ * 輪廻スキルの「お互いにカードを3枚引く」処理において各陣営ごとに3回呼び出され、合計3枚ドローを実現する。
+ * 手札上限（MAX_HAND_SIZE_DURING_TURN）に達している場合はドローをスキップする。
+ * デッキが空の場合は墓地をデッキへ戻してシャッフルし、当該陣営のHPを半減する。
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} p - ドローする陣営
+ * @returns {void}
+ */
+function simulateDrawForSamsara(state, p) {
+  const h = p === 'blue' ? state.playerHand : state.enemyHand;
+  const d = p === 'blue' ? state.playerDeck : state.enemyDeck;
+  const ds = p === 'blue' ? state.playerDiscard : state.enemyDiscard;
+
+  if (!h || !d) return;
+  // 手札上限は実戦の通常ドロー処理（drawCard）と同一の定数を参照
+  if (h.length >= MAX_HAND_SIZE_DURING_TURN) return;
+
+  if (d.length === 0 && ds && ds.length > 0) {
+    // 墓地を戻す
+    d.push(...ds);
+    ds.length = 0;
+    // シャッフル
+    for (let k = d.length - 1; k > 0; k--) {
+      const j = Math.floor(getSeededRandom() * (k + 1));
+      [d[k], d[j]] = [d[j], d[k]];
+    }
+    // HP半減
+    if (p === 'blue') {
+      state.playerHP = Math.ceil(state.playerHP / 2);
+    } else {
+      state.enemyHP = Math.ceil(state.enemyHP / 2);
+    }
+  }
+
+  if (d.length > 0) {
+    const drawn = d.pop();
+    if (drawn) {
+      if (
+        drawn.currentPower === undefined ||
+        Number.isNaN(drawn.currentPower) ||
+        (drawn.currentPower <= 0 && (drawn.power || 0) > 0)
+      ) {
+        drawn.currentPower = drawn.power || 0;
+      }
+      h.push(drawn);
+    }
+  }
+}
+
+/**
+ * 【成長】ターン開始時のパワー増加パッシブをシミュレートする。
+ *
+ * @param {object} c - 対象カードオブジェクト
+ * @param {number|null} skVal - スキル効果値
+ * @param {'blue'|'red'} side - 発動陣営
+ * @param {number} lane - 発動レーン
+ * @param {Array<object>} events - イベント配列
+ * @returns {void}
+ */
+function handleGrowthPassive(c, skVal, side, lane, events) {
+  const v = skVal ?? 1;
+  c.currentPower += v;
+  events.push({
+    type: 'power_change',
+    side,
+    lane,
+    amount: v,
+    source: 'growth',
+  });
+}
+
+/**
+ * 【腐食】ターン開始時のパワー減少デバフをシミュレートする。
+ *
+ * @param {object} c - 対象カードオブジェクト
+ * @param {number|null} skVal - スキル効果値（腐食値）
+ * @param {'blue'|'red'} side - 発動陣営
+ * @param {number} lane - 発動レーン
+ * @param {Array<object>} events - イベント配列
+ * @returns {void}
+ */
+function handleCorrosionPassive(c, skVal, side, lane, events) {
+  const pVal = skVal ?? 1;
+  c.currentPower -= pVal;
+  events.push({
+    type: 'power_change',
+    side,
+    lane,
+    amount: -pVal,
+    source: 'corrosion',
+  });
+}
+
+/**
+ * 【迎撃】ターン開始時、相手の最大パワーカードを特定してダメージを与えるパッシブをシミュレートする。
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {object} c - 発動カードオブジェクト
+ * @param {number|null} skVal - スキル効果値（ダメージ値）
+ * @param {'blue'|'red'} side - 発動陣営
+ * @param {number} lane - 発動レーン
+ * @param {Array<object>} events - イベント配列
+ * @returns {void}
+ */
+function handleInterceptPassive(state, c, skVal, side, lane, events) {
+  const dmg = skVal || 2;
+  const eB = side === 'blue' ? state.enemyBoard : state.playerBoard;
+  const oppSide = side === 'blue' ? 'red' : 'blue';
+  let maxL = -1,
+    maxP = -1;
+  for (let j = 0; j < 3; j++) {
+    if (eB[j]) {
+      const p = eB[j].currentPower;
+      // 同値の場合は左（jが小さい方）を優先するため、> を使用
+      if (p > maxP) {
+        maxP = p;
+        maxL = j;
+      }
+    }
+  }
+  if (maxL !== -1) {
+    events.push({
+      type: 'skill_popup',
+      side,
+      lane,
+      skillName: '迎撃',
+    });
+    const blockType = getDamageBlockType(eB[maxL], dmg, true, state, oppSide);
+    if (!blockType) {
+      eB[maxL].currentPower -= dmg;
+      events.push({
+        type: 'damage_card',
+        side: oppSide,
+        lane: maxL,
+        amount: dmg,
+        source: 'intercept',
+      });
+    } else if (blockType === 'valkyria_guard') {
+      events.push({
+        type: 'valkyria_guard_block',
+        side: oppSide,
+        lane: maxL,
+        amount: dmg,
+        source: 'intercept',
+      });
+    } else {
+      events.push({
+        type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
+        side: oppSide,
+        lane: maxL,
+        source: 'intercept',
+      });
+    }
+  }
+}
+
+/**
+ * 【契約】ターン開始時の自傷ダメージパッシブをシミュレートする。
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {number|null} skVal - スキル効果値（ダメージ値）
+ * @param {'blue'|'red'} side - 発動陣営
+ * @param {boolean} skipContract - 契約ダメージのスキップフラグ
+ * @param {Array<object>} events - イベント配列
+ * @returns {void}
+ */
+function handleContractPassive(state, skVal, side, skipContract, events) {
+  if (skipContract) return;
+  const v = skVal || 3;
+  damageLeader(state, side, v, 'contract', events);
+}
+
+/**
+ * 【輪廻】ターン開始時、お互いの手札を全て破棄し、お互いにカードを3枚引くパッシブをシミュレートする。
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} side - 発動陣営
+ * @param {number} lane - 発動レーン
+ * @param {Array<object>} events - イベント配列
+ * @returns {void}
+ */
+function handleSamsaraPassive(state, side, lane, events) {
+  const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
+  const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
+  const myDiscard = side === 'blue' ? state.playerDiscard : state.enemyDiscard;
+  const opDiscard = side === 'blue' ? state.enemyDiscard : state.playerDiscard;
+
+  // 1. お互いの手札を全て捨てる（トークンは除外）
+  if (myHand) {
+    while (myHand.length > 0) {
+      const card = myHand.pop();
+      if (card && !card.isToken && myDiscard) {
+        myDiscard.push(card);
+      }
+    }
+  }
+  if (opHand) {
+    while (opHand.length > 0) {
+      const card = opHand.pop();
+      if (card && !card.isToken && opDiscard) {
+        opDiscard.push(card);
+      }
+    }
+  }
+
+  // 2. お互いに3枚引く
+  for (let k = 0; k < 3; k++) {
+    simulateDrawForSamsara(state, 'blue');
+  }
+  for (let k = 0; k < 3; k++) {
+    simulateDrawForSamsara(state, 'red');
+  }
+
+  events.push({
+    type: 'samsara_trigger',
+    side,
+    lane,
+    source: 'samsara',
+  });
+}
+
+/**
+ * 【覚醒】ターン開始時、同レーンに覚醒先トークンを配置（Place）するパッシブをシミュレートする。
+ * レーンが封印されている場合は不発（保留）とする。
+ * 覚醒が発動した場合は真を返し、呼び出し元で後続スキルの処理を中断（break）させる。
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {object} c - 発動カードオブジェクト
+ * @param {object|string} sk - スキル定義オブジェクトまたはID
+ * @param {string} skId - スキルID ('awake' | 'awake_legendary')
+ * @param {number|null} skVal - スキル効果値
+ * @param {'blue'|'red'} side - 発動陣営
+ * @param {number} lane - 発動レーン
+ * @param {Array<object>} events - イベント配列
+ * @returns {boolean} カードが置換された場合（発動成功時）は true、封印等で発動しなかった場合は false
+ */
+function handleAwakePassive(state, c, sk, skId, skVal, side, lane, events) {
+  if (isLaneSealed(state, side, lane)) {
+    // 封印されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
+    return false;
+  }
+  const currentAwakeSkillId = skId;
+  const v = skVal || 1;
+  const awakeSkill = typeof sk === 'object' ? sk : null;
+  const summonId =
+    awakeSkill?.summonId ||
+    (currentAwakeSkillId === 'awake_legendary'
+      ? 'token_thebeast'
+      : 'token_dragon');
+
+  // 同レーンにトークンを配置（Place）
+  events.push({
+    type: 'awake_trigger',
+    side,
+    lane,
+    card: c,
+    summonId,
+    value: v,
+  });
+  applyActiveSkillLogic(
+    state,
+    side,
+    lane,
+    currentAwakeSkillId,
+    v,
+    events,
+    [],
+    lane
+  );
+  return true;
+}
+
+/**
  * ターン開始パッシブの適用
- * @returns {Array} events
+ *
+ * @param {object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} side - ターンを開始する陣営
+ * @param {boolean} [skipContract=false] - 契約スキルの自傷スキップフラグ
+ * @param {Array<object>} [events=[]] - イベント配列
+ * @returns {Array<object>} events
  */
 export function applyPassiveSkillLogic(
   state,
@@ -5916,35 +6249,7 @@ export function applyPassiveSkillLogic(
     if (!c) continue;
 
     // 神出 (teleport): 空きレーンが1つの時に確定移動をシミュレート
-    if (
-      hasSkill(c, 'teleport') &&
-      (c.stunTurns || 0) === 0 &&
-      !teleportMovedIds.has(c.uid || c.id)
-    ) {
-      const sealedLanes =
-        side === 'blue'
-          ? state.playerSealedLanes || [0, 0, 0]
-          : state.enemySealedLanes || [0, 0, 0];
-      const emptyLanes = [];
-      for (let j = 0; j < 3; j++) {
-        if (b[j] === null && sealedLanes[j] === 0) {
-          emptyLanes.push(j);
-        }
-      }
-      if (emptyLanes.length === 1) {
-        const targetLane = emptyLanes[0];
-        b[targetLane] = c;
-        b[i] = null;
-        teleportMovedIds.add(c.uid || c.id);
-        events.push({
-          type: 'teleport_simulation',
-          side,
-          from: i,
-          to: targetLane,
-          source: 'teleport',
-        });
-      }
-    }
+    handleTeleportSimulation(state, b, c, i, side, teleportMovedIds, events);
 
     // スキルおよび状態の時系列スロット順（付与順）に順次解決
     const cardSkills = Array.isArray(c.skills) ? [...c.skills] : [];
@@ -5956,212 +6261,30 @@ export function applyPassiveSkillLogic(
         typeof sk === 'object' && sk.value !== undefined ? sk.value : null;
 
       if (skId === 'growth') {
-        const v = skVal ?? 1;
-        c.currentPower += v;
-        events.push({
-          type: 'power_change',
-          side,
-          lane: i,
-          amount: v,
-          source: 'growth',
-        });
+        handleGrowthPassive(c, skVal, side, i, events);
       } else if (skId === 'corrosion') {
-        // 【腐食状態（debuff）のターン開始時処理】
-        const pVal = skVal || c.corrosion || 1;
-        c.currentPower -= pVal;
-        events.push({
-          type: 'power_change',
-          side,
-          lane: i,
-          amount: -pVal,
-          source: 'corrosion',
-        });
+        handleCorrosionPassive(c, skVal, side, i, events);
       } else if (skId === 'intercept') {
-        // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
-        const dmg = skVal || 2;
-        const eB = side === 'blue' ? state.enemyBoard : state.playerBoard;
-        const oppSide = side === 'blue' ? 'red' : 'blue';
-        let maxL = -1,
-          maxP = -1;
-        for (let j = 0; j < 3; j++) {
-          if (eB[j]) {
-            const p = eB[j].currentPower;
-            // 同値の場合は左（jが小さい方）を優先するため、> を使用
-            if (p > maxP) {
-              maxP = p;
-              maxL = j;
-            }
-          }
-        }
-        if (maxL !== -1) {
-          events.push({
-            type: 'skill_popup',
-            side,
-            lane: i,
-            skillName: '迎撃',
-          });
-          const blockType = getDamageBlockType(
-            eB[maxL],
-            dmg,
-            true,
-            state,
-            oppSide
-          );
-          if (!blockType) {
-            eB[maxL].currentPower -= dmg;
-            events.push({
-              type: 'damage_card',
-              side: oppSide,
-              lane: maxL,
-              amount: dmg,
-              source: 'intercept',
-            });
-          } else if (blockType === 'valkyria_guard') {
-            events.push({
-              type: 'valkyria_guard_block',
-              side: oppSide,
-              lane: maxL,
-              amount: dmg,
-              source: 'intercept',
-            });
-          } else {
-            events.push({
-              type: BLOCK_TYPE_EVENT_MAP[blockType] || `${blockType}_block`,
-              side: oppSide,
-              lane: maxL,
-              source: 'intercept',
-            });
-          }
-        }
-      } else if (skId === 'contract' && !skipContract) {
-        let v = skVal || 3;
-        damageLeader(state, side, v, 'contract', events);
+        handleInterceptPassive(state, c, skVal, side, i, events);
+      } else if (skId === 'contract') {
+        handleContractPassive(state, skVal, side, skipContract, events);
       } else if (skId === 'samsara') {
-        // 輪廻: ターン開始時、お互いの手札を全て捨てる。その後、お互いにカードを3枚引く。
-        const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
-        const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
-        const myDiscard =
-          side === 'blue' ? state.playerDiscard : state.enemyDiscard;
-        const opDiscard =
-          side === 'blue' ? state.enemyDiscard : state.playerDiscard;
-
-        // 1. お互いの手札を全て捨てる（トークンは除外）
-        if (myHand) {
-          while (myHand.length > 0) {
-            const card = myHand.pop();
-            if (card && !card.isToken && myDiscard) {
-              myDiscard.push(card);
-            }
-          }
-        }
-        if (opHand) {
-          while (opHand.length > 0) {
-            const card = opHand.pop();
-            if (card && !card.isToken && opDiscard) {
-              opDiscard.push(card);
-            }
-          }
-        }
-
-        // 2. お互いに3枚引く
-        /**
-         * 【輪廻】指定陣営にカードを1枚ドローさせるシミュレーションヘルパー。
-         * 輪廻スキルの「お互いにカードを3枚引く」処理において各陣営ごとに3回呼び出され、合計3枚ドローを実現する。
-         * 手札上限（MAX_HAND_SIZE_DURING_TURN）に達している場合はドローをスキップする。
-         * デッキが空の場合は墓地をデッキへ戻してシャッフルし、当該陣営のHPを半減する。
-         *
-         * @param {'blue'|'red'} p - ドローする陣営
-         * @returns {void}
-         */
-        const drawSim = (p) => {
-          const h = p === 'blue' ? state.playerHand : state.enemyHand;
-          const d = p === 'blue' ? state.playerDeck : state.enemyDeck;
-          const ds = p === 'blue' ? state.playerDiscard : state.enemyDiscard;
-
-          if (!h || !d) return;
-          // 手札上限は実戦の通常ドロー処理（drawCard）と同一の定数を参照
-          if (h.length >= MAX_HAND_SIZE_DURING_TURN) return;
-
-          if (d.length === 0 && ds && ds.length > 0) {
-            // 墓地を戻す
-            d.push(...ds);
-            ds.length = 0;
-            // シャッフル
-            for (let k = d.length - 1; k > 0; k--) {
-              const j = Math.floor(getSeededRandom() * (k + 1));
-              [d[k], d[j]] = [d[j], d[k]];
-            }
-            // HP半減
-            if (p === 'blue') {
-              state.playerHP = Math.ceil(state.playerHP / 2);
-            } else {
-              state.enemyHP = Math.ceil(state.enemyHP / 2);
-            }
-          }
-
-          if (d.length > 0) {
-            const drawn = d.pop();
-            if (drawn) {
-              if (
-                drawn.currentPower === undefined ||
-                Number.isNaN(drawn.currentPower) ||
-                (drawn.currentPower <= 0 && (drawn.power || 0) > 0)
-              ) {
-                drawn.currentPower = drawn.power || 0;
-              }
-              h.push(drawn);
-            }
-          }
-        };
-
-        for (let k = 0; k < 3; k++) {
-          drawSim('blue');
-        }
-        for (let k = 0; k < 3; k++) {
-          drawSim('red');
-        }
-
-        events.push({
-          type: 'samsara_trigger',
-          side,
-          lane: i,
-          source: 'samsara',
-        });
+        handleSamsaraPassive(state, side, i, events);
       } else if (skId === 'awake' || skId === 'awake_legendary') {
-        if (isLaneSealed(state, side, i)) {
-          // 封印されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
-          continue;
-        }
-        const currentAwakeSkillId = skId;
-        const v = skVal || 1;
-        const awakeSkill = typeof sk === 'object' ? sk : null;
-        const summonId =
-          awakeSkill?.summonId ||
-          (currentAwakeSkillId === 'awake_legendary'
-            ? 'token_thebeast'
-            : 'token_dragon');
-
-        // 同レーンにトークンを配置（Place）
-        events.push({
-          type: 'awake_trigger',
-          side,
-          lane: i,
-          card: c,
-          summonId,
-          value: v,
-        });
-        applyActiveSkillLogic(
+        const replaced = handleAwakePassive(
           state,
+          c,
+          sk,
+          skId,
+          skVal,
           side,
           i,
-          currentAwakeSkillId,
-          v,
-          events,
-          [],
-          i
+          events
         );
-        // カードが新トークンに置換されたため、後続のスキル・状態処理を中断
-        break;
+        if (replaced) {
+          // カードが新トークンに置換されたため、後続のスキル・状態処理を中断
+          break;
+        }
       }
     }
   }

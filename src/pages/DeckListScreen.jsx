@@ -151,10 +151,23 @@ export default function DeckListScreen({ switchScreen }) {
     };
   }, []);
 
+  /**
+   * 選択したデッキを確定し、モード別の次画面（デッキ編成画面または対戦前画面）へ遷移する。
+   *
+   * @param {number} index - 選択したデッキのインデックス
+   * @return {void}
+   */
   const handleSelectDeck = (index) => {
     confirmDeckSelect?.(index);
   };
 
+  /**
+   * 指定したインデックスのデッキを削除する。
+   * 最後の1つのデッキは削除不可とし、削除後はセーブデータを更新して再描画する。
+   *
+   * @param {number} index - 削除対象デッキのインデックス
+   * @return {void}
+   */
   const handleDeleteDeck = (index) => {
     playSound?.(SOUNDS?.seClick);
     if (GameState.decks.length <= 1) {
@@ -177,6 +190,12 @@ export default function DeckListScreen({ switchScreen }) {
     );
   };
 
+  /**
+   * 新規デッキ作成フローを開始し、キャラクター選択画面へ遷移する。
+   * デッキスロット上限に達している場合は何もしない。
+   *
+   * @return {void}
+   */
   const handleCreateNew = () => {
     playSound?.(SOUNDS?.seClick);
     if (decks.length >= MAX_DECK_SLOTS) return;
@@ -195,6 +214,12 @@ export default function DeckListScreen({ switchScreen }) {
     }
   };
 
+  /**
+   * 現在のゲームモードに対応するデッキ一覧画面からの戻り処理を実行する。
+   * ストーリーモード時は中断確認モーダルを表示し、それ以外のモードは goBackFromDeckList に委譲する。
+   *
+   * @return {void}
+   */
   const handleBack = () => {
     playSound?.(SOUNDS?.seClick);
     if (GameState.gameMode === 'story') {

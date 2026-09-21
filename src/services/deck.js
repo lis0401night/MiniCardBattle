@@ -878,59 +878,7 @@ export function loadDeck() {
 
   // 3. デッキのロードと固有設定の適用
 
-  if (GameState.gameMode === 'defense_register') {
-    GameState.currentDeckIndex = 0; // 防衛時は必ず0番目を使用する
-    const defenseSaved = localStorage.getItem(
-      'mini_card_battle_defense_deck_obj'
-    );
-    if (defenseSaved) {
-      try {
-        GameState.decks = [JSON.parse(defenseSaved)];
-        // キャラクター選択直後の場合は選択されたリーダーおよびスキンを強制適用する
-        if (
-          GameState.playerConfig &&
-          GameState.playerConfig.id &&
-          GameState.appState === 'select_player'
-        ) {
-          GameState.decks[0].leaderId = GameState.playerConfig.id;
-          if (GameState.playerSkins?.[GameState.playerConfig.id]) {
-            if (!GameState.decks[0].playerSkins) {
-              GameState.decks[0].playerSkins = {};
-            }
-            GameState.decks[0].playerSkins[GameState.playerConfig.id] =
-              GameState.playerSkins[GameState.playerConfig.id];
-          }
-        }
-      } catch {
-        GameState.decks = [];
-      }
-    } else {
-      // マイグレーション：古い構造からの引き継ぎ
-      const oldDef = localStorage.getItem('mini_card_battle_deck_defense');
-      if (oldDef) {
-        try {
-          const cardsArr = JSON.parse(oldDef);
-          GameState.decks = [
-            {
-              id: 'defense_deck',
-              name: '防衛デッキ',
-              leaderId: GameState.playerConfig?.id || 'android',
-              playmatId:
-                localStorage.getItem('mini_card_battle_playmat_defense') ||
-                null,
-              playerSkins: {},
-              premiumCards: [...GameState.premiumCards],
-              cards: cardsArr,
-            },
-          ];
-        } catch {
-          GameState.decks = [];
-        }
-      } else {
-        GameState.decks = [];
-      }
-    }
-  } else if (GameState.gameMode === 'battle_dungeon') {
+  if (GameState.gameMode === 'battle_dungeon') {
     GameState.currentDeckIndex = 0; // ダンジョン時は必ず0番目を使用する
     const dungeonSaved = localStorage.getItem(
       'mini_card_battle_dungeon_deck_obj'
@@ -1027,17 +975,12 @@ export function loadDeck() {
 
   if (!GameState.decks || GameState.decks.length === 0) {
     if (
-      GameState.gameMode === 'defense_register' ||
       GameState.gameMode === 'battle_dungeon' ||
       GameState.gameMode === 'tournament'
     ) {
       const fallbackLeader =
         GameState.playerConfig?.id || GameState.pendingCharId || 'android';
       createNewDeck(fallbackLeader);
-      if (GameState.gameMode === 'defense_register') {
-        GameState.decks[0].name = DEFENSE_DECK_NAME;
-        GameState.decks[0].id = DEFENSE_DECK_ID;
-      }
       if (GameState.gameMode === 'battle_dungeon') {
         GameState.decks[0].name = DUNGEON_DECK_NAME;
         GameState.decks[0].id = DUNGEON_DECK_ID;
@@ -1177,10 +1120,7 @@ export function createNewDeck(leaderId) {
     cards: getInitialDeck().map((c) => c.id),
   };
   GameState.decks.push(newDeck);
-  if (
-    GameState.gameMode !== 'defense_register' &&
-    GameState.gameMode !== 'battle_dungeon'
-  ) {
+  if (GameState.gameMode !== 'battle_dungeon') {
     saveSafeNormalDecks(GameState.decks);
   }
   return GameState.decks.length - 1; // 生成したデッキのインデックスを返す

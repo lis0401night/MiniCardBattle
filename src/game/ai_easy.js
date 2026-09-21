@@ -220,12 +220,11 @@ export function isImmediatelySelfDestructiveOnPlay(
     'reanimate', // 反魂
     'snipe', // 狙撃（敵ユニット/リーダー直接攻撃）
     'artillery', // 砲撃（全体攻撃）
-    'corrosion', // 腐食（敵継続ダメージ）
-    'plague', // 疫病（敵弱体化）
+    'toxic', // 有毒（正面のカードへ「腐食」状態を付与）
     'bind', // 拘束（敵足止め）
     'freeze', // 氷結（敵凍結）
     'silence', // 忘却（正面のカードの全能力無効）
-    'curse', // 呪い
+    'oblivion', // 沈黙（お互いの場の全カードの全能力無効）
     'cull', // 選別（敵破壊）
     'execute', // 処刑（敵破壊）
     'dominate', // 支配（敵強奪）

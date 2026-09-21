@@ -2769,6 +2769,46 @@ export function checkHasAllFormsOnBoard(boardCardsOrIds = []) {
 }
 
 /**
+ * 盤面カード配列またはID配列から、比較用のカードID一覧（id / baseId）を正規化して取得する。
+ *
+ * @param {Array<string>} [presentBoardIds=[]] - 盤面カードID配列
+ * @param {Array<object>} [presentBoardCards=[]] - 盤面カードオブジェクト配列
+ * @returns {Array<string>} 正規化されたカードID配列
+ */
+function resolvePresentBoardIds(presentBoardIds = [], presentBoardCards = []) {
+  if (Array.isArray(presentBoardIds) && presentBoardIds.length > 0) {
+    return presentBoardIds;
+  }
+  if (!Array.isArray(presentBoardCards)) return [];
+  return presentBoardCards
+    .filter(Boolean)
+    .flatMap((c) => [c.id, c.baseId])
+    .filter(Boolean);
+}
+
+/**
+ * 「唯一（excludeBoard）」条件により、対象カードを盤面存在カードとして除外すべきか判定する。
+ * 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
+ * あらゆるカードが「既に場に存在する」とみなされて除外対象（true）となる。
+ *
+ * @param {object} card - 判定対象カード
+ * @param {Array<string>} resolvedBoardIds - 正規化された盤面カードID配列
+ * @param {Array<object>} presentBoardCards - 盤面カードオブジェクト配列
+ * @returns {boolean} 除外すべき場合は true
+ */
+function isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards) {
+  const hasCards =
+    Array.isArray(presentBoardCards) && presentBoardCards.length > 0;
+  if (resolvedBoardIds.length === 0 && !hasCards) return false;
+  const boardTarget = hasCards ? presentBoardCards : resolvedBoardIds;
+  if (checkHasAllFormsOnBoard(boardTarget)) return true;
+  return (
+    resolvedBoardIds.includes(card.id) ||
+    (Boolean(card.baseId) && resolvedBoardIds.includes(card.baseId))
+  );
+}
+
+/**
  * 対象カードが「召喚（summon）」または「召集（assemble）」スキルの発動条件・対象指定に合致するか判定する共通実体関数。
  * 手札またはデッキからのカード召喚において、同一の判定ロジック・順序（excludeBoard → self → token → targetIds → targetKeyword → targetSkills → value/reqPower）を一元的に保証します。
  *
@@ -2796,39 +2836,17 @@ export function matchesHandOrDeckTarget(card, skill, options = {}) {
     presentBoardCards = [],
   } = options;
 
-  // 盤面IDリストの正規化（presentBoardIds が空で presentBoardCards が提供されている場合は自動補完）
-  const resolvedBoardIds =
-    Array.isArray(presentBoardIds) && presentBoardIds.length > 0
-      ? presentBoardIds
-      : Array.isArray(presentBoardCards)
-        ? presentBoardCards
-            .filter(Boolean)
-            .flatMap((c) => [c.id, c.baseId])
-            .filter(Boolean)
-        : [];
+  const resolvedBoardIds = resolvePresentBoardIds(
+    presentBoardIds,
+    presentBoardCards
+  );
 
   // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
-  // 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
-  // あらゆるカードが「既に場に存在する」とみなされて召喚・召集の対象から除外される。
   if (
     skill.excludeBoard &&
-    (resolvedBoardIds.length > 0 ||
-      (Array.isArray(presentBoardCards) && presentBoardCards.length > 0))
+    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards)
   ) {
-    const boardTarget =
-      Array.isArray(presentBoardCards) && presentBoardCards.length > 0
-        ? presentBoardCards
-        : resolvedBoardIds;
-
-    if (checkHasAllFormsOnBoard(boardTarget)) {
-      return false;
-    }
-    if (
-      resolvedBoardIds.includes(card.id) ||
-      (card.baseId && resolvedBoardIds.includes(card.baseId))
-    ) {
-      return false;
-    }
+    return false;
   }
 
   // 2. self / targetSelf: 自身と同じカード指定
@@ -2955,39 +2973,17 @@ export function matchesGraveyardTarget(card, skill, options = {}) {
 
   const { presentBoardIds = [], presentBoardCards = [] } = options;
 
-  // 盤面IDリストの正規化（presentBoardIds が空で presentBoardCards が提供されている場合は自動補完）
-  const resolvedBoardIds =
-    Array.isArray(presentBoardIds) && presentBoardIds.length > 0
-      ? presentBoardIds
-      : Array.isArray(presentBoardCards)
-        ? presentBoardCards
-            .filter(Boolean)
-            .flatMap((c) => [c.id, c.baseId])
-            .filter(Boolean)
-        : [];
+  const resolvedBoardIds = resolvePresentBoardIds(
+    presentBoardIds,
+    presentBoardCards
+  );
 
   // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
-  // 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
-  // あらゆるカードが「既に場に存在する」とみなされて復活・傀儡の対象から除外される。
   if (
     skill.excludeBoard &&
-    (resolvedBoardIds.length > 0 ||
-      (Array.isArray(presentBoardCards) && presentBoardCards.length > 0))
+    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards)
   ) {
-    const boardTarget =
-      Array.isArray(presentBoardCards) && presentBoardCards.length > 0
-        ? presentBoardCards
-        : resolvedBoardIds;
-
-    if (checkHasAllFormsOnBoard(boardTarget)) {
-      return false;
-    }
-    if (
-      resolvedBoardIds.includes(card.id) ||
-      (card.baseId && resolvedBoardIds.includes(card.baseId))
-    ) {
-      return false;
-    }
+    return false;
   }
 
   // 3. targetIds / targetId: 特定カードID指定（万相カードは matchesCardIds 内で自動判定）

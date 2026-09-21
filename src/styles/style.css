@@ -1866,69 +1866,58 @@ h2 {
   border-radius: 4px;
 }
 
-.card-skill.badge-valkyria-guard {
-  border-color: #f59e0b;
-  color: #fef08a;
+/* 状態（ステータス）バッジの共通スタイル。個別の色は CSS カスタムプロパティで指定する */
+.card-skill[class*='badge-'] {
+  border-color: var(--status-border);
+  color: var(--status-text);
   background: linear-gradient(
     135deg,
-    rgba(245, 158, 11, 0.95),
-    rgba(180, 83, 9, 0.95)
+    var(--status-bg-from),
+    var(--status-bg-to)
   );
   font-weight: 900;
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
+  box-shadow: 0 0 6px var(--status-glow);
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.card-skill.badge-valkyria-guard {
+  --status-border: #f59e0b;
+  --status-text: #fef08a;
+  --status-bg-from: rgba(245, 158, 11, 0.95);
+  --status-bg-to: rgba(180, 83, 9, 0.95);
+  --status-glow: rgba(251, 191, 36, 0.8);
 }
 
 .card-skill.badge-invincible {
-  border-color: #38bdf8;
-  color: #f0f9ff;
-  background: linear-gradient(
-    135deg,
-    rgba(14, 165, 233, 0.95),
-    rgba(2, 132, 199, 0.95)
-  );
-  font-weight: 900;
-  box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
-  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  --status-border: #38bdf8;
+  --status-text: #f0f9ff;
+  --status-bg-from: rgba(14, 165, 233, 0.95);
+  --status-bg-to: rgba(2, 132, 199, 0.95);
+  --status-glow: rgba(56, 189, 248, 0.8);
 }
 
 .card-skill.badge-stun {
-  border-color: #eab308;
-  color: #fef08a;
-  background: linear-gradient(
-    135deg,
-    rgba(202, 138, 4, 0.95),
-    rgba(161, 98, 7, 0.95)
-  );
-  font-weight: 900;
-  box-shadow: 0 0 6px rgba(234, 179, 8, 0.8);
-  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  --status-border: #eab308;
+  --status-text: #fef08a;
+  --status-bg-from: rgba(202, 138, 4, 0.95);
+  --status-bg-to: rgba(161, 98, 7, 0.95);
+  --status-glow: rgba(234, 179, 8, 0.8);
 }
 
 .card-skill.badge-corrosion {
-  border-color: #22c55e;
-  color: #f0fdf4;
-  background: linear-gradient(
-    135deg,
-    rgba(34, 197, 94, 0.95),
-    rgba(21, 128, 61, 0.95)
-  );
-  font-weight: 900;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.8);
-  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  --status-border: #22c55e;
+  --status-text: #f0fdf4;
+  --status-bg-from: rgba(34, 197, 94, 0.95);
+  --status-bg-to: rgba(21, 128, 61, 0.95);
+  --status-glow: rgba(34, 197, 94, 0.8);
 }
 
 .card-skill.badge-cant-attack {
-  border-color: #ef4444;
-  color: #fecdd3;
-  background: linear-gradient(
-    135deg,
-    rgba(239, 68, 68, 0.95),
-    rgba(153, 27, 27, 0.95)
-  );
-  font-weight: 900;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
-  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  --status-border: #ef4444;
+  --status-text: #fecdd3;
+  --status-bg-from: rgba(239, 68, 68, 0.95);
+  --status-bg-to: rgba(153, 27, 27, 0.95);
+  --status-glow: rgba(239, 68, 68, 0.8);
 }
 
 .hand-area {

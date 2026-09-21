@@ -300,6 +300,26 @@ async function executeGroupDestruction(targets) {
 }
 
 /**
+ * 「唯一（excludeBoard）」判定用に、自陣盤面のカード本体一覧とID一覧を収集する。
+ * excludeBoard が無効な場合は空配列を返し、不要な走査を回避する。
+ *
+ * @param {Array<object|null>} myBoard - 自陣の盤面配列
+ * @param {boolean} isExcludeBoard - excludeBoard（唯一）指定の有無
+ * @returns {{presentBoardCards: Array<object>, presentBoardIds: Array<string>}} 盤面カード本体一覧とID一覧
+ */
+function collectPresentBoardTargets(myBoard, isExcludeBoard) {
+  const presentBoardCards = isExcludeBoard
+    ? (myBoard || []).filter(Boolean)
+    : [];
+  const presentBoardIds = isExcludeBoard
+    ? presentBoardCards
+        .flatMap((card) => [card.id, card.baseId])
+        .filter(Boolean)
+    : [];
+  return { presentBoardCards, presentBoardIds };
+}
+
+/**
  * アクティブスキル（召喚時、またはカード選択時）の効果を個別に解決・実行します。
  *
  * @param {'blue'|'red'} o スキルを発動したプレイヤー陣営
@@ -532,14 +552,10 @@ export async function resolveActiveSkillEffect(
     const selfId = c ? c.baseId || c.id : null;
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const presentBoardCards = isExcludeBoard
-      ? myBoard.filter((card) => Boolean(card))
-      : [];
-    const presentBoardIds = isExcludeBoard
-      ? presentBoardCards
-          .flatMap((card) => [card.id, card.baseId])
-          .filter(Boolean)
-      : [];
+    const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+      myBoard,
+      isExcludeBoard
+    );
 
     /**
      * 手札内のカードが召喚スキルの対象として有効か判定する（共通関数 matchesSummonTarget に委譲）。
@@ -2217,14 +2233,10 @@ export async function resolveActiveSkillEffect(
 
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const presentBoardCards = isExcludeBoard
-      ? myBoard.filter((card) => Boolean(card))
-      : [];
-    const presentBoardIds = isExcludeBoard
-      ? presentBoardCards
-          .flatMap((card) => [card.id, card.baseId])
-          .filter(Boolean)
-      : [];
+    const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+      myBoard,
+      isExcludeBoard
+    );
 
     // 墓地内の有効な復活対象カード判定（共通関数 matchesResurrectTarget に委譲）
     const validCards = discard.filter((card) =>
@@ -2423,14 +2435,10 @@ export async function resolveActiveSkillEffect(
       o === 'blue' ? GameState.enemyDiscard : GameState.playerDiscard;
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const presentBoardCards = isExcludeBoard
-      ? myBoard.filter((card) => Boolean(card))
-      : [];
-    const presentBoardIds = isExcludeBoard
-      ? presentBoardCards
-          .flatMap((card) => [card.id, card.baseId])
-          .filter(Boolean)
-      : [];
+    const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+      myBoard,
+      isExcludeBoard
+    );
 
     const validCards = oppDiscard.filter((card) =>
       matchesPuppetTarget(card, currentSkill, {
@@ -2814,14 +2822,10 @@ export async function resolveActiveSkillEffect(
     const selfId = c ? c.baseId || c.id : null;
     const isExcludeBoard = Boolean(currentSkill?.excludeBoard);
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const presentBoardCards = isExcludeBoard
-      ? myBoard.filter((card) => Boolean(card))
-      : [];
-    const presentBoardIds = isExcludeBoard
-      ? presentBoardCards
-          .flatMap((card) => [card.id, card.baseId])
-          .filter(Boolean)
-      : [];
+    const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+      myBoard,
+      isExcludeBoard
+    );
 
     const validCards = deck.filter((card) =>
       matchesAssembleTarget(card, currentSkill, {
@@ -4148,12 +4152,10 @@ export async function triggerStartTurnPassive(owner, lane) {
       }
       triggered = true;
       continue;
-    }
-
-    // 【腐食（状態）のパワー減少処理】
-    // 「成長」スキルの対となる状態異常。自分のターン開始時、付与されている腐食の値分パワーを減少させる
-    if (skId === 'corrosion') {
-      const pVal = skVal || c.corrosion || 1;
+    } else if (skId === 'corrosion') {
+      // 【腐食（状態）のパワー減少処理】
+      // 「成長」スキルの対となる状態異常。自分のターン開始時、付与されている腐食の値分パワーを減少させる
+      const pVal = skVal ?? 1;
       c.power -= pVal; // RendererがcurrentPowerを処理するためpowerを減算
       events.push({
         type: 'power_change',
@@ -4164,9 +4166,9 @@ export async function triggerStartTurnPassive(owner, lane) {
       });
       triggered = true;
       continue;
-    }
-
-    if (skId === 'growth') {
+    } else if (skId === 'growth') {
+      // 【成長（growth）のパワー増加処理】
+      // 自分のターン開始時、自身のパワーを指定値分増加させる
       const val = skVal ?? 1;
       c.power += val; // RendererがcurrentPowerを処理するのでここはpowerのみアップ
       events.push({
@@ -4177,10 +4179,9 @@ export async function triggerStartTurnPassive(owner, lane) {
         source: 'growth',
       });
       triggered = true;
-    }
-
-    // 迎撃: ターン開始時に相手の最大パワーカードにダメージ
-    if (skId === 'intercept') {
+      continue;
+    } else if (skId === 'intercept') {
+      // 【迎撃（intercept）】ターン開始時に相手の最大パワーカードにダメージ
       const dmg = skVal || 2;
       const eB =
         owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
@@ -4239,9 +4240,9 @@ export async function triggerStartTurnPassive(owner, lane) {
         }
       }
       triggered = true;
-    }
-
-    if (skId === 'contract') {
+      continue;
+    } else if (skId === 'contract') {
+      // 【契約（contract）】ターン開始時の自傷ダメージ
       const val = skVal || 3;
       // 自分側にスキル発動のポップアップを出す
       events.push({
@@ -4268,9 +4269,9 @@ export async function triggerStartTurnPassive(owner, lane) {
         });
       }
       triggered = true;
-    }
-
-    if (skId === 'samsara') {
+      continue;
+    } else if (skId === 'samsara') {
+      // 【輪廻（samsara）】ターン開始時、お互いの手札を全て破棄し、お互いにカードを3枚引く
       const cEl = document.querySelector(
         `#${side}-lanes .cell[data-lane="${lane}"] .card`
       );
@@ -4312,9 +4313,9 @@ export async function triggerStartTurnPassive(owner, lane) {
       await sleep(600);
 
       triggered = true;
-    }
-
-    if (skId === 'awake' || skId === 'awake_legendary') {
+      continue;
+    } else if (skId === 'awake' || skId === 'awake_legendary') {
+      // 【覚醒（awake / awake_legendary）】ターン開始時、同レーンにトークンを配置（置換）
       if (isLaneSealed(GameState, owner, lane)) {
         // 封印（seal）されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
         continue;

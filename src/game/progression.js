@@ -25,6 +25,17 @@ import {
  */
 
 /**
+ * 選択済みデッキを読み込み、ゲーム状態を battle に更新してバトルを開始する共通処理。
+ *
+ * @returns {void}
+ */
+export function startPreparedBattle() {
+  loadDeck();
+  GameState.appState = 'battle';
+  prepareBattle();
+}
+
+/**
  * ダイアログ終了後などの「次のステップ」を判定して実行する
  */
 export function handleProgressionNextStep() {
@@ -93,9 +104,7 @@ export function handleProgressionNextStep() {
     }
   } else if (GameState.gameMode === 'tournament') {
     if (GameState.appState === 'pre_battle_dialogue') {
-      loadDeck();
-      GameState.appState = 'battle';
-      prepareBattle();
+      startPreparedBattle();
       return;
     }
 
@@ -170,9 +179,7 @@ export function handleFreeBattleProgression() {
   } else if (GameState.appState === 'pre_dialogue') {
     // 難易度選択直後にデッキ一覧・デッキ編成・ステージ選択を完了しているため、
     // 戦闘前会話終了後はデッキ編成画面を挟まず、直接バトルを開始する
-    loadDeck();
-    GameState.appState = 'battle';
-    prepareBattle();
+    startPreparedBattle();
   } else {
     switchScreen('screen-mode-select');
   }

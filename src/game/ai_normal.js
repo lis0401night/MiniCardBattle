@@ -6198,7 +6198,7 @@ export function evaluateAdhocCullChoice(
  * @param {Array<string>} presentBoardIds - 盤面に既に存在するカードID群
  * @param {number} defaultLane - フォールバック先レーン
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
- * @param {Array<object>} [presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列
+ * @param {Array<object>|null} [presentBoardCards=null] - 盤面に配置済みの実カードオブジェクト配列（未指定時は初期シミュレーション状態から取得）
  * @return {{ selectedIdx: number, laneIdx: number }} 最善手札インデックスと配置レーン（パスなら selectedIdx: -1）
  */
 export function evaluateAdhocSummonMove(
@@ -6208,7 +6208,7 @@ export function evaluateAdhocSummonMove(
   presentBoardIds,
   defaultLane,
   owner = 'red',
-  presentBoardCards = []
+  presentBoardCards = null
 ) {
   if (!hand || hand.length === 0) {
     return { selectedIdx: -1, laneIdx: defaultLane };
@@ -6236,12 +6236,11 @@ export function evaluateAdhocSummonMove(
   let bestBranch = null;
 
   const seenSignatures = new Set();
-  const resolvedBoardCards =
-    Array.isArray(presentBoardCards) && presentBoardCards.length > 0
-      ? presentBoardCards
-      : isRed
-        ? initialSimState.enemyBoard.filter(Boolean)
-        : initialSimState.playerBoard.filter(Boolean);
+  const resolvedBoardCards = Array.isArray(presentBoardCards)
+    ? presentBoardCards
+    : isRed
+      ? initialSimState.enemyBoard.filter(Boolean)
+      : initialSimState.playerBoard.filter(Boolean);
 
   for (let i = 0; i < hand.length; i++) {
     const card = hand[i];
@@ -6346,7 +6345,7 @@ export function evaluateAdhocSummonMove(
  * @param {number} defaultLane - 召喚先レーン番号
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
  * @param {Array<string>} [presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard用）
- * @param {Array<object>} [presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列
+ * @param {Array<object>|null} [presentBoardCards=null] - 盤面に配置済みの実カードオブジェクト配列（未指定時は初期シミュレーション状態から取得）
  * @return {object|null} 最善カードオブジェクト（パスなら null）
  */
 export function evaluateAdhocAssembleMove(
@@ -6356,7 +6355,7 @@ export function evaluateAdhocAssembleMove(
   defaultLane,
   owner = 'red',
   presentBoardIds = [],
-  presentBoardCards = []
+  presentBoardCards = null
 ) {
   if (!deck || deck.length === 0 || defaultLane < 0 || defaultLane > 2) {
     return null;
@@ -6364,12 +6363,11 @@ export function evaluateAdhocAssembleMove(
 
   const initialSimState = buildInitialSimState();
   const isRed = owner === 'red';
-  const resolvedBoardCards =
-    Array.isArray(presentBoardCards) && presentBoardCards.length > 0
-      ? presentBoardCards
-      : isRed
-        ? initialSimState.enemyBoard.filter(Boolean)
-        : initialSimState.playerBoard.filter(Boolean);
+  const resolvedBoardCards = Array.isArray(presentBoardCards)
+    ? presentBoardCards
+    : isRed
+      ? initialSimState.enemyBoard.filter(Boolean)
+      : initialSimState.playerBoard.filter(Boolean);
 
   const validCards = deck.filter((card) =>
     matchesAssembleTarget(card, skObj, {
@@ -6766,11 +6764,29 @@ export function simulateAdhocChoiceResurrect(
     ? presentBoardCards.flatMap((c) => [c.id, c.baseId]).filter(Boolean)
     : [];
 
-  const maxPower = choiceSkill.value || 1;
+  // 【重要】特定対象（targetIds / targetKeyword / targetId）が指定されている復活スキルの場合、
+  // パワー制限（choiceSkill.value）は存在しないため maxPower を null としてパワー上限チェックを解除する。
+  // （choiceSkill.value が未指定の場合に 1 と誤認してパワー1超の正規対象カードを不正棄却するバグを防止）
+  const hasSpecificTarget =
+    (Array.isArray(choiceSkill.targetIds) &&
+      choiceSkill.targetIds.length > 0) ||
+    choiceSkill.targetId ||
+    (typeof choiceSkill.targetKeyword === 'string' &&
+      choiceSkill.targetKeyword);
+  const maxPower = hasSpecificTarget
+    ? null
+    : choiceSkill.value !== undefined && choiceSkill.value !== null
+      ? choiceSkill.value
+      : 1;
+
   const validDiscardIndices = [];
   for (let i = 0; i < simDiscard.length; i++) {
     const dCard = simDiscard[i];
-    if (dCard && !dCard.isToken && (dCard.power || 0) <= maxPower) {
+    if (
+      dCard &&
+      !dCard.isToken &&
+      (maxPower === null || (dCard.power || 0) <= maxPower)
+    ) {
       if (
         matchesResurrectTarget(dCard, choiceSkill, {
           presentBoardIds,
