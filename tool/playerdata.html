@@ -316,6 +316,26 @@
                       <button
                         type="button"
                         class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('common')"
+                        aria-label="共通ポイントで並び替え"
+                      >
+                        共通ポイント
+                      </button>
+                    </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 80px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('high_difficulty')"
+                        aria-label="高難易度ポイントで並び替え"
+                      >
+                        高難易度ポイント
+                      </button>
+                    </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 80px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
                         onclick="window.sortBy('defense')"
                         aria-label="防衛ポイントで並び替え"
                       >
@@ -336,16 +356,6 @@
                       <button
                         type="button"
                         class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
-                        onclick="window.sortBy('common')"
-                        aria-label="共通ポイントで並び替え"
-                      >
-                        共通ポイント
-                      </button>
-                    </th>
-                    <th class="p-2 md:p-3 text-center" style="min-width: 80px">
-                      <button
-                        type="button"
-                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
                         onclick="window.sortBy('challenge')"
                         aria-label="試練ポイントで並び替え"
                       >
@@ -360,16 +370,6 @@
                         aria-label="大会ポイントで並び替え"
                       >
                         大会ポイント
-                      </button>
-                    </th>
-                    <th class="p-2 md:p-3 text-center" style="min-width: 80px">
-                      <button
-                        type="button"
-                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
-                        onclick="window.sortBy('high_difficulty')"
-                        aria-label="高難易度ポイントで並び替え"
-                      >
-                        高難易度ポイント
                       </button>
                     </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 80px">
@@ -435,9 +435,6 @@
                         最終アクセス
                       </button>
                     </th>
-                    <th class="p-2 md:p-3 text-center" style="min-width: 70px">
-                      詳細
-                    </th>
                   </tr>
                 </thead>
                 <tbody id="player-table-body" class="divide-y divide-slate-100">
@@ -481,6 +478,15 @@
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-1.5">
+              <input
+                type="text"
+                id="leader-search-input"
+                placeholder="リーダー名・ID・スキルで検索..."
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm w-48"
+                oninput="window.filterLeaderList(this.value)"
+              />
+            </div>
+            <div class="flex items-center gap-1.5">
               <span class="text-xs font-bold text-slate-500">集計対象:</span>
               <select
                 class="battle-limit-select bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
@@ -502,6 +508,8 @@
                 onchange="window.sortLeaderList(this.value)"
               >
                 <option value="registered" selected>📋 デッキ登録順</option>
+                <option value="attack_winrate">⚔️ 攻撃勝率順</option>
+                <option value="defense_winrate">🛡️ 防衛勝率順</option>
                 <option value="attack">⚔️ 攻撃デッキ使用順</option>
                 <option value="defense">🛡️ 防衛デッキ使用順</option>
                 <option value="name">👤 キャラクター名順</option>
@@ -546,6 +554,15 @@
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-1.5">
+              <input
+                type="text"
+                id="card-search-input"
+                placeholder="カード名・ID・スキルで検索..."
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm w-44"
+                oninput="window.filterCardList(this.value)"
+              />
+            </div>
+            <div class="flex items-center gap-1.5">
               <span class="text-xs font-bold text-slate-500">集計対象:</span>
               <select
                 class="battle-limit-select bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
@@ -567,8 +584,10 @@
                 onchange="window.sortCardList(this.value)"
               >
                 <option value="registered" selected>📋 登録デッキ使用順</option>
-                <option value="defense">🛡️ 防衛デッキ使用順</option>
-                <option value="attack">⚔️ 攻撃デッキ使用順</option>
+                <option value="attack_winrate">⚔️ 攻撃勝率順</option>
+                <option value="defense_winrate">🛡️ 防衛勝率順</option>
+                <option value="attack">⚔️ 攻撃デッキ使用数順</option>
+                <option value="defense">🛡️ 防衛デッキ使用数順</option>
                 <option value="owned_players">👥 所持プレイヤー数順</option>
                 <option value="owned_total">📦 総所持枚数順</option>
                 <option value="premium_unlocked">✨ プレミアム解放者順</option>
@@ -1051,6 +1070,89 @@
           </div>
         </div>
       </div>
+
+      <!-- リーダー詳細ポップアップモーダル -->
+      <div
+        id="leader-detail-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-leader-detail-title"
+        tabindex="-1"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 hidden"
+        onclick="if (event.target === this) window.closeLeaderDetailModal();"
+      >
+        <div
+          class="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-4xl w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl animate-fade-in"
+        >
+          <!-- モーダルヘッダー -->
+          <div
+            class="p-4 md:p-5 border-b border-slate-800 bg-slate-900/90 flex justify-between items-center shrink-0"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <img
+                id="modal-leader-thumb"
+                src=""
+                class="w-12 h-12 rounded-2xl object-cover border-2 border-indigo-500 bg-slate-950 shrink-0"
+                alt=""
+              />
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3
+                    id="modal-leader-detail-title"
+                    class="font-black text-lg text-white tracking-tight truncate"
+                  >
+                    リーダー詳細情報
+                  </h3>
+                  <span
+                    id="modal-leader-hp-badge"
+                    class="text-[10px] font-black text-rose-400 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-800 shrink-0"
+                  >
+                    HP 30
+                  </span>
+                  <span
+                    id="modal-leader-skill-badge"
+                    class="text-[10px] font-black text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800 shrink-0"
+                  >
+                    -
+                  </span>
+                </div>
+                <div
+                  id="modal-leader-detail-subtitle"
+                  class="text-xs text-slate-400 font-mono truncate mt-0.5"
+                >
+                  ID: --
+                </div>
+              </div>
+            </div>
+            <button
+              onclick="window.closeLeaderDetailModal()"
+              class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-sm font-bold shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- モーダルボディ (スクロール可能な詳細コンテンツ) -->
+          <div
+            id="leader-detail-panel"
+            class="panel-scroll scroll-custom p-4 md:p-6 overflow-y-auto flex-1 space-y-6"
+          >
+            <!-- JS Injection -->
+          </div>
+
+          <!-- モーダルフッター -->
+          <div
+            class="p-4 border-t border-slate-800 bg-slate-950 flex justify-end shrink-0"
+          >
+            <button
+              onclick="window.closeLeaderDetailModal()"
+              class="px-5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition-colors"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script type="module">
@@ -1116,14 +1218,20 @@
 
       /**
        * カードサムネイルのパスを生成する（プレミアム対応）
+       * PREMIUM_CARD_IDS に含まれるカードのみプレミアム画像を返し、それ以外は通常画像を返す
        * @param {string} id - カードID
        * @param {boolean} [isPremium=false] - プレミアムカードフラグ
        * @returns {string} サムネイル画像パス
        */
-      const getCardThumbPath = (id, isPremium = false) =>
-        fixAssetPath(
-          `assets/cards/card_${encodeURIComponent(String(id))}${isPremium ? '_premium' : ''}_thumb.webp`
+      const getCardThumbPath = (id, isPremium = false) => {
+        const hasPremium =
+          isPremium &&
+          Array.isArray(PREMIUM_CARD_IDS) &&
+          (PREMIUM_CARD_IDS.length === 0 || PREMIUM_CARD_IDS.includes(id));
+        return fixAssetPath(
+          `assets/cards/card_${encodeURIComponent(String(id))}${hasPremium ? '_premium' : ''}_thumb.webp`
         );
+      };
 
       /**
        * プレイマットサムネイルのパスを生成する
@@ -1327,11 +1435,47 @@
       }
 
       /**
+       * カード要素（オブジェクトまたはカードID文字列）がプレミアム版であるか判定する共通関数
+       * 1. entry がオブジェクトで isPremium (boolean) が明示されている場合はそれを最優先
+       * 2. 指定がない場合は premiumCardsList（プレイヤー所持またはデッキ設定のプレミアムカードID配列）を参照
+       *
+       * @param {string|Object} entry - カードIDまたはカードオブジェクト
+       * @param {Array<string>} [premiumCardsList=[]] - 解放済みプレミアムカードID配列
+       * @returns {boolean} プレミアム対象であるか
+       */
+      function checkIsCardPremium(entry, premiumCardsList = []) {
+        if (!entry) return false;
+        const cardId = resolveCardId(entry);
+        if (!cardId) return false;
+
+        // 1. オブジェクトに明示的な isPremium が設定されている場合
+        if (
+          typeof entry === 'object' &&
+          entry !== null &&
+          typeof entry.isPremium === 'boolean'
+        ) {
+          return entry.isPremium;
+        }
+
+        // 2. 所持プレミアムカードリストに含まれている場合
+        if (
+          Array.isArray(premiumCardsList) &&
+          premiumCardsList.includes(cardId)
+        ) {
+          return true;
+        }
+
+        return false;
+      }
+
+      /**
        * デッキのカード配列を CARD_MASTER の定義順（ID順）に正規化（ソート）する共通関数
+       * 同一カード内の通常版とプレミアム版の順序も整然と並び替える
        * @param {Array<string|Object>} cards - カード配列
+       * @param {Array<string>} [premiumCardsList=[]] - プレミアムカードID配列
        * @returns {Array<string|Object>} ソート済みのカード配列のシャローコピー
        */
-      function sortCardsByMasterOrder(cards) {
+      function sortCardsByMasterOrder(cards, premiumCardsList = []) {
         if (!Array.isArray(cards)) return [];
         const cardOrderMap = new Map();
         (CARD_MASTER || []).forEach((c, i) => cardOrderMap.set(c.id, i));
@@ -1342,10 +1486,8 @@
           const idxA = cardOrderMap.get(idA) ?? Number.MAX_SAFE_INTEGER;
           const idxB = cardOrderMap.get(idB) ?? Number.MAX_SAFE_INTEGER;
           if (idxA !== idxB) return idxA - idxB;
-          const premA =
-            typeof a === 'object' && a !== null && !!a.isPremium ? 1 : 0;
-          const premB =
-            typeof b === 'object' && b !== null && !!b.isPremium ? 1 : 0;
+          const premA = checkIsCardPremium(a, premiumCardsList) ? 1 : 0;
+          const premB = checkIsCardPremium(b, premiumCardsList) ? 1 : 0;
           return premA - premB;
         });
       }
@@ -1430,7 +1572,16 @@
       let selectedPlayerId = null;
       let currentSort = { key: 'defense', dir: 'desc' };
       let currentCardSort = 'registered';
+      let cardSearchQuery = ''; // 全カード一覧の検索フィルター文字列
+      let currentCardModalTab = 'battles'; // カード詳細モーダルのアクティブタブ ('battles' | 'reg_decks' | 'def_decks' | 'skills')
+      let currentCardModalBattleFilter = 'all'; // カード詳細モーダルの対戦ログ絞り込み ('all' | 'attacker' | 'defender')
+      let lastActiveCardModalCardId = null; // 現在モーダルで表示中のカードID
       let currentLeaderSort = 'registered';
+      let leaderSearchQuery = ''; // リーダー一覧の検索フィルター文字列
+      let currentLeaderModalTab = 'battles'; // リーダー詳細モーダルのアクティブタブ ('battles' | 'reg_decks' | 'def_decks' | 'skill')
+      let currentLeaderModalBattleFilter = 'all'; // リーダー詳細モーダルの対戦ログ絞り込み ('all' | 'attacker' | 'defender')
+      let lastActiveLeaderModalCharId = null; // 現在リーダーモーダルで表示中のキャラクターID
+      let lastActiveElementLeaderModal = null; // リーダー詳細モーダルを開く前のフォーカス要素
       let currentSkinSort = 'unlocked';
       let currentIconSort = 'unlocked';
       let currentPlaymatSort = 'owned';
@@ -1538,6 +1689,40 @@
       window.closeBattleDeckModal = closeBattleDeckModal;
       window.openCardDetailModal = openCardDetailModal;
       window.closeCardDetailModal = closeCardDetailModal;
+      window.openLeaderDetailModal = openLeaderDetailModal;
+      window.closeLeaderDetailModal = closeLeaderDetailModal;
+      window.filterCardList = function (query) {
+        cardSearchQuery = (query || '').trim().toLowerCase();
+        renderCardList();
+      };
+      window.filterLeaderList = function (query) {
+        leaderSearchQuery = (query || '').trim().toLowerCase();
+        renderLeaderList();
+      };
+      window.switchCardModalTab = function (tab) {
+        currentCardModalTab = tab;
+        if (lastActiveCardModalCardId) {
+          openCardDetailModal(lastActiveCardModalCardId, true);
+        }
+      };
+      window.switchLeaderModalTab = function (tab) {
+        currentLeaderModalTab = tab;
+        if (lastActiveLeaderModalCharId) {
+          openLeaderDetailModal(lastActiveLeaderModalCharId, true);
+        }
+      };
+      window.filterCardModalBattles = function (filter) {
+        currentCardModalBattleFilter = filter;
+        if (lastActiveCardModalCardId) {
+          openCardDetailModal(lastActiveCardModalCardId, true);
+        }
+      };
+      window.filterLeaderModalBattles = function (filter) {
+        currentLeaderModalBattleFilter = filter;
+        if (lastActiveLeaderModalCharId) {
+          openLeaderDetailModal(lastActiveLeaderModalCharId, true);
+        }
+      };
       window.sortCardList = function (sortKey) {
         currentCardSort = sortKey;
         renderCardList();
@@ -2077,6 +2262,9 @@
           const cardModal = document.getElementById('card-detail-modal');
           const isCardModalOpen =
             cardModal && !cardModal.classList.contains('hidden');
+          const leaderModal = document.getElementById('leader-detail-modal');
+          const isLeaderModalOpen =
+            leaderModal && !leaderModal.classList.contains('hidden');
           const playerModal = document.getElementById('player-detail-modal');
           const isPlayerModalOpen =
             playerModal && !playerModal.classList.contains('hidden');
@@ -2090,6 +2278,10 @@
               closeCardDetailModal();
               return;
             }
+            if (isLeaderModalOpen) {
+              closeLeaderDetailModal();
+              return;
+            }
             if (isPlayerModalOpen) {
               closePlayerDetailModal();
               return;
@@ -2101,6 +2293,8 @@
               trapModalFocus(ev, deckModal);
             } else if (isCardModalOpen) {
               trapModalFocus(ev, cardModal);
+            } else if (isLeaderModalOpen) {
+              trapModalFocus(ev, leaderModal);
             } else if (isPlayerModalOpen) {
               trapModalFocus(ev, playerModal);
             }
@@ -2197,7 +2391,8 @@
               isSelected ? 'player-row-selected' : ''
             } ${isExcluded ? 'opacity-40 bg-slate-50' : ''}"
                 data-uuid="${escapeHtml(p.uuid)}"
-                onclick="window.selectPlayer('${p.uuid}')">
+                onclick="window.selectPlayer('${p.uuid}')"
+                title="クリックして詳細情報を表示">
               <td class="p-2 md:p-3 text-center text-[10px] font-black text-slate-300 group-hover:text-indigo-400 transition-colors">${
                 idx + 1
               }</td>
@@ -2225,23 +2420,23 @@
                   ${escapeHtml(charName)}
                 </span>
               </td>
+              <td class="p-2 md:p-3 text-center" title="所持: ${formatNumber(p.common_points || 0)} Pt / 累計: ${formatNumber(p.common_total_points || p.common_points || 0)} Pt">
+                <div class="text-[11px] font-black text-yellow-600">${formatNumber(p.common_total_points || p.common_points || 0)}</div>
+              </td>
+              <td class="p-2 md:p-3 text-center">
+                <div class="text-[11px] font-black text-rose-600">${formatNumber(p.high_difficulty_total_points || 0)}</div>
+              </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-amber-600">${formatNumber(p.total_points || 0)}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-amber-500">${p.defense_wins || 0}</div>
               </td>
-              <td class="p-2 md:p-3 text-center" title="所持: ${formatNumber(p.common_points || 0)} Pt / 累計: ${formatNumber(p.common_total_points || p.common_points || 0)} Pt">
-                <div class="text-[11px] font-black text-yellow-600">${formatNumber(p.common_total_points || p.common_points || 0)}</div>
-              </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-emerald-600">${formatNumber(p.challenge_total_points || 0)}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-violet-600">${formatNumber(p.tournament_total_points || 0)}</div>
-              </td>
-              <td class="p-2 md:p-3 text-center">
-                <div class="text-[11px] font-black text-rose-600">${formatNumber(p.high_difficulty_total_points || 0)}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black text-sky-600">${formatNumber(p.fortune_total_points || 0)}</div>
@@ -2275,17 +2470,6 @@
                       : '-'
                   }
                 </div>
-              </td>
-              <td class="p-2 md:p-3 text-center">
-                <button
-                  type="button"
-                  data-action="open-player-detail"
-                  data-uuid="${escapeHtml(p.uuid)}"
-                  class="px-2.5 py-1 text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-sm flex items-center gap-1 mx-auto"
-                  title="プレイヤー詳細モーダルを開く"
-                >
-                  <span>🔍 詳細</span>
-                </button>
               </td>
             </tr>`;
           })
@@ -3179,8 +3363,8 @@
       // =============================
       /**
        * リーダー一覧の集計とレンダリングを行う関数。
-       * プレイヤーデータから登録デッキ・防衛デッキリーダー使用数、および攻撃履歴データから攻撃デッキリーダー使用数を集計して表示する。
-       * 攻撃デッキ使用数の集計では、同一攻撃プレイヤー（UUID）による重複を加算せず、ユニーク攻撃者数を集計する。
+       * プレイヤーデータから登録デッキ・防衛デッキリーダー使用数、
+       * および対戦履歴データから攻撃・防衛時の勝率や使用数を集計してモダンUIで描画する。
        *
        * @function renderLeaderList
        * @returns {void}
@@ -3203,21 +3387,24 @@
           }`;
         }
 
-        // 登録デッキ、防衛デッキでのリーダー使用数と、攻撃履歴でのリーダー使用数（UUID重複排除）
+        // 1. 登録デッキおよび防衛デッキのリーダー使用数集計
         const registeredLeaderCounts = {}; // charId -> 登録しているプレイヤー人数
+        const registeredLeaderDecks = {}; // charId -> 登録デッキ総数
         const defenseLeaderCounts = {};
         const globalPlayerLeaderSet = {}; // attackerUuid -> Set of charId
 
-        // 1. 登録デッキおよび防衛デッキのリーダー使用数集計
         allPlayers.forEach((p) => {
           if (excludedPlayerIds.has(p.uuid)) return;
 
-          // 登録デッキ集計（同一プレイヤー内での重複をSetで排除）
+          // 登録デッキ集計（初期デッキ完全一致は除外）
           const playerRegLeaders = new Set();
           if (Array.isArray(p.registered_decks)) {
             p.registered_decks.forEach((d) => {
               if (d && d.leaderId) {
+                if (Array.isArray(d.cards) && isInitialDeck(d.cards)) return;
                 playerRegLeaders.add(d.leaderId);
+                registeredLeaderDecks[d.leaderId] =
+                  (registeredLeaderDecks[d.leaderId] || 0) + 1;
               }
             });
           }
@@ -3234,21 +3421,56 @@
           }
         });
 
-        // 2. 攻撃デッキのリーダー使用数集計（選択された対戦ログ範囲 activeBattles から集計し、同一攻撃者UUIDで重複排除）
+        // 2. 対戦履歴（activeBattles）から各リーダーの攻撃・防衛戦績を集計
+        const leaderBattleStats = new Map();
+        const getOrInitStats = (charId) => {
+          if (!leaderBattleStats.has(charId)) {
+            leaderBattleStats.set(charId, {
+              atkMatches: 0,
+              atkWins: 0,
+              atkLosses: 0,
+              atkDraws: 0,
+              defMatches: 0,
+              defWins: 0,
+              defLosses: 0,
+              defDraws: 0,
+            });
+          }
+          return leaderBattleStats.get(charId);
+        };
+
         activeBattles.forEach((rec) => {
-          if (!rec.attackerUuid || excludedPlayerIds.has(rec.attackerUuid))
-            return;
-          const attackerUuid = rec.attackerUuid;
-          const charId = rec.attackerCharacter;
-          if (charId) {
-            if (!globalPlayerLeaderSet[attackerUuid]) {
-              globalPlayerLeaderSet[attackerUuid] = new Set();
+          const isAtkWin = rec.result === 'lose'; // rec.result は防衛側視点 ('win' | 'lose' | 'draw')
+          const isDefWin = rec.result === 'win';
+          const isDraw = rec.result === 'draw';
+
+          // 攻撃側リーダー集計
+          if (rec.attackerUuid && !excludedPlayerIds.has(rec.attackerUuid)) {
+            const atkCharId = rec.attackerCharacter || 'android';
+            const stat = getOrInitStats(atkCharId);
+            stat.atkMatches++;
+            if (isAtkWin) stat.atkWins++;
+            else if (isDraw) stat.atkDraws++;
+            else stat.atkLosses++;
+
+            if (!globalPlayerLeaderSet[rec.attackerUuid]) {
+              globalPlayerLeaderSet[rec.attackerUuid] = new Set();
             }
-            globalPlayerLeaderSet[attackerUuid].add(charId);
+            globalPlayerLeaderSet[rec.attackerUuid].add(atkCharId);
+          }
+
+          // 防衛側リーダー集計
+          if (rec.targetUuid && !excludedPlayerIds.has(rec.targetUuid)) {
+            const { charId: defCharId } = resolveDefenderIdentity(rec);
+            const stat = getOrInitStats(defCharId);
+            stat.defMatches++;
+            if (isDefWin) stat.defWins++;
+            else if (isDraw) stat.defDraws++;
+            else stat.defLosses++;
           }
         });
 
-        // 全攻撃者ごとの使用リーダーキャラID（Set）を各リーダーの攻撃使用数に加算
+        // 全攻撃者ごとの使用リーダーキャラID（Set）を各リーダーの攻撃使用人数に加算
         const attackLeaderCounts = {};
         Object.values(globalPlayerLeaderSet).forEach((charSet) => {
           charSet.forEach((charId) => {
@@ -3262,33 +3484,95 @@
           return c && typeof c === 'object' && (c.name || c.id);
         });
 
-        // Object.keys() は仕様上キーが一意であるため重複排除は不要
-        const uniqueCharKeys = charKeys;
-
-        const leaderList = uniqueCharKeys.map((key) => {
+        let leaderList = charKeys.map((key) => {
           const charData = CHARACTERS[key] || {};
           const name = charData.name || key;
           const desc = charData.desc || '';
           const icon =
             fixAssetPath(charData.icon || charData.image) || getIconPath(key);
+          const hp = charData.hp || 30;
+          const leaderSkill = charData.leaderSkill || null;
           const regCount = registeredLeaderCounts[key] || 0;
+          const regDecks = registeredLeaderDecks[key] || 0;
           const defCount = defenseLeaderCounts[key] || 0;
           const atkCount = attackLeaderCounts[key] || 0;
+          const bStat = leaderBattleStats.get(key) || {
+            atkMatches: 0,
+            atkWins: 0,
+            atkLosses: 0,
+            atkDraws: 0,
+            defMatches: 0,
+            defWins: 0,
+            defLosses: 0,
+            defDraws: 0,
+          };
 
           return {
             id: key,
             name,
             desc,
             icon,
+            hp,
+            leaderSkill,
             regCount,
+            regDecks,
             defCount,
             atkCount,
+            bStat,
           };
         });
 
+        // 検索フィルター適用
+        if (leaderSearchQuery) {
+          leaderList = leaderList.filter((c) => {
+            const nameMatch = c.name.toLowerCase().includes(leaderSearchQuery);
+            const idMatch = c.id.toLowerCase().includes(leaderSearchQuery);
+            const skillNameMatch = c.leaderSkill?.name
+              ? c.leaderSkill.name.toLowerCase().includes(leaderSearchQuery)
+              : false;
+            const skillDescMatch = c.leaderSkill?.desc
+              ? c.leaderSkill.desc.toLowerCase().includes(leaderSearchQuery)
+              : false;
+            const descMatch = c.desc
+              ? c.desc.toLowerCase().includes(leaderSearchQuery)
+              : false;
+            return (
+              nameMatch ||
+              idMatch ||
+              skillNameMatch ||
+              skillDescMatch ||
+              descMatch
+            );
+          });
+        }
+
         // ソート処理
         leaderList.sort((a, b) => {
-          if (currentLeaderSort === 'registered') {
+          if (currentLeaderSort === 'attack_winrate') {
+            const mA = a.bStat.atkMatches;
+            const mB = b.bStat.atkMatches;
+            if (mA > 0 && mB === 0) return -1;
+            if (mA === 0 && mB > 0) return 1;
+            if (mA > 0 && mB > 0) {
+              const rateA = a.bStat.atkWins / mA;
+              const rateB = b.bStat.atkWins / mB;
+              if (rateA !== rateB) return rateB - rateA;
+              if (mA !== mB) return mB - mA;
+            }
+            if (a.regCount !== b.regCount) return b.regCount - a.regCount;
+          } else if (currentLeaderSort === 'defense_winrate') {
+            const mA = a.bStat.defMatches;
+            const mB = b.bStat.defMatches;
+            if (mA > 0 && mB === 0) return -1;
+            if (mA === 0 && mB > 0) return 1;
+            if (mA > 0 && mB > 0) {
+              const rateA = a.bStat.defWins / mA;
+              const rateB = b.bStat.defWins / mB;
+              if (rateA !== rateB) return rateB - rateA;
+              if (mA !== mB) return mB - mA;
+            }
+            if (a.regCount !== b.regCount) return b.regCount - a.regCount;
+          } else if (currentLeaderSort === 'registered') {
             if (a.regCount !== b.regCount) return b.regCount - a.regCount;
             if (a.atkCount !== b.atkCount) return b.atkCount - a.atkCount;
             if (a.defCount !== b.defCount) return b.defCount - a.defCount;
@@ -3309,85 +3593,263 @@
           leadersCountElem.innerText = `(${leaderList.length}人)`;
         }
 
+        const gridContainer = document.getElementById('leaders-grid');
+        if (!gridContainer) return;
+
+        if (leaderList.length === 0) {
+          gridContainer.innerHTML = `
+            <div class="col-span-full p-12 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border border-slate-200">
+              「${escapeHtml(leaderSearchQuery)}」に一致するリーダーが見つかりませんでした。
+            </div>
+          `;
+          return;
+        }
+
         const gridHtml = leaderList
           .map((c) => {
             const isZero =
-              c.regCount === 0 && c.defCount === 0 && c.atkCount === 0;
+              c.regCount === 0 &&
+              c.defCount === 0 &&
+              c.atkCount === 0 &&
+              c.bStat.atkMatches === 0 &&
+              c.bStat.defMatches === 0;
+
+            const atkWinRate =
+              c.bStat.atkMatches > 0
+                ? ((c.bStat.atkWins / c.bStat.atkMatches) * 100).toFixed(1)
+                : null;
+            const defWinRate =
+              c.bStat.defMatches > 0
+                ? ((c.bStat.defWins / c.bStat.defMatches) * 100).toFixed(1)
+                : null;
+
+            const atkWinRateStr =
+              atkWinRate !== null ? `${atkWinRate}%` : '--%';
+            const defWinRateStr =
+              defWinRate !== null ? `${defWinRate}%` : '--%';
+
+            const atkWinPctVal =
+              atkWinRate !== null ? parseFloat(atkWinRate) : 0;
+            const defWinPctVal =
+              defWinRate !== null ? parseFloat(defWinRate) : 0;
+
+            const skillName = c.leaderSkill?.name || 'スキルなし';
+            const skillCost =
+              c.leaderSkill?.cost !== undefined
+                ? `SP:${c.leaderSkill.cost}`
+                : '';
+            const skillDesc = c.leaderSkill?.desc || '';
+
             return `
-            <div class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-2xl p-4 flex flex-col shadow-sm hover:shadow-md transition-all">
-              <div class="flex gap-4 mb-3 items-center">
-                <img src="${escapeHtml(c.icon)}" loading="lazy" class="w-16 h-16 object-cover rounded-2xl border-2 border-indigo-500 bg-slate-900 shrink-0 shadow-sm" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
-                <div class="flex flex-col flex-1 min-w-0">
-                  <div class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
-                  <div class="text-[10px] font-bold text-slate-400 truncate mt-0.5">${escapeHtml(c.id)}</div>
-                  <div class="mt-2 text-[11px] font-bold space-y-0.5">
-                    <div class="text-emerald-600">📋 デッキ登録: <span class="font-black">${c.regCount}</span> 人</div>
-                    <div class="text-indigo-600">⚔️ 攻撃デッキ使用: <span class="font-black">${c.atkCount}</span> 人</div>
-                    <div class="text-amber-600">🛡️ 防衛デッキ使用: <span class="font-black">${c.defCount}</span> 人</div>
+            <div
+              class="bg-white border ${isZero ? 'border-slate-200 opacity-70' : 'border-slate-200 hover:border-indigo-500'} rounded-2xl p-4 flex flex-col shadow-xs hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer group relative overflow-hidden"
+              onclick="window.openLeaderDetailModal('${escapeHtml(c.id)}')"
+              role="button"
+              tabindex="0"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.openLeaderDetailModal('${escapeHtml(c.id)}');}"
+              title="クリックして「${escapeHtml(c.name)}」の採用デッキ・詳細戦績を確認"
+            >
+              <!-- 上部: アイコン + 名前 + ID + スキルバッジ -->
+              <div class="flex gap-3.5 mb-3 items-start">
+                <div class="shrink-0">
+                  <img
+                    src="${escapeHtml(c.icon)}"
+                    loading="lazy"
+                    class="w-16 h-16 object-cover rounded-2xl border-2 border-indigo-500 bg-slate-900 group-hover:scale-105 transition-transform shadow-xs"
+                    alt="${escapeHtml(c.name)}"
+                    onerror="this.onerror=null; this.src='${getIconPath('player')}'"
+                  />
+                </div>
+                <div class="flex-1 min-w-0 flex flex-col justify-between min-h-[64px]">
+                  <div>
+                    <div class="font-black text-slate-800 text-sm truncate group-hover:text-indigo-600 transition-colors" title="${escapeHtml(c.name)}">
+                      ${escapeHtml(c.name)}
+                    </div>
+                    <div class="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+                      ${escapeHtml(c.id)}
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span class="text-[10px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 shrink-0 truncate max-w-[150px]" title="${escapeHtml(skillName)}">
+                      ⚡ ${escapeHtml(skillName)}
+                    </span>
+                    ${skillCost ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shrink-0">${escapeHtml(skillCost)}</span>` : ''}
                   </div>
                 </div>
               </div>
-              ${c.desc ? `<div class="mt-auto bg-slate-50 rounded-xl p-2.5 text-[10px] text-slate-500 line-clamp-2 leading-relaxed border border-slate-100">${escapeHtml(c.desc)}</div>` : ''}
+
+              <!-- 勝率ダッシュボード（最重要情報） -->
+              <div class="grid grid-cols-2 gap-2 mb-2.5">
+                <!-- 攻撃勝率 -->
+                <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between text-[10px] font-bold text-indigo-900">
+                    <span class="flex items-center gap-0.5">⚔️ 攻勝率</span>
+                    <span class="text-[9px] text-indigo-500 font-medium">${c.bStat.atkMatches}戦</span>
+                  </div>
+                  <div class="flex items-baseline justify-between mt-1 gap-1 flex-wrap">
+                    <span class="text-base font-black ${c.bStat.atkMatches > 0 ? 'text-indigo-700' : 'text-slate-400'}">${atkWinRateStr}</span>
+                    <span class="text-[9px] font-bold text-slate-500 whitespace-nowrap">${c.bStat.atkWins}勝/${c.bStat.atkLosses}敗</span>
+                  </div>
+                  <div class="w-full bg-indigo-200/50 h-1.5 rounded-full overflow-hidden mt-1.5">
+                    <div class="bg-indigo-600 h-full rounded-full transition-all" style="width: ${atkWinPctVal}%"></div>
+                  </div>
+                </div>
+
+                <!-- 防衛勝率 -->
+                <div class="bg-amber-50/70 border border-amber-100 rounded-xl p-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between text-[10px] font-bold text-amber-900">
+                    <span class="flex items-center gap-0.5">🛡️ 防勝率</span>
+                    <span class="text-[9px] text-amber-500 font-medium">${c.bStat.defMatches}戦</span>
+                  </div>
+                  <div class="flex items-baseline justify-between mt-1 gap-1 flex-wrap">
+                    <span class="text-base font-black ${c.bStat.defMatches > 0 ? 'text-amber-700' : 'text-slate-400'}">${defWinRateStr}</span>
+                    <span class="text-[9px] font-bold text-slate-500 whitespace-nowrap">${c.bStat.defWins}勝/${c.bStat.defLosses}敗</span>
+                  </div>
+                  <div class="w-full bg-amber-200/50 h-1.5 rounded-full overflow-hidden mt-1.5">
+                    <div class="bg-amber-600 h-full rounded-full transition-all" style="width: ${defWinPctVal}%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 採用数 メトリクス -->
+              <div class="bg-slate-50/80 rounded-xl p-2 mb-2 text-[10px] font-bold grid grid-cols-3 gap-1 border border-slate-100 text-slate-600 text-center">
+                <div class="flex flex-col">
+                  <span class="text-slate-400 text-[9px]">📋 登録</span>
+                  <span class="font-black text-slate-800 mt-0.5">${c.regCount}人</span>
+                </div>
+                <div class="flex flex-col border-x border-slate-200">
+                  <span class="text-slate-400 text-[9px]">🛡️ 防衛</span>
+                  <span class="font-black text-slate-800 mt-0.5">${c.defCount}人</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-slate-400 text-[9px]">⚔️ 攻撃使用</span>
+                  <span class="font-black text-slate-800 mt-0.5">${c.atkCount}人</span>
+                </div>
+              </div>
+
+              <!-- リーダースキル・キャラ説明 -->
+              <div class="bg-slate-50 rounded-xl p-2.5 text-[10px] mb-2 min-h-[44px] max-h-[58px] overflow-y-auto scroll-custom border border-slate-100 leading-relaxed text-slate-600">
+                ${skillDesc ? `<div class="font-bold text-slate-700 mb-0.5">${escapeHtml(skillDesc)}</div>` : ''}
+                ${c.desc ? `<div class="text-[9px] text-slate-400 line-clamp-1">${escapeHtml(c.desc)}</div>` : ''}
+              </div>
+
+              <!-- フッターリンク -->
+              <div class="mt-auto pt-1 flex items-center justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700">
+                <span>詳細分析・採用デッキ</span>
+                <span class="transform group-hover:translate-x-1 transition-transform font-black">→</span>
+              </div>
             </div>
           `;
           })
           .join('');
 
-        const gridContainer = document.getElementById('leaders-grid');
-        if (gridContainer) {
-          gridContainer.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">${gridHtml}</div>`;
-        }
+        gridContainer.innerHTML = `<div class="grid gap-4" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">${gridHtml}</div>`;
       }
 
       // =============================
       // 全カード一覧セクション
       // =============================
-      function renderCardList() {
-        const totalCount = allPlayers.length;
-        const includedCount = totalCount - excludedPlayerIds.size;
-        const activeBattles = getFilteredRecentBattles();
-        const activeCount = activeBattles.length;
-        const totalBattleCount = recentBattles.length;
 
-        const cardsFilterStatus = document.getElementById(
-          'cards-filter-status'
-        );
-        if (cardsFilterStatus) {
-          cardsFilterStatus.innerHTML = `プレイヤー: <span class="font-black text-indigo-600">${includedCount}</span>/${totalCount}人 | 攻撃対戦ログ: <span class="font-black text-indigo-600">${activeCount}</span>/${totalBattleCount}件${
-            excludedPlayerIds.size > 0
-              ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
-              : ''
-          }`;
+      /**
+       * 全カードの対戦ログ・採用・所持統計データを集計する
+       * （同一デッキ内の複数枚投入の場合も1試合としてカウント）
+       * @param {Array} activeBattles - 集計対象の対戦ログ配列
+       * @param {Array} players - プレイヤー一覧配列
+       * @param {Set<string>} excludedUuids - 集計から除外するプレイヤーUUID集合
+       * @returns {Object} 各種集計マップ
+       */
+      function calculateAllCardStats(activeBattles, players, excludedUuids) {
+        // 対戦ログ集計: cardId => { atkMatches, atkWins, atkLosses, defMatches, defWins, defLosses }
+        const battleStats = new Map();
+
+        function getCardBattleStat(cardId) {
+          let s = battleStats.get(cardId);
+          if (!s) {
+            s = {
+              atkMatches: 0,
+              atkWins: 0,
+              atkLosses: 0,
+              defMatches: 0,
+              defWins: 0,
+              defLosses: 0,
+            };
+            battleStats.set(cardId, s);
+          }
+          return s;
         }
 
-        // トークンを除外
-        const cards = CARD_MASTER.filter(
-          (c) => !String(c.id).startsWith('token_')
-        );
+        // 1. 対戦ログ走査（デッキ単位で1回のみカウント：複数枚投入時も1試合）
+        activeBattles.forEach((rec) => {
+          // 攻撃側デッキ
+          if (
+            rec.attackerUuid &&
+            !excludedUuids.has(rec.attackerUuid) &&
+            Array.isArray(rec.attackerDeck)
+          ) {
+            const isAtkWin = rec.result === 'lose'; // rec.result は防衛側視点 ('win'=防衛成功, 'lose'=防衛失敗/攻撃成功)
+            const isDraw = rec.result === 'draw';
 
-        // 使用回数を集計 (登録デッキ & 防衛デッキ & 攻撃デッキ)
+            // 同一デッキ内の重複カードを Set で排除して1試合カウント
+            const uniqueAtkCardIds = new Set(
+              rec.attackerDeck.map(resolveCardId).filter(Boolean)
+            );
+            uniqueAtkCardIds.forEach((cId) => {
+              const st = getCardBattleStat(cId);
+              st.atkMatches++;
+              if (isAtkWin) {
+                st.atkWins++;
+              } else if (!isDraw) {
+                st.atkLosses++;
+              }
+            });
+          }
+
+          // 防衛側デッキ
+          if (rec.targetUuid && !excludedUuids.has(rec.targetUuid)) {
+            const targetPlayer = players.find((p) => p.uuid === rec.targetUuid);
+            const defDeck =
+              Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0
+                ? rec.defenderDeck
+                : targetPlayer?.deck;
+
+            if (Array.isArray(defDeck)) {
+              const isDefWin = rec.result === 'win';
+              const isDraw = rec.result === 'draw';
+
+              // 同一デッキ内の重複カードを Set で排除して1試合カウント
+              const uniqueDefCardIds = new Set(
+                defDeck.map(resolveCardId).filter(Boolean)
+              );
+              uniqueDefCardIds.forEach((cId) => {
+                const st = getCardBattleStat(cId);
+                st.defMatches++;
+                if (isDefWin) {
+                  st.defWins++;
+                } else if (!isDraw) {
+                  st.defLosses++;
+                }
+              });
+            }
+          }
+        });
+
+        // 2. 登録デッキ、防衛デッキ、所持数・プレミアム解放の集計
         const registeredUsageCounts = {};
         const defenseUsageCounts = {};
         const attackUsageCounts = {};
-
-        // 所持状況・プレミアム解放状況の集計
         const ownedPlayerCounts = {};
         const ownedTotalCopies = {};
         const premiumUnlockedCounts = {};
 
-        // 1. 登録デッキ、防衛デッキ、所持・プレミアム解放の集計
-        allPlayers.forEach((p) => {
-          if (excludedPlayerIds.has(p.uuid)) return;
+        players.forEach((p) => {
+          if (excludedUuids.has(p.uuid)) return;
 
-          // 登録デッキ（registered_decks）集計（1プレイヤー内の最大投入枚数 1〜4枚 ロジック）
-          // ※初期デッキと完全に一致するスロットは未編集デフォルトデッキとして除外し、実際の構築デッキのみを集計
+          // 登録デッキ集計（初期デッキ完全一致は除外）
           if (Array.isArray(p.registered_decks)) {
             const playerDeckCardMax = {};
             p.registered_decks.forEach((deck) => {
               if (deck && Array.isArray(deck.cards)) {
-                // 初期デッキと完全に一致するものは集計対象外
                 if (isInitialDeck(deck.cards)) return;
-
                 const deckCardCounts = {};
                 deck.cards.forEach((entry) => {
                   const cId = resolveCardId(entry);
@@ -3408,7 +3870,21 @@
             });
           }
 
-          // 所持カード（インベントリ）集計
+          // 防衛デッキ集計
+          if (p.has_defense_deck && Array.isArray(p.deck)) {
+            const defCardCounts = {};
+            p.deck.forEach((entry) => {
+              const cId = resolveCardId(entry);
+              if (!cId) return;
+              defCardCounts[cId] = (defCardCounts[cId] || 0) + 1;
+            });
+            Object.keys(defCardCounts).forEach((cId) => {
+              defenseUsageCounts[cId] =
+                (defenseUsageCounts[cId] || 0) + defCardCounts[cId];
+            });
+          }
+
+          // インベントリ
           const inventory = p.inventory || {};
           Object.keys(inventory).forEach((cId) => {
             const count = parseInt(inventory[cId], 10) || 0;
@@ -3418,7 +3894,7 @@
             }
           });
 
-          // プレミアム解放集計（同一プレイヤー内の重複を排除して加算）
+          // プレミアム解放
           const unlockedPrem = p.unlocked_premium_cards || [];
           if (Array.isArray(unlockedPrem)) {
             const uniquePrem = new Set(
@@ -3431,66 +3907,35 @@
           }
         });
 
-        // 2. 攻撃デッキ使用数および防衛デッキ使用数の集計（選択された対戦ログ範囲 activeBattles から集計）
+        // 攻撃デッキ使用枚数（対戦ログの最大値）
         const globalPlayerCardMaxCounts = {};
-        const globalDefenderCardMaxCounts = {};
-
         activeBattles.forEach((rec) => {
-          // 攻撃デッキ集計（同一攻撃者の履歴がある場合は最大値を採用）
-          if (rec.attackerUuid && !excludedPlayerIds.has(rec.attackerUuid)) {
+          if (
+            rec.attackerUuid &&
+            !excludedUuids.has(rec.attackerUuid) &&
+            Array.isArray(rec.attackerDeck)
+          ) {
             const attackerUuid = rec.attackerUuid;
-            if (Array.isArray(rec.attackerDeck)) {
-              const deckCardCounts = {};
-              rec.attackerDeck.forEach((entry) => {
-                const cId = resolveCardId(entry);
-                if (!cId) return;
-                deckCardCounts[cId] = (deckCardCounts[cId] || 0) + 1;
-              });
+            const deckCardCounts = {};
+            rec.attackerDeck.forEach((entry) => {
+              const cId = resolveCardId(entry);
+              if (!cId) return;
+              deckCardCounts[cId] = (deckCardCounts[cId] || 0) + 1;
+            });
 
-              if (!globalPlayerCardMaxCounts[attackerUuid]) {
-                globalPlayerCardMaxCounts[attackerUuid] = {};
-              }
-              Object.keys(deckCardCounts).forEach((cId) => {
-                const currentMax =
-                  globalPlayerCardMaxCounts[attackerUuid][cId] || 0;
-                globalPlayerCardMaxCounts[attackerUuid][cId] = Math.max(
-                  currentMax,
-                  deckCardCounts[cId]
-                );
-              });
+            if (!globalPlayerCardMaxCounts[attackerUuid]) {
+              globalPlayerCardMaxCounts[attackerUuid] = {};
             }
-          }
-
-          // 防衛デッキ集計（同一防衛者の履歴がある場合は最大値を採用）
-          // ※ 過去の対戦履歴（defenderDeck）が存在するデータのみを集計対象とし、現行デッキで過去履歴を汚染しない
-          if (rec.targetUuid && !excludedPlayerIds.has(rec.targetUuid)) {
-            const targetUuid = rec.targetUuid;
-            const defDeck = rec.defenderDeck;
-
-            if (Array.isArray(defDeck) && defDeck.length > 0) {
-              const deckCardCounts = {};
-              defDeck.forEach((entry) => {
-                const cId = resolveCardId(entry);
-                if (!cId) return;
-                deckCardCounts[cId] = (deckCardCounts[cId] || 0) + 1;
-              });
-
-              if (!globalDefenderCardMaxCounts[targetUuid]) {
-                globalDefenderCardMaxCounts[targetUuid] = {};
-              }
-              Object.keys(deckCardCounts).forEach((cId) => {
-                const currentMax =
-                  globalDefenderCardMaxCounts[targetUuid][cId] || 0;
-                globalDefenderCardMaxCounts[targetUuid][cId] = Math.max(
-                  currentMax,
-                  deckCardCounts[cId]
-                );
-              });
-            }
+            Object.keys(deckCardCounts).forEach((cId) => {
+              const currentMax =
+                globalPlayerCardMaxCounts[attackerUuid][cId] || 0;
+              globalPlayerCardMaxCounts[attackerUuid][cId] = Math.max(
+                currentMax,
+                deckCardCounts[cId]
+              );
+            });
           }
         });
-
-        // 全攻撃者ごとのカード最大枚数を攻撃使用数に加算
         Object.values(globalPlayerCardMaxCounts).forEach((counts) => {
           Object.keys(counts).forEach((cId) => {
             attackUsageCounts[cId] =
@@ -3498,19 +3943,101 @@
           });
         });
 
-        // 全防衛者ごとのカード最大枚数を防衛使用数に加算
-        Object.values(globalDefenderCardMaxCounts).forEach((counts) => {
-          Object.keys(counts).forEach((cId) => {
-            defenseUsageCounts[cId] =
-              (defenseUsageCounts[cId] || 0) + counts[cId];
-          });
-        });
+        return {
+          battleStats,
+          registeredUsageCounts,
+          defenseUsageCounts,
+          attackUsageCounts,
+          ownedPlayerCounts,
+          ownedTotalCopies,
+          premiumUnlockedCounts,
+        };
+      }
 
-        // 定義順インデックスを事前計算する（ソート内の線形探索を排除）
-        const orderMap = new Map(CARD_MASTER.map((c, i) => [c.id, i]));
+      /**
+       * 全カード一覧タイルを描画する（勝率表示・ソート・検索・UI最適化）
+       */
+      function renderCardList() {
+        const totalCount = allPlayers.length;
+        const includedCount = totalCount - excludedPlayerIds.size;
+        const activeBattles = getFilteredRecentBattles();
+        const activeCount = activeBattles.length;
+        const totalBattleCount = recentBattles.length;
+
+        // 集計の実行
+        const stats = calculateAllCardStats(
+          activeBattles,
+          allPlayers,
+          excludedPlayerIds
+        );
+        const {
+          battleStats,
+          registeredUsageCounts,
+          defenseUsageCounts,
+          attackUsageCounts,
+          ownedPlayerCounts,
+          ownedTotalCopies,
+          premiumUnlockedCounts,
+        } = stats;
+
+        // トークンを除外した全カード
+        const allMasterCards = (CARD_MASTER || []).filter(
+          (c) => !String(c.id).startsWith('token_')
+        );
+
+        // 検索フィルター適用
+        let cards = allMasterCards;
+        if (cardSearchQuery) {
+          cards = allMasterCards.filter((c) => {
+            const nameMatch = (c.name || '')
+              .toLowerCase()
+              .includes(cardSearchQuery);
+            const idMatch = (c.id || '')
+              .toLowerCase()
+              .includes(cardSearchQuery);
+            const skillMatch = (c.skills || []).some((sk) => {
+              const skName = (SKILLS[sk.id]?.name || sk.id || '').toLowerCase();
+              return skName.includes(cardSearchQuery);
+            });
+            return nameMatch || idMatch || skillMatch;
+          });
+        }
+
+        const cardsFilterStatus = document.getElementById(
+          'cards-filter-status'
+        );
+        if (cardsFilterStatus) {
+          cardsFilterStatus.innerHTML = `プレイヤー: <span class="font-black text-indigo-600">${includedCount}</span>/${totalCount}人 | 対戦ログ: <span class="font-black text-indigo-600">${activeCount}</span>/${totalBattleCount}件${
+            excludedPlayerIds.size > 0
+              ? ` <span class="text-rose-500 font-bold">(${excludedPlayerIds.size}人除外中)</span>`
+              : ''
+          }`;
+        }
+
+        const countEl = document.getElementById('cards-count');
+        if (countEl) {
+          countEl.innerText = cardSearchQuery
+            ? `(該当 ${cards.length} / 全 ${allMasterCards.length} 種)`
+            : `(${cards.length}種)`;
+        }
+
+        // 定義順インデックスマップ（安定ソート用）
+        const orderMap = new Map(allMasterCards.map((c, i) => [c.id, i]));
 
         // ソート処理
         cards.sort((a, b) => {
+          const statA = battleStats.get(a.id) || {
+            atkMatches: 0,
+            atkWins: 0,
+            defMatches: 0,
+            defWins: 0,
+          };
+          const statB = battleStats.get(b.id) || {
+            atkMatches: 0,
+            atkWins: 0,
+            defMatches: 0,
+            defWins: 0,
+          };
           const regA = registeredUsageCounts[a.id] || 0;
           const regB = registeredUsageCounts[b.id] || 0;
           const defA = defenseUsageCounts[a.id] || 0;
@@ -3524,7 +4051,31 @@
           const premA = premiumUnlockedCounts[a.id] || 0;
           const premB = premiumUnlockedCounts[b.id] || 0;
 
-          if (currentCardSort === 'registered') {
+          if (currentCardSort === 'attack_winrate') {
+            const mA = statA.atkMatches;
+            const mB = statB.atkMatches;
+            // 0戦カードは末尾へ送る
+            if (mA > 0 && mB === 0) return -1;
+            if (mA === 0 && mB > 0) return 1;
+            if (mA > 0 && mB > 0) {
+              const rateA = statA.atkWins / mA;
+              const rateB = statB.atkWins / mB;
+              if (rateA !== rateB) return rateB - rateA;
+              if (mA !== mB) return mB - mA;
+            }
+          } else if (currentCardSort === 'defense_winrate') {
+            const mA = statA.defMatches;
+            const mB = statB.defMatches;
+            // 0戦カードは末尾へ送る
+            if (mA > 0 && mB === 0) return -1;
+            if (mA === 0 && mB > 0) return 1;
+            if (mA > 0 && mB > 0) {
+              const rateA = statA.defWins / mA;
+              const rateB = statB.defWins / mB;
+              if (rateA !== rateB) return rateB - rateA;
+              if (mA !== mB) return mB - mA;
+            }
+          } else if (currentCardSort === 'registered') {
             if (regA !== regB) return regB - regA;
             if (atkA !== atkB) return atkB - atkA;
             if (defA !== defB) return defB - defA;
@@ -3549,17 +4100,35 @@
             if (a.rarity !== b.rarity) return b.rarity - a.rarity;
           }
 
-          // 定義順に存在しないカードは常に末尾へ送る
+          // 定義順インデックスで安定ソート
           const idxA = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
           const idxB = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
           return idxA - idxB;
         });
 
-        document.getElementById('cards-count').innerText =
-          `(${cards.length}種)`;
+        const gridEl = document.getElementById('cards-grid');
+        if (!gridEl) return;
+
+        if (cards.length === 0) {
+          gridEl.innerHTML = `
+            <div class="col-span-full p-12 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border border-slate-200">
+              「${escapeHtml(cardSearchQuery)}」に一致するカードが見つかりませんでした。
+            </div>
+          `;
+          return;
+        }
 
         const gridHtml = cards
           .map((c) => {
+            const bStat = battleStats.get(c.id) || {
+              atkMatches: 0,
+              atkWins: 0,
+              atkLosses: 0,
+              defMatches: 0,
+              defWins: 0,
+              defLosses: 0,
+            };
+
             const regCount = registeredUsageCounts[c.id] || 0;
             const defCount = defenseUsageCounts[c.id] || 0;
             const atkCount = attackUsageCounts[c.id] || 0;
@@ -3572,20 +4141,31 @@
               includedCount > 0
                 ? ((ownCount / includedCount) * 100).toFixed(0)
                 : 0;
-            const premRate =
-              includedCount > 0
-                ? ((premCount / includedCount) * 100).toFixed(0)
-                : 0;
 
             const rarityColor = RARITY_COLORS[c.rarity] || 'slate';
             const rarityLabel = RARITY_LABELS[c.rarity] || '?';
-            const isZero =
-              regCount === 0 &&
-              defCount === 0 &&
-              atkCount === 0 &&
-              ownCount === 0 &&
-              premCount === 0;
 
+            // 勝率計算（0戦なら null）
+            const atkWinRate =
+              bStat.atkMatches > 0
+                ? ((bStat.atkWins / bStat.atkMatches) * 100).toFixed(1)
+                : null;
+            const defWinRate =
+              bStat.defMatches > 0
+                ? ((bStat.defWins / bStat.defMatches) * 100).toFixed(1)
+                : null;
+
+            const atkWinRateStr =
+              atkWinRate !== null ? `${atkWinRate}%` : '--%';
+            const defWinRateStr =
+              defWinRate !== null ? `${defWinRate}%` : '--%';
+
+            const atkWinPctVal =
+              atkWinRate !== null ? parseFloat(atkWinRate) : 0;
+            const defWinPctVal =
+              defWinRate !== null ? parseFloat(defWinRate) : 0;
+
+            // スキルHTML
             const skillsHtml = (c.skills || [])
               .map((sk) => {
                 const skillName = SKILLS[sk.id]?.name || sk.id;
@@ -3593,81 +4173,111 @@
                   sk.value !== undefined && sk.value !== null
                     ? `: ${sk.value}`
                     : '';
-                return `<div class="text-[10px] text-slate-500"><span class="font-bold text-slate-700">${escapeHtml(skillName)}</span>${valueText}</div>`;
+                return `<div class="text-[10px] text-slate-600 leading-tight"><span class="font-bold text-slate-800">${escapeHtml(skillName)}</span>${valueText}</div>`;
               })
               .join('');
 
             return `
             <div
-              class="bg-white border ${isZero ? 'border-slate-200 opacity-60' : 'border-slate-300'} rounded-xl p-3 flex flex-col shadow-sm hover:shadow-lg hover:border-indigo-500 hover:scale-[1.01] transition-all cursor-pointer group"
+              class="bg-white border border-slate-200 hover:border-indigo-500 rounded-2xl p-3.5 flex flex-col shadow-xs hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer group relative overflow-hidden"
               onclick="window.openCardDetailModal('${escapeHtml(c.id)}')"
               role="button"
               tabindex="0"
               onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.openCardDetailModal('${escapeHtml(c.id)}');}"
-              title="クリックして「${escapeHtml(c.name)}」の採用デッキ・対戦履歴を確認"
+              title="クリックして「${escapeHtml(c.name)}」の採用デッキ・詳細戦績を確認"
             >
-              <div class="flex gap-3 mb-2">
-                <img src="${escapeHtml(getCardThumbPath(c.id))}" loading="lazy" class="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0 group-hover:scale-105 transition-transform" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
-                <div class="flex flex-col flex-1 min-w-0">
-                  <div class="flex justify-between items-start gap-1">
-                    <div class="font-black text-slate-800 text-sm truncate group-hover:text-indigo-600 transition-colors" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
-                    <div class="text-xs font-black text-indigo-500 shrink-0">PWR ${c.power ?? '?'}</div>
+              <!-- 上部: サムネイル + タイトル + レアリティ + PWR -->
+              <div class="flex gap-3 mb-2.5 items-start">
+                <div class="relative shrink-0">
+                  <img src="${escapeHtml(getCardThumbPath(c.id))}" loading="lazy" class="w-14 h-14 object-cover rounded-xl border border-slate-200 bg-slate-50 group-hover:scale-105 transition-transform shadow-xs" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                  <!-- レアリティバッジ（左上） -->
+                  <span class="absolute -top-1.5 -left-1.5 text-[10px] font-black text-${rarityColor}-700 bg-${rarityColor}-100 px-1.5 py-0.5 rounded border border-${rarityColor}-300 shadow-xs leading-none">${rarityLabel}</span>
+                </div>
+                <div class="flex-1 min-w-0 flex flex-col justify-between min-h-[56px]">
+                  <div class="font-black text-slate-800 text-sm truncate group-hover:text-indigo-600 transition-colors" title="${escapeHtml(c.name)}">
+                    ${escapeHtml(c.name)}
                   </div>
-                  <div class="mt-1 flex items-center gap-1.5 flex-wrap">
-                    <span class="text-[10px] font-black text-${rarityColor}-600 bg-${rarityColor}-50 px-1.5 py-0.5 rounded border border-${rarityColor}-200">${rarityLabel}</span>
-                    ${
-                      isPremiumTarget
-                        ? `<span class="text-[8px] font-black text-fuchsia-600 bg-fuchsia-50 px-1 py-0.5 rounded border border-fuchsia-200">✨ プレミアム対象</span>`
-                        : ''
-                    }
+                  <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span class="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 shrink-0">
+                      PWR ${c.power ?? '?'}
+                    </span>
+                    ${isPremiumTarget ? '<span class="text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shrink-0">★ プレミアム</span>' : ''}
+                  </div>
+                  <div class="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+                    ${escapeHtml(c.id)}
                   </div>
                 </div>
               </div>
 
-              <!-- 統計情報エリア -->
-              <div class="bg-slate-50 rounded-lg p-2 mb-2 text-[10px] font-bold space-y-1 border border-slate-100">
-                <div class="flex justify-between items-center text-indigo-700">
-                  <span>👥 所持者数:</span>
-                  <span class="font-black">${ownCount}人 <span class="text-[9px] text-slate-400 font-normal">(${ownRate}%)</span></span>
+              <!-- 勝率ダッシュボード（最重要情報） -->
+              <div class="grid grid-cols-2 gap-2 mb-2.5">
+                <!-- 攻撃勝率 -->
+                <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between text-[10px] font-bold text-indigo-900">
+                    <span class="flex items-center gap-0.5">⚔️ 攻勝率</span>
+                    <span class="text-[9px] text-indigo-500 font-medium">${bStat.atkMatches}戦</span>
+                  </div>
+                  <div class="flex items-baseline justify-between mt-1 gap-1 flex-wrap">
+                    <span class="text-base font-black ${bStat.atkMatches > 0 ? 'text-indigo-700' : 'text-slate-400'}">${atkWinRateStr}</span>
+                    <span class="text-[9px] font-bold text-slate-500 whitespace-nowrap">${bStat.atkWins}勝/${bStat.atkLosses}敗</span>
+                  </div>
+                  <div class="w-full bg-indigo-200/50 h-1.5 rounded-full overflow-hidden mt-1.5">
+                    <div class="bg-indigo-600 h-full rounded-full transition-all" style="width: ${atkWinPctVal}%"></div>
+                  </div>
                 </div>
-                <div class="flex justify-between items-center text-slate-600">
-                  <span>📦 総流通枚数:</span>
-                  <span class="font-black">${ownTotal}枚</span>
-                </div>
-                ${
-                  isPremiumTarget
-                    ? `
-                <div class="flex justify-between items-center text-fuchsia-700 border-t border-slate-200/60 pt-0.5">
-                  <span>✨ プレミアム解放:</span>
-                  <span class="font-black">${premCount}人 <span class="text-[9px] text-slate-400 font-normal">(${premRate}%)</span></span>
-                </div>`
-                    : ''
-                }
-                <div class="flex justify-between items-center text-slate-600 text-[9px] border-t border-slate-200/60 pt-0.5">
-                  <span class="text-emerald-600 font-black">📋 登録: ${regCount}枚</span>
-                  <span class="text-indigo-600 font-black">⚔️ 攻撃: ${atkCount}枚</span>
-                  <span class="text-amber-600 font-black">🛡️ 防衛: ${defCount}枚</span>
+
+                <!-- 防衛勝率 -->
+                <div class="bg-amber-50/70 border border-amber-100 rounded-xl p-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between text-[10px] font-bold text-amber-900">
+                    <span class="flex items-center gap-0.5">🛡️ 防勝率</span>
+                    <span class="text-[9px] text-amber-500 font-medium">${bStat.defMatches}戦</span>
+                  </div>
+                  <div class="flex items-baseline justify-between mt-1 gap-1 flex-wrap">
+                    <span class="text-base font-black ${bStat.defMatches > 0 ? 'text-amber-700' : 'text-slate-400'}">${defWinRateStr}</span>
+                    <span class="text-[9px] font-bold text-slate-500 whitespace-nowrap">${bStat.defWins}勝/${bStat.defLosses}敗</span>
+                  </div>
+                  <div class="w-full bg-amber-200/50 h-1.5 rounded-full overflow-hidden mt-1.5">
+                    <div class="bg-amber-600 h-full rounded-full transition-all" style="width: ${defWinPctVal}%"></div>
+                  </div>
                 </div>
               </div>
 
-              <div class="bg-slate-50 rounded p-2 min-h-[40px] mb-2">
-                ${skillsHtml || '<div class="text-[10px] text-slate-400 italic">スキルなし</div>'}
+              <!-- 採用数・所持数 メトリクス -->
+              <div class="bg-slate-50/80 rounded-xl p-2 mb-2 text-[10px] font-bold grid grid-cols-2 gap-x-2 gap-y-1 border border-slate-100 text-slate-600">
+                <div class="flex justify-between items-center">
+                  <span>📋 登録:</span>
+                  <span class="font-black text-slate-800">${regCount}枚</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>🛡️ 防衛:</span>
+                  <span class="font-black text-slate-800">${defCount}枚</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>👥 所持:</span>
+                  <span class="font-black text-slate-800">${ownCount}人 <span class="text-[8px] text-slate-400 font-normal">(${ownRate}%)</span></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>📦 流通:</span>
+                  <span class="font-black text-slate-800">${ownTotal}枚</span>
+                </div>
               </div>
 
-              <!-- 詳細確認ボタン風バー -->
-              <div class="mt-auto pt-1 text-center">
-                <span class="text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700 flex items-center justify-center gap-1">
-                  <span>🔍 採用デッキ・対戦履歴</span>
-                  <span>→</span>
-                </span>
+              <!-- スキル情報 -->
+              <div class="bg-slate-50 rounded-lg p-2 text-[10px] mb-2 min-h-[36px] max-h-[50px] overflow-y-auto scroll-custom border border-slate-100">
+                ${skillsHtml || '<div class="text-slate-400 italic">スキルなし（通常カード）</div>'}
+              </div>
+
+              <!-- フッターリンク -->
+              <div class="mt-auto pt-1 flex items-center justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700">
+                <span>詳細分析・採用デッキ</span>
+                <span class="transform group-hover:translate-x-1 transition-transform font-black">→</span>
               </div>
             </div>
-          `;
+            `;
           })
           .join('');
 
-        document.getElementById('cards-grid').innerHTML =
-          `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">${gridHtml}</div>`;
+        gridEl.innerHTML = `<div class="grid gap-3.5" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));">${gridHtml}</div>`;
       }
 
       // =============================
@@ -4172,22 +4782,48 @@
           logs = logs.filter((r) => r.result === 'win');
         }
 
-        // 2. 名前検索フィルター (攻撃者名・防衛者名)
+        // 2. 検索フィルター (対戦者名・防衛者名・キャラクター名・UUID)
         if (searchQuery) {
-          logs = logs.filter(
-            (r) =>
-              (r.attackerName || '').toLowerCase().includes(searchQuery) ||
-              (r.targetName || '').toLowerCase().includes(searchQuery)
-          );
-        }
+          logs = logs.filter((r) => {
+            const atkName = (r.attackerName || '').toLowerCase();
+            const targetP = allPlayers.find((p) => p.uuid === r.targetUuid);
+            const defName = (r.targetName || targetP?.name || '').toLowerCase();
+            const atkUuid = (r.attackerUuid || '').toLowerCase();
+            const defUuid = (r.targetUuid || '').toLowerCase();
 
-        // 件数更新
-        if (countEl) {
-          countEl.textContent = `(表示: ${Math.min(logs.length, limit)} / 全 ${recentBattles.length} 件)`;
+            const atkCharId = r.attackerCharacter || 'android';
+            const atkCharName = (
+              CHARACTERS[atkCharId]?.name || ''
+            ).toLowerCase();
+            const { charId: defCharId } = resolveDefenderIdentity(r);
+            const defCharName = (
+              CHARACTERS[defCharId]?.name || ''
+            ).toLowerCase();
+
+            return (
+              atkName.includes(searchQuery) ||
+              defName.includes(searchQuery) ||
+              atkUuid.includes(searchQuery) ||
+              defUuid.includes(searchQuery) ||
+              atkCharId.toLowerCase().includes(searchQuery) ||
+              atkCharName.includes(searchQuery) ||
+              defCharId.toLowerCase().includes(searchQuery) ||
+              defCharName.includes(searchQuery)
+            );
+          });
         }
 
         // 表示件数制限
         const displayLogs = limit === Infinity ? logs : logs.slice(0, limit);
+
+        // 件数更新
+        if (countEl) {
+          if (logs.length !== recentBattles.length) {
+            countEl.textContent = `(表示: ${displayLogs.length}件 / 該当: ${logs.length}件 / 全 ${recentBattles.length}件)`;
+          } else {
+            countEl.textContent = `(表示: ${displayLogs.length}件 / 全 ${recentBattles.length}件)`;
+          }
+        }
 
         if (displayLogs.length === 0) {
           container.innerHTML = `
@@ -4246,13 +4882,18 @@
               ? rec.attackerDeck.length
               : 0;
 
-            // 防衛デッキ枚数
+            // 防衛プレイヤーおよび防衛デッキの解決
+            const targetPlayer = allPlayers.find(
+              (p) => p.uuid === rec.targetUuid
+            );
             const hasHistoricalDefDeck =
               Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0;
             const defDeck = hasHistoricalDefDeck
               ? rec.defenderDeck
               : targetPlayer?.deck || [];
             const defDeckCount = Array.isArray(defDeck) ? defDeck.length : 0;
+            const defPlayerName =
+              rec.targetName || targetPlayer?.name || '不明';
 
             return `
             <tr class="hover:bg-slate-50/80 transition-colors">
@@ -4271,7 +4912,7 @@
                 <div class="flex items-center gap-2.5">
                   <img src="${escapeHtml(defIconPath)}" loading="lazy" class="w-8 h-8 rounded-full object-cover border border-amber-200 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
                   <div class="flex flex-col min-w-0">
-                    <div class="font-bold text-slate-800 text-sm truncate">${escapeHtml(rec.targetName || '不明')}</div>
+                    <div class="font-bold text-slate-800 text-sm truncate">${escapeHtml(defPlayerName)}</div>
                     <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(defCharObj.name || defCharId)}</div>
                   </div>
                 </div>
@@ -4310,12 +4951,17 @@
 
       /**
        * 汎用デッキ詳細モーダルを表示する共通関数
-       * @param {Object} options - { title, subtitle, cards }
+       * @param {Object} options - { title, subtitle, cards, premiumCards }
        */
-      function showGenericDeckModal({ title, subtitle, cards }) {
+      function showGenericDeckModal({
+        title,
+        subtitle,
+        cards,
+        premiumCards = [],
+      }) {
         if (!Array.isArray(cards) || cards.length === 0) return;
 
-        const sortedCards = sortCardsByMasterOrder(cards);
+        const sortedCards = sortCardsByMasterOrder(cards, premiumCards);
 
         const modal = document.getElementById('battle-deck-modal');
         const titleEl = document.getElementById('modal-deck-title');
@@ -4329,25 +4975,39 @@
         const cardsHtml = sortedCards
           .map((entry) => {
             const cardId = resolveCardId(entry);
-            const isPremium =
-              typeof entry === 'object' && entry !== null
-                ? !!entry.isPremium
-                : false;
+            const isPremium = checkIsCardPremium(entry, premiumCards);
+            const isActualPremium =
+              isPremium &&
+              Array.isArray(PREMIUM_CARD_IDS) &&
+              (PREMIUM_CARD_IDS.length === 0 ||
+                PREMIUM_CARD_IDS.includes(cardId));
+
             const cardObj = (CARD_MASTER || []).find((c) => c.id === cardId);
 
             const cardName = cardObj ? cardObj.name : cardId;
             const power = cardObj ? cardObj.power : '?';
             const rarity = cardObj ? cardObj.rarity : 1;
-            const thumbUrl = getCardThumbPath(cardId, isPremium);
+            const thumbUrl = getCardThumbPath(cardId, isActualPremium);
+            const fallbackThumbUrl = getCardThumbPath(cardId, false);
 
             const rarityColor = RARITY_COLORS[rarity] || 'slate';
             const rarityLabel = RARITY_LABELS[rarity] || '?';
 
             return `
-            <div class="relative bg-slate-800 border ${isPremium ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-700'} rounded-2xl p-2.5 flex flex-col shadow-md hover:border-indigo-400 transition-all overflow-hidden group">
-              ${isPremium ? '<div class="absolute top-0 right-0 bg-gradient-to-l from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-bl-lg shadow-sm z-10">★ プレミアム</div>' : ''}
+            <div
+              class="relative bg-slate-800 border ${isActualPremium ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-700'} rounded-2xl p-2.5 flex flex-col shadow-md hover:border-indigo-400 transition-all overflow-hidden group cursor-pointer"
+              onclick="if(window.openCardDetailModal) window.openCardDetailModal('${escapeHtml(cardId)}')"
+              title="${escapeHtml(cardName)} の詳細を表示"
+            >
+              ${isActualPremium ? '<div class="absolute top-0 right-0 bg-gradient-to-l from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-bl-lg shadow-sm z-10">★ プレミアム</div>' : ''}
               <div class="relative mb-2 overflow-hidden rounded-xl bg-slate-900 border border-slate-700/50 aspect-square">
-                <img src="${escapeHtml(thumbUrl)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${escapeHtml(cardName)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                <img
+                  src="${escapeHtml(thumbUrl)}"
+                  loading="lazy"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  alt="${escapeHtml(cardName)}"
+                  onerror="if(this.dataset.fallback!=='1'){this.dataset.fallback='1';this.src='${escapeHtml(fallbackThumbUrl)}';}else{this.onerror=null;this.src='${fixAssetPath('assets/cards/card_default.webp')}';}"
+                />
               </div>
               <div class="flex flex-col flex-1 min-w-0">
                 <div class="font-black text-white text-xs truncate" title="${escapeHtml(cardName)}">${escapeHtml(cardName)}</div>
@@ -4402,18 +5062,31 @@
             Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0;
           const { charId: defCharId } = resolveDefenderIdentity(rec);
           const defCharName = CHARACTERS[defCharId]?.name || defCharId;
+          const defPremiumCards = Array.isArray(
+            targetPlayer?.unlocked_premium_cards
+          )
+            ? targetPlayer.unlocked_premium_cards
+            : [];
           showGenericDeckModal({
             title: `🛡️ ${rec.targetName || '不明'} の防衛デッキ`,
             subtitle: `${hasHistoricalDefDeck ? '対戦時デッキ' : '⚠️ 対戦時履歴なし（現在の防衛デッキを代替表示）'} | 防衛プレイヤー: ${rec.targetName || '不明'} (${defCharName}) | 対戦相手: ${rec.attackerName || '不明'} | 日時: ${formattedDate} | 結果: ${resultLabel}`,
             cards: deck,
+            premiumCards: defPremiumCards,
           });
         } else {
           const atkCharId = rec.attackerCharacter || 'android';
           const atkCharName = CHARACTERS[atkCharId]?.name || atkCharId;
+          const atkPlayer = allPlayers.find((p) => p.uuid === rec.attackerUuid);
+          const atkPremiumCards = Array.isArray(
+            atkPlayer?.unlocked_premium_cards
+          )
+            ? atkPlayer.unlocked_premium_cards
+            : [];
           showGenericDeckModal({
             title: `🎴 ${rec.attackerName || '不明'} の攻撃デッキ`,
             subtitle: `攻撃プレイヤー: ${rec.attackerName || '不明'} (${atkCharName}) | 対戦相手: ${rec.targetName || '不明'} | 日時: ${formattedDate} | 結果: ${resultLabel}`,
             cards: deck,
+            premiumCards: atkPremiumCards,
           });
         }
       }
@@ -4430,10 +5103,19 @@
         if (!deck || !Array.isArray(deck.cards)) return;
 
         const leaderName = getCharName(deck.leaderId);
+        const premiumList = Array.from(
+          new Set([
+            ...(Array.isArray(deck.premiumCards) ? deck.premiumCards : []),
+            ...(Array.isArray(player.unlocked_premium_cards)
+              ? player.unlocked_premium_cards
+              : []),
+          ])
+        );
         showGenericDeckModal({
           title: `📋 ${player.name || 'プレイヤー'} の登録デッキ: ${deck.name || `デッキ${deckIndex + 1}`}`,
           subtitle: `リーダー: ${leaderName} | 登録枚数: ${deck.cards.length}枚`,
           cards: deck.cards,
+          premiumCards: premiumList,
         });
       }
 
@@ -4447,10 +5129,14 @@
 
         const leaderId = player.character || player.deck_leader || 'android';
         const leaderName = getCharName(leaderId);
+        const premiumList = Array.isArray(player.unlocked_premium_cards)
+          ? player.unlocked_premium_cards
+          : [];
         showGenericDeckModal({
           title: `🛡️ ${player.name || 'プレイヤー'} の防衛デッキ`,
           subtitle: `リーダー: ${leaderName} | ステージ: ${STAGE_NAME_MAP[player.stage] || player.stage || 'デフォルト'} | 防衛Pt: ${player.points || 0}pt | 枚数: ${player.deck.length}枚`,
           cards: player.deck,
+          premiumCards: premiumList,
         });
       }
 
@@ -4471,12 +5157,15 @@
 
       /**
        * カード詳細ポップアップモーダルを開く
-       * そのカードを採用している登録デッキ、防衛デッキ、攻撃・防衛戦履歴を抽出し、一覧表示します。
+       * そのカードを採用している登録デッキ、防衛デッキ、攻撃・防衛戦履歴を抽出し、ダッシュボード＆タブ形式で一覧表示します。
        * @param {string} cardId - カードID
+       * @param {boolean} [preserveScroll=false] - タブ切り替え時にスクロール位置を保持するかどうか
        */
-      function openCardDetailModal(cardId) {
+      function openCardDetailModal(cardId, preserveScroll = false) {
         const card = (CARD_MASTER || []).find((c) => c.id === cardId);
         if (!card) return;
+
+        lastActiveCardModalCardId = cardId;
 
         const modal = document.getElementById('card-detail-modal');
         const titleEl = document.getElementById('modal-card-detail-title');
@@ -4516,14 +5205,20 @@
                 if (isInitialDeck(deck.cards)) return; // 初期デッキ除外
                 let count = 0;
                 let hasPremium = false;
+                const deckPremCards = Array.from(
+                  new Set([
+                    ...(Array.isArray(deck.premiumCards)
+                      ? deck.premiumCards
+                      : []),
+                    ...(Array.isArray(p.unlocked_premium_cards)
+                      ? p.unlocked_premium_cards
+                      : []),
+                  ])
+                );
                 deck.cards.forEach((entry) => {
                   if (resolveCardId(entry) === card.id) {
                     count++;
-                    if (
-                      typeof entry === 'object' &&
-                      entry !== null &&
-                      entry.isPremium
-                    ) {
+                    if (checkIsCardPremium(entry, deckPremCards)) {
                       hasPremium = true;
                     }
                   }
@@ -4551,14 +5246,13 @@
           if (p.has_defense_deck && Array.isArray(p.deck)) {
             let count = 0;
             let hasPremium = false;
+            const pPremCards = Array.isArray(p.unlocked_premium_cards)
+              ? p.unlocked_premium_cards
+              : [];
             p.deck.forEach((entry) => {
               if (resolveCardId(entry) === card.id) {
                 count++;
-                if (
-                  typeof entry === 'object' &&
-                  entry !== null &&
-                  entry.isPremium
-                ) {
+                if (checkIsCardPremium(entry, pPremCards)) {
                   hasPremium = true;
                 }
               }
@@ -4574,46 +5268,94 @@
           }
         });
 
-        // 3. 対戦履歴（攻撃・防衛戦）からの採用マッチング
+        // 3. 対戦履歴（攻撃・防衛戦）からの採用マッチング＆勝率集計（複数枚でも1試合カウント）
         const battleMatches = [];
+        let atkWins = 0;
+        let atkLosses = 0;
+        let atkDraws = 0;
+        let atkMatches = 0;
+
+        let defWins = 0;
+        let defLosses = 0;
+        let defDraws = 0;
+        let defMatches = 0;
+
         const activeBattles = getFilteredRecentBattles();
         activeBattles.forEach((rec, realIdx) => {
+          const isAtkWin = rec.result === 'lose'; // rec.result は防衛側視点
+          const isDefWin = rec.result === 'win';
+          const isDraw = rec.result === 'draw';
+
           // 攻撃側デッキ
-          if (Array.isArray(rec.attackerDeck)) {
+          if (
+            rec.attackerUuid &&
+            !excludedPlayerIds.has(rec.attackerUuid) &&
+            Array.isArray(rec.attackerDeck)
+          ) {
             const atkCount = rec.attackerDeck.filter(
               (entry) => resolveCardId(entry) === card.id
             ).length;
             if (atkCount > 0) {
+              atkMatches++;
+              if (isAtkWin) atkWins++;
+              else if (isDraw) atkDraws++;
+              else atkLosses++;
+
               battleMatches.push({
                 rec,
                 realIdx,
                 type: 'attacker',
                 count: atkCount,
+                isWin: isAtkWin,
+                isDraw,
               });
             }
           }
+
           // 防衛側デッキ
-          const targetPlayer = allPlayers.find(
-            (p) => p.uuid === rec.targetUuid
-          );
-          const defDeck =
-            Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0
-              ? rec.defenderDeck
-              : targetPlayer?.deck;
-          if (Array.isArray(defDeck)) {
-            const defCount = defDeck.filter(
-              (entry) => resolveCardId(entry) === card.id
-            ).length;
-            if (defCount > 0) {
-              battleMatches.push({
-                rec,
-                realIdx,
-                type: 'defender',
-                count: defCount,
-              });
+          if (rec.targetUuid && !excludedPlayerIds.has(rec.targetUuid)) {
+            const targetPlayer = allPlayers.find(
+              (p) => p.uuid === rec.targetUuid
+            );
+            const defDeck =
+              Array.isArray(rec.defenderDeck) && rec.defenderDeck.length > 0
+                ? rec.defenderDeck
+                : targetPlayer?.deck;
+
+            if (Array.isArray(defDeck)) {
+              const defCount = defDeck.filter(
+                (entry) => resolveCardId(entry) === card.id
+              ).length;
+              if (defCount > 0) {
+                defMatches++;
+                if (isDefWin) defWins++;
+                else if (isDraw) defDraws++;
+                else defLosses++;
+
+                battleMatches.push({
+                  rec,
+                  realIdx,
+                  type: 'defender',
+                  count: defCount,
+                  isWin: isDefWin,
+                  isDraw,
+                });
+              }
             }
           }
         });
+
+        // 勝率文字列の計算
+        const atkWinRate =
+          atkMatches > 0 ? ((atkWins / atkMatches) * 100).toFixed(1) : null;
+        const defWinRate =
+          defMatches > 0 ? ((defWins / defMatches) * 100).toFixed(1) : null;
+
+        const atkWinRateStr = atkWinRate !== null ? `${atkWinRate}%` : '--%';
+        const defWinRateStr = defWinRate !== null ? `${defWinRate}%` : '--%';
+
+        const atkWinPct = atkWinRate !== null ? parseFloat(atkWinRate) : 0;
+        const defWinPct = defWinRate !== null ? parseFloat(defWinRate) : 0;
 
         // スキルHTML
         const skillsHtml = (card.skills || [])
@@ -4634,8 +5376,8 @@
                 ? ` (値: ${sk.value})`
                 : '';
             return `
-              <div class="bg-slate-800/80 rounded-xl p-3 border border-slate-700/60">
-                <div class="flex items-center gap-2 mb-1">
+              <div class="bg-slate-800/80 rounded-2xl p-3.5 border border-slate-700/70 shadow-sm">
+                <div class="flex items-center gap-2 mb-1.5">
                   <span class="font-black text-indigo-400 text-sm">${escapeHtml(skillName)}</span>
                   <span class="text-xs font-mono text-slate-400">${escapeHtml(valueText)}</span>
                 </div>
@@ -4692,7 +5434,7 @@
                 `;
                 })
                 .join('')
-            : '<div class="text-xs text-slate-500 italic p-4 text-center bg-slate-800/40 rounded-2xl border border-slate-800">登録デッキでの採用はありません（初期デッキと完全一致するスロットは除外されています）。</div>';
+            : '<div class="text-xs text-slate-400 italic p-6 text-center bg-slate-800/40 rounded-2xl border border-slate-800">登録デッキでの採用はありません（初期デッキと完全一致するスロットは除外されています）。</div>';
 
         // 防衛デッキ一覧HTML
         const defDecksHtml =
@@ -4746,17 +5488,28 @@
                 `;
                 })
                 .join('')
-            : '<div class="text-xs text-slate-500 italic p-4 text-center bg-slate-800/40 rounded-2xl border border-slate-800">防衛デッキでの採用はありません。</div>';
+            : '<div class="text-xs text-slate-400 italic p-6 text-center bg-slate-800/40 rounded-2xl border border-slate-800">防衛デッキでの採用はありません。</div>';
+
+        // 対戦ログフィルター適用
+        let filteredBattleMatches = battleMatches;
+        if (currentCardModalBattleFilter === 'attacker') {
+          filteredBattleMatches = battleMatches.filter(
+            (m) => m.type === 'attacker'
+          );
+        } else if (currentCardModalBattleFilter === 'defender') {
+          filteredBattleMatches = battleMatches.filter(
+            (m) => m.type === 'defender'
+          );
+        }
 
         // 対戦履歴一覧HTML
         const battleLogsHtml =
-          battleMatches.length > 0
-            ? battleMatches
-                .map(({ rec, realIdx, type, count }) => {
+          filteredBattleMatches.length > 0
+            ? filteredBattleMatches
+                .map(({ rec, realIdx, type, count, isWin, isDraw }) => {
                   const formattedDate = rec.timestamp
                     ? new Date(rec.timestamp * 1000).toLocaleString('ja-JP')
                     : '日時不明';
-                  const isAtkWin = rec.result === 'lose'; // 'lose' = 防衛側敗北 = 攻撃側勝利
                   const isAttackerSide = type === 'attacker';
 
                   const badgeClass = isAttackerSide
@@ -4766,17 +5519,27 @@
                     ? '⚔️ 攻撃側デッキ'
                     : '🛡️ 防衛側デッキ';
 
+                  let outcomeBadge = '';
+                  if (isDraw) {
+                    outcomeBadge =
+                      '<span class="px-2 py-0.5 rounded text-[10px] font-black bg-slate-800 text-slate-400 border border-slate-600">🤝 引き分け</span>';
+                  } else if (isWin) {
+                    outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-950 text-emerald-300 border border-emerald-700 shadow-xs">🎉 勝利 (${isAttackerSide ? '攻撃成功' : '防衛成功'})</span>`;
+                  } else {
+                    outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-950 text-rose-300 border border-rose-800 shadow-xs">💀 敗北 (${isAttackerSide ? '攻撃失敗' : '防衛突破'})</span>`;
+                  }
+
                   return `
                   <div class="bg-slate-800/80 border border-slate-700/70 hover:border-slate-500 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all">
                     <div class="min-w-0">
                       <div class="flex items-center gap-2 flex-wrap text-xs">
-                        <span class="text-slate-400 font-mono">${escapeHtml(formattedDate)}</span>
+                        <span class="text-slate-400 font-mono text-[11px]">${escapeHtml(formattedDate)}</span>
                         <span class="text-[10px] font-black px-2 py-0.5 rounded border ${badgeClass}">${roleLabel} (${count}枚使用)</span>
-                        <span class="text-[10px] font-bold ${isAtkWin ? 'text-indigo-400' : 'text-amber-400'}">${isAtkWin ? '⚔️ 攻撃勝利' : '🛡️ 防衛勝利'}</span>
+                        ${outcomeBadge}
                       </div>
-                      <div class="text-xs font-bold text-slate-200 mt-1 flex items-center gap-2 flex-wrap">
+                      <div class="text-xs font-bold text-slate-200 mt-1.5 flex items-center gap-2 flex-wrap">
                         <span class="text-indigo-300 font-black">攻: ${escapeHtml(rec.attackerName || '不明')}</span>
-                        <span class="text-slate-500">vs</span>
+                        <span class="text-slate-500 font-normal">vs</span>
                         <span class="text-amber-300 font-black">防: ${escapeHtml(rec.targetName || '不明')}</span>
                       </div>
                     </div>
@@ -4792,85 +5555,231 @@
                 `;
                 })
                 .join('')
-            : `<div class="text-xs text-slate-500 italic p-4 text-center bg-slate-800/40 rounded-2xl border border-slate-800">直近 ${activeBattles.length} 試合の対戦ログでの使用履歴はありません。</div>`;
+            : `<div class="text-xs text-slate-400 italic p-6 text-center bg-slate-800/40 rounded-2xl border border-slate-800">条件に該当する対戦履歴はありません。</div>`;
+
+        // タブボタンのアクティブクラス定義
+        const tabActiveCls =
+          'bg-indigo-600 text-white shadow-sm border border-indigo-500';
+        const tabInactiveCls =
+          'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 border border-slate-700/80';
+
+        // フィルターボタンのアクティブクラス定義
+        const filterActiveCls = 'bg-indigo-600 text-white font-black shadow-xs';
+        const filterInactiveCls =
+          'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 font-bold';
+
+        // 現在のアクティブタブの内容
+        let tabContentHtml = '';
+        if (currentCardModalTab === 'battles') {
+          tabContentHtml = `
+            <div>
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                <div class="flex items-center gap-2">
+                  <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
+                    <span>⚔️ 対戦ログ登場履歴</span>
+                    <span class="text-[10px] font-normal text-slate-400">(${battleMatches.length}試合中 ${filteredBattleMatches.length}件表示)</span>
+                  </h4>
+                </div>
+                <!-- 攻防クイックフィルター -->
+                <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 gap-1 text-[11px]">
+                  <button
+                    onclick="window.filterCardModalBattles('all')"
+                    class="px-2.5 py-1 rounded-lg transition-colors ${currentCardModalBattleFilter === 'all' ? filterActiveCls : filterInactiveCls}"
+                  >
+                    すべて (${battleMatches.length})
+                  </button>
+                  <button
+                    onclick="window.filterCardModalBattles('attacker')"
+                    class="px-2.5 py-1 rounded-lg transition-colors ${currentCardModalBattleFilter === 'attacker' ? filterActiveCls : filterInactiveCls}"
+                  >
+                    ⚔️ 攻撃のみ (${atkMatches})
+                  </button>
+                  <button
+                    onclick="window.filterCardModalBattles('defender')"
+                    class="px-2.5 py-1 rounded-lg transition-colors ${currentCardModalBattleFilter === 'defender' ? filterActiveCls : filterInactiveCls}"
+                  >
+                    🛡️ 防衛のみ (${defMatches})
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-2.5 max-h-80 overflow-y-auto scroll-custom pr-1">
+                ${battleLogsHtml}
+              </div>
+            </div>
+          `;
+        } else if (currentCardModalTab === 'reg_decks') {
+          tabContentHtml = `
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                  <span>📋 採用登録デッキ一覧</span>
+                  <span class="text-[10px] font-normal text-slate-400">(${registeredMatches.length}件)</span>
+                </h4>
+                <span class="text-[10px] text-slate-500">※初期デッキ除外</span>
+              </div>
+              <div class="space-y-2.5 max-h-80 overflow-y-auto scroll-custom pr-1">
+                ${regDecksHtml}
+              </div>
+            </div>
+          `;
+        } else if (currentCardModalTab === 'def_decks') {
+          tabContentHtml = `
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
+                  <span>🛡️ 採用防衛デッキ一覧</span>
+                  <span class="text-[10px] font-normal text-slate-400">(${defenseMatches.length}人)</span>
+                </h4>
+              </div>
+              <div class="space-y-2.5 max-h-80 overflow-y-auto scroll-custom pr-1">
+                ${defDecksHtml}
+              </div>
+            </div>
+          `;
+        } else if (currentCardModalTab === 'skills') {
+          tabContentHtml = `
+            <div>
+              <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-3 flex items-center gap-2">
+                <span>✨ 所持スキル詳細解説</span>
+              </h4>
+              <div class="space-y-2.5">
+                ${skillsHtml || '<div class="text-xs text-slate-500 italic p-6 text-center bg-slate-800/40 rounded-2xl border border-slate-800">所持スキルなし（通常カード）</div>'}
+              </div>
+            </div>
+          `;
+        }
 
         panelEl.innerHTML = `
-          <!-- サマリー統計ブロック -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-3 flex flex-col">
-              <span class="text-[10px] font-black text-slate-400">📋 登録デッキ採用数</span>
-              <div class="text-lg font-black text-emerald-400 mt-1">${formatNumber(totalRegCopies)}枚 <span class="text-xs text-slate-400 font-normal">(${registeredMatches.length}デッキ)</span></div>
+          <!-- サマリー統計ブロック (戦績ダッシュボード) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- ⚔️ 攻撃戦績 -->
+            <div class="bg-indigo-950/40 border border-indigo-800/50 rounded-2xl p-3.5 flex flex-col justify-between shadow-xs">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-indigo-300 flex items-center gap-1">⚔️ 攻撃時勝率</span>
+                  <span class="text-[10px] text-slate-400 font-bold">${atkMatches}戦</span>
+                </div>
+                <div class="text-2xl font-black ${atkMatches > 0 ? 'text-indigo-400' : 'text-slate-500'} mt-1">
+                  ${atkWinRateStr}
+                </div>
+              </div>
+              <div class="mt-2.5">
+                <div class="flex justify-between items-center text-[10px] font-bold text-slate-300 mb-1">
+                  <span>${atkWins}勝 / ${atkLosses}敗</span>
+                  ${atkDraws > 0 ? `<span class="text-slate-400">${atkDraws}分</span>` : ''}
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                  <div class="bg-indigo-500 h-full transition-all" style="width: ${atkWinPct}%"></div>
+                  <div class="bg-rose-500/80 h-full transition-all" style="width: ${atkMatches > 0 ? (atkLosses / atkMatches) * 100 : 0}%"></div>
+                </div>
+              </div>
             </div>
-            <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-3 flex flex-col">
-              <span class="text-[10px] font-black text-slate-400">🛡️ 防衛デッキ採用数</span>
-              <div class="text-lg font-black text-amber-400 mt-1">${formatNumber(totalDefCopies)}枚 <span class="text-xs text-slate-400 font-normal">(${defenseMatches.length}人)</span></div>
+
+            <!-- 🛡️ 防衛戦績 -->
+            <div class="bg-amber-950/40 border border-amber-800/50 rounded-2xl p-3.5 flex flex-col justify-between shadow-xs">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black text-amber-300 flex items-center gap-1">🛡️ 防衛時勝率</span>
+                  <span class="text-[10px] text-slate-400 font-bold">${defMatches}戦</span>
+                </div>
+                <div class="text-2xl font-black ${defMatches > 0 ? 'text-amber-400' : 'text-slate-500'} mt-1">
+                  ${defWinRateStr}
+                </div>
+              </div>
+              <div class="mt-2.5">
+                <div class="flex justify-between items-center text-[10px] font-bold text-slate-300 mb-1">
+                  <span>${defWins}勝 / ${defLosses}敗</span>
+                  ${defDraws > 0 ? `<span class="text-slate-400">${defDraws}分</span>` : ''}
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                  <div class="bg-amber-500 h-full transition-all" style="width: ${defWinPct}%"></div>
+                  <div class="bg-rose-500/80 h-full transition-all" style="width: ${defMatches > 0 ? (defLosses / defMatches) * 100 : 0}%"></div>
+                </div>
+              </div>
             </div>
-            <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-3 flex flex-col">
-              <span class="text-[10px] font-black text-slate-400">⚔️ 対戦ログ登場回数</span>
-              <div class="text-lg font-black text-indigo-400 mt-1">${formatNumber(battleMatches.length)}回 <span class="text-xs text-slate-400 font-normal">(直近${activeBattles.length}戦)</span></div>
+
+            <!-- 📋 デッキ採用実績 -->
+            <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-3.5 flex flex-col justify-between">
+              <div>
+                <span class="text-[11px] font-black text-slate-400">📋 デッキ採用実績</span>
+                <div class="space-y-1 mt-2 text-xs font-bold">
+                  <div class="flex justify-between items-center">
+                    <span class="text-emerald-400">登録デッキ:</span>
+                    <span class="text-white font-black">${formatNumber(totalRegCopies)}枚 <span class="text-[10px] text-slate-400 font-normal">(${registeredMatches.length}デッキ)</span></span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-amber-400">防衛デッキ:</span>
+                    <span class="text-white font-black">${formatNumber(totalDefCopies)}枚 <span class="text-[10px] text-slate-400 font-normal">(${defenseMatches.length}人)</span></span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-[9px] text-slate-500 border-t border-slate-700/60 pt-1.5 mt-2">
+                ※ 登録デッキは初期デッキを除外して集計
+              </div>
             </div>
-            <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-3 flex flex-col">
-              <span class="text-[10px] font-black text-slate-400">⚡ 基本パワー / レア</span>
-              <div class="text-lg font-black text-white mt-1">PWR ${card.power ?? '?'} <span class="text-xs font-bold text-${rarityColor}-400">(${rarityLabel})</span></div>
+
+            <!-- ⚡ カードスペック -->
+            <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-3.5 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] font-black text-slate-400">⚡ 基本性能</span>
+                  <span class="text-[10px] font-bold text-${rarityColor}-400 bg-${rarityColor}-950 px-2 py-0.5 rounded border border-${rarityColor}-800">${rarityLabel}</span>
+                </div>
+                <div class="text-2xl font-black text-white mt-1">
+                  PWR ${card.power ?? '?'}
+                </div>
+              </div>
+              <div class="text-xs text-slate-300 font-bold border-t border-slate-700/60 pt-1.5 mt-2 flex items-center justify-between">
+                <span>所持スキル:</span>
+                <span class="text-indigo-400 font-black">${(card.skills || []).length} 種</span>
+              </div>
             </div>
           </div>
 
-          <!-- スキル一覧 -->
-          <div>
-            <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2">
+          <!-- タブナビゲーションバー -->
+          <div class="flex items-center gap-1.5 border-b border-slate-800 pb-2.5 overflow-x-auto scroll-custom">
+            <button
+              onclick="window.switchCardModalTab('battles')"
+              class="px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${currentCardModalTab === 'battles' ? tabActiveCls : tabInactiveCls}"
+            >
+              <span>⚔️ 対戦ログ登場履歴</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${currentCardModalTab === 'battles' ? 'bg-indigo-800 text-indigo-200' : 'bg-slate-700 text-slate-300'}">${battleMatches.length}</span>
+            </button>
+            <button
+              onclick="window.switchCardModalTab('reg_decks')"
+              class="px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${currentCardModalTab === 'reg_decks' ? tabActiveCls : tabInactiveCls}"
+            >
+              <span>📋 採用登録デッキ</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${currentCardModalTab === 'reg_decks' ? 'bg-indigo-800 text-indigo-200' : 'bg-slate-700 text-slate-300'}">${registeredMatches.length}</span>
+            </button>
+            <button
+              onclick="window.switchCardModalTab('def_decks')"
+              class="px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${currentCardModalTab === 'def_decks' ? tabActiveCls : tabInactiveCls}"
+            >
+              <span>🛡️ 採用防衛デッキ</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${currentCardModalTab === 'def_decks' ? 'bg-indigo-800 text-indigo-200' : 'bg-slate-700 text-slate-300'}">${defenseMatches.length}</span>
+            </button>
+            <button
+              onclick="window.switchCardModalTab('skills')"
+              class="px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${currentCardModalTab === 'skills' ? tabActiveCls : tabInactiveCls}"
+            >
               <span>✨ スキル情報</span>
-            </h4>
-            <div class="space-y-2">
-              ${skillsHtml || '<div class="text-xs text-slate-500 italic p-3 bg-slate-800/40 rounded-xl border border-slate-800">所持スキルなし（通常カード）</div>'}
-            </div>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full ${currentCardModalTab === 'skills' ? 'bg-indigo-800 text-indigo-200' : 'bg-slate-700 text-slate-300'}">${(card.skills || []).length}</span>
+            </button>
           </div>
 
-          <!-- 登録デッキ一覧 -->
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <h4 class="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2">
-                <span>📋 採用登録デッキ一覧</span>
-                <span class="text-[10px] font-normal text-slate-400">(${registeredMatches.length}件)</span>
-              </h4>
-              <span class="text-[10px] text-slate-500">※初期デッキ除外</span>
-            </div>
-            <div class="space-y-2.5 max-h-72 overflow-y-auto scroll-custom pr-1">
-              ${regDecksHtml}
-            </div>
-          </div>
-
-          <!-- 防衛デッキ一覧 -->
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <h4 class="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
-                <span>🛡️ 採用防衛デッキ一覧</span>
-                <span class="text-[10px] font-normal text-slate-400">(${defenseMatches.length}人)</span>
-              </h4>
-            </div>
-            <div class="space-y-2.5 max-h-72 overflow-y-auto scroll-custom pr-1">
-              ${defDecksHtml}
-            </div>
-          </div>
-
-          <!-- 攻撃・防衛戦履歴一覧 -->
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                <span>⚔️ 対戦ログ登場履歴</span>
-                <span class="text-[10px] font-normal text-slate-400">(${battleMatches.length}試合)</span>
-              </h4>
-              <span class="text-[10px] text-slate-500">表示範囲: 直近 ${activeBattles.length} 試合</span>
-            </div>
-            <div class="space-y-2.5 max-h-72 overflow-y-auto scroll-custom pr-1">
-              ${battleLogsHtml}
-            </div>
+          <!-- タブパネルコンテンツ -->
+          <div class="pt-1">
+            ${tabContentHtml}
           </div>
         `;
 
-        lastActiveElementCardModal = document.activeElement;
-        modal.classList.remove('hidden');
-        modal.focus();
-        panelEl.scrollTop = 0;
+        if (!preserveScroll) {
+          lastActiveElementCardModal = document.activeElement;
+          modal.classList.remove('hidden');
+          modal.focus();
+          panelEl.scrollTop = 0;
+        }
       }
 
       /**
@@ -4885,6 +5794,575 @@
         ) {
           lastActiveElementCardModal.focus();
           lastActiveElementCardModal = null;
+        }
+      }
+
+      // =============================
+      // リーダー詳細ポップアップモーダル
+      // =============================
+
+      /**
+       * リーダー詳細ポップアップモーダルを開き、戦績ダッシュボードおよび詳細タブを描画する
+       * @param {string} charId - 対象のキャラクターID
+       * @param {boolean} [preserveScroll=false] - タブ切り替え時にスクロール位置を保持するかどうか
+       */
+      function openLeaderDetailModal(charId, preserveScroll = false) {
+        const charData = CHARACTERS[charId];
+        if (!charData) return;
+
+        lastActiveLeaderModalCharId = charId;
+
+        const modal = document.getElementById('leader-detail-modal');
+        const titleEl = document.getElementById('modal-leader-detail-title');
+        const subtitleEl = document.getElementById(
+          'modal-leader-detail-subtitle'
+        );
+        const hpBadgeEl = document.getElementById('modal-leader-hp-badge');
+        const skillBadgeEl = document.getElementById(
+          'modal-leader-skill-badge'
+        );
+        const thumbEl = document.getElementById('modal-leader-thumb');
+        const panelEl = document.getElementById('leader-detail-panel');
+        if (!modal || !panelEl) return;
+
+        const charName = charData.name || charId;
+        const hp = charData.hp || 30;
+        const leaderSkill = charData.leaderSkill || null;
+        const skillName = leaderSkill?.name || '通常スキル';
+        const skillCost =
+          leaderSkill?.cost !== undefined ? ` (SP:${leaderSkill.cost})` : '';
+
+        if (titleEl) titleEl.textContent = charName;
+        if (subtitleEl) {
+          subtitleEl.textContent = `ID: ${charId}${skillCost}`;
+        }
+        if (hpBadgeEl) {
+          hpBadgeEl.textContent = `HP ${hp}`;
+        }
+        if (skillBadgeEl) {
+          skillBadgeEl.textContent = `⚡ ${skillName}`;
+        }
+        if (thumbEl) {
+          thumbEl.src =
+            fixAssetPath(charData.icon || charData.image) ||
+            getIconPath(charId);
+          thumbEl.alt = charName;
+        }
+
+        // 1. 登録デッキ（registered_decks）からの採用マッチング（初期デッキ完全一致は除外）
+        const registeredMatches = [];
+        allPlayers.forEach((p) => {
+          if (excludedPlayerIds.has(p.uuid)) return;
+          if (Array.isArray(p.registered_decks)) {
+            p.registered_decks.forEach((deck, dIdx) => {
+              if (deck && deck.leaderId === charId) {
+                if (Array.isArray(deck.cards) && isInitialDeck(deck.cards))
+                  return;
+                registeredMatches.push({
+                  player: p,
+                  deck,
+                  deckIndex: dIdx,
+                });
+              }
+            });
+          }
+        });
+
+        // 2. 防衛デッキ（p.deck）からの採用マッチング
+        const defenseMatches = [];
+        allPlayers.forEach((p) => {
+          if (excludedPlayerIds.has(p.uuid)) return;
+          if (p.has_defense_deck) {
+            const defCharId = p.character || p.deck_leader || 'android';
+            if (defCharId === charId) {
+              defenseMatches.push({
+                player: p,
+              });
+            }
+          }
+        });
+
+        // 3. 対戦履歴（攻撃・防衛戦）からのマッチング＆勝率集計
+        const battleMatches = [];
+        let atkWins = 0;
+        let atkLosses = 0;
+        let atkDraws = 0;
+        let atkMatches = 0;
+
+        let defWins = 0;
+        let defLosses = 0;
+        let defDraws = 0;
+        let defMatches = 0;
+
+        const globalAttackerSet = new Set();
+        const activeBattles = getFilteredRecentBattles();
+
+        activeBattles.forEach((rec, realIdx) => {
+          const isAtkWin = rec.result === 'lose'; // rec.result は防衛側視点
+          const isDefWin = rec.result === 'win';
+          const isDraw = rec.result === 'draw';
+
+          // 攻撃側リーダー判定
+          if (rec.attackerUuid && !excludedPlayerIds.has(rec.attackerUuid)) {
+            const atkCharId = rec.attackerCharacter || 'android';
+            if (atkCharId === charId) {
+              atkMatches++;
+              if (isAtkWin) atkWins++;
+              else if (isDraw) atkDraws++;
+              else atkLosses++;
+
+              globalAttackerSet.add(rec.attackerUuid);
+
+              battleMatches.push({
+                rec,
+                realIdx,
+                type: 'attacker',
+                isWin: isAtkWin,
+                isDraw,
+              });
+            }
+          }
+
+          // 防衛側リーダー判定
+          if (rec.targetUuid && !excludedPlayerIds.has(rec.targetUuid)) {
+            const { charId: defCharId } = resolveDefenderIdentity(rec);
+            if (defCharId === charId) {
+              defMatches++;
+              if (isDefWin) defWins++;
+              else if (isDraw) defDraws++;
+              else defLosses++;
+
+              battleMatches.push({
+                rec,
+                realIdx,
+                type: 'defender',
+                isWin: isDefWin,
+                isDraw,
+              });
+            }
+          }
+        });
+
+        // 勝率文字列の計算
+        const atkWinRate =
+          atkMatches > 0 ? ((atkWins / atkMatches) * 100).toFixed(1) : null;
+        const defWinRate =
+          defMatches > 0 ? ((defWins / defMatches) * 100).toFixed(1) : null;
+
+        const atkWinRateStr = atkWinRate !== null ? `${atkWinRate}%` : '--%';
+        const defWinRateStr = defWinRate !== null ? `${defWinRate}%` : '--%';
+
+        const atkWinPct = atkWinRate !== null ? parseFloat(atkWinRate) : 0;
+        const defWinPct = defWinRate !== null ? parseFloat(defWinRate) : 0;
+
+        // 登録デッキ一覧HTML
+        const regDecksHtml =
+          registeredMatches.length > 0
+            ? registeredMatches
+                .map(({ player, deck, deckIndex }) => {
+                  const pCharId = player.character || 'android';
+                  const pIconId = player.icon || player.avatar || pCharId;
+                  const deckName = deck.name || `デッキ${deckIndex + 1}`;
+
+                  return `
+                  <div class="bg-slate-800/80 border border-slate-700/70 hover:border-indigo-500/70 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <img src="${getIconPath(pIconId)}" loading="lazy" class="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" alt="${escapeHtml(player.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <button
+                            onclick="window.openPlayerDetailModal('${escapeHtml(player.uuid)}')"
+                            class="font-black text-sm text-slate-100 hover:text-indigo-400 transition-colors truncate"
+                          >
+                            ${escapeHtml(player.name || '名無し')}
+                          </button>
+                          <span class="text-[10px] font-bold text-slate-400 bg-slate-700/70 px-2 py-0.5 rounded border border-slate-600/50 shrink-0">
+                            ${escapeHtml(deckName)} (No.${deckIndex + 1})
+                          </span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
+                          UUID: ${escapeHtml(player.uuid)}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button
+                        onclick="window.openPlayerRegisteredDeckModal('${escapeHtml(player.uuid)}', ${deckIndex})"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 hover:border-indigo-400 transition-all shadow-sm flex items-center gap-1.5"
+                      >
+                        <span>🎴 デッキ確認</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+                })
+                .join('')
+            : `<div class="text-xs text-slate-400 italic p-6 text-center bg-slate-800/40 rounded-2xl border border-slate-800">登録デッキでの採用はありません。</div>`;
+
+        // 防衛デッキ一覧HTML
+        const defDecksHtml =
+          defenseMatches.length > 0
+            ? defenseMatches
+                .map(({ player }) => {
+                  const pCharId = player.character || 'android';
+                  const pIconId = player.icon || player.avatar || pCharId;
+                  const pts = player.defense_points ?? player.points ?? 0;
+
+                  return `
+                  <div class="bg-slate-800/80 border border-slate-700/70 hover:border-amber-500/70 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <img src="${getIconPath(pIconId)}" loading="lazy" class="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" alt="${escapeHtml(player.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <button
+                            onclick="window.openPlayerDetailModal('${escapeHtml(player.uuid)}')"
+                            class="font-black text-sm text-slate-100 hover:text-amber-400 transition-colors truncate"
+                          >
+                            ${escapeHtml(player.name || '名無し')}
+                          </button>
+                          <span class="text-[10px] font-black text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800 shrink-0">
+                            🛡️ ${pts} pt
+                          </span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
+                          UUID: ${escapeHtml(player.uuid)}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button
+                        onclick="window.openPlayerDefenseDeckModal('${escapeHtml(player.uuid)}')"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-600/30 hover:bg-amber-600/50 text-amber-200 border border-amber-500/40 hover:border-amber-400 transition-all shadow-sm flex items-center gap-1.5"
+                      >
+                        <span>🛡️ 防衛デッキ確認</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+                })
+                .join('')
+            : `<div class="text-xs text-slate-400 italic p-6 text-center bg-slate-800/40 rounded-2xl border border-slate-800">防衛デッキでの採用はありません。</div>`;
+
+        // 対戦ログHTMLの生成（フィルタリング対応）
+        const filteredBattleMatches = battleMatches.filter((bm) => {
+          if (currentLeaderModalBattleFilter === 'attacker')
+            return bm.type === 'attacker';
+          if (currentLeaderModalBattleFilter === 'defender')
+            return bm.type === 'defender';
+          return true;
+        });
+
+        const battlesHtml =
+          filteredBattleMatches.length > 0
+            ? filteredBattleMatches
+                .map(({ rec, realIdx, type, isWin, isDraw }) => {
+                  const roleLabel =
+                    type === 'attacker' ? '⚔️ 攻撃側' : '🛡️ 防衛側';
+                  const badgeClass =
+                    type === 'attacker'
+                      ? 'text-indigo-400 bg-indigo-950/80 border-indigo-800'
+                      : 'text-amber-400 bg-amber-950/80 border-amber-800';
+
+                  let outcomeBadge = '';
+                  if (isDraw) {
+                    outcomeBadge =
+                      '<span class="text-[10px] font-black text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">DRAW</span>';
+                  } else if (isWin) {
+                    outcomeBadge =
+                      '<span class="text-[10px] font-black text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">WIN</span>';
+                  } else {
+                    outcomeBadge =
+                      '<span class="text-[10px] font-black text-rose-400 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-800">LOSE</span>';
+                  }
+
+                  let formattedDate = '日時不明';
+                  if (rec.timestamp) {
+                    try {
+                      formattedDate = new Date(rec.timestamp).toLocaleString(
+                        'ja-JP',
+                        {
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      );
+                    } catch (e) {
+                      formattedDate = String(rec.timestamp);
+                    }
+                  }
+
+                  return `
+                  <div class="bg-slate-800/80 border border-slate-700/70 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap text-xs">
+                        <span class="text-slate-400 font-mono text-[11px]">${escapeHtml(formattedDate)}</span>
+                        <span class="text-[10px] font-black px-2 py-0.5 rounded border ${badgeClass}">${roleLabel}</span>
+                        ${outcomeBadge}
+                      </div>
+                      <div class="text-xs font-bold text-slate-200 mt-1.5 flex items-center gap-2 flex-wrap">
+                        <span class="text-indigo-300 font-black">攻: ${escapeHtml(rec.attackerName || '不明')}</span>
+                        <span class="text-slate-500 font-normal">vs</span>
+                        <span class="text-amber-300 font-black">防: ${escapeHtml(rec.targetName || '不明')}</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button
+                        onclick="window.openBattleDeckModal(${realIdx}, '${type}')"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 text-white transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <span>🎴 使用デッキ確認</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+                })
+                .join('')
+            : `<div class="text-xs text-slate-400 italic p-6 text-center bg-slate-800/40 rounded-2xl border border-slate-800">条件に該当する対戦履歴はありません。</div>`;
+
+        // スキル・キャラ詳細タブHTML
+        const skillTabHtml = `
+          <div class="space-y-4">
+            <!-- リーダースキル詳細カード -->
+            <div class="bg-slate-800/80 rounded-2xl p-4 border border-indigo-500/30 shadow-sm">
+              <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">⚡</span>
+                  <span class="font-black text-indigo-400 text-base">${escapeHtml(skillName)}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  ${leaderSkill?.cost !== undefined ? `<span class="text-xs font-black text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-800">消費 SP: ${leaderSkill.cost}</span>` : ''}
+                  ${leaderSkill?.action ? `<span class="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">action: ${escapeHtml(leaderSkill.action)}</span>` : ''}
+                </div>
+              </div>
+              <div class="text-xs text-slate-200 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 font-bold whitespace-pre-wrap">${escapeHtml(leaderSkill?.desc || 'リーダースキル情報なし')}</div>
+            </div>
+
+            <!-- キャラクター設定・ステータス -->
+            <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/70 shadow-sm space-y-3">
+              <div class="font-black text-slate-200 text-sm flex items-center gap-2">
+                <span>👤</span>
+                <span>キャラクター設定・プロフィール</span>
+              </div>
+              ${charData.desc ? `<div class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">${escapeHtml(charData.desc)}</div>` : ''}
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 flex flex-col">
+                  <span class="text-slate-400 text-[10px] font-bold">初期 HP</span>
+                  <span class="text-rose-400 font-black text-sm mt-0.5">${hp}</span>
+                </div>
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 flex flex-col">
+                  <span class="text-slate-400 text-[10px] font-bold">操作難易度</span>
+                  <span class="text-amber-400 font-black text-sm mt-0.5">${'★'.repeat(charData.easeOfUse || 3)}${'☆'.repeat(Math.max(0, 5 - (charData.easeOfUse || 3)))}</span>
+                </div>
+                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 flex flex-col col-span-2 sm:col-span-1">
+                  <span class="text-slate-400 text-[10px] font-bold">テーマカラー</span>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0" style="background-color: ${charData.color || '#6366f1'}"></span>
+                    <span class="text-slate-300 font-mono text-xs font-bold">${charData.color || '#6366f1'}</span>
+                  </div>
+                </div>
+              </div>
+
+              ${
+                charData.preBattleLine
+                  ? `
+                <div class="bg-indigo-950/30 border border-indigo-900/50 rounded-xl p-3 text-xs text-indigo-200 leading-relaxed">
+                  <span class="text-[10px] font-black text-indigo-400 block mb-1">【対戦前ボイス】</span>
+                  「${escapeHtml(charData.preBattleLine)}」
+                </div>
+              `
+                  : ''
+              }
+            </div>
+          </div>
+        `;
+
+        // タブボタンのアクティブクラス定義
+        const tabActiveCls =
+          'bg-indigo-600 text-white shadow-sm border border-indigo-500';
+        const tabInactiveCls =
+          'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 border border-slate-700/80';
+
+        // フィルターボタンのアクティブクラス定義
+        const filterActiveCls = 'bg-indigo-600 text-white font-black shadow-xs';
+        const filterInactiveCls =
+          'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 font-bold';
+
+        // 現在のアクティブタブの内容
+        let tabContentHtml = '';
+        if (currentLeaderModalTab === 'battles') {
+          tabContentHtml = `
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <div class="text-xs font-black text-slate-400 tracking-wider uppercase">対戦ログ履歴一覧</div>
+                <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+                  <button
+                    onclick="window.filterLeaderModalBattles('all')"
+                    class="px-2.5 py-1 rounded-lg text-xs transition-all ${currentLeaderModalBattleFilter === 'all' ? filterActiveCls : filterInactiveCls}"
+                  >
+                    すべて (${battleMatches.length})
+                  </button>
+                  <button
+                    onclick="window.filterLeaderModalBattles('attacker')"
+                    class="px-2.5 py-1 rounded-lg text-xs transition-all ${currentLeaderModalBattleFilter === 'attacker' ? filterActiveCls : filterInactiveCls}"
+                  >
+                    ⚔️ 攻撃のみ (${atkMatches})
+                  </button>
+                  <button
+                    onclick="window.filterLeaderModalBattles('defender')"
+                    class="px-2.5 py-1 rounded-lg text-xs transition-all ${currentLeaderModalBattleFilter === 'defender' ? filterActiveCls : filterInactiveCls}"
+                  >
+                    🛡️ 防衛のみ (${defMatches})
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-2.5 max-h-[460px] overflow-y-auto scroll-custom pr-1">
+                ${battlesHtml}
+              </div>
+            </div>
+          `;
+        } else if (currentLeaderModalTab === 'reg_decks') {
+          tabContentHtml = `
+            <div>
+              <div class="text-xs font-black text-slate-400 tracking-wider uppercase mb-3">このリーダーを採用している登録デッキ (${registeredMatches.length}件)</div>
+              <div class="space-y-2.5 max-h-[460px] overflow-y-auto scroll-custom pr-1">
+                ${regDecksHtml}
+              </div>
+            </div>
+          `;
+        } else if (currentLeaderModalTab === 'def_decks') {
+          tabContentHtml = `
+            <div>
+              <div class="text-xs font-black text-slate-400 tracking-wider uppercase mb-3">このリーダーを防衛に設定しているプレイヤー (${defenseMatches.length}人)</div>
+              <div class="space-y-2.5 max-h-[460px] overflow-y-auto scroll-custom pr-1">
+                ${defDecksHtml}
+              </div>
+            </div>
+          `;
+        } else if (currentLeaderModalTab === 'skill') {
+          tabContentHtml = skillTabHtml;
+        }
+
+        // モーダル全体のHTML構造
+        panelEl.innerHTML = `
+          <!-- サマリー戦績ダッシュボード -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <!-- 攻撃戦績 -->
+            <div class="bg-indigo-950/40 border border-indigo-800/60 rounded-2xl p-4 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-xs font-bold text-indigo-300">
+                <span class="flex items-center gap-1.5">⚔️ 攻撃戦績</span>
+                <span class="text-indigo-400 font-mono">${atkMatches} 試合</span>
+              </div>
+              <div class="my-3 flex items-baseline justify-between gap-2">
+                <span class="text-2xl font-black ${atkMatches > 0 ? 'text-indigo-300' : 'text-slate-500'}">${atkWinRateStr}</span>
+                <div class="text-xs font-bold text-slate-400 font-mono">
+                  <span class="text-emerald-400">${atkWins}勝</span> / <span class="text-rose-400">${atkLosses}敗</span>${atkDraws > 0 ? ` / <span class="text-slate-400">${atkDraws}分</span>` : ''}
+                </div>
+              </div>
+              <div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div class="bg-indigo-500 h-full rounded-full transition-all" style="width: ${atkWinPct}%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 防衛戦績 -->
+            <div class="bg-amber-950/40 border border-amber-800/60 rounded-2xl p-4 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-xs font-bold text-amber-300">
+                <span class="flex items-center gap-1.5">🛡️ 防衛戦績</span>
+                <span class="text-amber-400 font-mono">${defMatches} 試合</span>
+              </div>
+              <div class="my-3 flex items-baseline justify-between gap-2">
+                <span class="text-2xl font-black ${defMatches > 0 ? 'text-amber-300' : 'text-slate-500'}">${defWinRateStr}</span>
+                <div class="text-xs font-bold text-slate-400 font-mono">
+                  <span class="text-emerald-400">${defWins}勝</span> / <span class="text-rose-400">${defLosses}敗</span>${defDraws > 0 ? ` / <span class="text-slate-400">${defDraws}分</span>` : ''}
+                </div>
+              </div>
+              <div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div class="bg-amber-500 h-full rounded-full transition-all" style="width: ${defWinPct}%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 採用メトリクス -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col justify-between text-xs">
+              <div class="text-xs font-bold text-slate-300">📋 採用・使用状況</div>
+              <div class="space-y-2 my-auto">
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-400">登録デッキ採用:</span>
+                  <span class="font-black text-slate-100 font-mono">${registeredMatches.length} デッキ</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-400">防衛デッキ採用:</span>
+                  <span class="font-black text-slate-100 font-mono">${defenseMatches.length} 人</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-400">攻撃使用人数:</span>
+                  <span class="font-black text-slate-100 font-mono">${globalAttackerSet.size} 人</span>
+                </div>
+              </div>
+              <div class="text-[10px] text-slate-500 text-right">※ 集計対象範囲内の数値</div>
+            </div>
+          </div>
+
+          <!-- タブナビゲーションバー -->
+          <div class="flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 shrink-0 overflow-x-auto scroll-custom">
+            <button
+              onclick="window.switchLeaderModalTab('battles')"
+              class="flex-1 min-w-[120px] py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${currentLeaderModalTab === 'battles' ? tabActiveCls : tabInactiveCls}"
+            >
+              <span>⚔️ 対戦ログ履歴</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/30">${battleMatches.length}</span>
+            </button>
+            <button
+              onclick="window.switchLeaderModalTab('reg_decks')"
+              class="flex-1 min-w-[120px] py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${currentLeaderModalTab === 'reg_decks' ? tabActiveCls : tabInactiveCls}"
+            >
+              <span>📋 登録デッキ</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/30">${registeredMatches.length}</span>
+            </button>
+            <button
+              onclick="window.switchLeaderModalTab('def_decks')"
+              class="flex-1 min-w-[120px] py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${currentLeaderModalTab === 'def_decks' ? tabActiveCls : tabInactiveCls}"
+            >
+              <span>🛡️ 防衛デッキ</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/30">${defenseMatches.length}</span>
+            </button>
+            <button
+              onclick="window.switchLeaderModalTab('skill')"
+              class="flex-1 min-w-[120px] py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${currentLeaderModalTab === 'skill' ? tabActiveCls : tabInactiveCls}"
+            >
+              <span>⚡ スキル・キャラ詳細</span>
+            </button>
+          </div>
+
+          <!-- タブコンテンツ -->
+          <div class="transition-all">
+            ${tabContentHtml}
+          </div>
+        `;
+
+        if (!preserveScroll) {
+          lastActiveElementLeaderModal = document.activeElement;
+          modal.classList.remove('hidden');
+          modal.focus();
+          panelEl.scrollTop = 0;
+        }
+      }
+
+      /**
+       * リーダー詳細ポップアップモーダルを閉じる
+       */
+      function closeLeaderDetailModal() {
+        const modal = document.getElementById('leader-detail-modal');
+        if (modal) modal.classList.add('hidden');
+        if (
+          lastActiveElementLeaderModal &&
+          typeof lastActiveElementLeaderModal.focus === 'function'
+        ) {
+          lastActiveElementLeaderModal.focus();
+          lastActiveElementLeaderModal = null;
         }
       }
 
