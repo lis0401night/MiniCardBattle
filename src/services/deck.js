@@ -1244,6 +1244,7 @@ export function saveCurrentEditDeck() {
     );
 
     if (GameState.gameMode === 'defense_register') {
+      // 防衛用ストレージへの保存（防衛履歴表示や次回登録用）
       localStorage.setItem(
         'mini_card_battle_defense_deck_obj',
         JSON.stringify(activeDeck)
@@ -1253,6 +1254,8 @@ export function saveCurrentEditDeck() {
         'mini_card_battle_deck_defense',
         JSON.stringify(activeDeck.cards)
       );
+      // 選択した通常デッキのスロットにも編集内容を安全に反映・永続化する
+      saveSafeNormalDecks(GameState.decks);
     } else if (
       GameState.gameMode === 'battle_dungeon' ||
       activeDeck?.id === DUNGEON_DECK_ID

@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
 import BackButton from '../components/BackButton.jsx';
-import {
-  getSafeNormalDecks,
-  loadDeck,
-  saveSafeNormalDecks,
-  startBattleFlow,
-} from '../services/deck.js';
+import { getSafeNormalDecks, saveSafeNormalDecks } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
-import { confirmCharSelect, goBackFromSelect } from '../services/uiMainCore.js';
+import {
+  confirmDeckSelect,
+  goBackFromDeckList,
+} from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import {
   CHARACTERS,
@@ -154,37 +152,7 @@ export default function DeckListScreen({ switchScreen }) {
   }, []);
 
   const handleSelectDeck = (index) => {
-    playSound?.(SOUNDS?.seClick);
-
-    if (GameState.appState === APP_STATE_SELECT_ENEMY_DECK) {
-      GameState.pendingCharId = GameState.decks[index].leaderId;
-      GameState.practiceEnemyDeckIndex = index;
-      confirmCharSelect?.();
-      return;
-    }
-
-    GameState.currentDeckIndex = index;
-    loadDeck();
-
-    if (GameState.appState === 'select_deck') {
-      if (GameState.gameMode === 'story') {
-        GameState.pendingCharId = GameState.decks[index].leaderId;
-        startBattleFlow();
-        return;
-      }
-      if (GameState.gameMode === 'practice') {
-        GameState.practicePlayerDeckIndex = index;
-      }
-      GameState.pendingCharId = GameState.decks[index].leaderId;
-      if (GameState.gameMode === 'tournament' && !GameState.tournament) {
-        GameState.appState = 'tournament_init_deck_edit';
-        switchScreen?.('screen-deck-edit');
-      } else {
-        confirmCharSelect?.();
-      }
-    } else {
-      switchScreen?.('screen-deck-edit');
-    }
+    confirmDeckSelect?.(index);
   };
 
   const handleDeleteDeck = (index) => {
@@ -244,7 +212,7 @@ export default function DeckListScreen({ switchScreen }) {
         }
       );
     } else {
-      goBackFromSelect?.();
+      goBackFromDeckList?.();
     }
   };
 

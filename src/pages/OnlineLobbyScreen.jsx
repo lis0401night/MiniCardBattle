@@ -14,7 +14,7 @@ import {
   updatePlayerReady,
   updateRoomHeartbeat,
 } from '../services/multiplayer.js';
-import { showOnlineMenu } from '../services/uiMainCore.js';
+import { navigateToDeckList, showOnlineMenu } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -24,7 +24,7 @@ import {
   getPlayerIconPath,
   getIconFramePath,
 } from '../utils/constants/characters.js';
-import { playSound, switchScreen, stopAllBGM } from '../utils/gameUtils.js';
+import { playSound, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
   getScreenBackgroundStyle,
@@ -450,8 +450,7 @@ export default function OnlineLobbyScreen() {
     if (isBattleStarting) return;
     playSound(SOUNDS.seClick);
     GameState.gameMode = 'online_deck_edit';
-    GameState.appState = 'select_deck';
-    switchScreen('screen-deck-list');
+    navigateToDeckList('select_deck');
   };
 
   const handleSetReady = async () => {

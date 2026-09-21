@@ -4,6 +4,10 @@ import MissionListModal from '../components/battle/MissionListModal.jsx';
 import GridDensityIcon from '../components/common/GridDensityIcon.jsx';
 import MenuButton from '../components/common/MenuButton.jsx';
 import { prepareBattle } from '../game/battle/index.js';
+import {
+  initFortuneEventMode,
+  initHighDifficultyEventMode,
+} from '../game/events.js';
 import { loadDeck, saveDeck, setRenderDeckEditHook } from '../services/deck.js';
 import { openCardPreview } from '../services/uiGallery.js';
 import { goBackFromDeckEdit } from '../services/uiMainCore.js';
@@ -491,12 +495,30 @@ export default function DeckEditorScreen({ switchScreen }) {
       saveDeck();
     }
 
-    if (isDefenseConfig || GameState.gameMode === 'online_deck_edit') {
+    if (
+      isDefenseConfig ||
+      GameState.gameMode === 'online_deck_edit' ||
+      GameState.gameMode === 'free'
+    ) {
       GameState.appState = 'select_stage';
       if (typeof window.initStageSelectScreen === 'function')
         window.initStageSelectScreen();
       if (typeof switchScreen === 'function')
         switchScreen('screen-stage-select');
+    } else if (
+      (GameState.gameMode?.startsWith('event_') &&
+        (GameState.gameMode?.endsWith('_high') ||
+          GameState.gameMode?.endsWith('_fortune'))) ||
+      GameState.gameMode === 'event_satan'
+    ) {
+      const enemyCharId = getEventEnemyCharId(GameState.gameMode);
+      const playerCharId =
+        GameState.pendingCharId || GameState.playerConfig?.id || 'android';
+      if (GameState.gameMode?.endsWith('_fortune')) {
+        initFortuneEventMode(playerCharId, enemyCharId);
+      } else {
+        initHighDifficultyEventMode(playerCharId, enemyCharId);
+      }
     } else if (
       GameState.gameMode === 'create_deck' ||
       GameState.gameMode === 'free_deck_edit' ||
@@ -1487,7 +1509,9 @@ export default function DeckEditorScreen({ switchScreen }) {
             GameState.gameMode === 'online_deck_edit' ||
             GameState.gameMode === 'tournament'
               ? '編成完了'
-              : 'バトル開始！'
+              : GameState.gameMode === 'free'
+                ? 'ステージ選択へ'
+                : 'バトル開始！'
           }
         />
 

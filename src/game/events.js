@@ -4,7 +4,7 @@ import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
 import { EVENT_FORTUNE_DIALOGUES } from '../utils/constants/eventFortuneDialogues.js';
 import { switchScreen } from '../utils/gameUtils.js';
 import { asyncGet } from '../utils/fetch.js';
-import { startBattleFlow, migrateCardId } from '../services/deck.js';
+import { loadDeck, migrateCardId } from '../services/deck.js';
 import { GameState } from '../state/gameState.js';
 import { AI_LEVEL, DIFFICULTY } from '../utils/constants/config.js';
 import {
@@ -12,6 +12,7 @@ import {
   showContinueScreen,
 } from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
+import { prepareBattle } from './battle/index.js';
 
 /**
  * 汎用：高難易度イベントの初期化（サタン含む全高難易度キャラ共通）
@@ -131,9 +132,12 @@ export function handleEventProgression() {
       });
     }
   } else if (GameState.appState === 'pre_dialogue') {
-    // 導入ダイアログ(対峙)後はデッキ編成へ
+    // 難易度選択直後にデッキ一覧・編成を完了しているため、
+    // 対峙ダイアログ終了後はデッキ編成画面を挟まず、直接バトルを開始する
     performFadeTransition(() => {
-      startBattleFlow();
+      loadDeck();
+      GameState.appState = 'battle';
+      prepareBattle();
     });
   } else if (GameState.appState === 'post_dialogue') {
     if (GameState.lastBattleResult === 'lose') {

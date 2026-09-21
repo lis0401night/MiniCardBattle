@@ -1,4 +1,4 @@
-import { loadDeck, startBattleFlow } from '../services/deck.js';
+import { loadDeck } from '../services/deck.js';
 import {
   initSelectScreen,
   performFadeTransition,
@@ -168,7 +168,11 @@ export function handleFreeBattleProgression() {
       switchScreen('screen-select');
     });
   } else if (GameState.appState === 'pre_dialogue') {
-    startBattleFlow();
+    // 難易度選択直後にデッキ一覧・デッキ編成・ステージ選択を完了しているため、
+    // 戦闘前会話終了後はデッキ編成画面を挟まず、直接バトルを開始する
+    loadDeck();
+    GameState.appState = 'battle';
+    prepareBattle();
   } else {
     switchScreen('screen-mode-select');
   }

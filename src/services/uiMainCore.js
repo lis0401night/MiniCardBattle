@@ -726,6 +726,78 @@ export function goBackFromSelect() {
   }
 }
 
+/**
+ * デッキ一覧画面（DeckListScreen）の「戻る」ボタン押下時の画面遷移を実行します。
+ * 各ゲームモードのフローに応じて適切な直前画面へ遷移します。
+ *
+ * @return {void}
+ */
+export function goBackFromDeckList() {
+  playSound(SOUNDS.seClick);
+  // デッキ選択のフローから抜ける際にページネーションをリセット
+  GameState.deckListPage = 0;
+
+  if (GameState.gameMode === 'defense_register') {
+    // 防衛デッキ登録：防衛メニューへ戻る
+    switchScreen('screen-defense-menu');
+  } else if (GameState.gameMode === 'online_deck_edit') {
+    // オンライン対戦設定：オンラインロビーへ戻る
+    showOnlineLobby();
+  } else if (GameState.gameMode === 'defense_attack') {
+    // 防衛戦（攻撃側）：対戦相手リストへ戻る
+    switchScreen('screen-defense-battle-list');
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_high')
+  ) {
+    // 高難易度イベント：難易度選択へ戻る
+    GameState.appState = 'select_difficulty';
+    switchScreen('screen-difficulty');
+  } else if (
+    GameState.gameMode?.startsWith('event_') &&
+    GameState.gameMode?.endsWith('_fortune')
+  ) {
+    // 運命の邂逅イベント：難易度選択へ戻る
+    GameState.appState = 'select_difficulty';
+    switchScreen('screen-difficulty');
+  } else if (GameState.gameMode === 'free') {
+    // フリー対戦：難易度選択画面へ戻る
+    GameState.appState = 'select_difficulty';
+    switchScreen('screen-difficulty');
+  } else if (GameState.gameMode === 'practice') {
+    // 練習モード
+    if (GameState.appState === APP_STATE_SELECT_ENEMY_DECK) {
+      // 敵デッキ選択中の場合はプレイヤーデッキ選択（通常のデッキ一覧）に戻る
+      navigateToDeckList('select_deck');
+    } else {
+      // プレイヤーデッキ選択中の場合はソロメニューへ戻る
+      switchScreen('screen-solo-menu');
+    }
+  } else if (GameState.gameMode === 'tournament') {
+    playSound(AUDIO_INSTANCES.bgmTournament1);
+    if (
+      GameState.tournament &&
+      GameState.tournament.bracketTree &&
+      GameState.tournament.bracketTree.length > 0 &&
+      GameState.tournament.deckEditDone
+    ) {
+      switchScreen('screen-tournament-bracket');
+    } else {
+      switchScreen('screen-tournament-menu');
+    }
+  } else if (GameState.gameMode === 'story') {
+    // ストーリーモード：ソロメニューへ戻る
+    switchScreen('screen-solo-menu');
+  } else if (GameState.gameMode === 'free_deck_edit') {
+    // マイデッキ編集：ソロメニューまたはタイトルへ戻る
+    switchScreen('screen-solo-menu');
+  } else {
+    // デフォルトフォールバック：モード選択へ戻る
+    playSound(AUDIO_INSTANCES.bgmTitle);
+    switchScreen('screen-mode-select');
+  }
+}
+
 export function goBackFromDifficulty() {
   playSound(SOUNDS.seClick);
   if (GameState.gameMode === 'defense_register') {
@@ -761,14 +833,13 @@ export function goBackFromStage() {
   playSound(SOUNDS.seClick);
   if (
     GameState.gameMode === 'defense_register' ||
-    GameState.gameMode === 'online_deck_edit'
+    GameState.gameMode === 'online_deck_edit' ||
+    GameState.gameMode === 'free'
   ) {
-    // 防衛・オンラインのステージ選択画面からは、直前のデッキ編集画面へと戻る
+    // 防衛・オンライン・フリー対戦のステージ選択画面からは、直前のデッキ編集画面へと戻る
     switchScreen('screen-deck-edit');
   } else if (GameState.gameMode === 'practice') {
     navigateToDeckList(APP_STATE_SELECT_ENEMY_DECK);
-  } else if (GameState.gameMode === 'free') {
-    navigateToDeckList('select_deck');
   } else {
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
@@ -777,13 +848,11 @@ export function goBackFromStage() {
 
 export function goBackFromDeckEdit(isCancel = false) {
   playSound(SOUNDS.seClick);
-  if (GameState.gameMode === 'defense_register') {
-    // キャラクター選択に戻る
-    GameState.appState = 'select_player';
-    initSelectScreen(false);
-    switchScreen('screen-select');
-  } else if (GameState.gameMode === 'online_deck_edit') {
-    // オンラインデッキ編集：デッキ一覧に戻る
+  if (
+    GameState.gameMode === 'defense_register' ||
+    GameState.gameMode === 'online_deck_edit'
+  ) {
+    // 防衛登録 / オンラインデッキ編集：デッキ一覧に戻る
     navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'defense_attack') {
     // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
@@ -1258,12 +1327,8 @@ export function showDefenseRules() {
 export function startDefenseRegistration() {
   playSound(SOUNDS.seClick);
   GameState.gameMode = 'defense_register';
-  // 防衛デッキ新規登録時はプレイヤースキンをリセットし、デフォルト状態で選べるようにする
-  GameState.playerSkins = {};
   GameState.playerName = resolvePlayerName();
-  GameState.appState = 'select_player';
-  initSelectScreen(false);
-  switchScreen('screen-select');
+  navigateToDeckList('select_deck');
 }
 
 export function closePlayerNameModal() {
@@ -1278,13 +1343,123 @@ export function startDefenseBattle() {
 }
 
 /**
+ * デッキ一覧画面（DeckListScreen）でプレイヤーがデッキを選択・確定した際のアクションを実行します。
+ * ゲームモード（防衛登録、オンライン対戦設定、フリー対戦、ストーリー等）に応じた適切な次画面への遷移を行います。
+ *
+ * @param {number} index - 選択されたデッキのインデックス（0〜9）
+ * @return {void}
+ */
+export function confirmDeckSelect(index) {
+  if (!GameState.decks || index < 0 || index >= GameState.decks.length) {
+    return;
+  }
+
+  playSound(SOUNDS.seClick);
+
+  // 練習モードで相手デッキを選択中の場合
+  if (GameState.appState === APP_STATE_SELECT_ENEMY_DECK) {
+    GameState.pendingCharId = GameState.decks[index].leaderId;
+    GameState.practiceEnemyDeckIndex = index;
+    confirmCharSelect();
+    return;
+  }
+
+  GameState.currentDeckIndex = index;
+  loadDeck();
+
+  const selectedDeck = GameState.decks[index];
+  const selectedLeaderId = selectedDeck.leaderId || 'android';
+  GameState.pendingCharId = selectedLeaderId;
+
+  // 選択デッキのスキン設定を反映
+  const chosenSkin = selectedDeck.playerSkins?.[selectedLeaderId] || 'default';
+  if (!GameState.playerSkins) GameState.playerSkins = {};
+  GameState.playerSkins[selectedLeaderId] = chosenSkin;
+
+  // playerConfig にリーダー情報とスキンを先行反映
+  GameState.playerConfig = { ...CHARACTERS[selectedLeaderId] };
+  if (typeof getSkinImage === 'function') {
+    const templateChar = CHARACTERS[selectedLeaderId];
+    if (templateChar) {
+      GameState.playerConfig.image =
+        getSkinImage(templateChar, chosenSkin, 'image') || templateChar.image;
+      GameState.playerConfig.imageLose =
+        getSkinImage(templateChar, chosenSkin, 'imageLose') ||
+        templateChar.imageLose ||
+        templateChar.image;
+      GameState.playerConfig.icon =
+        getSkinImage(templateChar, chosenSkin, 'icon') || templateChar.icon;
+      GameState.playerConfig.iconDamage =
+        getSkinImage(templateChar, chosenSkin, 'iconDamage') ||
+        templateChar.iconDamage ||
+        templateChar.icon;
+    }
+  }
+
+  // プレイマット情報の反映
+  if (selectedDeck.playmatId) {
+    GameState.selectedPlaymatId = selectedDeck.playmatId;
+  }
+
+  if (
+    GameState.gameMode === 'defense_register' ||
+    GameState.gameMode === 'online_deck_edit' ||
+    GameState.gameMode === 'free' ||
+    GameState.gameMode === 'event_satan' ||
+    (GameState.gameMode?.startsWith('event_') &&
+      (GameState.gameMode?.endsWith('_high') ||
+        GameState.gameMode?.endsWith('_fortune')))
+  ) {
+    // 防衛登録 / オンライン対戦設定 / フリー対戦 / 高難易度イベント / 運命の邂逅：
+    // デッキ一覧で選んだ通常デッキをベースにデッキ編成画面へ移行
+    startBattleFlow();
+    setTimeout(() => {
+      if (typeof renderDeckEdit === 'function') renderDeckEdit();
+    }, 50);
+  } else if (GameState.gameMode === 'story') {
+    // ストーリーモード：即座にバトルまたは会話フローへ
+    startBattleFlow();
+  } else if (GameState.gameMode === 'practice') {
+    // 練習モード：プレイヤーデッキ確定後、相手デッキ選択画面へ
+    GameState.practicePlayerDeckIndex = index;
+    GameState.appState = APP_STATE_SELECT_ENEMY_DECK;
+    if (window.forceUpdateDeckList) window.forceUpdateDeckList();
+  } else if (GameState.gameMode === 'tournament') {
+    if (!GameState.tournament) {
+      GameState.appState = 'tournament_init_deck_edit';
+      switchScreen('screen-deck-edit');
+    } else {
+      initTournamentMode();
+    }
+  } else if (GameState.gameMode === 'free_deck_edit') {
+    // マイデッキ編集：デッキ編成画面へ移行
+    switchScreen('screen-deck-edit');
+  } else if (GameState.gameMode === 'defense_attack') {
+    // 防衛戦（攻撃側）：デッキ選択確定後、バトルへ
+    startBattleFlow();
+  } else {
+    // デフォルトフォールバック：ステージ選択画面へ移行
+    GameState.appState = 'select_stage';
+    initStageSelectScreen();
+    switchScreen('screen-stage-select');
+  }
+}
+
+/**
  * キャラクター選択画面でキャラクター・スキンを決定した際の確定処理を実行します。
- * ゲームモード（防衛デッキ登録、ストーリー、トーナメント、オンライン編集等）に応じた画面遷移や初期化を行います。
+ * ゲームモード（ストーリー、トーナメント、新規デッキ作成等）に応じた画面遷移や初期化を行います。
  *
  * @return {void}
  */
 export function confirmCharSelect() {
   playSound(SOUNDS.seClick);
+
+  // デッキ選択状態からの呼び出しの場合は新設の confirmDeckSelect へ委譲
+  if (GameState.appState === 'select_deck') {
+    confirmDeckSelect(GameState.currentDeckIndex || 0);
+    return;
+  }
+
   if (GameState.appState === 'create_deck_select_char') {
     const charId = GameState.pendingCharId;
     const chosenSkin = GameState.playerSkins[charId];
@@ -1305,10 +1480,7 @@ export function confirmCharSelect() {
     return;
   }
 
-  if (
-    GameState.appState === 'select_player' ||
-    GameState.appState === 'select_deck'
-  ) {
+  if (GameState.appState === 'select_player') {
     if (GameState.gameMode === 'practice') {
       GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
       GameState.appState = APP_STATE_SELECT_ENEMY_DECK;
