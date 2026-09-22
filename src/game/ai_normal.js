@@ -7448,16 +7448,31 @@ export function evaluateAdhocTokenLanes(
           if (!simState) continue;
 
           // トークン配置および戦闘フェーズ完了後の盤面状態を総合評価関数で客観的に採点
-          let score = evaluateSimState(simState);
+          const rawScore = evaluateSimState(simState);
 
-          // タイブレーク：左 > 右 > 中央
-          score += 0.001 / lanePriorityOrder[l];
+          const currentPri = lanePriorityOrder[l] || 99;
+          const bestPri = lanePriorityOrder[bestLane] || 99;
+          const currentLen = actionQueue.length;
+          const bestLen = bestBranch ? bestBranch.length : Infinity;
 
-          if (score > maxScore) {
-            maxScore = score;
+          if (rawScore > maxScore + 0.00001) {
+            maxScore = rawScore;
             bestBranch = actionQueue;
             bestLane = l;
             bestSimState = simState;
+          } else if (Math.abs(rawScore - maxScore) <= 0.00001) {
+            // 「同じ結果をもたらす場合は手が少ないものを選ぶ原則」の徹底
+            if (currentLen < bestLen) {
+              maxScore = rawScore;
+              bestBranch = actionQueue;
+              bestLane = l;
+              bestSimState = simState;
+            } else if (currentLen === bestLen && currentPri < bestPri) {
+              maxScore = rawScore;
+              bestBranch = actionQueue;
+              bestLane = l;
+              bestSimState = simState;
+            }
           }
         }
       }
@@ -7478,12 +7493,21 @@ export function evaluateAdhocTokenLanes(
     );
     if (simState) {
       // 配置を行わない（パス）盤面の戦闘解決結果を総合評価関数で採点
-      let score = evaluateSimState(simState) + 0.0005; // キャンセル時のタイブレーク微調整
-      if (score > maxScore) {
-        maxScore = score;
+      const rawScore = evaluateSimState(simState);
+      const bestLen = bestBranch ? bestBranch.length : Infinity;
+      if (rawScore > maxScore + 0.00001) {
+        maxScore = rawScore;
         bestBranch = [{ type: 'play_adhoc', card: null, laneIdx: -1 }];
         bestLane = -1;
         bestSimState = simState;
+      } else if (Math.abs(rawScore - maxScore) <= 0.00001) {
+        // パス（手数0）は同スコア時に手数1以上の手より確実に優先
+        if (0 < bestLen) {
+          maxScore = rawScore;
+          bestBranch = [{ type: 'play_adhoc', card: null, laneIdx: -1 }];
+          bestLane = -1;
+          bestSimState = simState;
+        }
       }
     }
   }
