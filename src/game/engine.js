@@ -21,6 +21,7 @@ import {
   matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
+  matchesAssembleTarget,
   matchesUnionMaterial,
   isCardInvincible,
   syncCardStatuses,
@@ -2876,9 +2877,35 @@ export function applyActiveSkillLogic(
     }
     case 'assemble': {
       // 【召集(assemble)スキル処理】
-      // 召喚時、デッキから条件に合うカード1枚を自分のレーンに召喚する
+      // 先行1ターン目は他のレーンにカードを出せないためボーナス加算不可
+      const turnCount = state.turnCount ?? 0;
+      const firstPlayer = state.firstPlayer;
+      if (turnCount === 1 && firstPlayer === owner) break;
+
+      // 召喚時、デッキから条件に合うカード1枚を自分のレーンに召喚する（シミュレーション用近似）
       const myDeck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
       if (!myDeck || myDeck.length === 0) break;
+      const selfId = c ? c.baseId || c.id : null;
+      const skObj = c?.skills?.find((s) => s.id === 'assemble') || {
+        id: 'assemble',
+        value: val,
+      };
+      const isExcludeBoard = Boolean(skObj.excludeBoard);
+      const myBoard = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+      const presentBoardCards = isExcludeBoard ? myBoard.filter(Boolean) : [];
+      const presentBoardIds = isExcludeBoard
+        ? presentBoardCards.flatMap((bc) => [bc.id, bc.baseId]).filter(Boolean)
+        : [];
+      const hasTarget = myDeck.some(
+        (dCard) =>
+          dCard &&
+          matchesAssembleTarget(dCard, skObj, {
+            selfId,
+            presentBoardIds,
+            presentBoardCards,
+          })
+      );
+      if (!hasTarget) break;
       const assembleBonus = val || 3;
       c.currentPower += assembleBonus;
       events.push({

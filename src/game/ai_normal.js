@@ -8,6 +8,7 @@ import {
   getSkillValue,
   hasSkill,
   matchesAssembleTarget,
+  matchesCallTarget,
   matchesResurrectTarget,
   matchesSummonTarget,
   consumeStartupSkill,
@@ -214,6 +215,37 @@ function estimateCallAssembleBonus(sk) {
     callBonus = maxPower > 0 ? maxPower : 6;
   }
   return callBonus;
+}
+
+/**
+ * 指定されたデッキ内に対象スキル（号令または召集）の条件を満たすカードが存在するか判定する。
+ * デッキが0枚の場合、または条件に合致するカードが1枚も存在しない場合は false を返す。
+ *
+ * @param {object|null|undefined} sk - 号令または召集のスキル定義オブジェクト
+ * @param {Array<object>|null|undefined} deck - 判定対象のデッキ配列
+ * @param {object} [options={}] - 判定用オプション
+ * @param {string|null} [options.selfId=null] - 発動元カードのIDまたはbaseId
+ * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列
+ * @returns {boolean} 条件を満たすカードが1枚以上存在すれば true
+ */
+function hasValidTargetInDeck(sk, deck, options = {}) {
+  if (!sk || !Array.isArray(deck) || deck.length === 0) return false;
+  return deck.some((card) => card && matchesCallTarget(card, sk, options));
+}
+
+/**
+ * 指定されたプレイヤーが先行1ターン目（中央レーン以外への配置不可）であるかを判定する。
+ * 先行1ターン目は他のレーンにカードを出すことができないため、追加展開スキルのボーナス等を抑止する。
+ *
+ * @param {'blue' | 'red'} owner - 対象プレイヤー
+ * @param {object|null|undefined} [state=null] - シミュレーション状態オブジェクト
+ * @returns {boolean} 先行1ターン目であれば true
+ */
+function isFirstTurnRestricted(owner, state = null) {
+  const turnCount = state?.turnCount ?? GameState.turnCount ?? 0;
+  const firstPlayer = state?.firstPlayer ?? GameState.firstPlayer;
+  return turnCount === 1 && firstPlayer === owner;
 }
 
 const cloneCard = (c) => (c ? structuredClone(c) : null);
@@ -591,12 +623,36 @@ export function processActionSequence(
                 ].includes(sk.id)
               )
                 return;
-              // 号令・召集: デッキからカードを出す動的スキルのため、パワーボーナスで近似
+              // 号令・召集: デッキに対象カードが存在する場合のみパワーボーナスで近似
+              // （※ 先行1ターン目は他のレーンにカードを出せないためボーナス加算不可）
               if (sk.id === 'call' || sk.id === 'assemble') {
-                const callBonus = estimateCallAssembleBonus(sk);
-                boardCard.currentPower =
-                  (boardCard.currentPower || 0) + callBonus;
-                boardCard.basePower = (boardCard.basePower || 0) + callBonus;
+                if (!isFirstTurnRestricted('red', simState)) {
+                  const selfId = boardCard
+                    ? boardCard.baseId || boardCard.id
+                    : null;
+                  const isExcludeBoard = Boolean(sk.excludeBoard);
+                  const presentBoardCards = isExcludeBoard
+                    ? simState.enemyBoard.filter(Boolean)
+                    : [];
+                  const presentBoardIds = isExcludeBoard
+                    ? presentBoardCards
+                        .flatMap((c) => [c.id, c.baseId])
+                        .filter(Boolean)
+                    : [];
+                  if (
+                    hasValidTargetInDeck(sk, simState.enemyDeck, {
+                      selfId,
+                      presentBoardIds,
+                      presentBoardCards,
+                    })
+                  ) {
+                    const callBonus = estimateCallAssembleBonus(sk);
+                    boardCard.currentPower =
+                      (boardCard.currentPower || 0) + callBonus;
+                    boardCard.basePower =
+                      (boardCard.basePower || 0) + callBonus;
+                  }
+                }
               } else if (sk.id === 'metamorph') {
                 boardCard.currentPower = METAMORPH_ESTIMATED_POWER;
                 boardCard.basePower = METAMORPH_ESTIMATED_POWER;
@@ -772,33 +828,49 @@ export function processActionSequence(
               ? action.checkConstraints
               : true;
         } else if (action.type === 'assemble') {
-          // デッキからカードを取得・消費
+          // デッキからカードを取得・消費（存在しない場合は不発としてスキップ）
+          const targetDeck =
+            action.owner === 'blue' ? simState.playerDeck : simState.enemyDeck;
           let dIdx = -1;
-          if (action.targetUid) {
-            dIdx = simState.enemyDeck.findIndex(
+          const targetKey = action.targetUid || action.cardId;
+
+          if (targetKey) {
+            dIdx = targetDeck.findIndex(
               (c) =>
                 c &&
-                (c.uid === action.targetUid ||
-                  c.id === action.targetUid ||
-                  c.baseId === action.targetUid)
+                (c.uid === targetKey ||
+                  c.id === targetKey ||
+                  c.baseId === targetKey)
             );
           }
+          // targetIdx のフォールバックは、対象カードと同一IDの場合のみ許可（spliceによるずれ・別カードの誤取得を防止）
           if (
             dIdx === -1 &&
             action.targetIdx !== undefined &&
-            action.targetIdx < simState.enemyDeck.length
+            action.targetIdx < targetDeck.length
           ) {
-            dIdx = action.targetIdx;
+            const cand = targetDeck[action.targetIdx];
+            if (
+              cand &&
+              (!targetKey ||
+                cand.uid === targetKey ||
+                cand.id === targetKey ||
+                cand.baseId === targetKey)
+            ) {
+              dIdx = action.targetIdx;
+            }
           }
-          if (dIdx !== -1 && simState.enemyDeck[dIdx]) {
-            playedCard = cloneCard(simState.enemyDeck[dIdx]);
-            simState.enemyDeck.splice(dIdx, 1);
-          } else {
-            const master = CARD_MASTER.find(
-              (m) => m.id === action.targetUid || m.id === action.cardId
-            );
-            if (master) playedCard = cloneCard(master);
+
+          if (dIdx === -1 || !targetDeck[dIdx]) {
+            // デッキに対象カードが存在しない場合は召集不発（カード捏造や無関係なカードの召喚を防止）
+            for (let i = 0; i < 3; i++) {
+              flushPendingSimSkills(simState, parentCardOnLane[i], i);
+            }
+            continue;
           }
+
+          playedCard = cloneCard(targetDeck[dIdx]);
+          targetDeck.splice(dIdx, 1);
           checkConstraints = true;
         } else {
           // play, forge, summon は手札から
@@ -1277,13 +1349,37 @@ export function processActionSequence(
                   (AI_SKILL_UTILITY[sk.id] || 0);
               }
             }
-            if (sk.id === 'call' || sk.id === 'assemble') {
-              const callBonus = estimateCallAssembleBonus(sk);
-              const boardCard = simState.enemyBoard[lIdx];
-              if (boardCard) {
-                boardCard.currentPower =
-                  (boardCard.currentPower || 0) + callBonus;
-                boardCard.basePower = (boardCard.basePower || 0) + callBonus;
+            if (sk.id === 'call') {
+              // 号令（call）: デッキに対象カードが存在する場合のみパワーボーナスを仮加算
+              // （※ 先行1ターン目は他のレーンにカードを出せないためボーナス加算不可）
+              // （※ assemble は buildSkillBranch で子アクションとして展開されるため親カードには加算しない）
+              if (!isFirstTurnRestricted('red', simState)) {
+                const boardCard = simState.enemyBoard[lIdx];
+                const selfId = boardCard
+                  ? boardCard.baseId || boardCard.id
+                  : null;
+                const isExcludeBoard = Boolean(sk.excludeBoard);
+                const presentBoardCards = isExcludeBoard
+                  ? simState.enemyBoard.filter(Boolean)
+                  : [];
+                const presentBoardIds = isExcludeBoard
+                  ? presentBoardCards
+                      .flatMap((c) => [c.id, c.baseId])
+                      .filter(Boolean)
+                  : [];
+                if (
+                  boardCard &&
+                  hasValidTargetInDeck(sk, simState.enemyDeck, {
+                    selfId,
+                    presentBoardIds,
+                    presentBoardCards,
+                  })
+                ) {
+                  const callBonus = estimateCallAssembleBonus(sk);
+                  boardCard.currentPower =
+                    (boardCard.currentPower || 0) + callBonus;
+                  boardCard.basePower = (boardCard.basePower || 0) + callBonus;
+                }
               }
             } else if (sk.id === 'metamorph') {
               const boardCard = simState.enemyBoard[lIdx];
@@ -1303,6 +1399,7 @@ export function processActionSequence(
                 'puppet',
                 'servant',
                 'summon',
+                'assemble',
                 'ambush',
                 'resurrect',
                 'awake',
@@ -6306,25 +6403,53 @@ export function evaluateAdhocSummonMove(
       // 召喚アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
       const score = evaluateSimState(simState);
 
-      // タイブレーク：左(1) > 右(2) > 中央(3)
+      // タイブレーク用レーン優先順位：左(1) > 右(2) > 中央(3)
       const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
-      const tieBreaker =
-        (isRed ? 0.001 : -0.001) / lanePriorityOrder[summonLane];
-      const evaluatedScore = score + tieBreaker;
+      const currentPri = lanePriorityOrder[summonLane] || 99;
+      const bestPri = lanePriorityOrder[bestLane] || 99;
 
       if (isRed) {
-        if (evaluatedScore > bestScore) {
-          bestScore = evaluatedScore;
+        if (score > bestScore + 0.00001) {
+          bestScore = score;
           bestIdx = i;
           bestLane = summonLane;
           bestBranch = branch;
+        } else if (Math.abs(score - bestScore) <= 0.00001) {
+          // 「同じ結果をもたらす場合は手が少ないものを選ぶ原則」の徹底
+          const currentLen = branch.length;
+          const bestLen = bestBranch ? bestBranch.length : Infinity;
+          if (currentLen < bestLen) {
+            bestScore = score;
+            bestIdx = i;
+            bestLane = summonLane;
+            bestBranch = branch;
+          } else if (currentLen === bestLen && currentPri < bestPri) {
+            bestScore = score;
+            bestIdx = i;
+            bestLane = summonLane;
+            bestBranch = branch;
+          }
         }
       } else {
-        if (evaluatedScore < bestScore) {
-          bestScore = evaluatedScore;
+        if (score < bestScore - 0.00001) {
+          bestScore = score;
           bestIdx = i;
           bestLane = summonLane;
           bestBranch = branch;
+        } else if (Math.abs(score - bestScore) <= 0.00001) {
+          const currentLen = branch.length;
+          const bestLen = bestBranch ? bestBranch.length : Infinity;
+          if (currentLen < bestLen) {
+            bestScore = score;
+            bestIdx = i;
+            bestLane = summonLane;
+            bestBranch = branch;
+          } else if (currentLen === bestLen && currentPri < bestPri) {
+            bestScore = score;
+            bestIdx = i;
+            bestLane = summonLane;
+            bestBranch = branch;
+          }
         }
       }
     }
@@ -6445,17 +6570,47 @@ export function evaluateAdhocAssembleMove(
       // 召集アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
       const score = evaluateSimState(simState);
 
+      // タイブレーク用レーン優先順位：左(1) > 右(2) > 中央(3)
+      const lanePriorityOrder = { 0: 1, 2: 2, 1: 3 };
+      const currentPri = lanePriorityOrder[assembleLane] || 99;
+      const bestPri = lanePriorityOrder[bestBranch?.[0]?.laneIdx] || 99;
+
       if (isRed) {
-        if (score > bestScore) {
+        if (score > bestScore + 0.00001) {
           bestScore = score;
           bestCard = card;
           bestBranch = branch;
+        } else if (Math.abs(score - bestScore) <= 0.00001) {
+          // 「同じ結果をもたらす場合は手が少ないものを選ぶ原則」の徹底
+          const currentLen = branch.length;
+          const bestLen = bestBranch ? bestBranch.length : Infinity;
+          if (currentLen < bestLen) {
+            bestScore = score;
+            bestCard = card;
+            bestBranch = branch;
+          } else if (currentLen === bestLen && currentPri < bestPri) {
+            bestScore = score;
+            bestCard = card;
+            bestBranch = branch;
+          }
         }
       } else {
-        if (score < bestScore) {
+        if (score < bestScore - 0.00001) {
           bestScore = score;
           bestCard = card;
           bestBranch = branch;
+        } else if (Math.abs(score - bestScore) <= 0.00001) {
+          const currentLen = branch.length;
+          const bestLen = bestBranch ? bestBranch.length : Infinity;
+          if (currentLen < bestLen) {
+            bestScore = score;
+            bestCard = card;
+            bestBranch = branch;
+          } else if (currentLen === bestLen && currentPri < bestPri) {
+            bestScore = score;
+            bestCard = card;
+            bestBranch = branch;
+          }
         }
       }
     }
@@ -6638,6 +6793,8 @@ export function simulateAdhocChoiceAssemble(
   const isRed = owner === 'red';
   const simDeck = isRed ? simState.enemyDeck : simState.playerDeck;
   if (!simDeck || simDeck.length === 0) return;
+  // 先行1ターン目は他のレーンにカードを出せないため召集による展開不可
+  if (isFirstTurnRestricted(owner, simState)) return;
 
   const simBoard = isRed ? simState.enemyBoard : simState.playerBoard;
   const sourceCard = simBoard[sourceLane];
@@ -6993,12 +7150,36 @@ export function evaluateAdhocSkillChoice(
           // デッキからの召集：デッキに対象カードが存在するか判定し、精密にシミュレート（不在なら不発）
           simulateAdhocChoiceAssemble(simState, owner, lane, choiceSkill);
         } else if (choiceSkill.id === 'call') {
-          // 号令（call）：デッキトップの内容は非公開情報であり事前に予測してはならないため、
-          // 一律で期待値として+3（または指定値）のパワー加算判定を行う
-          if (simCard) {
-            const callBonus = choiceSkill.value || 3;
-            simCard.currentPower = (simCard.currentPower || 0) + callBonus;
-            simCard.basePower = (simCard.basePower || 0) + callBonus;
+          // 号令（call）：デッキに対象カードが存在する場合のみ期待値としてパワー加算
+          // （※ 先行1ターン目は他のレーンにカードを出せないため加算不可）
+          const targetOwner = isRed ? 'red' : 'blue';
+          if (!isFirstTurnRestricted(targetOwner, simState)) {
+            const simDeck = isRed ? simState.enemyDeck : simState.playerDeck;
+            const selfId = simCard ? simCard.baseId || simCard.id : null;
+            const isExcludeBoard = Boolean(choiceSkill.excludeBoard);
+            const currentSimBoard = isRed
+              ? simState.enemyBoard
+              : simState.playerBoard;
+            const presentBoardCards = isExcludeBoard
+              ? currentSimBoard.filter(Boolean)
+              : [];
+            const presentBoardIds = isExcludeBoard
+              ? presentBoardCards
+                  .flatMap((c) => [c.id, c.baseId])
+                  .filter(Boolean)
+              : [];
+            if (
+              simCard &&
+              hasValidTargetInDeck(choiceSkill, simDeck, {
+                selfId,
+                presentBoardIds,
+                presentBoardCards,
+              })
+            ) {
+              const callBonus = choiceSkill.value || 3;
+              simCard.currentPower = (simCard.currentPower || 0) + callBonus;
+              simCard.basePower = (simCard.basePower || 0) + callBonus;
+            }
           }
         } else if (choiceSkill.id === 'resurrect') {
           // 墓地からの復活：墓地に対象カードが存在するか判定し、精密にシミュレート（不在なら不発）
@@ -7800,13 +7981,37 @@ export function simulateMove(
             skills.forEach((sk) => {
               if (sk.id === 'call' || sk.id === 'assemble') {
                 // 【号令・召集の仮評価（simulateMove版）】
-                // processActionSequence と同じロジック: call/assembleの値分のパワーを仮加算
-                const callBonus = estimateCallAssembleBonus(sk);
-                const boardCard = simState.enemyBoard[laneIdx];
-                if (boardCard) {
-                  boardCard.currentPower =
-                    (boardCard.currentPower || 0) + callBonus;
-                  boardCard.basePower = (boardCard.basePower || 0) + callBonus;
+                // 先行1ターン目は他のレーンにカードを出せないためボーナス加算不可
+                // デッキに対象カードが存在する場合のみ、パワーボーナスを仮加算
+                if (!isFirstTurnRestricted('red', simState)) {
+                  const selfId = activeCard
+                    ? activeCard.baseId || activeCard.id
+                    : null;
+                  const isExcludeBoard = Boolean(sk.excludeBoard);
+                  const presentBoardCards = isExcludeBoard
+                    ? simState.enemyBoard.filter(Boolean)
+                    : [];
+                  const presentBoardIds = isExcludeBoard
+                    ? presentBoardCards
+                        .flatMap((c) => [c.id, c.baseId])
+                        .filter(Boolean)
+                    : [];
+                  if (
+                    hasValidTargetInDeck(sk, simState.enemyDeck, {
+                      selfId,
+                      presentBoardIds,
+                      presentBoardCards,
+                    })
+                  ) {
+                    const callBonus = estimateCallAssembleBonus(sk);
+                    const boardCard = simState.enemyBoard[laneIdx];
+                    if (boardCard) {
+                      boardCard.currentPower =
+                        (boardCard.currentPower || 0) + callBonus;
+                      boardCard.basePower =
+                        (boardCard.basePower || 0) + callBonus;
+                    }
+                  }
                 }
               } else if (sk.id === 'metamorph') {
                 // 【変身の仮評価（simulateMove版）】
@@ -7821,6 +8026,7 @@ export function simulateMove(
                   'clone',
                   'servant',
                   'summon',
+                  'assemble',
                   'ambush',
                   'puppet',
                   'resurrect',

@@ -2941,6 +2941,21 @@ export function matchesAssembleTarget(card, skill, options = {}) {
 }
 
 /**
+ * 対象カードが「号令（call）」スキルの発動条件・対象指定に合致するか判定する公開関数。
+ *
+ * @param {object|null|undefined} card - 判定対象のデッキカードオブジェクト
+ * @param {object|null|undefined} skill - 号令スキル定義オブジェクト
+ * @param {object} [options={}] - 判定用オプション
+ * @param {string|null} [options.selfId=null] - 号令元カードのIDまたはbaseId
+ * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列
+ * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
+ * @returns {boolean} 号令対象として有効であれば true、そうでなければ false
+ */
+export function matchesCallTarget(card, skill, options = {}) {
+  return matchesHandOrDeckTarget(card, skill, options);
+}
+
+/**
  * 対象カードが「復活（resurrect）」または「傀儡（puppet）」スキルの発動条件・対象指定に合致するか判定する共通実体関数。
  * 自軍墓地（復活）または敵軍墓地（傀儡）からのカード配置において、同一の判定ロジック・順序を一元的に保証します。
  *
