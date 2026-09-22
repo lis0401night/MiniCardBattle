@@ -418,7 +418,7 @@ export function canResolveStandaloneSkill(
  * @param {'red' | 'blue'} [owner='red'] - 配置を行う陣営
  * @param {object|null} [_tokenCard=null] - 配置対象のカードまたはトークンオブジェクト
  * @param {number} [count=1] - 配置を決定するレーン数
- * @param {boolean} [_canCancel=false] - キャンセル可否フラグ（Easyでは常時配置を行う）
+ * @param {boolean} [canCancel=false] - キャンセル可否フラグ（空きレーン不足時に自陣を破壊せずキャンセルする）
  * @param {boolean} [_checkConstraints=true] - 制約チェックフラグ
  * @param {Array<object>} [_pendingSkills=[]] - 後続スキルリスト
  * @return {Array<number>} 決定されたレーンインデックス配列
@@ -428,7 +428,7 @@ export function getEasyTokenLanes(
   owner = 'red',
   _tokenCard = null,
   count = 1,
-  _canCancel = false,
+  canCancel = false,
   _checkConstraints = true,
   _pendingSkills = []
 ) {
@@ -439,7 +439,12 @@ export function getEasyTokenLanes(
     return shuffleArray(emptyLanes).slice(0, count);
   }
 
-  // 空きレーンをすべて使い、不足分は埋まっているレーンからランダムに選ぶ
+  // キャンセルが許可されている場合、空き枠不足時に味方カードを上書き自壊させずキャンセル（空配列）を返す
+  if (canCancel) {
+    return [];
+  }
+
+  // キャンセル不可の場合のみ、空きレーンをすべて使い、不足分は埋まっているレーンからランダムに選ぶ
   const occupiedLanes = allLanes.filter((l) => board[l] !== null);
   return [...shuffleArray(emptyLanes), ...shuffleArray(occupiedLanes)].slice(
     0,

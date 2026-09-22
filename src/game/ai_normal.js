@@ -6526,10 +6526,27 @@ export function evaluateAdhocAssembleMove(
     : initialSimState.playerSealedLanes;
   const unsealedLanes = [0, 1, 2].filter((l) => !sealed || sealed[l] === 0);
 
-  if (unsealedLanes.length === 0) return uniqueCards[0];
+  if (unsealedLanes.length === 0) return null;
 
-  let bestScore = isRed ? -Infinity : Infinity;
-  let bestCard = uniqueCards[0];
+  // パス（召集を行わない）シミュレーション状態のスコアをベースラインとして算出
+  const passSimState = processActionSequence(
+    [{ type: 'play_adhoc', card: null, laneIdx: -1 }],
+    false,
+    null,
+    null,
+    'before',
+    null,
+    null,
+    structuredClone(initialSimState)
+  );
+  const baselineScore = passSimState
+    ? evaluateSimState(passSimState)
+    : isRed
+      ? -Infinity
+      : Infinity;
+
+  let bestScore = baselineScore;
+  let bestCard = null;
   let bestBranch = null;
 
   for (const card of uniqueCards) {
@@ -6582,16 +6599,19 @@ export function evaluateAdhocAssembleMove(
           bestBranch = branch;
         } else if (Math.abs(score - bestScore) <= 0.00001) {
           // 「同じ結果をもたらす場合は手が少ないものを選ぶ原則」の徹底
-          const currentLen = branch.length;
-          const bestLen = bestBranch ? bestBranch.length : Infinity;
-          if (currentLen < bestLen) {
-            bestScore = score;
-            bestCard = card;
-            bestBranch = branch;
-          } else if (currentLen === bestLen && currentPri < bestPri) {
-            bestScore = score;
-            bestCard = card;
-            bestBranch = branch;
+          // パス（何もしない）は手数0なので、bestBranchがnull（パス）の時に同点なら、手数1以上のブランチには更新しない（パスを優先）
+          if (bestBranch !== null) {
+            const currentLen = branch.length;
+            const bestLen = bestBranch.length;
+            if (currentLen < bestLen) {
+              bestScore = score;
+              bestCard = card;
+              bestBranch = branch;
+            } else if (currentLen === bestLen && currentPri < bestPri) {
+              bestScore = score;
+              bestCard = card;
+              bestBranch = branch;
+            }
           }
         }
       } else {
@@ -6600,16 +6620,18 @@ export function evaluateAdhocAssembleMove(
           bestCard = card;
           bestBranch = branch;
         } else if (Math.abs(score - bestScore) <= 0.00001) {
-          const currentLen = branch.length;
-          const bestLen = bestBranch ? bestBranch.length : Infinity;
-          if (currentLen < bestLen) {
-            bestScore = score;
-            bestCard = card;
-            bestBranch = branch;
-          } else if (currentLen === bestLen && currentPri < bestPri) {
-            bestScore = score;
-            bestCard = card;
-            bestBranch = branch;
+          if (bestBranch !== null) {
+            const currentLen = branch.length;
+            const bestLen = bestBranch.length;
+            if (currentLen < bestLen) {
+              bestScore = score;
+              bestCard = card;
+              bestBranch = branch;
+            } else if (currentLen === bestLen && currentPri < bestPri) {
+              bestScore = score;
+              bestCard = card;
+              bestBranch = branch;
+            }
           }
         }
       }
