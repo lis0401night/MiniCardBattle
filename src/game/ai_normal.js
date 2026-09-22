@@ -2315,6 +2315,7 @@ export function getBestSimulatedMove() {
                     let discardNodes = combo.map((idx) => ({
                       type: 'discard',
                       targetIdx: idx,
+                      targetUid: originalHand[idx]?.uid,
                     }));
                     let newlyDiscarded = combo.map((idx) => originalHand[idx]);
                     let nextBranches = buildSkillBranch(
@@ -5391,6 +5392,7 @@ export function buildSkillBranchAdhoc(
         let discardNodes = combo.map((idx) => ({
           type: 'discard',
           targetIdx: idx,
+          targetUid: myHand[idx]?.uid,
         }));
         let newlyDiscarded = combo.map((idx) => myHand[idx]);
         let nextBranches = callNextBranch(
@@ -6740,7 +6742,6 @@ export function simulateAdhocChoiceSummon(
   let bestHandIdx = validHandIndices[0];
   let bestPlacementLane = candidateLanes[0];
   let bestScore = isRed ? -Infinity : Infinity;
-  let bestSimState = null;
 
   for (const hIdx of validHandIndices) {
     const testCard = simHand[hIdx];
@@ -6783,31 +6784,29 @@ export function simulateAdhocChoiceSummon(
           bestScore = subScore;
           bestHandIdx = hIdx;
           bestPlacementLane = lane;
-          bestSimState = subState;
         }
       } else {
         if (subScore < bestScore) {
           bestScore = subScore;
           bestHandIdx = hIdx;
           bestPlacementLane = lane;
-          bestSimState = subState;
         }
       }
     }
   }
 
-  if (bestSimState) {
-    Object.assign(simState, bestSimState);
-  } else {
-    const [chosenCard] = simHand.splice(bestHandIdx, 1);
-    simulateCardPlacementOnBoard(
-      simState,
-      owner,
-      bestPlacementLane,
-      chosenCard,
-      true
-    );
-  }
+  // 【二重戦闘防止】processActionSequence は戦闘フェーズまで完了済みの盤面（bestSimState）を返すため、
+  // これを親（evaluateAdhocSkillChoice）に上書き代入すると親の末尾の evaluateTurnOutcome と合わせて
+  // 戦闘フェーズが2回走る二重戦闘バグが発生する。
+  // そのため、探索によって決定した最善カード・レーンに基づき、戦闘前の配置状態のみを simState に反映する。
+  const [chosenCard] = simHand.splice(bestHandIdx, 1);
+  simulateCardPlacementOnBoard(
+    simState,
+    owner,
+    bestPlacementLane,
+    chosenCard,
+    true
+  );
 
   // 召喚スキル固有の「虚空」トークン手札補充
   const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void');
@@ -6876,7 +6875,6 @@ export function simulateAdhocChoiceAssemble(
   let bestDeckIdx = validDeckIndices[0];
   let bestPlacementLane = candidateLanes[0];
   let bestScore = isRed ? -Infinity : Infinity;
-  let bestSimState = null;
 
   for (const dIdx of validDeckIndices) {
     const testCard = simDeck[dIdx];
@@ -6919,31 +6917,29 @@ export function simulateAdhocChoiceAssemble(
           bestScore = subScore;
           bestDeckIdx = dIdx;
           bestPlacementLane = lane;
-          bestSimState = subState;
         }
       } else {
         if (subScore < bestScore) {
           bestScore = subScore;
           bestDeckIdx = dIdx;
           bestPlacementLane = lane;
-          bestSimState = subState;
         }
       }
     }
   }
 
-  if (bestSimState) {
-    Object.assign(simState, bestSimState);
-  } else {
-    const [chosenCard] = simDeck.splice(bestDeckIdx, 1);
-    simulateCardPlacementOnBoard(
-      simState,
-      owner,
-      bestPlacementLane,
-      chosenCard,
-      true
-    );
-  }
+  // 【二重戦闘防止】processActionSequence は戦闘フェーズまで完了済みの盤面（bestSimState）を返すため、
+  // これを親（evaluateAdhocSkillChoice）に上書き代入すると親の末尾の evaluateTurnOutcome と合わせて
+  // 戦闘フェーズが2回走る二重戦闘バグが発生する。
+  // そのため、探索によって決定した最善カード・レーンに基づき、戦闘前の配置状態のみを simState に反映する。
+  const [chosenCard] = simDeck.splice(bestDeckIdx, 1);
+  simulateCardPlacementOnBoard(
+    simState,
+    owner,
+    bestPlacementLane,
+    chosenCard,
+    true
+  );
 }
 
 /**
@@ -7001,7 +6997,6 @@ export function simulateAdhocChoiceResurrect(
   let bestDiscardIdx = validDiscardIndices[0];
   let bestPlacementLane = candidateLanes[0];
   let bestScore = isRed ? -Infinity : Infinity;
-  let bestSimState = null;
 
   for (const dIdx of validDiscardIndices) {
     const testCard = simDiscard[dIdx];
@@ -7044,31 +7039,29 @@ export function simulateAdhocChoiceResurrect(
           bestScore = subScore;
           bestDiscardIdx = dIdx;
           bestPlacementLane = lane;
-          bestSimState = subState;
         }
       } else {
         if (subScore < bestScore) {
           bestScore = subScore;
           bestDiscardIdx = dIdx;
           bestPlacementLane = lane;
-          bestSimState = subState;
         }
       }
     }
   }
 
-  if (bestSimState) {
-    Object.assign(simState, bestSimState);
-  } else {
-    const [chosenCard] = simDiscard.splice(bestDiscardIdx, 1);
-    simulateCardPlacementOnBoard(
-      simState,
-      owner,
-      bestPlacementLane,
-      chosenCard,
-      false
-    );
-  }
+  // 【二重戦闘防止】processActionSequence は戦闘フェーズまで完了済みの盤面（bestSimState）を返すため、
+  // これを親（evaluateAdhocSkillChoice）に上書き代入すると親の末尾の evaluateTurnOutcome と合わせて
+  // 戦闘フェーズが2回走る二重戦闘バグが発生する。
+  // そのため、探索によって決定した最善カード・レーンに基づき、戦闘前の配置状態のみを simState に反映する。
+  const [chosenCard] = simDiscard.splice(bestDiscardIdx, 1);
+  simulateCardPlacementOnBoard(
+    simState,
+    owner,
+    bestPlacementLane,
+    chosenCard,
+    false
+  );
 }
 
 /**

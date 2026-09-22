@@ -1014,12 +1014,60 @@ export async function waitPlayerHandSelection(
     return resultIndices.slice(0, count);
   }
 
-  // AIの場合：事前計画キューの残骸をクリーンアップし、常に最新手札から最適カードを決定
+  // AIの場合：事前計画キュー（actionQueue）から破棄予定カードを取得し、シミュレーション通りの最善カードを選択
   if (owner === 'red') {
+    const plannedIndices = [];
     for (let i = 0; i < count; i++) {
-      consumeAIAction('discard');
+      const plannedAction = consumeAIAction('discard');
+      if (plannedAction) {
+        // UID優先照合（手札配列の変動やインデックスずれに影響されない確実な特定）
+        if (plannedAction.targetUid) {
+          const matchIdx = hand.findIndex(
+            (c, idx) =>
+              c &&
+              !plannedIndices.includes(idx) &&
+              (c.uid === plannedAction.targetUid ||
+                c.baseId === plannedAction.targetUid ||
+                c.id === plannedAction.targetUid)
+          );
+          if (matchIdx !== -1) {
+            plannedIndices.push(matchIdx);
+            continue;
+          }
+        }
+        // インデックス照合（フォールバック）
+        if (
+          plannedAction.targetIdx !== undefined &&
+          plannedAction.targetIdx >= 0 &&
+          plannedAction.targetIdx < hand.length &&
+          !plannedIndices.includes(plannedAction.targetIdx)
+        ) {
+          plannedIndices.push(plannedAction.targetIdx);
+          continue;
+        }
+      }
     }
-    // 常に最新手札に基づき、共通のAI破棄選択ロジックで最適インデックスを決定
+
+    // 事前計画で規定枚数すべてのカードが特定できた場合はそのまま確定
+    if (plannedIndices.length === count) {
+      return plannedIndices;
+    }
+
+    // 計画が一部のみ特定できた場合、残りの枚数をフォールバックで補う
+    if (plannedIndices.length > 0) {
+      const remainingCount = count - plannedIndices.length;
+      const remainingHand = hand.map((c, i) =>
+        plannedIndices.includes(i) ? null : c
+      );
+      const fallbackIndices = getAIDiscardIndices(
+        remainingHand,
+        remainingCount,
+        forceExact
+      );
+      return [...plannedIndices, ...fallbackIndices].slice(0, count);
+    }
+
+    // 事前計画が存在しない場合（相手のハンデス効果等）：共通のAI破棄選択ロジックで最適インデックスを決定
     return getAIDiscardIndices(hand, count, forceExact);
   }
 
