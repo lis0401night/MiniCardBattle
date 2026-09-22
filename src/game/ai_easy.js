@@ -439,9 +439,10 @@ export function getEasyTokenLanes(
     return shuffleArray(emptyLanes).slice(0, count);
   }
 
-  // キャンセルが許可されている場合、空き枠不足時に味方カードを上書き自壊させずキャンセル（空配列）を返す
+  // キャンセルが許可されている場合、味方カードの上書き自壊を避けるため空きレーンのみを使用する
+  // （空きレーンが存在しない場合のみキャンセル＝空配列を返す）
   if (canCancel) {
-    return [];
+    return shuffleArray(emptyLanes);
   }
 
   // キャンセル不可の場合のみ、空きレーンをすべて使い、不足分は埋まっているレーンからランダムに選ぶ

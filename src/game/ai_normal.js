@@ -517,6 +517,7 @@ export function processActionSequence(
         valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
         valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
         turnCount: GameState.turnCount || 0,
+        firstPlayer: GameState.firstPlayer,
         extraTurnCount: GameState.extraTurnCount || 0,
         attackSkipCount: GameState.attackSkipCount || 0,
         combatDamageTaken: 0,
@@ -829,10 +830,10 @@ export function processActionSequence(
               : true;
         } else if (action.type === 'assemble') {
           // デッキからカードを取得・消費（存在しない場合は不発としてスキップ）
-          const targetDeck =
-            action.owner === 'blue' ? simState.playerDeck : simState.enemyDeck;
+          // processActionSequence はAI（red）専用の思考シミュレーションのため enemyDeck を直接参照
+          const targetDeck = simState.enemyDeck;
           let dIdx = -1;
-          const targetKey = action.targetUid || action.cardId;
+          const targetKey = action.targetUid;
 
           if (targetKey) {
             dIdx = targetDeck.findIndex(
@@ -4186,6 +4187,8 @@ export function buildInitialSimState() {
     attackSkipCount: GameState.attackSkipCount || 0,
     valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
     valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
+    turnCount: GameState.turnCount || 0,
+    firstPlayer: GameState.firstPlayer,
     combatDamageTaken: 0,
     phaseBypassDamageTaken: 0,
     lastCardPlayed: null,
@@ -6416,18 +6419,21 @@ export function evaluateAdhocSummonMove(
           bestBranch = branch;
         } else if (Math.abs(score - bestScore) <= 0.00001) {
           // 「同じ結果をもたらす場合は手が少ないものを選ぶ原則」の徹底
-          const currentLen = branch.length;
-          const bestLen = bestBranch ? bestBranch.length : Infinity;
-          if (currentLen < bestLen) {
-            bestScore = score;
-            bestIdx = i;
-            bestLane = summonLane;
-            bestBranch = branch;
-          } else if (currentLen === bestLen && currentPri < bestPri) {
-            bestScore = score;
-            bestIdx = i;
-            bestLane = summonLane;
-            bestBranch = branch;
+          // パス（何もしない）は手数0なので、bestBranchがnull（パス）の時に同点なら、手数1以上のブランチには更新しない（パスを優先）
+          if (bestBranch !== null) {
+            const currentLen = branch.length;
+            const bestLen = bestBranch.length;
+            if (currentLen < bestLen) {
+              bestScore = score;
+              bestIdx = i;
+              bestLane = summonLane;
+              bestBranch = branch;
+            } else if (currentLen === bestLen && currentPri < bestPri) {
+              bestScore = score;
+              bestIdx = i;
+              bestLane = summonLane;
+              bestBranch = branch;
+            }
           }
         }
       } else {
@@ -6437,18 +6443,20 @@ export function evaluateAdhocSummonMove(
           bestLane = summonLane;
           bestBranch = branch;
         } else if (Math.abs(score - bestScore) <= 0.00001) {
-          const currentLen = branch.length;
-          const bestLen = bestBranch ? bestBranch.length : Infinity;
-          if (currentLen < bestLen) {
-            bestScore = score;
-            bestIdx = i;
-            bestLane = summonLane;
-            bestBranch = branch;
-          } else if (currentLen === bestLen && currentPri < bestPri) {
-            bestScore = score;
-            bestIdx = i;
-            bestLane = summonLane;
-            bestBranch = branch;
+          if (bestBranch !== null) {
+            const currentLen = branch.length;
+            const bestLen = bestBranch.length;
+            if (currentLen < bestLen) {
+              bestScore = score;
+              bestIdx = i;
+              bestLane = summonLane;
+              bestBranch = branch;
+            } else if (currentLen === bestLen && currentPri < bestPri) {
+              bestScore = score;
+              bestIdx = i;
+              bestLane = summonLane;
+              bestBranch = branch;
+            }
           }
         }
       }
@@ -7781,6 +7789,8 @@ export function evaluateAIMoves(currentState) {
         enemyDiscard: [],
         playerDeck: [],
         enemyDeck: [],
+        turnCount: GameState.turnCount || 0,
+        firstPlayer: GameState.firstPlayer,
         extraTurnCount: 0,
         attackSkipCount: 0,
       };
@@ -7868,6 +7878,8 @@ export function simulateMove(
     enemyDeck: GameState.enemyDeck.map(cloneCard),
     playerSealedLanes: [...(GameState.playerSealedLanes || [0, 0, 0])],
     enemySealedLanes: [...(GameState.enemySealedLanes || [0, 0, 0])],
+    turnCount: GameState.turnCount || 0,
+    firstPlayer: GameState.firstPlayer,
     extraTurnCount: GameState.extraTurnCount,
     attackSkipCount: GameState.attackSkipCount,
   };

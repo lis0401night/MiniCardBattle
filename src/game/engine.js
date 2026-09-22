@@ -1,3 +1,4 @@
+import { GameState } from '../state/gameState.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
@@ -2878,8 +2879,8 @@ export function applyActiveSkillLogic(
     case 'assemble': {
       // 【召集(assemble)スキル処理】
       // 先行1ターン目は他のレーンにカードを出せないためボーナス加算不可
-      const turnCount = state.turnCount ?? 0;
-      const firstPlayer = state.firstPlayer;
+      const turnCount = state.turnCount ?? GameState?.turnCount ?? 0;
+      const firstPlayer = state.firstPlayer ?? GameState?.firstPlayer;
       if (turnCount === 1 && firstPlayer === owner) break;
 
       // 召喚時、デッキから条件に合うカード1枚を自分のレーンに召喚する（シミュレーション用近似）
@@ -6261,16 +6262,12 @@ export function simulateDiscardCardsFromHand(state, side, cards, events = []) {
  * @returns {void}
  */
 function handleSamsaraPassive(state, side, lane, events) {
-  const myHand = side === 'blue' ? state.playerHand : state.enemyHand;
-  const opHand = side === 'blue' ? state.enemyHand : state.playerHand;
-  const oppSide = side === 'blue' ? 'red' : 'blue';
-
-  // 1. お互いの手札を全て捨てる（共通ヘルパーにより状態初期化および狂気スキルを正確に解決）
-  const myDropped = myHand ? myHand.splice(0, myHand.length) : [];
-  const opDropped = opHand ? opHand.splice(0, opHand.length) : [];
-
-  simulateDiscardCardsFromHand(state, side, myDropped, events);
-  simulateDiscardCardsFromHand(state, oppSide, opDropped, events);
+  // 1. お互いの手札を全て捨てる（実戦側 skillLogic.js の samsara 処理と同一の blue → red 順で解決し、乱数消費順序を一致させる）
+  for (const p of ['blue', 'red']) {
+    const h = p === 'blue' ? state.playerHand : state.enemyHand;
+    const dropped = h ? h.splice(0, h.length) : [];
+    simulateDiscardCardsFromHand(state, p, dropped, events);
+  }
 
   // 2. お互いに3枚引く
   for (let k = 0; k < 3; k++) {

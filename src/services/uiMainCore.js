@@ -760,16 +760,10 @@ export function goBackFromDeckList() {
   } else if (
     GameState.gameMode === 'event_satan' ||
     (GameState.gameMode?.startsWith('event_') &&
-      GameState.gameMode?.endsWith('_high'))
+      (GameState.gameMode?.endsWith('_high') ||
+        GameState.gameMode?.endsWith('_fortune')))
   ) {
-    // 高難易度イベント（サタン戦含む）：難易度選択へ戻る
-    GameState.appState = 'select_difficulty';
-    switchScreen('screen-difficulty');
-  } else if (
-    GameState.gameMode?.startsWith('event_') &&
-    GameState.gameMode?.endsWith('_fortune')
-  ) {
-    // 運命の邂逅イベント：難易度選択へ戻る
+    // 高難易度イベント（サタン戦含む）／運命の邂逅：難易度選択へ戻る
     GameState.appState = 'select_difficulty';
     switchScreen('screen-difficulty');
   } else if (GameState.gameMode === 'free') {
@@ -1363,6 +1357,35 @@ export function startDefenseBattle() {
 }
 
 /**
+ * 指定リーダーとスキンから GameState.playerConfig を構築して反映する。
+ * 対戦画面・デッキ編成画面が要求する image / imageLose / icon / iconDamage のフォールバック付き代入を行う。
+ *
+ * @param {string} leaderId - リーダーのキャラクターID
+ * @param {string} [skinId='default'] - 適用するスキンID
+ * @returns {void}
+ */
+export function applyPlayerConfigWithSkin(leaderId, skinId = 'default') {
+  const templateChar = CHARACTERS[leaderId];
+  if (!templateChar) return;
+
+  GameState.playerConfig = { ...templateChar };
+  if (typeof getSkinImage === 'function') {
+    GameState.playerConfig.image =
+      getSkinImage(templateChar, skinId, 'image') || templateChar.image;
+    GameState.playerConfig.imageLose =
+      getSkinImage(templateChar, skinId, 'imageLose') ||
+      templateChar.imageLose ||
+      templateChar.image;
+    GameState.playerConfig.icon =
+      getSkinImage(templateChar, skinId, 'icon') || templateChar.icon;
+    GameState.playerConfig.iconDamage =
+      getSkinImage(templateChar, skinId, 'iconDamage') ||
+      templateChar.iconDamage ||
+      templateChar.icon;
+  }
+}
+
+/**
  * 指定した通常デッキを確定し、リーダー、スキン、プレイマットをGameStateへ反映する。
  * 現在のゲームモードに応じて、デッキ編成、対戦準備、またはステージ選択へ遷移する。
  *
@@ -1404,24 +1427,7 @@ export function confirmDeckSelect(index) {
   GameState.playerSkins[selectedLeaderId] = chosenSkin;
 
   // playerConfig にリーダー情報とスキンを先行反映
-  GameState.playerConfig = { ...CHARACTERS[selectedLeaderId] };
-  if (typeof getSkinImage === 'function') {
-    const templateChar = CHARACTERS[selectedLeaderId];
-    if (templateChar) {
-      GameState.playerConfig.image =
-        getSkinImage(templateChar, chosenSkin, 'image') || templateChar.image;
-      GameState.playerConfig.imageLose =
-        getSkinImage(templateChar, chosenSkin, 'imageLose') ||
-        templateChar.imageLose ||
-        templateChar.image;
-      GameState.playerConfig.icon =
-        getSkinImage(templateChar, chosenSkin, 'icon') || templateChar.icon;
-      GameState.playerConfig.iconDamage =
-        getSkinImage(templateChar, chosenSkin, 'iconDamage') ||
-        templateChar.iconDamage ||
-        templateChar.icon;
-    }
-  }
+  applyPlayerConfigWithSkin(selectedLeaderId, chosenSkin);
 
   // プレイマット情報の反映（未設定デッキを選択した場合は確実に null でリセット）
   GameState.selectedPlaymatId = selectedDeck.playmatId || null;
@@ -1565,25 +1571,7 @@ export function confirmCharSelect() {
       GameState.playerSkins[selectedLeaderId] = chosenSkin;
 
       // 選択されたリーダーおよびスキン画像を playerConfig に先行反映
-      GameState.playerConfig = { ...CHARACTERS[selectedLeaderId] };
-      if (typeof getSkinImage === 'function') {
-        const templateChar = CHARACTERS[selectedLeaderId];
-        if (templateChar) {
-          GameState.playerConfig.image =
-            getSkinImage(templateChar, chosenSkin, 'image') ||
-            templateChar.image;
-          GameState.playerConfig.imageLose =
-            getSkinImage(templateChar, chosenSkin, 'imageLose') ||
-            templateChar.imageLose ||
-            templateChar.image;
-          GameState.playerConfig.icon =
-            getSkinImage(templateChar, chosenSkin, 'icon') || templateChar.icon;
-          GameState.playerConfig.iconDamage =
-            getSkinImage(templateChar, chosenSkin, 'iconDamage') ||
-            templateChar.iconDamage ||
-            templateChar.icon;
-        }
-      }
+      applyPlayerConfigWithSkin(selectedLeaderId, chosenSkin);
 
       if (GameState.gameMode === 'defense_register') {
         let defenseDeck = null;

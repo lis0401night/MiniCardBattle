@@ -20,7 +20,11 @@ if (
     empty($userAgent) ||
     preg_match('/bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu|headless|lighthouse|ptst/i', $userAgent)
 ) {
-    echo json_encode(['success' => true, 'bot' => true]);
+    echo json_encode([
+        'success' => false,
+        'bot' => true,
+        'error' => 'Automated access detected or empty User-Agent'
+    ]);
     exit;
 }
 

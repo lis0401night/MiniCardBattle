@@ -913,9 +913,10 @@ export function isBotOrAutomatedEnvironment() {
     return true;
   }
 
-  // クローラー・検索エンジンbot等の一般的なUser-Agent判定
+  // クローラー・検索エンジンbot等の一般的なUser-Agent判定（空UAも自動化環境として扱う）
   const ua = navigator.userAgent || '';
   if (
+    !ua ||
     /bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu|headless|lighthouse|ptst/i.test(
       ua
     )
@@ -1062,13 +1063,18 @@ export async function sendHeartbeat() {
     );
 
     if (!result) return false;
-    if (result.success) {
+    if (result.success && !result.bot) {
       // 送信成功時にタイムスタンプを記録
       localStorage.setItem(LAST_HEARTBEAT_KEY, String(Date.now()));
       console.log(
         `ハートビート送信成功${result.isNewPlayer ? '（新規プレイヤー登録）' : ''}`
       );
       return true;
+    }
+    if (result.bot) {
+      console.warn(
+        'ハートビート送信はbotまたは無効なUser-Agent環境としてサーバー側でスキップされました'
+      );
     }
     return false;
   } catch (err) {
