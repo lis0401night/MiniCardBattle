@@ -443,6 +443,23 @@ function flushPendingSimSkills(simState, card, lane) {
   delete card._pendingSimSkills;
 }
 
+/**
+ * AI用の行動キューをシミュレーション実行し、戦闘フェーズ完了後のシミュレーション状態を返す。
+ * 通常プレイ、召集、鍛造、アドホック召喚、トークン配置、リーダースキル発動等の連鎖アクションを一括処理する。
+ *
+ * @param {Array<object>} actionQueue - 実行する行動キュー（{ type, targetIdx, laneIdx, ... } の配列）
+ * @param {boolean} [isLeaderSkillPlay=false] - リーダースキルを使用する場合は true
+ * @param {string|null} [leaderSkillActionStr=null] - リーダースキルの action ID
+ * @param {Array<number>|null} [leaderSkillTokenLanes=null] - リーダースキル配置用の対象レーン配列
+ * @param {'before'|'after'} [skillOrderTiming='before'] - スキル発動タイミング
+ * @param {number|null} [leaderSkillTargetIdx=null] - リーダースキル対象味方カードインデックス
+ * @param {string|null} [leaderSkillTargetUid=null] - リーダースキル対象カードUID
+ * @param {object|null} [initialSimState=null] - 開始時のシミュレーション状態（省略時はGameStateから構築）
+ * @param {number|null} [leaderSkillResurrectLane=null] - 復活・使役等の配置先レーン
+ * @param {number|null} [leaderSkillOppTargetIdx=null] - リーダースキル対象相手カードインデックス
+ * @param {Array<object>|null} [leaderCardSkillActions=null] - リーダーカードスキルの追加アクションリスト
+ * @returns {object|null} 解決後のシミュレーション状態オブジェクト。無効な行動が含まれる場合は null
+ */
 export function processActionSequence(
   actionQueue,
   isLeaderSkillPlay = false,
@@ -4149,9 +4166,10 @@ export function evaluateTriggerTurnOutcome(
 
 /**
  * シミュレーション用の初期ゲーム状態（ディープコピー）を構築する共通ヘルパー関数。
- * 号令・狂気・反魂および誘発シミュレーションで共通利用する。
+ * 号令・狂気・反魂、召集、および各種直前シミュレーションで共通利用する。
+ * 盤面、手札、デッキ、墓地、HP/SP、封印レーン、turnCount、firstPlayer を含む完全なスキーマを持つ。
  *
- * @return {object} シミュレーション用初期状態オブジェクト
+ * @returns {object} シミュレーション用初期状態オブジェクト
  */
 export function buildInitialSimState() {
   return {
@@ -6299,14 +6317,14 @@ export function evaluateAdhocCullChoice(
  * を多段ツリー展開（buildCardPlayTreeAdhoc）し、processActionSequence による完全シミュレーションを実行。
  * 最善カード、配置レーン、選択肢（choices）、および後続連鎖アクションを決定・同期する。
  *
- * @param {Array<object>} hand - 手札配列
+ * @param {Array<object>} hand - 手札カード配列
  * @param {object} skObj - スキル定義オブジェクト
  * @param {string|null} selfId - 発動元カードID
  * @param {Array<string>} presentBoardIds - 盤面に既に存在するカードID群
- * @param {number} defaultLane - フォールバック先レーン
+ * @param {number} defaultLane - フォールバック先レーン番号
  * @param {'red' | 'blue'} [owner='red'] - プレイヤー種別
  * @param {Array<object>|null} [presentBoardCards=null] - 盤面に配置済みの実カードオブジェクト配列（未指定時は初期シミュレーション状態から取得）
- * @return {{ selectedIdx: number, laneIdx: number }} 最善手札インデックスと配置レーン（パスなら selectedIdx: -1）
+ * @returns {{ selectedIdx: number, laneIdx: number }} 最善手札インデックスと配置レーン（パス時は selectedIdx: -1）
  */
 export function evaluateAdhocSummonMove(
   hand,
@@ -7762,6 +7780,13 @@ export function getNormalTokenLanes(
   return results;
 }
 
+/**
+ * 盤面上の「移動（move）」スキルを持つ味方カードの最適移動先をシミュレーション評価する。
+ * 全移動パターンの戦闘解決結果を全探索し、最も戦闘スコアの高い移動手順リストを返す。
+ *
+ * @param {object} currentState - 現在のゲーム状態（enemyBoard, playerBoard, HP等を含む）
+ * @returns {Array<{ from: number, to: number }>|null} 決定された移動手順の配列。移動不要または移動可能カードなしの場合は null
+ */
 export function evaluateAIMoves(currentState) {
   const b = currentState.enemyBoard;
   const moveCards = [];
@@ -7843,6 +7868,25 @@ export function evaluateAIMoves(currentState) {
 
 export const getNormalDecision = getBestSimulatedMove;
 
+/**
+ * 1ターンの単一着手（手札カードプレイおよびリーダースキル発動）を仮想シミュレーション実行する。
+ * カード配置、スキル発動、戦闘フェーズを順次解決し、結果の盤面評価スコアを返す。
+ *
+ * @param {number} handIdx - プレイする手札カードのインデックス（-1 の場合は手札プレイなし）
+ * @param {number} laneIdx - 配置先レーン番号（0〜2）
+ * @param {Array<object>} hand - 手札カード配列
+ * @param {Array<object|null>} currentMyBoard - プレイ前の自分（AI）盤面配列
+ * @param {Array<object|null>} currentOpBoard - プレイ前の相手（プレイヤー）盤面配列
+ * @param {number} currentMyHP - 現在の自分（AI）HP
+ * @param {boolean} [useSkill=false] - リーダースキルを発動するかどうか
+ * @param {number} [currentMySP=0] - 現在の自分（AI）SP
+ * @param {Array<number>|null} [tokenLanes=null] - リーダースキル用トークン配置レーン配列
+ * @param {number|undefined} [choiceIndex=undefined] - 選択肢1の選択インデックス
+ * @param {Array<number>|null} [cardTokenLanes=null] - カードスキル用トークン配置レーン配列
+ * @param {boolean} [checkConstraints=true] - 召喚制約（伝説・生贄・挑戦・頂点）をチェックするかどうか
+ * @param {number|undefined} [choiceIndex2=undefined] - 選択肢2の選択インデックス
+ * @returns {number} 戦闘フェーズ解決後の客観的盤面評価スコア
+ */
 export function simulateMove(
   handIdx,
   laneIdx,

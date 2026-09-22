@@ -855,7 +855,8 @@ export const isMiasmaActive = (state) => {
 };
 
 /**
- * 配置時スキルの効果を適用する (純粋関数)
+ * 指定したアクティブスキルをゲーム状態またはシミュレーション状態へ適用する。
+ * ダメージ、バフ、デバフ、召喚、ドロー、手札破壊等の個別スキル効果を純粋なデータ更新として処理する。
  *
  * =========================================================================
  * 【開発ガイドライン：エンジン側でのアクティブスキル実装統一ルール】
@@ -867,13 +868,15 @@ export const isMiasmaActive = (state) => {
  * - 実画面での演出と適用処理は「src/game/skillLogic.js」内の個別ロジックで担当します。
  * =========================================================================
  *
- * @param {Object} state { b, eB, pHP, eHP, pSP, eSP, ... }
- * @param {string} owner 'blue' or 'red'
- * @param {number} l lane index
- * @param {string} sid skillId
- * @param {number} val skillValue
- * @param {Array} events - オプション of イベントログ配列
- * @returns {Array} 発生したイベントログ
+ * @param {object} state - ゲーム状態またはシミュレーション状態オブジェクト
+ * @param {'blue'|'red'} owner - スキルの所有者陣営
+ * @param {number} l - スキル発動カードのレーン番号（0〜2）
+ * @param {string} sid - スキルID（例: 'strike', 'draw', 'assemble' 等）
+ * @param {number} val - スキル効果値
+ * @param {Array<object>} [events=[]] - 発生したイベントを記録する配列
+ * @param {Array<number>|null} [simulatedTokenLanes=null] - シミュレーション用トークン配置対象レーン配列
+ * @param {number|undefined} [simulatedLane=undefined] - 移動・配置先のシミュレーション用レーン番号
+ * @returns {Array<object>} 解決後に発生したイベントログ配列
  */
 export function applyActiveSkillLogic(
   state,
@@ -6252,13 +6255,14 @@ export function simulateDiscardCardsFromHand(state, side, cards, events = []) {
 }
 
 /**
- * 【輪廻】ターン開始時、お互いの手札を全て破棄し、お互いにカードを3枚引くパッシブをシミュレートする。
- * 手札破棄は simulateDiscardCardsFromHand を用いて状態初期化および狂気（madness）処理を通過させる。
+ * 【輪廻】ターン開始時、お互いの手札を全て破棄し、お互いにカードを3枚引くパッシブスキルをシミュレートする。
+ * 手札破棄は実戦側（skillLogic.js の samsara 処理）と同一の blue → red の固定順で実行し、
+ * 狂気（madness）スキル解決に伴う乱数シード消費順序を実戦と一致させる。
  *
- * @param {object} state - バトル状態オブジェクト
- * @param {'blue'|'red'} side - 発動陣営
- * @param {number} lane - 発動レーン
- * @param {Array<object>} events - イベント配列
+ * @param {object} state - ゲーム状態またはシミュレーション状態オブジェクト
+ * @param {'blue'|'red'} side - 発動カードの所有陣営
+ * @param {number} lane - 発動カードのレーン番号（0〜2）
+ * @param {Array<object>} events - 追加先イベント配列
  * @returns {void}
  */
 function handleSamsaraPassive(state, side, lane, events) {
