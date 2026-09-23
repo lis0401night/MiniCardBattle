@@ -1635,8 +1635,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                           </div>
                           {renderSkillTagReact(displayCard)}
 
-                          {/* 1. 通常デッキ時の枚数バッジ（hideCount が false の場合） */}
-                          {!enemyDeckData.hideCount && (
+                          {/* 1. 通常デッキ時の枚数バッジ（hideCount が false かつ 非所持枚数モード時） */}
+                          {!enemyDeckData.hideCount && !showOwnershipMode && (
                             <div
                               style={{
                                 position: 'absolute',
@@ -1683,6 +1683,40 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 })()}
               </div>
             </div>
+
+            {/* デッキ確認・収録カードモーダル共通の所持枚数切替トグルボタン（リーダースキルの上または閉じるボタンの上に配置） */}
+            <button
+              type="button"
+              className="btn"
+              style={{
+                marginTop: '20px',
+                width: '100%',
+                fontSize: '1rem',
+                padding: '8px',
+                marginBottom: '0',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.25s ease',
+                background: showOwnershipMode
+                  ? 'linear-gradient(135deg, #f59e0b, #eab308)'
+                  : '#334155',
+                color: showOwnershipMode ? '#0f172a' : '#cbd5e1',
+                border: showOwnershipMode
+                  ? '2px solid #fef08a'
+                  : '1px solid rgba(148, 163, 184, 0.3)',
+                boxShadow: showOwnershipMode
+                  ? '0 0 16px rgba(250, 204, 21, 0.85), inset 0 0 8px rgba(255, 255, 255, 0.6)'
+                  : 'none',
+                transform: showOwnershipMode ? 'scale(1.02)' : 'none',
+              }}
+              onClick={() => {
+                playSound?.(SOUNDS?.seClick);
+                setShowOwnershipMode((prev) => !prev);
+              }}
+            >
+              {showOwnershipMode ? '所持枚数表示中' : '所持枚数に切替'}
+            </button>
+
             {!enemyDeckData.hideLeaderSkill &&
               (() => {
                 const cfg = enemyDeckData.isPlayerDeck
@@ -1706,7 +1740,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   <button
                     className="btn"
                     style={{
-                      marginTop: '20px',
+                      marginTop: '10px',
                       width: '100%',
                       background: '#475569',
                       fontSize: '1rem',
@@ -1729,40 +1763,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   </button>
                 );
               })()}
-            {/* 収録カードモーダル用の所持枚数切替トグルボタン（閉じるボタンの上） */}
-            {enemyDeckData.hideLeaderSkill && (
-              <button
-                type="button"
-                className="btn"
-                style={{
-                  marginTop: '20px',
-                  width: '100%',
-                  fontSize: '1rem',
-                  padding: '8px',
-                  marginBottom: '0',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.25s ease',
-                  background: showOwnershipMode
-                    ? 'linear-gradient(135deg, #f59e0b, #eab308)'
-                    : '#334155',
-                  color: showOwnershipMode ? '#0f172a' : '#cbd5e1',
-                  border: showOwnershipMode
-                    ? '2px solid #fef08a'
-                    : '1px solid rgba(148, 163, 184, 0.3)',
-                  boxShadow: showOwnershipMode
-                    ? '0 0 16px rgba(250, 204, 21, 0.85), inset 0 0 8px rgba(255, 255, 255, 0.6)'
-                    : 'none',
-                  transform: showOwnershipMode ? 'scale(1.02)' : 'none',
-                }}
-                onClick={() => {
-                  playSound?.(SOUNDS?.seClick);
-                  setShowOwnershipMode((prev) => !prev);
-                }}
-              >
-                {showOwnershipMode ? '所持枚数表示中' : '所持枚数に切替'}
-              </button>
-            )}
+
             <button
               className="btn"
               style={{ marginTop: '10px', width: '100%' }}
