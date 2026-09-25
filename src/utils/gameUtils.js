@@ -1549,6 +1549,199 @@ function createStatusBadgeHtml(statusId, value = 1) {
 }
 
 /**
+ * カードに付与されているすべてのアクティブな状態（ステータス）を抽出・集約して取得する。
+ * スキル枠（card.skills）内の状態スロットおよびカード直接プロパティ（stunTurns, corrosion, invincibleTurns 等）、
+ * さらに盤面全体の加護効果（GameState.valkyriaGuardBlue / Red 等）を一元化して重複なく取得します。
+ *
+ * @param {Object|null} card - 対象カードオブジェクト
+ * @param {boolean} [isBoard=false] - 盤面配置中かどうか
+ * @param {boolean|null} [valkyriaGuardActive=null] - 戦乙女の加護有効フラグ（nullの場合はGameStateからフォールバック取得）
+ * @returns {Array<{id: string, name: string, icon: string, value: number, badgeClass: string, desc: string, isStatus: boolean}>} アクティブな状態オブジェクトの配列
+ */
+export function getCardActiveStatuses(
+  card,
+  isBoard = false,
+  valkyriaGuardActive = null
+) {
+  if (!card) return [];
+
+  const statuses = [];
+  const renderedStatuses = new Set();
+
+  // 戦乙女の加護（盤面全体の加護効果発動時、カード自身が持っていなくても付与表示）
+  const isGuardActive =
+    isBoard &&
+    (Boolean(card?.valkyriaGuard) ||
+      (card?.valkyriaGuardTurns || 0) > 0 ||
+      (valkyriaGuardActive !== null
+        ? valkyriaGuardActive
+        : card.owner && typeof GameState !== 'undefined'
+          ? card.owner === 'blue'
+            ? (GameState.valkyriaGuardBlue || 0) > 0
+            : (GameState.valkyriaGuardRed || 0) > 0
+          : false));
+
+  // 1. スキル枠（card.skills）のスロット順（付与順）から状態エントリを抽出
+  if (Array.isArray(card.skills)) {
+    for (const sk of card.skills) {
+      if (!sk) continue;
+      const id = typeof sk === 'string' ? sk : sk.id;
+      const isStatusEntry = Boolean(sk.isStatus) || Boolean(STATUSES[id]);
+
+      if (isStatusEntry) {
+        if (!renderedStatuses.has(id)) {
+          const def = STATUSES[id];
+          if (!def) continue;
+
+          let val = sk.value !== undefined && sk.value !== null ? sk.value : 1;
+          // 直接プロパティがあれば最新値を同期
+          if (id === 'corrosion')
+            val = card.corrosion !== undefined ? card.corrosion : val;
+          else if (id === 'stun')
+            val = card.stunTurns !== undefined ? card.stunTurns : val;
+          else if (id === 'invincible')
+            val =
+              card.invincibleTurns !== undefined ? card.invincibleTurns : val;
+          else if (id === 'cant_attack')
+            val =
+              card.cantAttackTurns !== undefined ? card.cantAttackTurns : val;
+          else if (id === 'valkyria_guard')
+            val =
+              card.valkyriaGuardTurns !== undefined
+                ? card.valkyriaGuardTurns
+                : val;
+
+          // 加護は盤面全体の加護判定（isGuardActive）を考慮し、それ以外の状態異常は正の値（val > 0）のみ表示
+          const shouldShow = id === 'valkyria_guard' ? isGuardActive : val > 0;
+          if (shouldShow) {
+            statuses.push({
+              id,
+              name: def.name,
+              icon: def.icon,
+              value: val,
+              badgeClass: def.badgeClass || '',
+              desc: typeof def.desc === 'function' ? def.desc(val) : def.desc,
+              isStatus: true,
+            });
+            renderedStatuses.add(id);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. レガシー互換・外部設定（直接プロパティ）のフォールバック
+  if (isGuardActive && !renderedStatuses.has('valkyria_guard')) {
+    const def = STATUSES['valkyria_guard'];
+    const val = card.valkyriaGuardTurns || 1;
+    statuses.unshift({
+      id: 'valkyria_guard',
+      name: def.name,
+      icon: def.icon,
+      value: val,
+      badgeClass: def.badgeClass || '',
+      desc:
+        typeof def.desc === 'function'
+          ? def.desc(card.valkyriaGuardTurns || undefined)
+          : def.desc,
+      isStatus: true,
+    });
+    renderedStatuses.add('valkyria_guard');
+  }
+
+  const invincibleTurns =
+    (card.invincibleTurns || 0) > 0
+      ? card.invincibleTurns
+      : Array.isArray(card.skills)
+        ? card.skills.find(
+            (s) => s && (s.id === 'invincible' || s === 'invincible')
+          )?.value || 0
+        : 0;
+  if (invincibleTurns > 0 && !renderedStatuses.has('invincible')) {
+    const def = STATUSES['invincible'];
+    statuses.push({
+      id: 'invincible',
+      name: def.name,
+      icon: def.icon,
+      value: invincibleTurns,
+      badgeClass: def.badgeClass || '',
+      desc:
+        typeof def.desc === 'function' ? def.desc(invincibleTurns) : def.desc,
+      isStatus: true,
+    });
+    renderedStatuses.add('invincible');
+  }
+
+  const stunTurns =
+    (card.stunTurns || 0) > 0
+      ? card.stunTurns
+      : Array.isArray(card.skills)
+        ? card.skills.find((s) => s && (s.id === 'stun' || s === 'stun'))
+            ?.value || 0
+        : 0;
+  if (stunTurns > 0 && !renderedStatuses.has('stun')) {
+    const def = STATUSES['stun'];
+    statuses.push({
+      id: 'stun',
+      name: def.name,
+      icon: def.icon,
+      value: stunTurns,
+      badgeClass: def.badgeClass || '',
+      desc: typeof def.desc === 'function' ? def.desc(stunTurns) : def.desc,
+      isStatus: true,
+    });
+    renderedStatuses.add('stun');
+  }
+
+  const corrosion =
+    card.corrosion !== undefined && card.corrosion !== null
+      ? card.corrosion
+      : Array.isArray(card.skills)
+        ? card.skills.find(
+            (s) => s && (s.id === 'corrosion' || s === 'corrosion')
+          )?.value || 0
+        : 0;
+  if (corrosion > 0 && !renderedStatuses.has('corrosion')) {
+    const def = STATUSES['corrosion'];
+    statuses.push({
+      id: 'corrosion',
+      name: def.name,
+      icon: def.icon,
+      value: corrosion,
+      badgeClass: def.badgeClass || '',
+      desc: typeof def.desc === 'function' ? def.desc(corrosion) : def.desc,
+      isStatus: true,
+    });
+    renderedStatuses.add('corrosion');
+  }
+
+  const cantAttackTurns =
+    (card.cantAttackTurns || 0) > 0
+      ? card.cantAttackTurns
+      : Array.isArray(card.skills)
+        ? card.skills.find(
+            (s) => s && (s.id === 'cant_attack' || s === 'cant_attack')
+          )?.value || 0
+        : 0;
+  if (cantAttackTurns > 0 && !renderedStatuses.has('cant_attack')) {
+    const def = STATUSES['cant_attack'];
+    statuses.push({
+      id: 'cant_attack',
+      name: def.name,
+      icon: def.icon,
+      value: cantAttackTurns,
+      badgeClass: def.badgeClass || '',
+      desc:
+        typeof def.desc === 'function' ? def.desc(cantAttackTurns) : def.desc,
+      isStatus: true,
+    });
+    renderedStatuses.add('cant_attack');
+  }
+
+  return statuses;
+}
+
+/**
  * カードに付与されているスキルのバッジHTML文字列を生成する。
  * スキル枠（card.skills）のスロット順（付与された時系列順）に従って上から下へ描画します。
  *
@@ -1729,6 +1922,7 @@ export function renderSkillTag(
   return `<div class="card-skill-container">${badges.join('')}</div>`;
 }
 window.renderSkillTag = renderSkillTag;
+window.getCardActiveStatuses = getCardActiveStatuses;
 window.getSkillBadgeInfo = getSkillBadgeInfo;
 window.getSkillTargetLabel = getSkillTargetLabel;
 window.stripEphemeralSkills = stripEphemeralSkills;
@@ -2788,24 +2982,94 @@ function resolvePresentBoardIds(presentBoardIds = [], presentBoardCards = []) {
 
 /**
  * 「唯一（excludeBoard）」条件により、対象カードを盤面存在カードとして除外すべきか判定する。
- * 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
- * あらゆるカードが「既に場に存在する」とみなされて除外対象（true）となる。
+ * 1. 「万相（all_forms）」スキルを持つカードが自陣盤面に存在する場合、すべてのカード名・カードIDを占有しているとみなされ、
+ *    あらゆるカードが「既に場に存在する」とみなされて除外対象（true）となる。
+ * 2. 判定対象カード自身が自陣盤面に既に存在する（id または baseId が一致する）場合は除外対象（true）となる。
+ * 3. 【厳密な代用判定】判定対象カード自身が「万相（all_forms）」スキルを持つ場合、すべてのカード名と同じとして扱われるため、
+ *    スキルが指定する対象候補（targetIds や targetKeyword 等）のうち「どれか1種でも自陣盤面に存在している」場合、
+ *    万相はその存在するカードと同名であるとみなされ、盤面に既に存在するため除外対象（true）となる。
  *
  * @param {object} card - 判定対象カード
  * @param {Array<string>} resolvedBoardIds - 正規化された盤面カードID配列
  * @param {Array<object>} presentBoardCards - 盤面カードオブジェクト配列
- * @returns {boolean} 除外すべき場合は true
+ * @param {object|null} [skill=null] - スキル定義オブジェクト（targetIds, targetKeyword 等）
+ * @returns {boolean} 除外すべき場合は true、配置可能であれば false
  */
-function isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards) {
+function isExcludedByBoardPresence(
+  card,
+  resolvedBoardIds,
+  presentBoardCards,
+  skill = null
+) {
   const hasCards =
     Array.isArray(presentBoardCards) && presentBoardCards.length > 0;
   if (resolvedBoardIds.length === 0 && !hasCards) return false;
   const boardTarget = hasCards ? presentBoardCards : resolvedBoardIds;
+
+  // 1. 盤面に万相が存在する場合：盤面の万相があらゆるカードとして振る舞うため、全カードが除外対象
   if (checkHasAllFormsOnBoard(boardTarget)) return true;
-  return (
+
+  // 2. 判定対象カード自身が盤面に存在する場合：除外対象
+  if (
     resolvedBoardIds.includes(card.id) ||
     (Boolean(card.baseId) && resolvedBoardIds.includes(card.baseId))
+  ) {
+    return true;
+  }
+
+  // 3. 【厳密な代用判定】判定対象カード自身が「万相（all_forms）」を持つ場合：
+  // 万相は「すべてのカード名と同じ」として扱われるため、
+  // スキルが指定する対象カードのうち【どれか1種でも自陣盤面に存在する場合】は、
+  // 万相はその存在するカードと同名であるため「既に場に存在する」とみなして除外する。
+  const isCardAllForms = Boolean(
+    card &&
+    (hasSkillDeep(card, 'all_forms') ||
+      (() => {
+        const master = CARD_MASTER?.find(
+          (m) => m.id === card.id || (card.baseId && m.id === card.baseId)
+        );
+        return Boolean(master && hasSkillDeep(master, 'all_forms'));
+      })())
   );
+
+  if (isCardAllForms && skill) {
+    const targetIds = Array.isArray(skill.targetIds)
+      ? skill.targetIds
+      : skill.targetId
+        ? [skill.targetId]
+        : null;
+
+    if (Array.isArray(targetIds) && targetIds.length > 0) {
+      // (a) targetIds が指定されている場合：対象IDのどれか1つでも盤面に存在していれば除外
+      const hasAnyTargetOnBoard = targetIds.some(
+        (tid) =>
+          resolvedBoardIds.includes(tid) ||
+          (hasCards &&
+            presentBoardCards.some(
+              (bc) => bc && (bc.id === tid || bc.baseId === tid)
+            ))
+      );
+      if (hasAnyTargetOnBoard) return true;
+    } else if (typeof skill.targetKeyword === 'string' && skill.targetKeyword) {
+      // (b) targetKeyword が指定されている場合：そのキーワードを持つカードが盤面に存在していれば除外
+      const hasKeywordOnBoard =
+        hasCards &&
+        presentBoardCards.some(
+          (bc) => bc && matchesCardKeyword(bc, skill.targetKeyword)
+        );
+      if (hasKeywordOnBoard) return true;
+    } else if (skill.self || skill.targetSelf) {
+      // (c) self 指定の場合：発動元カードが盤面に存在していれば除外
+      const selfId = skill.selfId || null;
+      if (selfId && resolvedBoardIds.includes(selfId)) return true;
+    } else {
+      // (d) 対象ID・キーワード等の限定指定がない場合（全カード対象・パワー制限のみ等）：
+      // 盤面に1枚でもカードが存在していれば、万相はそのカードと同名であるため除外
+      if (resolvedBoardIds.length > 0 || hasCards) return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -2841,10 +3105,10 @@ export function matchesHandOrDeckTarget(card, skill, options = {}) {
     presentBoardCards
   );
 
-  // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
+  // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む、および万相の厳密代用判定）を除外
   if (
     skill.excludeBoard &&
-    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards)
+    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards, skill)
   ) {
     return false;
   }
@@ -2993,10 +3257,10 @@ export function matchesGraveyardTarget(card, skill, options = {}) {
     presentBoardCards
   );
 
-  // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む）を除外
+  // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む、および万相の厳密代用判定）を除外
   if (
     skill.excludeBoard &&
-    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards)
+    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards, skill)
   ) {
     return false;
   }

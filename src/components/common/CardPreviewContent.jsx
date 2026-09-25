@@ -3,11 +3,13 @@ import { GameState } from '../../state/gameState.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import {
-  DEFAULT_PACK_COVER_CARD_ID,
   PACK_DEFAULT_RARITY_WEIGHTS,
+  DEFAULT_PACK_COVER_CARD_ID,
 } from '../../utils/constants/packs.js';
 import { SKILLS } from '../../utils/constants/skills.js';
+import { STATUSES } from '../../utils/constants/statuses.js';
 import {
+  getCardActiveStatuses,
   getCardImgUrl,
   getSkillBadgeInfo,
   playSound,
@@ -101,9 +103,35 @@ function CardPreviewContent({
     styleProps.titleColor || rarityColors[card.rarity] || '#fff';
   const filter = GameState.playerConfig?.filter || 'none';
 
-  const skillCandidates = Array.isArray(card.skills)
-    ? card.skills.map((sk) => ({ ...sk }))
-    : [];
+  const isBoardCard = Boolean(
+    card.onBoard || card.lane !== undefined || card.owner
+  );
+  const activeStatuses = getCardActiveStatuses(card, isBoardCard);
+  const statusMap = new Map(activeStatuses.map((st) => [st.id, st]));
+  const renderedStatusIds = new Set();
+
+  const skillCandidates = [];
+  if (Array.isArray(card.skills)) {
+    card.skills.forEach((sk) => {
+      const id = typeof sk === 'string' ? sk : sk?.id;
+      if (statusMap.has(id)) {
+        if (!renderedStatusIds.has(id)) {
+          skillCandidates.push(statusMap.get(id));
+          renderedStatusIds.add(id);
+        }
+      } else {
+        skillCandidates.push({ ...sk });
+      }
+    });
+  }
+
+  // スロット外の直接プロパティ由来の状態（スタン・盤面加護等）を末尾に追加
+  activeStatuses.forEach((st) => {
+    if (!renderedStatusIds.has(st.id)) {
+      skillCandidates.push(st);
+      renderedStatusIds.add(st.id);
+    }
+  });
 
   const { choices: cardChoices, choices2: cardChoices2 } =
     resolveCardChoices(card);
@@ -675,6 +703,39 @@ function CardPreviewContent({
                   <p className="preview-skill-desc">クリックしてカードを公開</p>
                 ) : skillCandidates.length > 0 ? (
                   skillCandidates.map((sk, idx) => {
+                    // 状態エントリ（isStatus: true または STATUSES に定義されている）の描画
+                    const statusDef = STATUSES?.[sk.id];
+                    if (sk.isStatus || statusDef) {
+                      const def = statusDef || STATUSES[sk.id];
+                      if (!def) return null;
+                      const val =
+                        def.id === 'valkyria_guard' &&
+                        (!sk.value || sk.value === 1) &&
+                        !card.valkyriaGuardTurns
+                          ? ''
+                          : sk.value !== null && sk.value !== undefined
+                            ? sk.value
+                            : '';
+                      const desc =
+                        typeof def.desc === 'function'
+                          ? def.desc(sk.value)
+                          : def.desc;
+                      const badgeClass = def.badgeClass || '';
+
+                      return (
+                        <div key={idx} className="preview-skill-item">
+                          <div className={`preview-skill-badge ${badgeClass}`}>
+                            {def.icon ? `${def.icon} ` : ''}
+                            {def.name}
+                            {val}
+                          </div>
+                          <p className="preview-skill-desc">
+                            {renderDescContent(desc)}
+                          </p>
+                        </div>
+                      );
+                    }
+
                     const s = SKILLS?.[sk.id];
                     if (!s) return null;
                     const val =

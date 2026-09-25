@@ -1,5 +1,7 @@
 import { SKILLS } from '../utils/constants/skills.js';
+import { STATUSES } from '../utils/constants/statuses.js';
 import {
+  getCardActiveStatuses,
   getDialogue,
   getSkillBadgeInfo,
   isSkillMergeExcluded,
@@ -93,31 +95,48 @@ export function updateCardDetail(c) {
   } else {
     textColor = '#fff';
     let skillCandidates = [];
+    const activeStatuses = getCardActiveStatuses(c, true);
+    const statusMap = new Map(activeStatuses.map((st) => [st.id, st]));
+    const renderedStatusIds = new Set();
+
     // 複数スキル配列（union等が必要とするtargetId/summonIdなど全プロパティを引き継ぐ）
     if (Array.isArray(c.skills)) {
       c.skills.forEach((sk) => {
-        skillCandidates.push({ ...sk });
+        const id = typeof sk === 'string' ? sk : sk?.id;
+        if (statusMap.has(id)) {
+          if (!renderedStatusIds.has(id)) {
+            skillCandidates.push(statusMap.get(id));
+            renderedStatusIds.add(id);
+          }
+        } else {
+          skillCandidates.push({ ...sk });
+        }
       });
     }
 
-    if (c.stunTurns > 0) {
-      skillCandidates.push({
-        id: 'defender',
-        value: c.stunTurns,
-        isStun: true,
-      });
-    }
+    // スロット外の直接プロパティ由来の状態（スタン・盤面加護等）を末尾に追加
+    activeStatuses.forEach((st) => {
+      if (!renderedStatusIds.has(st.id)) {
+        skillCandidates.push(st);
+        renderedStatusIds.add(st.id);
+      }
+    });
 
     let grouped = [];
     skillCandidates.forEach((cand) => {
+      if (cand.isStatus) {
+        // 状態エントリは通常スキルと集約せずそのまま追加
+        grouped.push({ ...cand, count: 1 });
+        return;
+      }
       const isExcludedFromMerge = isSkillMergeExcluded(cand);
       const existing = isExcludedFromMerge
         ? null
         : grouped.find(
             (g) =>
+              !g.isStatus &&
               g.id === cand.id &&
               g.value === cand.value &&
-              g.isStun === cand.isStun &&
               g.choiceGroup === cand.choiceGroup &&
               g.targetId === cand.targetId &&
               g.targetKeyword === cand.targetKeyword
@@ -141,14 +160,40 @@ export function updateCardDetail(c) {
       const cSupremacySkills = resolveCardSupremacySkills(c);
 
       grouped.forEach((sk) => {
+        // 状態エントリ（isStatus: true または STATUSES に定義されている）の描画
+        const statusDef = STATUSES[sk.id];
+        if (sk.isStatus || statusDef) {
+          const def = statusDef || STATUSES[sk.id];
+          if (!def) return;
+
+          const iconPrefix = def.icon ? `${def.icon} ` : '';
+          const valStr =
+            def.id === 'valkyria_guard' &&
+            (!sk.value || sk.value === 1) &&
+            !c.valkyriaGuardTurns
+              ? ''
+              : sk.value !== undefined && sk.value !== null
+                ? sk.value
+                : '';
+          const skillEffect =
+            typeof def.desc === 'function' ? def.desc(sk.value) : def.desc;
+          const badgeClass = def.badgeClass || '';
+
+          html += `<div class="skill-header">
+                            <div class="card-skill-tag ${badgeClass}">
+                                ${iconPrefix}${def.name}${valStr}
+                            </div>
+                        </div>
+                        <div class="skill-desc">${skillEffect}</div>`;
+          return;
+        }
+
         const s = SKILLS[sk.id];
         if (s) {
-          const isStun = sk.isStun;
           const badgeInfo = getSkillBadgeInfo(sk);
-          let skillName = isStun ? 'スタン' : badgeInfo.name;
-          let val = isStun ? sk.value : badgeInfo.value;
-          // スタンの場合は💫、それ以外はバッジまたは定義のアイコンを採用
-          const skillIcon = isStun ? '💫' : badgeInfo.icon || s.icon;
+          const skillName = badgeInfo.name;
+          const val = badgeInfo.value;
+          const skillIcon = badgeInfo.icon || s.icon;
           const iconPrefix = skillIcon ? `${skillIcon} ` : '';
 
           // 合体(union)など、第2引数にスキルオブジェクト自体（targetId/summonId等）を必要とするdescに対応
@@ -206,7 +251,7 @@ export function updateCardDetail(c) {
                         `;
           } else {
             html += `<div class="skill-header">
-                            <div class="card-skill-tag" style="background:${isStun ? '#475569' : ''}; border-color:${isStun ? '#ef4444' : ''}; color:${isStun ? '#fca5a5' : ''};">
+                            <div class="card-skill-tag">
                                 ${iconPrefix}${skillName}${val}${countSuffix}
                             </div>
                         </div>

@@ -795,8 +795,9 @@ export function goBackFromDeckList() {
     // ストーリーモード：ソロメニューへ戻る
     switchScreen('screen-solo-menu');
   } else if (GameState.gameMode === 'free_deck_edit') {
-    // マイデッキ編集：ソロメニューまたはタイトルへ戻る
-    switchScreen('screen-solo-menu');
+    // マイデッキ編集：モード選択（トップメニュー）へ戻る
+    playSound(AUDIO_INSTANCES.bgmTitle);
+    switchScreen('screen-mode-select');
   } else {
     // デフォルトフォールバック：モード選択へ戻る
     playSound(AUDIO_INSTANCES.bgmTitle);
