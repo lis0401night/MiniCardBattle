@@ -15,6 +15,7 @@ import {
   decayCardStatus,
   matchesUnionMaterial,
   setCurrentRNG,
+  collectPresentBoardTargets,
 } from '../utils/gameUtils.js';
 import {
   applyEquipment,
@@ -649,14 +650,11 @@ export function processActionSequence(
                     ? boardCard.baseId || boardCard.id
                     : null;
                   const isExcludeBoard = Boolean(sk.excludeBoard);
-                  const presentBoardCards = isExcludeBoard
-                    ? simState.enemyBoard.filter(Boolean)
-                    : [];
-                  const presentBoardIds = isExcludeBoard
-                    ? presentBoardCards
-                        .flatMap((c) => [c.id, c.baseId])
-                        .filter(Boolean)
-                    : [];
+                  const { presentBoardCards, presentBoardIds } =
+                    collectPresentBoardTargets(
+                      simState.enemyBoard,
+                      isExcludeBoard
+                    );
                   if (
                     hasValidTargetInDeck(sk, simState.enemyDeck, {
                       selfId,
@@ -1377,14 +1375,11 @@ export function processActionSequence(
                   ? boardCard.baseId || boardCard.id
                   : null;
                 const isExcludeBoard = Boolean(sk.excludeBoard);
-                const presentBoardCards = isExcludeBoard
-                  ? simState.enemyBoard.filter(Boolean)
-                  : [];
-                const presentBoardIds = isExcludeBoard
-                  ? presentBoardCards
-                      .flatMap((c) => [c.id, c.baseId])
-                      .filter(Boolean)
-                  : [];
+                const { presentBoardCards, presentBoardIds } =
+                  collectPresentBoardTargets(
+                    simState.enemyBoard,
+                    isExcludeBoard
+                  );
                 if (
                   boardCard &&
                   hasValidTargetInDeck(sk, simState.enemyDeck, {
@@ -1895,14 +1890,8 @@ export function getBestSimulatedMove() {
               if (sk.id === 'summon') {
                 const selfId = card ? card.baseId || card.id : null;
                 const isExcludeBoard = Boolean(sk.excludeBoard);
-                const presentBoardCards = isExcludeBoard
-                  ? activeEnemyBoard.filter(Boolean)
-                  : [];
-                const presentBoardIds = isExcludeBoard
-                  ? presentBoardCards
-                      .flatMap((c) => [c.id, c.baseId])
-                      .filter(Boolean)
-                  : [];
+                const { presentBoardCards, presentBoardIds } =
+                  collectPresentBoardTargets(activeEnemyBoard, isExcludeBoard);
 
                 for (let i = 0; i < originalHand.length; i++) {
                   if (currentUsedHand.includes(i)) continue;
@@ -1960,14 +1949,8 @@ export function getBestSimulatedMove() {
               } else if (sk.id === 'assemble') {
                 const selfId = card ? card.baseId || card.id : null;
                 const isExcludeBoard = Boolean(sk.excludeBoard);
-                const presentBoardCards = isExcludeBoard
-                  ? activeEnemyBoard.filter(Boolean)
-                  : [];
-                const presentBoardIds = isExcludeBoard
-                  ? presentBoardCards
-                      .flatMap((c) => [c.id, c.baseId])
-                      .filter(Boolean)
-                  : [];
+                const { presentBoardCards, presentBoardIds } =
+                  collectPresentBoardTargets(activeEnemyBoard, isExcludeBoard);
 
                 const originalDeck = GameState.enemyDeck || [];
                 const seenKeys = new Set();
@@ -2134,14 +2117,8 @@ export function getBestSimulatedMove() {
                     : 1;
                 const candidates = [...originalDiscard, ...currentDiscarded];
                 const isExcludeBoard = Boolean(sk.excludeBoard);
-                const presentBoardCards = isExcludeBoard
-                  ? activeEnemyBoard.filter(Boolean)
-                  : [];
-                const presentBoardIds = isExcludeBoard
-                  ? presentBoardCards
-                      .flatMap((c) => [c.id, c.baseId])
-                      .filter(Boolean)
-                  : [];
+                const { presentBoardCards, presentBoardIds } =
+                  collectPresentBoardTargets(activeEnemyBoard, isExcludeBoard);
 
                 for (let i = 0; i < candidates.length; i++) {
                   if (currentUsedDiscard.includes(i)) continue;
@@ -4772,12 +4749,10 @@ export function buildSkillBranchAdhoc(
   if (sk.id === 'summon') {
     const selfId = parentCard ? parentCard.baseId || parentCard.id : null;
     const isExcludeBoard = Boolean(sk.excludeBoard);
-    const presentBoardCards = isExcludeBoard
-      ? activeMyBoard.filter(Boolean)
-      : [];
-    const presentBoardIds = isExcludeBoard
-      ? presentBoardCards.flatMap((c) => [c.id, c.baseId]).filter(Boolean)
-      : [];
+    const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+      activeMyBoard,
+      isExcludeBoard
+    );
 
     for (let i = 0; i < myHand.length; i++) {
       if (currentUsedHand.includes(i)) continue;
@@ -4838,12 +4813,10 @@ export function buildSkillBranchAdhoc(
   } else if (sk.id === 'assemble') {
     const selfId = parentCard ? parentCard.baseId || parentCard.id : null;
     const isExcludeBoard = Boolean(sk.excludeBoard);
-    const presentBoardCards = isExcludeBoard
-      ? activeMyBoard.filter(Boolean)
-      : [];
-    const presentBoardIds = isExcludeBoard
-      ? presentBoardCards.flatMap((c) => [c.id, c.baseId]).filter(Boolean)
-      : [];
+    const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+      activeMyBoard,
+      isExcludeBoard
+    );
 
     const seenKeys = new Set();
 
@@ -5018,12 +4991,10 @@ export function buildSkillBranchAdhoc(
         : 1;
     const candidates = [...myDiscard, ...currentDiscard];
     const isExcludeBoard = Boolean(sk.excludeBoard);
-    const presentBoardCards = isExcludeBoard
-      ? activeMyBoard.filter(Boolean)
-      : [];
-    const presentBoardIds = isExcludeBoard
-      ? presentBoardCards.flatMap((c) => [c.id, c.baseId]).filter(Boolean)
-      : [];
+    const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+      activeMyBoard,
+      isExcludeBoard
+    );
 
     for (let i = 0; i < candidates.length; i++) {
       if (currentUsedDiscard.includes(i)) continue;
@@ -6697,10 +6668,10 @@ export function simulateAdhocChoiceSummon(
   const simBoard = isRed ? simState.enemyBoard : simState.playerBoard;
   const sourceCard = simBoard[sourceLane];
   const selfId = sourceCard ? sourceCard.baseId || sourceCard.id : null;
-  const presentBoardCards = simBoard.filter(Boolean);
-  const presentBoardIds = presentBoardCards
-    .flatMap((c) => [c.id, c.baseId])
-    .filter(Boolean);
+  const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+    simBoard,
+    Boolean(choiceSkill.excludeBoard)
+  );
 
   // 対象となる手札カードのインデックスを抽出
   const validHandIndices = [];
@@ -6777,7 +6748,7 @@ export function simulateAdhocChoiceSummon(
       );
       if (!subState) continue;
 
-      // 傀儡による配置アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      // 召喚による配置アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
       const subScore = evaluateSimState(subState);
       if (isRed) {
         if (subScore > bestScore) {
@@ -6794,6 +6765,9 @@ export function simulateAdhocChoiceSummon(
       }
     }
   }
+
+  // 有効な分岐（制約を満たす合法手など）が1つも存在しなかった場合は不発として終了
+  if (!Number.isFinite(bestScore)) return;
 
   // 【二重戦闘防止】processActionSequence は戦闘フェーズまで完了済みの盤面（bestSimState）を返すため、
   // これを親（evaluateAdhocSkillChoice）に上書き代入すると親の末尾の evaluateTurnOutcome と合わせて
@@ -6846,10 +6820,10 @@ export function simulateAdhocChoiceAssemble(
   const simBoard = isRed ? simState.enemyBoard : simState.playerBoard;
   const sourceCard = simBoard[sourceLane];
   const selfId = sourceCard ? sourceCard.baseId || sourceCard.id : null;
-  const presentBoardCards = simBoard.filter(Boolean);
-  const presentBoardIds = presentBoardCards
-    .flatMap((c) => [c.id, c.baseId])
-    .filter(Boolean);
+  const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+    simBoard,
+    Boolean(choiceSkill.excludeBoard)
+  );
 
   const validDeckIndices = [];
   for (let i = 0; i < simDeck.length; i++) {
@@ -6928,6 +6902,9 @@ export function simulateAdhocChoiceAssemble(
     }
   }
 
+  // 有効な分岐（制約を満たす合法手など）が1つも存在しなかった場合は不発として終了
+  if (!Number.isFinite(bestScore)) return;
+
   // 【二重戦闘防止】processActionSequence は戦闘フェーズまで完了済みの盤面（bestSimState）を返すため、
   // これを親（evaluateAdhocSkillChoice）に上書き代入すると親の末尾の evaluateTurnOutcome と合わせて
   // 戦闘フェーズが2回走る二重戦闘バグが発生する。
@@ -6967,10 +6944,10 @@ export function simulateAdhocChoiceResurrect(
 
   const isExcludeBoard = Boolean(choiceSkill.excludeBoard);
   const simBoard = isRed ? simState.enemyBoard : simState.playerBoard;
-  const presentBoardCards = isExcludeBoard ? simBoard.filter(Boolean) : [];
-  const presentBoardIds = isExcludeBoard
-    ? presentBoardCards.flatMap((c) => [c.id, c.baseId]).filter(Boolean)
-    : [];
+  const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+    simBoard,
+    isExcludeBoard
+  );
 
   // パワー上限および特定対象（targetIds / targetKeyword / targetId）の判定は
   // 共通関数 matchesResurrectTarget（matchesGraveyardTarget）に一元委譲する
@@ -7032,7 +7009,7 @@ export function simulateAdhocChoiceResurrect(
       );
       if (!subState) continue;
 
-      // 鍛造による配置アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
+      // 復活による配置アクション解決および戦闘フェーズ完了後の盤面状態を総合評価関数で採点
       const subScore = evaluateSimState(subState);
       if (isRed) {
         if (subScore > bestScore) {
@@ -7049,6 +7026,9 @@ export function simulateAdhocChoiceResurrect(
       }
     }
   }
+
+  // 有効な分岐（合法手など）が1つも存在しなかった場合は不発として終了
+  if (!Number.isFinite(bestScore)) return;
 
   // 【二重戦闘防止】processActionSequence は戦闘フェーズまで完了済みの盤面（bestSimState）を返すため、
   // これを親（evaluateAdhocSkillChoice）に上書き代入すると親の末尾の evaluateTurnOutcome と合わせて
@@ -7201,14 +7181,8 @@ export function evaluateAdhocSkillChoice(
             const currentSimBoard = isRed
               ? simState.enemyBoard
               : simState.playerBoard;
-            const presentBoardCards = isExcludeBoard
-              ? currentSimBoard.filter(Boolean)
-              : [];
-            const presentBoardIds = isExcludeBoard
-              ? presentBoardCards
-                  .flatMap((c) => [c.id, c.baseId])
-                  .filter(Boolean)
-              : [];
+            const { presentBoardCards, presentBoardIds } =
+              collectPresentBoardTargets(currentSimBoard, isExcludeBoard);
             if (
               simCard &&
               hasValidTargetInDeck(choiceSkill, simDeck, {
@@ -7217,7 +7191,7 @@ export function evaluateAdhocSkillChoice(
                 presentBoardCards,
               })
             ) {
-              const callBonus = choiceSkill.value || 3;
+              const callBonus = estimateCallAssembleBonus(choiceSkill);
               simCard.currentPower = (simCard.currentPower || 0) + callBonus;
               simCard.basePower = (simCard.basePower || 0) + callBonus;
             }
@@ -8083,14 +8057,11 @@ export function simulateMove(
                     ? activeCard.baseId || activeCard.id
                     : null;
                   const isExcludeBoard = Boolean(sk.excludeBoard);
-                  const presentBoardCards = isExcludeBoard
-                    ? simState.enemyBoard.filter(Boolean)
-                    : [];
-                  const presentBoardIds = isExcludeBoard
-                    ? presentBoardCards
-                        .flatMap((c) => [c.id, c.baseId])
-                        .filter(Boolean)
-                    : [];
+                  const { presentBoardCards, presentBoardIds } =
+                    collectPresentBoardTargets(
+                      simState.enemyBoard,
+                      isExcludeBoard
+                    );
                   if (
                     hasValidTargetInDeck(sk, simState.enemyDeck, {
                       selfId,

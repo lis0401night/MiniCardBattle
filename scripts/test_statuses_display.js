@@ -25,7 +25,8 @@ globalThis.Audio = class {
 };
 
 // ダイナミックインポートでモジュールをロード
-const { getCardActiveStatuses } = await import('../src/utils/gameUtils.js');
+const { getCardActiveStatuses, renderSkillTag } =
+  await import('../src/utils/gameUtils.js');
 const { STATUSES } = await import('../src/utils/constants/statuses.js');
 
 let passedCount = 0;
@@ -41,7 +42,7 @@ function assert(condition, message) {
   }
 }
 
-console.log('--- Testing getCardActiveStatuses ---');
+console.log('--- Testing getCardActiveStatuses & renderSkillTag ---');
 
 // Test 1: スタン状態の抽出
 {
@@ -49,16 +50,22 @@ console.log('--- Testing getCardActiveStatuses ---');
   const statuses = getCardActiveStatuses(card, true);
   assert(statuses.length === 1, 'スタン状態が1件抽出されること');
   assert(statuses[0].id === 'stun', '状態IDがstunであること');
-  assert(statuses[0].name === 'スタン', '名称が「スタン」であること');
-  assert(statuses[0].value === 2, '持続ターン数が2であること');
-  assert(statuses[0].icon === '💫', 'アイコンが💫であること');
   assert(
-    statuses[0].badgeClass === 'badge-stun',
-    'badgeClassがbadge-stunであること'
+    statuses[0].name === STATUSES.stun.name,
+    '名称がSTATUSESマスターと一致すること'
+  );
+  assert(
+    statuses[0].badgeClass === STATUSES.stun.badgeClass,
+    'badgeClassがSTATUSESマスターと一致すること'
   );
   assert(
     statuses[0].desc.includes('2ターンの間、攻撃を行わず'),
     '説明文に残りターン数と攻撃不可が含まれること'
+  );
+  const tag = renderSkillTag(card, true);
+  assert(
+    tag.includes('badge-stun'),
+    'renderSkillTag に badge-stun が含まれること'
   );
 }
 
@@ -89,6 +96,11 @@ console.log('--- Testing getCardActiveStatuses ---');
   assert(
     statuses[0].desc === '自分のターン開始時、パワー-3',
     '説明文がパワー減少値と一致すること'
+  );
+  const tag = renderSkillTag(card, true);
+  assert(
+    tag.includes('badge-corrosion'),
+    'renderSkillTag に badge-corrosion が含まれること'
   );
 }
 
@@ -129,6 +141,11 @@ console.log('--- Testing getCardActiveStatuses ---');
   assert(
     statuses[0].desc === '全てのダメージを受けず、破壊されない。',
     '加護の説明文が正しいこと'
+  );
+  const tag = renderSkillTag(card, true, true);
+  assert(
+    tag.includes('badge-valkyria-guard'),
+    'renderSkillTag に badge-valkyria-guard が含まれること'
   );
 }
 
@@ -176,6 +193,17 @@ console.log('--- Testing getCardActiveStatuses ---');
     statuses[0].id === 'corrosion',
     'skills 内の状態スロットが優先して最初に来ること'
   );
+  const tag = renderSkillTag(card, true);
+  assert(
+    tag.includes('badge-corrosion'),
+    'renderSkillTag に corrosion が含まれること'
+  );
+  assert(tag.includes('badge-stun'), 'renderSkillTag に stun が含まれること');
+  assert(
+    tag.includes('badge-invincible'),
+    'renderSkillTag に invincible が含まれること'
+  );
+  assert(tag.includes('連撃2'), 'renderSkillTag に通常スキルが含まれること');
 }
 
 // Test 7: 非配置カード（手札や一覧画面）では全体加護が付与されないこと

@@ -113,6 +113,7 @@ function CardPreviewContent({
   const skillCandidates = [];
   if (Array.isArray(card.skills)) {
     card.skills.forEach((sk) => {
+      if (!sk) return;
       const id = typeof sk === 'string' ? sk : sk?.id;
       if (statusMap.has(id)) {
         if (!renderedStatusIds.has(id)) {
@@ -120,7 +121,7 @@ function CardPreviewContent({
           renderedStatusIds.add(id);
         }
       } else {
-        skillCandidates.push({ ...sk });
+        skillCandidates.push(typeof sk === 'string' ? { id: sk } : { ...sk });
       }
     });
   }

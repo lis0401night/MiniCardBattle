@@ -49,6 +49,7 @@ import {
   matchesAssembleTarget,
   matchesPuppetTarget,
   checkHasAllFormsOnBoard,
+  collectPresentBoardTargets,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
@@ -300,26 +301,6 @@ async function executeGroupDestruction(targets) {
 }
 
 /**
- * 「唯一（excludeBoard）」判定用に、自陣盤面のカード本体一覧とID一覧を収集する。
- * excludeBoard が無効な場合は空配列を返し、不要な走査を回避する。
- *
- * @param {Array<object|null>} myBoard - 自陣の盤面配列
- * @param {boolean} isExcludeBoard - excludeBoard（唯一）指定の有無
- * @returns {{presentBoardCards: Array<object>, presentBoardIds: Array<string>}} 盤面カード本体一覧とID一覧
- */
-function collectPresentBoardTargets(myBoard, isExcludeBoard) {
-  const presentBoardCards = isExcludeBoard
-    ? (myBoard || []).filter(Boolean)
-    : [];
-  const presentBoardIds = isExcludeBoard
-    ? presentBoardCards
-        .flatMap((card) => [card.id, card.baseId])
-        .filter(Boolean)
-    : [];
-  return { presentBoardCards, presentBoardIds };
-}
-
-/**
  * アクティブスキル（召喚時、またはカード選択時）の効果を個別に解決・実行します。
  *
  * @param {'blue'|'red'} o スキルを発動したプレイヤー陣営
@@ -523,6 +504,8 @@ export async function resolveActiveSkillEffect(
     enemyConfig: GameState.enemyConfig,
     valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
     valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
+    turnCount: GameState.turnCount || 0,
+    firstPlayer: GameState.firstPlayer,
   };
 
   if (skillId === 'summon') {
@@ -4342,6 +4325,8 @@ export async function triggerStartTurnPassive(owner, lane) {
         enemySealedLanes: GameState.enemySealedLanes,
         valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
         valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
+        turnCount: GameState.turnCount || 0,
+        firstPlayer: GameState.firstPlayer,
       };
 
       let awakeEvents = [];

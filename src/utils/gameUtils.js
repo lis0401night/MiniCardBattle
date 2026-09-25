@@ -1758,20 +1758,14 @@ export function renderSkillTag(
   if (!card) return '';
 
   const badges = [];
+  const slotItems = [];
+  const activeStatuses = getCardActiveStatuses(
+    card,
+    isBoard,
+    valkyriaGuardActive
+  );
+  const statusMap = new Map(activeStatuses.map((st) => [st.id, st]));
   const renderedStatuses = new Set();
-
-  // 戦乙女の加護（盤面全体の加護効果発動時、カード自身が持っていなくても付与表示）
-  const isGuardActive =
-    isBoard &&
-    (Boolean(card?.valkyriaGuard) ||
-      (card?.valkyriaGuardTurns || 0) > 0 ||
-      (valkyriaGuardActive !== null
-        ? valkyriaGuardActive
-        : card.owner && typeof GameState !== 'undefined'
-          ? card.owner === 'blue'
-            ? (GameState.valkyriaGuardBlue || 0) > 0
-            : (GameState.valkyriaGuardRed || 0) > 0
-          : false));
 
   // 1. スキル枠（card.skills）のスロット順（付与順）にバッジアイテムを生成
   /**
@@ -1781,7 +1775,6 @@ export function renderSkillTag(
    * @returns {string} カンマ区切りのID文字列（配列でない場合は空文字列）
    */
   const targetIdsKey = (ids) => (Array.isArray(ids) ? ids.join(',') : '');
-  const slotItems = [];
 
   if (Array.isArray(card.skills)) {
     for (const sk of card.skills) {
@@ -1789,41 +1782,16 @@ export function renderSkillTag(
       const id = typeof sk === 'string' ? sk : sk.id;
 
       // 状態（ステータス）エントリの判定
-      const isStatusEntry =
-        Boolean(sk.isStatus) ||
-        id === 'invincible' ||
-        id === 'corrosion' ||
-        id === 'stun' ||
-        id === 'valkyria_guard' ||
-        id === 'cant_attack';
-
-      if (isStatusEntry) {
+      if (statusMap.has(id)) {
         if (!renderedStatuses.has(id)) {
-          let val = sk.value !== undefined && sk.value !== null ? sk.value : 1;
-          // 直接プロパティがあれば最新値を同期（未所持や0の場合は確実に0とする）
-          if (id === 'corrosion')
-            val = card.corrosion !== undefined ? card.corrosion : val;
-          else if (id === 'stun')
-            val = card.stunTurns !== undefined ? card.stunTurns : val;
-          else if (id === 'invincible')
-            val =
-              card.invincibleTurns !== undefined ? card.invincibleTurns : val;
-          else if (id === 'cant_attack')
-            val =
-              card.cantAttackTurns !== undefined ? card.cantAttackTurns : val;
-
-          // 加護は盤面全体の加護判定（isGuardActive）を考慮し、それ以外の状態異常は正の値（val > 0）のみ表示
-          const shouldShow = id === 'valkyria_guard' ? isGuardActive : val > 0;
-
-          if (shouldShow) {
-            slotItems.push({
-              type: 'status',
-              statusId: id,
-              value: val,
-              html: createStatusBadgeHtml(id, val),
-            });
-            renderedStatuses.add(id);
-          }
+          const st = statusMap.get(id);
+          slotItems.push({
+            type: 'status',
+            statusId: st.id,
+            value: st.value,
+            html: createStatusBadgeHtml(st.id, st.value),
+          });
+          renderedStatuses.add(id);
         }
         continue;
       }
@@ -1885,38 +1853,16 @@ export function renderSkillTag(
   }
 
   // 3. レガシー互換・外部設定（直接プロパティ）のフォールバック
-  if (isGuardActive && !renderedStatuses.has('valkyria_guard')) {
-    badges.unshift(createStatusBadgeHtml('valkyria_guard', 1));
-    renderedStatuses.add('valkyria_guard');
-  }
-
-  const invincibleTurns =
-    (card.invincibleTurns || 0) > 0
-      ? card.invincibleTurns
-      : Array.isArray(card.skills)
-        ? card.skills.find(
-            (s) => s && (s.id === 'invincible' || s === 'invincible')
-          )?.value || 0
-        : 0;
-  if (invincibleTurns > 0 && !renderedStatuses.has('invincible')) {
-    badges.push(createStatusBadgeHtml('invincible', invincibleTurns));
-    renderedStatuses.add('invincible');
-  }
-
-  if (card.stunTurns > 0 && !renderedStatuses.has('stun')) {
-    badges.push(createStatusBadgeHtml('stun', card.stunTurns));
-    renderedStatuses.add('stun');
-  }
-
-  if ((card.corrosion || 0) > 0 && !renderedStatuses.has('corrosion')) {
-    badges.push(createStatusBadgeHtml('corrosion', card.corrosion));
-    renderedStatuses.add('corrosion');
-  }
-
-  if (card.cantAttackTurns > 0 && !renderedStatuses.has('cant_attack')) {
-    badges.push(createStatusBadgeHtml('cant_attack', card.cantAttackTurns));
-    renderedStatuses.add('cant_attack');
-  }
+  activeStatuses.forEach((st) => {
+    if (!renderedStatuses.has(st.id)) {
+      if (st.id === 'valkyria_guard') {
+        badges.unshift(createStatusBadgeHtml(st.id, st.value));
+      } else {
+        badges.push(createStatusBadgeHtml(st.id, st.value));
+      }
+      renderedStatuses.add(st.id);
+    }
+  });
 
   if (badges.length === 0) return '';
   return `<div class="card-skill-container">${badges.join('')}</div>`;
@@ -2993,13 +2939,15 @@ function resolvePresentBoardIds(presentBoardIds = [], presentBoardCards = []) {
  * @param {Array<string>} resolvedBoardIds - 正規化された盤面カードID配列
  * @param {Array<object>} presentBoardCards - 盤面カードオブジェクト配列
  * @param {object|null} [skill=null] - スキル定義オブジェクト（targetIds, targetKeyword 等）
+ * @param {string|null} [selfId=null] - 発動元カードのIDまたはbaseId（self/targetSelf 指定時の除外判定用）
  * @returns {boolean} 除外すべき場合は true、配置可能であれば false
  */
 function isExcludedByBoardPresence(
   card,
   resolvedBoardIds,
   presentBoardCards,
-  skill = null
+  skill = null,
+  selfId = null
 ) {
   const hasCards =
     Array.isArray(presentBoardCards) && presentBoardCards.length > 0;
@@ -3060,8 +3008,8 @@ function isExcludedByBoardPresence(
       if (hasKeywordOnBoard) return true;
     } else if (skill.self || skill.targetSelf) {
       // (c) self 指定の場合：発動元カードが盤面に存在していれば除外
-      const selfId = skill.selfId || null;
-      if (selfId && resolvedBoardIds.includes(selfId)) return true;
+      const targetSelfId = selfId || skill.selfId || null;
+      if (targetSelfId && resolvedBoardIds.includes(targetSelfId)) return true;
     } else {
       // (d) 対象ID・キーワード等の限定指定がない場合（全カード対象・パワー制限のみ等）：
       // 盤面に1枚でもカードが存在していれば、万相はそのカードと同名であるため除外
@@ -3108,7 +3056,13 @@ export function matchesHandOrDeckTarget(card, skill, options = {}) {
   // 1. excludeBoard: 盤面に既に存在するカード（同名/baseId含む、および万相の厳密代用判定）を除外
   if (
     skill.excludeBoard &&
-    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards, skill)
+    isExcludedByBoardPresence(
+      card,
+      resolvedBoardIds,
+      presentBoardCards,
+      skill,
+      selfId
+    )
   ) {
     return false;
   }
@@ -3233,6 +3187,7 @@ export function matchesCallTarget(card, skill, options = {}) {
  * @param {object|null|undefined} card - 判定対象の墓地カードオブジェクト
  * @param {object|null|undefined} skill - スキル定義オブジェクト（targetIds, targetKeyword, value 等）
  * @param {object} [options={}] - 判定用オプション
+ * @param {string|null} [options.selfId=null] - 発動元カードのIDまたはbaseId（self/targetSelf 指定時の除外用）
  * @param {Array<string>} [options.presentBoardIds=[]] - 盤面に配置済みのカードID配列（excludeBoard 指定時の除外用）
  * @param {Array<object>} [options.presentBoardCards=[]] - 盤面に配置済みの実カードオブジェクト配列（能力消去の反映用）
  * @returns {boolean} 墓地配置対象として有効であれば true、そうでなければ false
@@ -3250,7 +3205,11 @@ export function matchesGraveyardTarget(card, skill, options = {}) {
   // 1. トークンカードは墓地配置不可
   if (card.isToken) return false;
 
-  const { presentBoardIds = [], presentBoardCards = [] } = options;
+  const {
+    selfId = null,
+    presentBoardIds = [],
+    presentBoardCards = [],
+  } = options;
 
   const resolvedBoardIds = resolvePresentBoardIds(
     presentBoardIds,
@@ -3260,7 +3219,13 @@ export function matchesGraveyardTarget(card, skill, options = {}) {
   // 2. excludeBoard: 盤面に既に存在するカード（同名/baseId含む、および万相の厳密代用判定）を除外
   if (
     skill.excludeBoard &&
-    isExcludedByBoardPresence(card, resolvedBoardIds, presentBoardCards, skill)
+    isExcludedByBoardPresence(
+      card,
+      resolvedBoardIds,
+      presentBoardCards,
+      skill,
+      selfId
+    )
   ) {
     return false;
   }
@@ -3316,4 +3281,24 @@ export function matchesResurrectTarget(card, skill, options = {}) {
  */
 export function matchesPuppetTarget(card, skill, options = {}) {
   return matchesGraveyardTarget(card, skill, options);
+}
+
+/**
+ * スキル効果解決やシミュレーションにおいて、「唯一（excludeBoard）」などの除外判定に必要な
+ * 自陣盤面のカードオブジェクト一覧およびカードID一覧を収集して返却する共通ユーティリティ関数。
+ *
+ * @param {Array<object|null>} myBoard - 自陣の盤面配列
+ * @param {boolean} isExcludeBoard - excludeBoard（唯一）指定の有無
+ * @returns {{presentBoardCards: Array<object>, presentBoardIds: Array<string>}} 盤面カード本体一覧とID一覧
+ */
+export function collectPresentBoardTargets(myBoard, isExcludeBoard) {
+  const presentBoardCards = isExcludeBoard
+    ? (myBoard || []).filter(Boolean)
+    : [];
+  const presentBoardIds = isExcludeBoard
+    ? presentBoardCards
+        .flatMap((card) => [card.id, card.baseId])
+        .filter(Boolean)
+    : [];
+  return { presentBoardCards, presentBoardIds };
 }

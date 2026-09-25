@@ -102,6 +102,7 @@ export function updateCardDetail(c) {
     // 複数スキル配列（union等が必要とするtargetId/summonIdなど全プロパティを引き継ぐ）
     if (Array.isArray(c.skills)) {
       c.skills.forEach((sk) => {
+        if (!sk) return;
         const id = typeof sk === 'string' ? sk : sk?.id;
         if (statusMap.has(id)) {
           if (!renderedStatusIds.has(id)) {
@@ -109,7 +110,7 @@ export function updateCardDetail(c) {
             renderedStatusIds.add(id);
           }
         } else {
-          skillCandidates.push({ ...sk });
+          skillCandidates.push(typeof sk === 'string' ? { id: sk } : { ...sk });
         }
       });
     }

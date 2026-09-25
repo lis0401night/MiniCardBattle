@@ -1,4 +1,3 @@
-import { GameState } from '../state/gameState.js';
 import { getAIDiscardIndices } from '../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
@@ -26,6 +25,7 @@ import {
   matchesUnionMaterial,
   isCardInvincible,
   syncCardStatuses,
+  collectPresentBoardTargets,
 } from '../utils/gameUtils.js';
 
 /** 戦乙女の加護の持続カウンター（発動後、次の自分のターン開始時スキル解決完了までを1とする） */
@@ -2882,8 +2882,8 @@ export function applyActiveSkillLogic(
     case 'assemble': {
       // 【召集(assemble)スキル処理】
       // 先行1ターン目は他のレーンにカードを出せないためボーナス加算不可
-      const turnCount = state.turnCount ?? GameState?.turnCount ?? 0;
-      const firstPlayer = state.firstPlayer ?? GameState?.firstPlayer;
+      const turnCount = state.turnCount ?? 0;
+      const firstPlayer = state.firstPlayer;
       if (turnCount === 1 && firstPlayer === owner) break;
 
       // 召喚時、デッキから条件に合うカード1枚を自分のレーンに召喚する（シミュレーション用近似）
@@ -2896,10 +2896,10 @@ export function applyActiveSkillLogic(
       };
       const isExcludeBoard = Boolean(skObj.excludeBoard);
       const myBoard = owner === 'blue' ? state.playerBoard : state.enemyBoard;
-      const presentBoardCards = isExcludeBoard ? myBoard.filter(Boolean) : [];
-      const presentBoardIds = isExcludeBoard
-        ? presentBoardCards.flatMap((bc) => [bc.id, bc.baseId]).filter(Boolean)
-        : [];
+      const { presentBoardCards, presentBoardIds } = collectPresentBoardTargets(
+        myBoard,
+        isExcludeBoard
+      );
       const hasTarget = myDeck.some(
         (dCard) =>
           dCard &&
@@ -6229,18 +6229,10 @@ export function simulateDiscardCardsFromHand(state, side, cards, events = []) {
       for (const sk of cardSkills) {
         if (!sk) continue;
         const skId = typeof sk === 'string' ? sk : sk.id;
+        if (!ACTIVE_SKILLS.includes(skId)) continue;
         const skVal =
           typeof sk === 'object' && sk.value !== undefined ? sk.value : null;
-        applyActiveSkillLogic(
-          state,
-          side,
-          targetLane,
-          skId,
-          skVal,
-          events,
-          [],
-          targetLane
-        );
+        applyActiveSkillLogic(state, side, targetLane, skId, skVal, events);
       }
     } else {
       // 召喚不可の場合は通常通り墓地へ送る
