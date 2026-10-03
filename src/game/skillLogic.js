@@ -88,6 +88,7 @@ import {
   VALKYRIA_GUARD_TURNS,
   BLOCK_TYPE_EVENT_MAP,
   SUPREMACY_REQUIRED_BASE_POWER,
+  isReverseActive,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { scanMissionEvents } from './missionLogic.js';
@@ -454,14 +455,17 @@ export async function resolveActiveSkillEffect(
       replicate: '複製',
       hack: '改竄',
       grant_deadly: '付与(必殺)',
+      grant_sturdy: '付与(頑丈)',
+      bind: '拘束',
       buff: '強化',
+      reverse: '反転',
       inspire: '鼓舞',
       supremacy: '覇道',
       unleash: '解放',
       assemble: '召集',
       protection: '保護',
     };
-    let popupLabel = labels[skillId] || 'スキル';
+    let popupLabel = labels[skillId] || SKILLS[skillId]?.name || 'スキル';
     const TARGET_RULE_SKILLS = [
       'summon',
       'call',
@@ -3884,12 +3888,30 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'buff') {
     // 【「強化」スキル処理】
     // 召喚時、自身のパワーを+xする
-    const bVal = skillValue || 1;
+    const isReversed = isReverseActive(GameState);
+    let bVal = skillValue || 1;
+    if (isReversed) {
+      bVal = -bVal;
+      ['player', 'enemy'].forEach((sideKey) => {
+        const b =
+          sideKey === 'player' ? GameState.playerBoard : GameState.enemyBoard;
+        b.forEach((card, laneIdx) => {
+          if (card && hasSkill(card, 'reverse')) {
+            const revEl = document.querySelector(
+              `#${sideKey}-lanes .cell[data-lane="${laneIdx}"] .card`
+            );
+            if (revEl) createDamagePopup(revEl, '反転', '#a8a29e');
+          }
+        });
+      });
+    }
     c.currentPower = (c.currentPower || 0) + bVal;
 
-    playSound(SOUNDS.seSkill);
+    playSound(bVal > 0 ? SOUNDS.seSkill : SOUNDS.seDamage);
     if (cEl) {
-      createDamagePopup(cEl, `+${bVal}`, '#4ade80');
+      const prefix = bVal > 0 ? '+' : '';
+      const color = bVal > 0 ? '#4ade80' : '#ef4444';
+      createDamagePopup(cEl, `${prefix}${bVal}`, color);
     }
 
     renderBoard();
@@ -3902,7 +3924,23 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'inspire') {
     // 【「鼓舞」スキル処理】
     // 召喚時、自分の場の他カードから1体を選択してパワーを+valする
-    const bVal = skillValue || 1;
+    const isReversed = isReverseActive(GameState);
+    let bVal = skillValue || 1;
+    if (isReversed) {
+      bVal = -bVal;
+      ['player', 'enemy'].forEach((sideKey) => {
+        const b =
+          sideKey === 'player' ? GameState.playerBoard : GameState.enemyBoard;
+        b.forEach((card, laneIdx) => {
+          if (card && hasSkill(card, 'reverse')) {
+            const revEl = document.querySelector(
+              `#${sideKey}-lanes .cell[data-lane="${laneIdx}"] .card`
+            );
+            if (revEl) createDamagePopup(revEl, '反転', '#a8a29e');
+          }
+        });
+      });
+    }
     const isBlue = o === 'blue';
     const myBoard = isBlue ? GameState.playerBoard : GameState.enemyBoard;
 
@@ -3946,13 +3984,15 @@ export async function resolveActiveSkillEffect(
         if (targetCard) {
           targetCard.currentPower = (targetCard.currentPower || 0) + bVal;
 
-          playSound(SOUNDS.seSkill);
+          playSound(bVal > 0 ? SOUNDS.seSkill : SOUNDS.seDamage);
           const sidePrefix = isBlue ? 'player' : 'enemy';
           const tEl = document.querySelector(
             `#${sidePrefix}-lanes .cell[data-lane="${targetLane}"] .card`
           );
           if (tEl) {
-            createDamagePopup(tEl, `+${bVal}`, '#4ade80');
+            const prefix = bVal > 0 ? '+' : '';
+            const color = bVal > 0 ? '#4ade80' : '#ef4444';
+            createDamagePopup(tEl, `${prefix}${bVal}`, color);
           }
 
           renderBoard();
@@ -4138,7 +4178,9 @@ export async function triggerStartTurnPassive(owner, lane) {
     } else if (skId === 'corrosion') {
       // 【腐食（状態）のパワー減少処理】
       // 「成長」スキルの対となる状態異常。自分のターン開始時、付与されている腐食の値分パワーを減少させる
-      const pVal = skVal ?? 1;
+      const isReversed = isReverseActive(GameState);
+      const baseP = skVal ?? 1;
+      const pVal = baseP * (isReversed ? -1 : 1);
       c.power -= pVal; // RendererがcurrentPowerを処理するためpowerを減算
       events.push({
         type: 'power_change',
@@ -4146,13 +4188,16 @@ export async function triggerStartTurnPassive(owner, lane) {
         lane,
         amount: -pVal,
         source: 'corrosion',
+        isReversed,
       });
       triggered = true;
       continue;
     } else if (skId === 'growth') {
       // 【成長（growth）のパワー増加処理】
       // 自分のターン開始時、自身のパワーを指定値分増加させる
-      const val = skVal ?? 1;
+      const isReversed = isReverseActive(GameState);
+      const baseV = skVal ?? 1;
+      const val = baseV * (isReversed ? -1 : 1);
       c.power += val; // RendererがcurrentPowerを処理するのでここはpowerのみアップ
       events.push({
         type: 'power_change',
@@ -4160,6 +4205,7 @@ export async function triggerStartTurnPassive(owner, lane) {
         lane,
         amount: val,
         source: 'growth',
+        isReversed,
       });
       triggered = true;
       continue;

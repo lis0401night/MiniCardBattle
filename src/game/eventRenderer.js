@@ -249,6 +249,23 @@ export async function playEvents(events) {
           }
         }
 
+        if (ev.isReversed) {
+          ['player', 'enemy'].forEach((sideKey) => {
+            const b =
+              sideKey === 'player'
+                ? GameState.playerBoard
+                : GameState.enemyBoard;
+            b.forEach((card, laneIdx) => {
+              if (card && hasSkill(card, 'reverse')) {
+                const reverseEl = document.querySelector(
+                  `#${sideKey}-lanes .cell[data-lane="${laneIdx}"] .card`
+                );
+                if (reverseEl) createDamagePopup(reverseEl, '反転', '#a8a29e');
+              }
+            });
+          });
+        }
+
         const cEl = document.querySelector(
           `#${sidePrefix}-lanes .cell[data-lane="${ev.lane}"] .card`
         );
@@ -287,7 +304,7 @@ export async function playEvents(events) {
         } else {
           // 通常のパワー変動（バフ等）
           if (ev.amount !== 0) {
-            playSound(SOUNDS.seSkill);
+            playSound(ev.amount > 0 ? SOUNDS.seSkill : SOUNDS.seDamage);
             await sleep(200);
           }
         }

@@ -191,7 +191,9 @@ export function setupEventConfrontation() {
     GameState.playerConfig?.currentSkin ||
     'default';
   const confrontationSkinKey =
-    confrontationSkinId !== 'default' ? `${charId}_${confrontationSkinId}` : null;
+    confrontationSkinId !== 'default'
+      ? `${charId}_${confrontationSkinId}`
+      : null;
 
   const dialogs =
     (confrontationSkinKey && modeDialogues[confrontationSkinKey]) ||

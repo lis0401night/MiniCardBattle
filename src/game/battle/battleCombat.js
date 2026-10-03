@@ -48,6 +48,7 @@ import {
   isValkyriaGuardActive,
   applySingleCombat,
   calculateCombatPhase,
+  isReverseActive,
 } from '../engine.js';
 import { playEvents } from '../eventRenderer.js';
 import {
@@ -989,18 +990,37 @@ export function triggerRetaliateSkill(owner) {
   const alliedBoard =
     owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const sideLabel = owner === 'blue' ? 'player' : 'enemy';
+  const isReversed = isReverseActive(GameState);
+
+  if (isReversed) {
+    ['player', 'enemy'].forEach((sideKey) => {
+      const b =
+        sideKey === 'player' ? GameState.playerBoard : GameState.enemyBoard;
+      b.forEach((c, idx) => {
+        if (c && hasSkill(c, 'reverse')) {
+          const revEl = document.querySelector(
+            `#${sideKey}-lanes .cell[data-lane="${idx}"] .card`
+          );
+          if (revEl) createDamagePopup(revEl, '反転', '#a8a29e');
+        }
+      });
+    });
+  }
 
   for (let j = 0; j < 3; j++) {
     const ally = alliedBoard[j];
     if (ally && hasSkill(ally, 'retaliate')) {
-      const buffVal = getSkillValue(ally, 'retaliate') || 2;
+      let buffVal = getSkillValue(ally, 'retaliate') || 2;
+      if (isReversed) buffVal = -buffVal;
       ally.currentPower += buffVal;
 
       const allyEl = document.querySelector(
         `#${sideLabel}-lanes .cell[data-lane="${j}"] .card`
       );
       if (allyEl) {
-        createDamagePopup(allyEl, `報復 +${buffVal}`, '#f87171');
+        const prefix = buffVal > 0 ? '+' : '';
+        const color = buffVal > 0 ? '#f87171' : '#ef4444';
+        createDamagePopup(allyEl, `報復 ${prefix}${buffVal}`, color);
       }
     }
   }

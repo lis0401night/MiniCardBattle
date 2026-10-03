@@ -20,6 +20,7 @@ import {
   MAX_DECK_SLOTS,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
+import { QUICK_CPU_CONFIGS } from '../utils/constants/enemy_decks/quick_cpu/index.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
@@ -118,33 +119,60 @@ function applySkinToPlayerConfig() {
 // デッキ生成・編集・セーブ・ロードロジック
 // ==========================================
 
+/**
+ * プレイヤーまたは対戦相手のデッキを生成・シャッフルする
+ * オンライン対戦またはクイックマッチCPU対戦等の専用デッキ設定が存在する場合はそれを最優先で使用する。
+ * @param {string} owner - 所有者区分（'blue', 'red', 'host', 'client'）
+ * @param {Object} [config] - プレイヤーまたは敵の設定オブジェクト（deck プロパティを含む場合あり）
+ * @param {number} sessionId - セッションシード値
+ * @returns {Array<Object>} シャッフル済みのバトル用カードオブジェクト配列
+ */
 export function generateDeck(owner, config, sessionId) {
   let deck = [];
 
-  // オンラインモード：事前に渡された専用デッキ配列を使用する
+  // オンラインモードおよびクイックマッチCPU対戦：事前に渡された専用デッキ配列（config.deck）を使用する
   if (
-    checkIsOnlineMode(GameState.gameMode) &&
+    (checkIsOnlineMode(GameState.gameMode) ||
+      GameState.gameMode === 'online_quick_cpu') &&
     config &&
-    Array.isArray(config.deck)
+    Array.isArray(config.deck) &&
+    config.deck.length > 0
   ) {
     deck = config.deck.map((t, i) => {
-      const isPremium = t.isPremium || false;
-      const tempObj = { ...t, isPremium: isPremium };
+      // カードオブジェクトまたはカードID文字列の双方に対応してマスタデータを安全に取得
+      const cardObj =
+        typeof t === 'string'
+          ? CARD_MASTER.find((m) => m.id === t) || CARD_MASTER[0]
+          : t.name && t.power !== undefined
+            ? t
+            : CARD_MASTER.find((m) => m.id === t.id) || t;
+      const isPremium =
+        cardObj.isPremium ||
+        (owner === 'blue' &&
+          (GameState.premiumCards || []).includes(cardObj.id)) ||
+        false;
+      const tempObj = { ...cardObj, isPremium: isPremium };
       const imgUrl = getCardImgUrl(tempObj);
       return {
-        ...t,
-        baseId: t.id,
+        ...cardObj,
+        baseId: cardObj.id,
         id: `${owner}_${sessionId}_${i}`,
         uid: `${owner}_init_${sessionId}_${i}`,
         owner: owner,
         imgUrl: imgUrl,
-        power: t.power,
-        basePower: t.power,
-        currentPower: t.power,
+        power: cardObj.power,
+        basePower: cardObj.power,
+        currentPower: cardObj.power,
         isPremium: isPremium,
-        skills: Array.isArray(t.skills) ? t.skills.map((s) => ({ ...s })) : [],
-        choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
-        choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
+        skills: Array.isArray(cardObj.skills)
+          ? cardObj.skills.map((s) => ({ ...s }))
+          : [],
+        choices: cardObj.choices
+          ? cardObj.choices.map((c) => ({ ...c }))
+          : undefined,
+        choices2: cardObj.choices2
+          ? cardObj.choices2.map((c) => ({ ...c }))
+          : undefined,
       };
     });
     return shuffleArray(deck);
@@ -246,6 +274,11 @@ export function generateDeck(owner, config, sessionId) {
         } else {
           recipe = ENEMY_DECKS[charId] || ENEMY_DECKS.android;
         }
+      } else if (GameState.gameMode === 'online_quick_cpu') {
+        // クイックマッチCPU対戦フォールバック：QUICK_CPU_CONFIGSから該当キャラ専用デッキを取得
+        const quickCpuConfig =
+          QUICK_CPU_CONFIGS[config?.id] || QUICK_CPU_CONFIGS.android;
+        recipe = quickCpuConfig?.deck || QUICK_CPU_CONFIGS.android.deck;
       } else {
         recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
       }

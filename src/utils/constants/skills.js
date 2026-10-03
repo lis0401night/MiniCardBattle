@@ -1187,6 +1187,12 @@ export const SKILLS = {
     desc: () =>
       '場に居る限り、お互いにHPを回復する代わりに同じ値のダメージを受ける。',
   },
+  reverse: {
+    name: '反転',
+    icon: '↕️',
+    desc: () =>
+      '場に居る限り、お互いの場のカードのパワー上昇・減少の値が反転する。（ダメージ・装備・乗算は対象外）',
+  },
   cull: {
     name: '選別',
     icon: '🫳',
@@ -1446,6 +1452,7 @@ export const PASSIVE_SKILLS = [
   'arm_self',
   'grave_keeper',
   'miasma',
+  'reverse',
   'awake',
   'awake_legendary',
   'startup',
@@ -1621,7 +1628,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '盤面影響',
-        skills: ['phase', 'grave_keeper', 'miasma'],
+        skills: ['phase', 'grave_keeper', 'miasma', 'reverse'],
       },
       {
         name: 'その他',

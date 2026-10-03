@@ -61,15 +61,16 @@ const normalizeDeckCards = (rawDeck) => {
 
 /**
  * クイックマッチ待機画面コンポーネント
- * 「対戦相手を探しています」のロード待機、相手との自動マッチング成立検知、バトル移行、キャンセル処理を提供する。
+ * 「対戦相手を待っています」のロード待機、相手との自動マッチング成立検知、バトル移行、キャンセル処理を提供する。
  * 1分間マッチングしなかった場合は自動的に専用CPU対戦へ移行する。
  * @returns {import('react').ReactElement} クイックマッチ待機画面
  */
 export default function OnlineQuickMatchingScreen() {
   const [isMatchFound, setIsMatchFound] = useState(false);
   const [matchTitle, setMatchTitle] = useState('対戦相手が見つかりました！');
-  const [matchSubtitle, setMatchSubtitle] = useState('対戦準備中...');
+  const [countdown, setCountdown] = useState(60);
   const isMountedRef = useRef(true);
+  const countdownIntervalRef = useRef(null);
   const timeoutTimerRef = useRef(null);
   const cancelTimeoutRef = useRef(null);
   const hasMatchedRef = useRef(false);
@@ -84,9 +85,12 @@ export default function OnlineQuickMatchingScreen() {
     if (!isMountedRef.current || hasMatchedRef.current) return;
     hasMatchedRef.current = true;
     setMatchTitle('対戦相手が見つかりました！');
-    setMatchSubtitle('対戦準備中...');
     setIsMatchFound(true);
 
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
     if (timeoutTimerRef.current) {
       clearTimeout(timeoutTimerRef.current);
       timeoutTimerRef.current = null;
@@ -228,9 +232,12 @@ export default function OnlineQuickMatchingScreen() {
     if (!isMountedRef.current || hasMatchedRef.current) return;
     hasMatchedRef.current = true;
     setMatchTitle('対戦相手が見つかりました！');
-    setMatchSubtitle('トレーニングCPUと対戦を開始します...');
     setIsMatchFound(true);
 
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
     if (timeoutTimerRef.current) {
       clearTimeout(timeoutTimerRef.current);
       timeoutTimerRef.current = null;
@@ -259,6 +266,7 @@ export default function OnlineQuickMatchingScreen() {
         ...GameState.playerConfig,
         deck: activeDeckCards,
       };
+      GameState.playerDeckSelection = activeDeckCards;
 
       // 3. 対戦相手となる専用CPU設定をランダムに抽選（自身のキャラクターと被らないように選定）
       const playerCharId = GameState.playerConfig?.id;
@@ -452,11 +460,34 @@ export default function OnlineQuickMatchingScreen() {
       cancelTimeoutRef.current = null;
     }
 
+    // 60秒カウントダウンタイマーの開始（毎秒デクリメント）
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setCountdown(60);
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     beginMatching();
 
     return () => {
       isMountedRef.current = false;
       stopSessionHeartbeat();
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
       if (timeoutTimerRef.current) {
         clearTimeout(timeoutTimerRef.current);
         timeoutTimerRef.current = null;
@@ -494,6 +525,10 @@ export default function OnlineQuickMatchingScreen() {
       cancelTimeoutRef.current = null;
     }
     stopSessionHeartbeat();
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
     if (timeoutTimerRef.current) {
       clearTimeout(timeoutTimerRef.current);
       timeoutTimerRef.current = null;
@@ -538,10 +573,17 @@ export default function OnlineQuickMatchingScreen() {
                   margin: '0 0 8px 0',
                 }}
               >
-                対戦相手を探しています...
+                対戦相手を待っています
               </h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
-                他のプレイヤーが編成を完了するのを待機しています
+              <p
+                style={{
+                  color: '#38bdf8',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  margin: 0,
+                }}
+              >
+                {countdown}秒
               </p>
             </div>
             <div style={{ marginTop: '20px' }}>
@@ -559,10 +601,9 @@ export default function OnlineQuickMatchingScreen() {
               className="spinner"
               style={{ width: '50px', height: '50px', margin: '0 auto 16px' }}
             ></div>
-            <h3 style={{ color: '#38bdf8', fontSize: '1.4rem' }}>
+            <h3 style={{ color: '#38bdf8', fontSize: '1.4rem', margin: 0 }}>
               {matchTitle}
             </h3>
-            <p style={{ color: '#e2e8f0' }}>{matchSubtitle}</p>
           </div>
         )}
       </div>

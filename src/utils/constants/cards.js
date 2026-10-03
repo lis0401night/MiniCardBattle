@@ -4175,6 +4175,17 @@ export const CARD_MASTER = [
     flavor:
       '鳴り響く鐘の音は、終焉の宣告。その音を聞いた者に、逃れる術はない。',
   },
+  {
+    id: 'hangedman',
+    obtain: ['achievement'],
+    name: 'トリックハンガー',
+    rarity: 4,
+    power: 5,
+    skills: [{ id: 'reverse' }],
+    voiceCategory: 'human_male_trickstar',
+    flavor:
+      '逆さに見れば、世界は案外正しく見える。さて、間違っているのは世界かな、それとも君かな？',
+  },
   // トークンカード
   {
     id: 'token_knight',

@@ -320,7 +320,9 @@ export function buildDungeonIntroDialogue(deckData) {
     const skinId =
       deckData.currentSkin ||
       deckData.originalData?.currentSkin ||
-      (typeof GameState !== 'undefined' ? GameState.playerSkins?.[charId] : null) ||
+      (typeof GameState !== 'undefined'
+        ? GameState.playerSkins?.[charId]
+        : null) ||
       (() => {
         try {
           return JSON.parse(

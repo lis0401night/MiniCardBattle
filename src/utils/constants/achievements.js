@@ -828,6 +828,39 @@ export const ACHIEVEMENT_MASTER = [
     targetValue: 20,
     reward: { type: 'card', value: 'jason', name: '不吉な殺人鬼' },
   },
+  // --- クイックマッチ勝利数 ---
+  {
+    id: 'quick_win_10',
+    title: '電光石火',
+    description: 'クイックマッチで累計10回勝利する',
+    type: 'quick_win',
+    targetValue: 10,
+    reward: { type: 'card', value: 'hangedman', name: 'トリックハンガー' },
+  },
+  {
+    id: 'quick_win_20',
+    title: '疾風怒濤',
+    description: 'クイックマッチで累計20回勝利する',
+    type: 'quick_win',
+    targetValue: 20,
+    reward: { type: 'card', value: 'hangedman', name: 'トリックハンガー' },
+  },
+  {
+    id: 'quick_win_30',
+    title: '神速の闘士',
+    description: 'クイックマッチで累計30回勝利する',
+    type: 'quick_win',
+    targetValue: 30,
+    reward: { type: 'card', value: 'hangedman', name: 'トリックハンガー' },
+  },
+  {
+    id: 'quick_win_40',
+    title: '迅雷風烈',
+    description: 'クイックマッチで累計40回勝利する',
+    type: 'quick_win',
+    targetValue: 40,
+    reward: { type: 'card', value: 'hangedman', name: 'トリックハンガー' },
+  },
   // --- 実績達成数 ---
   {
     id: 'total_unlock_5',
@@ -874,6 +907,7 @@ export const achievementData = {
     maxDungeonFloor: 0,
     defenseWins: 0,
     defenseAttackWins: 0,
+    quickWins: 0, // クイックマッチ勝利数
     voidDefeated: 0, // ゼノン撃破フラグ（実績管理）
     succubusDefeated: 0, // ヴィオラ撃破フラグ（実績管理）
     warlockDefeated: 0, // バルタザール撃破フラグ（実績管理）
@@ -916,6 +950,8 @@ export function loadAchievements() {
         achievementData.stats.defenseWins = 0;
       if (typeof achievementData.stats.defenseAttackWins !== 'number')
         achievementData.stats.defenseAttackWins = 0;
+      if (typeof achievementData.stats.quickWins !== 'number')
+        achievementData.stats.quickWins = 0;
       if (typeof achievementData.stats.voidDefeated !== 'number')
         achievementData.stats.voidDefeated = 0;
       if (typeof achievementData.stats.succubusDefeated !== 'number')
@@ -931,6 +967,7 @@ export function loadAchievements() {
   checkUniqueStoryHardAchievements(); // 上級ストーリーのクリア種類数もロード時に判定
   checkTutorialAchievements(); // チュートリアルのクリア種類数もロード時に判定
   checkFortuneAchievements(); // 運命の邂逅の達成目標値もロード時に判定
+  checkQuickMatchAchievements(); // クイックマッチ勝利数の判定
   checkTotalAchievementUnlocks(); // 累計実績もロード時に再計算して反映する
   saveAchievements();
 }
@@ -976,6 +1013,10 @@ export function incrementStat(type, key = null, amount = 1) {
     achievementData.stats.defenseAttackWins =
       (achievementData.stats.defenseAttackWins || 0) + amount;
     checkDefenseAttackAchievements();
+  } else if (type === 'quickWins') {
+    achievementData.stats.quickWins =
+      (achievementData.stats.quickWins || 0) + amount;
+    checkQuickMatchAchievements();
   } else if (type === 'voidDefeated') {
     achievementData.stats.voidDefeated =
       (achievementData.stats.voidDefeated || 0) + amount;
@@ -1105,6 +1146,17 @@ function checkDefenseAttackAchievements() {
       updateAchievement(ach.id, wins, ach.targetValue);
     }
   );
+}
+
+/**
+ * クイックマッチ勝利数の実績チェック
+ * 累計勝利数に応じて quick_win 系の実績進捗を判定・更新する。
+ */
+export function checkQuickMatchAchievements() {
+  const wins = achievementData.stats.quickWins || 0;
+  ACHIEVEMENT_MASTER.filter((a) => a.type === 'quick_win').forEach((ach) => {
+    updateAchievement(ach.id, wins, ach.targetValue);
+  });
 }
 
 // チュートリアルクリア数の実績チェック

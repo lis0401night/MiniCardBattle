@@ -362,7 +362,9 @@ export function getDialogue(
   ) {
     // スキンに固有の mirrorIntro があれば最優先
     const skinObj =
-      skinId !== 'default' && speakerConfig.skins && speakerConfig.skins[skinId];
+      skinId !== 'default' &&
+      speakerConfig.skins &&
+      speakerConfig.skins[skinId];
     if (skinObj?.mirrorIntro) {
       return skinObj.mirrorIntro;
     }
@@ -832,6 +834,15 @@ export function createGraveKeeperEvents(state) {
  */
 export function createMiasmaEvents(state) {
   return createPassiveSkillPopupEvents(state, 'miasma', '瘴気', '#a8a29e');
+}
+
+/**
+ * 反転スキルの発動チェックを行い、演出イベント配列を生成します。
+ * @param {Object} state - バトル状態オブジェクト
+ * @returns {Array<Object>} 発生した演出イベントの配列
+ */
+export function createReverseEvents(state) {
+  return createPassiveSkillPopupEvents(state, 'reverse', '反転', '#a8a29e');
 }
 
 // 判定補助: 特定のスキルを所持しているか

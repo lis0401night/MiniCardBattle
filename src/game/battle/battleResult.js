@@ -854,6 +854,17 @@ export function endBattle() {
     incrementStat('freeBattleWins');
   }
 
+  // クイックマッチ勝利数実績のカウント（対人およびCPU対戦）
+  if (
+    GameState.lastBattleResult === 'win' &&
+    typeof incrementStat === 'function' &&
+    (GameState.gameMode === 'online_quick' ||
+      GameState.gameMode === 'online_quick_cpu' ||
+      GameState.onlineSubMode === 'quick')
+  ) {
+    incrementStat('quickWins');
+  }
+
   // デイリーミッション進捗記録（防衛戦・試練の宮殿・夢幻の闘技祭）
   if (GameState.lastBattleResult === 'win') {
     recordDailyMissionWin(GameState.gameMode);
