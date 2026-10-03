@@ -4,8 +4,9 @@ import { showOnlineRoomMatch } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 
 /**
- * オンライン対戦ルール説明画面
- * 共通コンポーネント ScreenLayout を適用してリファクタリングを完了。
+ * オンライン対戦 - ルームマッチ ルール説明画面コンポーネント
+ * ルーム作成（公開/非公開）、検索、対戦の流れ、制限時間、通信切断復帰ルールなどを説明する。
+ * @returns {import('react').ReactElement} ルームマッチルール画面
  */
 export default function OnlineRulesScreen() {
   const containerRef = useRef(null);
@@ -41,21 +42,22 @@ export default function OnlineRulesScreen() {
         style={{ overflowY: 'auto' }}
       >
         <ul>
-          <li>他のプレイヤーとリアルタイムで対戦ができるモードです。</li>
           <li>
-            オンライン対戦中はお互いの画面が常に同期されます。
-            <br />
-            通信環境の良い場所でプレイしてください。
+            友達や特定のプレイヤーとルームを作成・検索してリアルタイムに対戦するモードです。
           </li>
           <li>
-            試験的な実装のため、バグが発生する可能性があります。あらかじめご了承ください。
-            <br />
-            公開サイトなどでご連絡いただければ幸いです。
+            誰でも入れる「公開ルーム」と、合言葉で合流する「非公開ルーム」を選択できます。
+          </li>
+          <li>
+            各ターンに60秒の制限時間があり、時間切れになると自動でターンが終了します。
+          </li>
+          <li>
+            通信が切断された場合でも、60秒以内であれば直前の対戦状態から復帰できます。
           </li>
           <li
             style={{ color: '#fb7185', marginTop: '10px', listStyle: 'none' }}
           >
-            <b>※オンライン対戦のバトルではカードを獲得できません。</b>
+            <b>※ルームマッチのバトルではカードを獲得できません。</b>
           </li>
         </ul>
       </div>

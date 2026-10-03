@@ -2028,6 +2028,18 @@ export function showOnlineRoomMatch() {
   playSound(AUDIO_INSTANCES.bgmOnline);
   switchScreen('screen-online-room-match');
 }
+/**
+ * クイックマッチのルール説明画面を表示し、BGMを再生します。
+ */
+export function showOnlineQuickRules() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  switchScreen('screen-online-quick-rules');
+}
+
+/**
+ * ルームマッチのルール説明画面を表示し、BGMを再生します。
+ */
 export function showOnlineRules() {
   playSound(SOUNDS.seClick);
   playSound(AUDIO_INSTANCES.bgmOnline);

@@ -1,6 +1,10 @@
 import MenuButton from '../components/common/MenuButton.jsx';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
-import { showOnlineMenu, startQuickMatchChallenge } from '../services/uiMainCore.js';
+import {
+  showOnlineMenu,
+  showOnlineQuickRules,
+  startQuickMatchChallenge,
+} from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
 
 /**
@@ -11,10 +15,11 @@ import { showAlertModal } from '../services/uiModals.js';
 export default function OnlineQuickMatchScreen() {
   /**
    * ルールボタンクリック時のハンドラ
+   * クイックマッチのルール画面へ遷移する
    * @returns {void}
    */
   const handleRulesClick = () => {
-    showAlertModal?.('クイックマッチのルールは準備中です。');
+    showOnlineQuickRules?.();
   };
 
   /**

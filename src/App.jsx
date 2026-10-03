@@ -34,6 +34,7 @@ import TutorialSelectScreen from './pages/TutorialSelectScreen.jsx';
 import CutinOverlay from './components/battle/CutinOverlay.jsx';
 import MatchingScreen from './components/battle/MatchingScreen.jsx';
 import RewardOverlay from './components/battle/RewardOverlay.jsx';
+import SparkTimerLine from './components/battle/SparkTimerLine.jsx';
 import VfxOverlay from './components/battle/VfxOverlay.jsx';
 import {
   endPlayerTurn,
@@ -66,6 +67,7 @@ import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
 import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
 import OnlineQuickMatchScreen from './pages/OnlineQuickMatchScreen.jsx';
 import OnlineQuickMatchingScreen from './pages/OnlineQuickMatchingScreen.jsx';
+import OnlineQuickRulesScreen from './pages/OnlineQuickRulesScreen.jsx';
 import OnlineRoomMatchScreen from './pages/OnlineRoomMatchScreen.jsx';
 import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
 import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
@@ -198,6 +200,7 @@ const SCREEN_COMPONENTS = {
   'screen-online-menu': OnlineMenuScreen,
   'screen-online-quick-match': OnlineQuickMatchScreen,
   'screen-online-quick-matching': OnlineQuickMatchingScreen,
+  'screen-online-quick-rules': OnlineQuickRulesScreen,
   'screen-online-room-match': OnlineRoomMatchScreen,
   'screen-online-rules': OnlineRulesScreen,
   'screen-online-search': OnlineRoomSearchScreen,
@@ -325,6 +328,7 @@ export default function App() {
           <RewardOverlay />
           <CutinOverlay />
           <VfxOverlay />
+          <SparkTimerLine />
         </>
       )}
       <div id="fade-overlay" className="fade-overlay"></div>

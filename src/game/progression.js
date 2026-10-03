@@ -128,7 +128,10 @@ export function handleProgressionNextStep() {
     } else {
       switchScreen('screen-online-lobby');
     }
-  } else if (GameState.gameMode === 'online_quick') {
+  } else if (
+    GameState.gameMode === 'online_quick' ||
+    GameState.gameMode === 'online_quick_cpu'
+  ) {
     GameState.onlineSubMode = null;
     safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(() => {
       if (typeof showOnlineQuickMatch === 'function') {

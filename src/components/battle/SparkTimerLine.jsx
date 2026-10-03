@@ -65,17 +65,18 @@ export default function SparkTimerLine() {
     <div className="spark-timer-root" aria-hidden="true">
       <style>{`
         .spark-timer-root {
-          position: absolute;
-          left: 0;
-          right: 0;
+          position: fixed;
+          left: 50%;
           top: 50%;
-          transform: translateY(-50%);
+          transform: translate(-50%, -50%);
+          width: 100%;
+          max-width: 480px;
           height: 0;
           display: flex;
           justify-content: center;
           align-items: center;
           pointer-events: none;
-          z-index: 1200;
+          z-index: 100000;
         }
 
         .spark-timer-line {

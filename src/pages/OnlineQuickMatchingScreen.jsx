@@ -13,15 +13,21 @@ import {
   QUICK_MATCH_REF,
 } from '../services/multiplayer.js';
 import { showOnlineQuickMatch } from '../services/uiMainCore.js';
-import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
+  CHARACTERS,
   getPlayerIconPath,
   getSkinImage,
 } from '../utils/constants/characters.js';
-import { PROFILE_ICON_KEY } from '../utils/constants/config.js';
+import {
+  AI_LEVEL,
+  DIFFICULTY,
+  PROFILE_ICON_KEY,
+} from '../utils/constants/config.js';
+import { getRandomQuickCpuConfig } from '../utils/constants/enemy_decks/quick_cpu/index.js';
 import {
   getOrCreateUUID,
   playSound,
@@ -34,12 +40,35 @@ import { SOUNDS } from '../utils/sounds.js';
 const MATCHING_TIMEOUT_MS = 60000;
 
 /**
+ * デッキ配列を完全なカードオブジェクト配列に正規化する内部ヘルパー
+ * @param {Array} rawDeck - カードオブジェクトまたはID文字列の配列
+ * @returns {Array<Object>} 正規化されたカードオブジェクト配列
+ */
+const normalizeDeckCards = (rawDeck) => {
+  if (!Array.isArray(rawDeck)) return [];
+  return rawDeck
+    .map((c) => {
+      if (!c) return null;
+      if (typeof c === 'object' && c.name && c.power !== undefined) {
+        return { ...c };
+      }
+      const actualId = typeof c === 'object' ? c.id : c;
+      const template = CARD_MASTER.find((m) => m.id === actualId);
+      return template ? { ...template } : null;
+    })
+    .filter(Boolean);
+};
+
+/**
  * クイックマッチ待機画面コンポーネント
  * 「対戦相手を探しています」のロード待機、相手との自動マッチング成立検知、バトル移行、キャンセル処理を提供する。
+ * 1分間マッチングしなかった場合は自動的に専用CPU対戦へ移行する。
  * @returns {import('react').ReactElement} クイックマッチ待機画面
  */
 export default function OnlineQuickMatchingScreen() {
   const [isMatchFound, setIsMatchFound] = useState(false);
+  const [matchTitle, setMatchTitle] = useState('対戦相手が見つかりました！');
+  const [matchSubtitle, setMatchSubtitle] = useState('対戦準備中...');
   const isMountedRef = useRef(true);
   const timeoutTimerRef = useRef(null);
   const cancelTimeoutRef = useRef(null);
@@ -54,6 +83,8 @@ export default function OnlineQuickMatchingScreen() {
   const handleMatchSuccess = (roomData) => {
     if (!isMountedRef.current || hasMatchedRef.current) return;
     hasMatchedRef.current = true;
+    setMatchTitle('対戦相手が見つかりました！');
+    setMatchSubtitle('対戦準備中...');
     setIsMatchFound(true);
 
     if (timeoutTimerRef.current) {
@@ -76,26 +107,6 @@ export default function OnlineQuickMatchingScreen() {
         });
         return;
       }
-
-      /**
-       * デッキ配列を完全なカードオブジェクト配列に正規化する内部ヘルパー
-       * @param {Array} rawDeck - カードオブジェクトまたはID文字列の配列
-       * @returns {Array<Object>} 正規化されたカードオブジェクト配列
-       */
-      const normalizeDeckCards = (rawDeck) => {
-        if (!Array.isArray(rawDeck)) return [];
-        return rawDeck
-          .map((c) => {
-            if (!c) return null;
-            if (typeof c === 'object' && c.name && c.power !== undefined) {
-              return { ...c };
-            }
-            const actualId = typeof c === 'object' ? c.id : c;
-            const template = CARD_MASTER.find((m) => m.id === actualId);
-            return template ? { ...template } : null;
-          })
-          .filter(Boolean);
-      };
 
       // 共通の対戦シードを同期
       const bSeed = roomData.battleSeed || Date.now();
@@ -207,8 +218,144 @@ export default function OnlineQuickMatchingScreen() {
     }
   };
 
+  /**
+   * マッチング待機タイムアウト（60秒経過）時に呼ばれ、
+   * Firebaseの待機登録を解除した上で専用CPU対戦へ自動移行する。
+   * @returns {Promise<void>}
+   */
+  const handleTimeoutTransitionToCpu = async () => {
+    if (!isMountedRef.current || hasMatchedRef.current) return;
+    hasMatchedRef.current = true;
+    setMatchTitle('対戦相手が見つかりました！');
+    setMatchSubtitle('トレーニングCPUと対戦を開始します...');
+    setIsMatchFound(true);
+
+    if (timeoutTimerRef.current) {
+      clearTimeout(timeoutTimerRef.current);
+      timeoutTimerRef.current = null;
+    }
+    stopSessionHeartbeat();
+
+    try {
+      // 1. Firebase 上の自身のクイックマッチ待機登録を安全にキャンセル・削除
+      await cancelQuickMatch().catch((err) => {
+        console.warn('タイムアウト時のクイックマッチ待機解除に失敗しました:', err);
+      });
+
+      // 2. プレイヤー自身のデッキ設定を正規化・取得
+      const rawDeckCards =
+        GameState.playerDeckSelection ||
+        GameState.deckSelection ||
+        GameState.playerConfig?.deck ||
+        GameState.decks?.[GameState.currentDeckIndex]?.cards ||
+        [];
+      const activeDeckCards = normalizeDeckCards(rawDeckCards);
+
+      GameState.playerConfig = {
+        ...GameState.playerConfig,
+        deck: activeDeckCards,
+      };
+
+      // 3. 対戦相手となる専用CPU設定をランダムに抽選（自身のキャラクターと被らないように選定）
+      const playerCharId = GameState.playerConfig?.id;
+      const cpuConfig = getRandomQuickCpuConfig(playerCharId);
+      const enemyCharTemplate = CHARACTERS[cpuConfig.characterId] || CHARACTERS.android;
+
+      GameState.enemyConfig = {
+        ...enemyCharTemplate,
+        deck: normalizeDeckCards(cpuConfig.deck),
+      };
+
+      // 4. 難易度およびAIレベルの設定（ハード設定）
+      GameState.difficulty = DIFFICULTY.HARD;
+      GameState.aiLevel = AI_LEVEL.HARD;
+
+      // 5. スキン・プレイマット・ステージ情報の設定
+      GameState.playerSkins = GameState.playerSkins || {};
+      GameState.enemySkins = GameState.enemySkins || {};
+      GameState.playerSkins[GameState.playerConfig.id] =
+        GameState.playerSkins[GameState.playerConfig.id] || 'default';
+      GameState.enemySkins[GameState.enemyConfig.id] = cpuConfig.skin || 'default';
+
+      GameState.playerConfig.playmat = GameState.selectedPlaymatId || null;
+      GameState.enemyConfig.playmat = cpuConfig.playmat || null;
+
+      // ステージの決定: 50% の確率でプレイヤー選択ステージ、またはCPU対応ステージ
+      const playerStage = GameState.selectedStageId || 'plain';
+      const cpuStage = cpuConfig.stage || 'plain';
+      GameState.selectedStageId = Math.random() < 0.5 ? playerStage : cpuStage;
+
+      // 画像パス・アイコンの設定
+      GameState.playerConfig.image = getSkinImage(
+        GameState.playerConfig,
+        GameState.playerSkins[GameState.playerConfig.id],
+        'image'
+      );
+      GameState.playerConfig.imageLose = getSkinImage(
+        GameState.playerConfig,
+        GameState.playerSkins[GameState.playerConfig.id],
+        'imageLose'
+      );
+      GameState.playerConfig.icon = GameState.playerConfig.icon || getSkinImage(
+        GameState.playerConfig,
+        GameState.playerSkins[GameState.playerConfig.id],
+        'icon'
+      );
+      GameState.playerConfig.iconDamage = GameState.playerConfig.iconDamage || getSkinImage(
+        GameState.playerConfig,
+        GameState.playerSkins[GameState.playerConfig.id],
+        'iconDamage'
+      ) || GameState.playerConfig.icon;
+
+      GameState.enemyConfig.image = getSkinImage(
+        GameState.enemyConfig,
+        cpuConfig.skin || 'default',
+        'image'
+      );
+      GameState.enemyConfig.imageLose = getSkinImage(
+        GameState.enemyConfig,
+        cpuConfig.skin || 'default',
+        'imageLose'
+      );
+      GameState.enemyConfig.icon = getSkinImage(
+        GameState.enemyConfig,
+        cpuConfig.skin || 'default',
+        'icon'
+      );
+      GameState.enemyConfig.iconDamage = getSkinImage(
+        GameState.enemyConfig,
+        cpuConfig.skin || 'default',
+        'iconDamage'
+      ) || GameState.enemyConfig.icon;
+
+      // 6. 対戦シードの設定
+      GameState.battleSeed = Date.now();
+
+      // 7. 切断ハンドラを解除（CPU対戦のため）
+      multiplayerCallbacks.onRoomClosed = null;
+
+      // 8. ゲームモード設定（オンライン専用CPU対戦モード）
+      GameState.onlineSubMode = 'quick';
+      GameState.gameMode = 'online_quick_cpu';
+      GameState.appState = 'battle';
+
+      // 演出のため少しだけ待機（1秒）してからバトルへ移行
+      setTimeout(() => {
+        if (!isMountedRef.current) return;
+        prepareBattle();
+      }, 1000);
+    } catch (err) {
+      console.error('クイックマッチCPU戦移行エラー:', err);
+      showAlertModal('対戦の準備中にエラーが発生しました。', () => {
+        showOnlineQuickMatch?.();
+      });
+    }
+  };
+
   const handleMatchSuccessRef = useRef(null);
   handleMatchSuccessRef.current = handleMatchSuccess;
+  const handleTimeoutTransitionToCpuRef = useRef(null);
+  handleTimeoutTransitionToCpuRef.current = handleTimeoutTransitionToCpu;
   const handleCancelRef = useRef(null);
 
   /**
@@ -262,20 +409,11 @@ export default function OnlineQuickMatchingScreen() {
           startSessionHeartbeat(roomId, QUICK_MATCH_REF);
         }
 
-        // 待機開始時: タイムアウトタイマーを設定
+        // 待機開始時: タイムアウトタイマーを設定（1分経過でCPU戦に自動移行）
         if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
         timeoutTimerRef.current = setTimeout(() => {
           if (!hasMatchedRef.current && isMountedRef.current) {
-            showConfirmModal(
-              '対戦相手が見つかりませんでした。\n検索を続行しますか？',
-              () => {
-                isMatchingStartedRef.current = false;
-                beginMatching();
-              },
-              () => {
-                handleCancelRef.current?.();
-              }
-            );
+            handleTimeoutTransitionToCpuRef.current?.();
           }
         }, MATCHING_TIMEOUT_MS);
       }
@@ -398,9 +536,9 @@ export default function OnlineQuickMatchingScreen() {
           <div>
             <div className="spinner" style={{ width: '50px', height: '50px', margin: '0 auto 16px' }}></div>
             <h3 style={{ color: '#38bdf8', fontSize: '1.4rem' }}>
-              対戦相手が見つかりました！
+              {matchTitle}
             </h3>
-            <p style={{ color: '#e2e8f0' }}>対戦準備中...</p>
+            <p style={{ color: '#e2e8f0' }}>{matchSubtitle}</p>
           </div>
         )}
       </div>

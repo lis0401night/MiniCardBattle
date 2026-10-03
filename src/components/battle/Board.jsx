@@ -5,7 +5,6 @@ import { hasSkill } from '../../utils/gameUtils.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { isValkyriaGuardActive } from '../../game/engine.js';
 import Card from './Card.jsx';
-import SparkTimerLine from './SparkTimerLine.jsx';
 
 /**
  * 召喚時の配置制約条件をチェックします。
@@ -158,7 +157,6 @@ export default function Board({
           );
         })}
       </div>
-      <SparkTimerLine />
 
       {/* 自陣レーン */}
       <div className="lane-row" id="player-lanes">

@@ -36,6 +36,7 @@ export function checkIsOnlineTimerEnabled(gameMode) {
   return (
     gameMode === 'online' ||
     gameMode === 'online_quick' ||
+    gameMode === 'online_quick_cpu' ||
     gameMode === 'practice'
   );
 }
