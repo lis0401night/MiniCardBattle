@@ -6,15 +6,20 @@ import {
   getCurrentRoomId,
   getIsHost,
   getServerNow,
-  leaveRoom,
   listenToRoom,
   multiplayerCallbacks,
+  safeLeaveRoom,
   sendChatMessage,
   setRoomStatusToBattle,
   updatePlayerReady,
-  updateRoomHeartbeat,
+  startSessionHeartbeat,
+  stopSessionHeartbeat,
+  ROOMS_REF,
 } from '../services/multiplayer.js';
-import { navigateToDeckList, showOnlineMenu } from '../services/uiMainCore.js';
+import {
+  navigateToDeckList,
+  showOnlineRoomMatch,
+} from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
@@ -30,17 +35,8 @@ import {
   getScreenBackgroundStyle,
   PROFILE_NAME_KEY,
   DEFAULT_PLAYER_NAME,
-  ROOM_HEARTBEAT_INTERVAL_MS,
   ONLINE_BATTLE_START_DELAY_MS,
 } from '../utils/constants/config.js';
-
-async function safeLeaveRoom(errorMessage) {
-  try {
-    await leaveRoom();
-  } catch (e) {
-    console.error(errorMessage, e);
-  }
-}
 
 export default function OnlineLobbyScreen() {
   const [roomData, setRoomData] = useState(cachedRoomData || null);
@@ -142,6 +138,7 @@ export default function OnlineLobbyScreen() {
      * @param {Object} data - 最新のルームデータ
      */
     const executeStartBattle = (data) => {
+      stopSessionHeartbeat();
       if (
         !data ||
         !data.host?.leaderConfig?.leaderConfig ||
@@ -250,16 +247,19 @@ export default function OnlineLobbyScreen() {
       // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
       multiplayerCallbacks.onRoomClosed = async () => {
         GameState.isBattleEnded = true;
+        GameState.onlineSubMode = null;
         if (typeof window.setSlowMotionReact === 'function') {
           window.setSlowMotionReact(false);
         }
         if (typeof stopAllBGM === 'function') stopAllBGM();
         await safeLeaveRoom('ルーム解散時の退室処理に失敗しました:');
         showAlertModal('ルームが解散されました。', () => {
-          showOnlineMenu?.();
+          showOnlineRoomMatch?.();
         });
       };
 
+      // オンラインサブモードをルームマッチに明示的に設定
+      GameState.onlineSubMode = 'room';
       GameState.gameMode = 'online';
       GameState.appState = 'battle';
 
@@ -390,7 +390,7 @@ export default function OnlineLobbyScreen() {
       setRoomData(null);
       await safeLeaveRoom('ルーム解散時の退室処理に失敗しました:');
       showAlertModal('ルームが解散されました。', () => {
-        showOnlineMenu?.();
+        showOnlineRoomMatch?.();
       });
     };
 
@@ -398,25 +398,15 @@ export default function OnlineLobbyScreen() {
     const roomId = getCurrentRoomId();
     if (roomId) {
       listenToRoom(roomId);
-    }
-
-    // ホストとしてロビーで待機中の間、一定周期ごとに生存信号（ハートビート）を送信するタイマー
-    const sendHeartbeat = () => {
-      const activeRoomId = getCurrentRoomId();
-      if (getIsHost() && activeRoomId && GameState.appState !== 'battle') {
-        updateRoomHeartbeat(activeRoomId);
+      // ホストとしてロビーで待機中の間、定期生存信号（ハートビート）を送信開始
+      if (getIsHost() && GameState.appState !== 'battle') {
+        startSessionHeartbeat(roomId, ROOMS_REF);
       }
-    };
-    // マウント直後に1回送信し、初回送信までの空白時間を作らない
-    sendHeartbeat();
-    const heartbeatInterval = setInterval(
-      sendHeartbeat,
-      ROOM_HEARTBEAT_INTERVAL_MS
-    );
+    }
 
     return () => {
       isMountedRef.current = false;
-      clearInterval(heartbeatInterval);
+      stopSessionHeartbeat();
       window.reloadOnlineLobbyConfig = null;
       // ロビー画面から離脱した場合（対戦開始時を除く）はコールバックを解除
       // 対戦開始時は対戦用のコールバック（切断検知等）を維持するため、バトル状態でない場合のみ null にする
@@ -441,9 +431,10 @@ export default function OnlineLobbyScreen() {
   const handleLeaveRoom = async () => {
     if (isBattleStarting && !battleStartError) return;
     playSound(SOUNDS.seClick);
+    GameState.onlineSubMode = null;
     await safeLeaveRoom('退室に失敗しました:');
     setRoomData(null);
-    showOnlineMenu?.();
+    showOnlineRoomMatch?.();
   };
 
   const handleDeckEdit = () => {

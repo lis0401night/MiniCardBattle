@@ -1,9 +1,11 @@
 import { loadDeck } from '../services/deck.js';
+import { safeLeaveRoom } from '../services/multiplayer.js';
 import {
   initSelectScreen,
   performFadeTransition,
   showDefenseBattleList,
   showOnlineLobby,
+  showOnlineQuickMatch,
 } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { switchScreen } from '../utils/gameUtils.js';
@@ -100,11 +102,42 @@ export function handleProgressionNextStep() {
       switchScreen('screen-mode-select');
     }
   } else if (GameState.gameMode === 'online') {
-    if (typeof showOnlineLobby === 'function') {
+    const subMode = GameState.onlineSubMode;
+    GameState.onlineSubMode = null; // リセット
+
+    // クイックマッチの場合はセッションを完全に破棄・退室してクイックマッチ画面へ復帰
+    if (subMode === 'quick') {
+      safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(() => {
+        if (typeof showOnlineQuickMatch === 'function') {
+          showOnlineQuickMatch();
+        } else {
+          switchScreen('screen-online-quick-match');
+        }
+      });
+      return;
+    } else if (subMode === 'room') {
+      // ルームマッチの場合はルーム内ロビー画面へ復帰（再戦用）
+      if (typeof showOnlineLobby === 'function') {
+        showOnlineLobby();
+      } else {
+        switchScreen('screen-online-lobby');
+      }
+    } else if (typeof showOnlineLobby === 'function') {
+      // フォールバック（未指定時は従来のルームロビー）
       showOnlineLobby();
     } else {
       switchScreen('screen-online-lobby');
     }
+  } else if (GameState.gameMode === 'online_quick') {
+    GameState.onlineSubMode = null;
+    safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(() => {
+      if (typeof showOnlineQuickMatch === 'function') {
+        showOnlineQuickMatch();
+      } else {
+        switchScreen('screen-online-quick-match');
+      }
+    });
+    return;
   } else if (GameState.gameMode === 'tournament') {
     if (GameState.appState === 'pre_battle_dialogue') {
       startPreparedBattle();

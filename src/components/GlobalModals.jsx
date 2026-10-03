@@ -1190,6 +1190,10 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       });
     };
 
+    window.closeDiscardSelectionModalReact = () => {
+      setDiscardSelectionData(null);
+    };
+
     return () => {
       // アンマウント時にサービス側のモーダルフックを解除
       setShowConfirmModalHook(null);
@@ -1224,6 +1228,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       delete window.showSkillChoiceModalReact;
       delete window.closeSkillChoiceModalReact;
       delete window.showDiscardSelectionModalReact;
+      delete window.closeDiscardSelectionModalReact;
     };
   }, []);
 

@@ -30,7 +30,9 @@ import {
 } from '../../utils/gameUtils.js';
 import {
   clearActionQueueAndRegenerateSeed,
+  clearActiveBattleSession,
   getIsHost,
+  markQuickMatchEnded,
   resetRoomStatusToWaiting,
 } from '../../services/multiplayer.js';
 import {
@@ -40,6 +42,8 @@ import {
 import { AUDIO_INSTANCES, SOUNDS } from '../../utils/sounds.js';
 import { cleanupVoiceBuffers } from '../../utils/constants/voices.js';
 import { cleanupTutorial, handleTutorialEnd } from '../tutorialEngine.js';
+import { cleanupOnlineTimer } from './onlineTimer.js';
+import { cleanupOnlineDisconnectManager } from './onlineDisconnectManager.js';
 import {
   PLAYER_TALKS,
   STORY_BGM_CHANGE_BATTLE,
@@ -818,12 +822,23 @@ export function endBattle() {
   if (updateBattleUIHook) updateBattleUIHook();
   GameState.isProcessing = false;
 
-  if (GameState.gameMode === 'online') {
-    resetRoomStatusToWaiting().catch((e) =>
-      console.warn('resetRoomStatusToWaiting failed:', e)
-    );
-    if (getIsHost()) {
-      clearActionQueueAndRegenerateSeed();
+  if (GameState.gameMode === 'online' || GameState.gameMode === 'online_quick') {
+    if (
+      GameState.onlineSubMode === 'quick' ||
+      GameState.gameMode === 'online_quick'
+    ) {
+      // クイックマッチの場合: ルームステータスを 'ended' に変更し、会話中の第三者誤マッチングを完全に遮断
+      markQuickMatchEnded().catch((e) =>
+        console.warn('markQuickMatchEnded failed:', e)
+      );
+    } else {
+      // ルームマッチの場合: ロビー再戦に向けてルームステータスを 'waiting' に戻す
+      resetRoomStatusToWaiting().catch((e) =>
+        console.warn('resetRoomStatusToWaiting failed:', e)
+      );
+      if (getIsHost()) {
+        clearActionQueueAndRegenerateSeed();
+      }
     }
   }
 
@@ -867,6 +882,7 @@ export function endBattle() {
     if (
       GameState.lastBattleResult === 'win' &&
       GameState.gameMode !== 'online' &&
+      GameState.gameMode !== 'online_quick' &&
       GameState.gameMode !== 'practice' &&
       GameState.gameMode !== 'tournament'
     ) {
@@ -962,6 +978,9 @@ export function cleanupBattleState() {
   GameState.battleStartPlayerDeckObjects = null;
   GameState.battleStartEnemyDeckObjects = null;
   GameState.aiDecision = null;
+  // 対戦全体に付与されていた戦乙女の加護状態を完全リセット（降参・リタイア後の画面持ち越しを防止）
+  GameState.valkyriaGuardBlue = 0;
+  GameState.valkyriaGuardRed = 0;
 
   // 2. モード系フラグおよび選択リゾルバのクリア
   GameState.isPlacementMode = false;
@@ -1006,6 +1025,11 @@ export function cleanupBattleState() {
     });
   }
   GameState.battleImageCache = null;
+
+  // 7. オンライン対戦タイマーおよび切断監視マネージャーの完全解放、対戦セッション消去
+  cleanupOnlineTimer();
+  cleanupOnlineDisconnectManager();
+  clearActiveBattleSession();
 
   // ※ BGMバッファは sounds.js の LRUキャッシュ（MAX_CACHED_BGMS = 2）によって
   //    自動管理・維持されるため、ここでの明示的パージは行わない（再戦時の再デコード負荷を防止）。

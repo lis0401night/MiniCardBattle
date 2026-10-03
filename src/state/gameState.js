@@ -83,6 +83,8 @@ export const GameState = {
   enemySealedLanes: [0, 0, 0],
   appState: 'title',
   gameMode: 'story',
+  // オンライン通信対戦時のサブ種別 ('room' | 'quick' | null)
+  onlineSubMode: null,
   aiLevel: AI_LEVEL.EASY,
   difficulty: DIFFICULTY.EASY,
   storyDifficulty: DIFFICULTY.EASY,
@@ -140,6 +142,9 @@ export const GameState = {
   selectedStageId: null,
   extraTurnCount: 0,
   attackSkipCount: 0,
+  // アンジェのリーダースキル「戦乙女の加護」の残存ターン数（陣営全体・対戦中のみ有効）
+  valkyriaGuardBlue: 0,
+  valkyriaGuardRed: 0,
   bgmVolume: DEFAULT_SOUND_VOLUME,
   seVolume: DEFAULT_SOUND_VOLUME,
   isBgmMuted: false,

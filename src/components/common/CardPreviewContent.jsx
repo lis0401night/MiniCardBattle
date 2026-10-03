@@ -103,8 +103,18 @@ function CardPreviewContent({
     styleProps.titleColor || rarityColors[card.rarity] || '#fff';
   const filter = GameState.playerConfig?.filter || 'none';
 
+  // 盤面カードかどうかの判定：呼び出し元からの明示指定（styleProps.isBoard）を最優先し、
+  // 未指定時は「対戦画面中（appState === 'battle'）」かつ盤面配置中（onBoard/lane/盤面配列に含まれる）の場合のみ true とする。
+  // ※ 対戦外画面（デッキ確認、デッキ編成、カード一覧等）で owner が付与されたカードが盤面カードと誤認されるのを恒久的に防止する。
+  const isBattle =
+    typeof GameState !== 'undefined' && GameState.appState === 'battle';
   const isBoardCard = Boolean(
-    card.onBoard || card.lane !== undefined || card.owner
+    styleProps.isBoard ??
+    (isBattle &&
+      (card.onBoard ||
+        (card.lane !== undefined && card.lane !== null) ||
+        GameState.playerBoard?.includes(card) ||
+        GameState.enemyBoard?.includes(card)))
   );
   const activeStatuses = getCardActiveStatuses(card, isBoardCard);
   const statusMap = new Map(activeStatuses.map((st) => [st.id, st]));

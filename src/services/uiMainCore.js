@@ -754,6 +754,9 @@ export function goBackFromDeckList() {
   } else if (GameState.gameMode === 'online_deck_edit') {
     // オンライン対戦設定：オンラインロビーへ戻る
     showOnlineLobby();
+  } else if (GameState.gameMode === 'online_quick') {
+    // クイックマッチ：クイックマッチメニューへ戻る
+    showOnlineQuickMatch();
   } else if (GameState.gameMode === 'defense_attack') {
     // 防衛戦（攻撃側）：対戦相手リストへ戻る
     switchScreen('screen-defense-battle-list');
@@ -841,9 +844,10 @@ export function goBackFromStage() {
   if (
     GameState.gameMode === 'defense_register' ||
     GameState.gameMode === 'online_deck_edit' ||
+    GameState.gameMode === 'online_quick' ||
     GameState.gameMode === 'free'
   ) {
-    // 防衛・オンライン・フリー対戦のステージ選択画面からは、直前のデッキ編集画面へと戻る
+    // 防衛・オンライン・クイックマッチ・フリー対戦のステージ選択画面からは、直前のデッキ編集画面へと戻る
     switchScreen('screen-deck-edit');
   } else if (GameState.gameMode === 'practice') {
     navigateToDeckList(APP_STATE_SELECT_ENEMY_DECK);
@@ -864,9 +868,10 @@ export function goBackFromDeckEdit(isCancel = false) {
   playSound(SOUNDS.seClick);
   if (
     GameState.gameMode === 'defense_register' ||
-    GameState.gameMode === 'online_deck_edit'
+    GameState.gameMode === 'online_deck_edit' ||
+    GameState.gameMode === 'online_quick'
   ) {
-    // 防衛登録 / オンラインデッキ編集：デッキ一覧に戻る
+    // 防衛登録 / オンラインデッキ編集 / クイックマッチ：デッキ一覧に戻る
     navigateToDeckList('select_deck');
   } else if (GameState.gameMode === 'defense_attack') {
     // 攻撃側：キャラクター選択に戻る（攻撃開始フローでは対戦相手選択は固定されているため）
@@ -1436,13 +1441,14 @@ export function confirmDeckSelect(index) {
   if (
     GameState.gameMode === 'defense_register' ||
     GameState.gameMode === 'online_deck_edit' ||
+    GameState.gameMode === 'online_quick' ||
     GameState.gameMode === 'free' ||
     GameState.gameMode === 'event_satan' ||
     (GameState.gameMode?.startsWith('event_') &&
       (GameState.gameMode?.endsWith('_high') ||
         GameState.gameMode?.endsWith('_fortune')))
   ) {
-    // 防衛登録 / オンライン対戦設定 / フリー対戦 / 高難易度イベント / 運命の邂逅：
+    // 防衛登録 / オンライン対戦設定 / クイックマッチ / フリー対戦 / 高難易度イベント / 運命の邂逅：
     // デッキ一覧で選んだ通常デッキをベースにデッキ編成画面へ移行
     startBattleFlow();
     setTimeout(() => {
@@ -1781,6 +1787,25 @@ export function confirmStageSelect(stageId) {
     } else {
       switchScreen('screen-online-lobby');
     }
+  } else if (GameState.gameMode === 'online_quick') {
+    // クイックマッチ：ステージ選択完了後、最新設定を保存してマッチング待機画面へ遷移
+    const settings = {
+      leaderId: GameState.playerConfig?.id || 'android',
+      stage: GameState.selectedStageId || 'plain',
+      deckId:
+        GameState.decks && GameState.decks[GameState.currentDeckIndex]
+          ? GameState.decks[GameState.currentDeckIndex].id
+          : null,
+    };
+    try {
+      localStorage.setItem(
+        'mini_card_battle_online_last_settings',
+        JSON.stringify(settings)
+      );
+    } catch (e) {
+      console.warn('オンライン設定の保存に失敗しました:', e);
+    }
+    showOnlineQuickMatching();
   } else if (GameState.gameMode === 'practice') {
     performFadeTransition(() => {
       GameState.battleCount = 1;
@@ -1957,10 +1982,51 @@ export function closeEnemyDeckModal() {
 }
 
 // --- Online Routing ---
+/**
+ * オンライン対戦メニュー画面（クイックマッチ・ルームマッチ選択）を表示し、BGMを再生します。
+ */
 export function showOnlineMenu() {
   playSound(SOUNDS.seClick);
   playSound(AUDIO_INSTANCES.bgmOnline);
   switchScreen('screen-online-menu');
+}
+
+/**
+ * クイックマッチ画面（ルール・ランキング・挑戦選択）を表示し、BGMを再生します。
+ */
+export function showOnlineQuickMatch() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  switchScreen('screen-online-quick-match');
+}
+
+/**
+ * クイックマッチ挑戦フローを開始します。
+ * ゲームモードを online_quick に設定し、デッキ一覧画面へ遷移します。
+ */
+export function startQuickMatchChallenge() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  GameState.gameMode = 'online_quick';
+  navigateToDeckList('select_deck');
+}
+
+/**
+ * クイックマッチ待機画面（「対戦相手を探しています」ロード画面）を表示します。
+ */
+export function showOnlineQuickMatching() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  switchScreen('screen-online-quick-matching');
+}
+
+/**
+ * ルームマッチ画面（ルーム作成・ルーム検索・ルール選択）を表示し、BGMを再生します。
+ */
+export function showOnlineRoomMatch() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  switchScreen('screen-online-room-match');
 }
 export function showOnlineRules() {
   playSound(SOUNDS.seClick);

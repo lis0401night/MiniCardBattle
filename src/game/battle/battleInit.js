@@ -6,8 +6,16 @@ import { generateDeck } from '../../services/deck.js';
 import {
   cachedRoomData,
   getIsHost,
+  getCurrentRoomId,
+  getCurrentBasePath,
+  ROOMS_REF,
+  QUICK_MATCH_REF,
+  listenToRoom,
   listenToRoomActions,
-  multiplayerCallbacks,
+  restoreMultiplayerSession,
+  saveActiveBattleSession,
+  clearActiveBattleSession,
+  saveLastSyncStateToRoom,
 } from '../../services/multiplayer.js';
 import {
   renderBoard,
@@ -18,12 +26,15 @@ import {
   updateHPBar,
   updateSPOrbs,
 } from '../../services/uiBattle.js';
-import { showOnlineLobby } from '../../services/uiMainCore.js';
 import { showAlertModal } from '../../services/uiModals.js';
 import { GameState } from '../../state/gameState.js';
 import { incrementStat } from '../../utils/constants/achievements.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
-import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getSkinImage,
+  getPlayerIconPath,
+} from '../../utils/constants/characters.js';
 import {
   AI_LEVEL,
   AI_THINKING_DURATION,
@@ -51,6 +62,7 @@ import { getPlaymatImgUrl } from '../../utils/constants/playmats.js';
 import { toDeckObjects } from '../../utils/deckUtils.js';
 import {
   checkIsFreeMode,
+  checkIsOnlineMode,
   checkIsStoryMode,
   checkIsTutorialMode,
   decodedBgms,
@@ -80,8 +92,11 @@ import { loadAllVoices } from '../../utils/constants/voices.js';
 import { isTutorialMode, runTutorialFlow } from '../tutorialEngine.js';
 import { drawCard, playCard } from './battleCombat.js';
 import {
+  applySyncState,
   dispatchBattleAction,
+  generateSyncState,
   resetQueueProcessing,
+  sendSyncStateNow,
   setPendingChoiceResolver,
 } from './battleQueue.js';
 import { checkWinCondition } from './battleResult.js';
@@ -89,6 +104,17 @@ import { waitPlayerHandSelection } from './battleSelection.js';
 import { endTurnLogic, startTurn } from './battleTurn.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import { BATTLE_PHASE } from './phases/phaseTypes.js';
+import {
+  cleanupOnlineTimer,
+  startOnlineTimer,
+  stopOnlineTimer,
+} from './onlineTimer.js';
+import {
+  ONLINE_TIMER_MULLIGAN_SEC,
+  ONLINE_TIMER_MAIN_PHASE_SEC,
+  checkIsOnlineTimerEnabled,
+} from '../../utils/constants/onlineTimer.js';
+import { initOnlineDisconnectManager } from './onlineDisconnectManager.js';
 
 /** リーダー固有の最大HP定義。未定義のキャラクターは MAX_HP を使用する */
 const LEADER_MAX_HP_OVERRIDES = {
@@ -266,6 +292,11 @@ export function clearBattleStateData() {
   GameState.pendingChoices = [];
   GameState.isProcessing = false;
   GameState.isBattleEnded = false;
+  // アンジェのリーダースキル「戦乙女の加護」状態を初期化
+  GameState.valkyriaGuardBlue = 0;
+  GameState.valkyriaGuardRed = 0;
+  // オンライン対戦タイマーを完全に停止・解放
+  cleanupOnlineTimer();
 }
 
 /**
@@ -304,7 +335,7 @@ export function prepareBattle() {
 
   // 2. 裏でアセット読み込みと対戦状態の構築を進行させる
   const startLoadingAndBattle = (onLoadComplete) => {
-    const isOnline = GameState.gameMode === 'online';
+    const isOnline = checkIsOnlineMode(GameState.gameMode);
     const sessionId = isOnline
       ? GameState.battleSeed || cachedRoomData?.battleSeed || Date.now()
       : Date.now();
@@ -351,36 +382,15 @@ export function prepareBattle() {
           dispatchBattleAction(action, true);
         });
 
-        // ホスト側：クライアントが切断して status が waiting に戻った（または client が消去された）場合の検知
-        if (isHost) {
-          multiplayerCallbacks.onRoomUpdated = (data) => {
-            if (!data || GameState.isBattleEnded) return;
+        // オンライン対戦切断・復帰監視マネージャー起動（60秒待機オーバーレイと再同期を統括）
+        initOnlineDisconnectManager();
 
-            if (!data.client || data.status === 'waiting') {
-              GameState.isBattleEnded = true;
-              if (typeof window.setSlowMotionReact === 'function') {
-                window.setSlowMotionReact(false);
-              }
-              stopAllBGM();
-
-              if (typeof showAlertModal === 'function') {
-                showAlertModal('接続が切れました。', () => {
-                  if (typeof showOnlineLobby === 'function') {
-                    showOnlineLobby();
-                  } else {
-                    switchScreen('screen-online-lobby');
-                  }
-                });
-              } else {
-                if (typeof showOnlineLobby === 'function') {
-                  showOnlineLobby();
-                } else {
-                  switchScreen('screen-online-lobby');
-                }
-              }
-            }
-          };
-        }
+        // アプリ落ち復帰用に進行中の対戦セッションを保存（basePathを確実に記録）
+        saveActiveBattleSession(
+          getCurrentRoomId(),
+          isHost,
+          getCurrentBasePath()
+        );
       } else {
         GameState.playerDeck = generateDeck(
           'blue',
@@ -1355,7 +1365,7 @@ export async function determineTurnOrder() {
 
   // 先攻後攻の判定
   let isFirst = false;
-  if (GameState.gameMode === 'online') {
+  if (checkIsOnlineMode(GameState.gameMode)) {
     const hostGoesFirst = getSeededRandom() < 0.5;
     const iAmHost = getIsHost();
     isFirst = (hostGoesFirst && iAmHost) || (!hostGoesFirst && !iAmHost);
@@ -1396,7 +1406,7 @@ export async function startMulliganPhase() {
   );
   let enemyPromise;
 
-  if (GameState.gameMode === 'online') {
+  if (checkIsOnlineMode(GameState.gameMode)) {
     enemyPromise = waitPlayerHandSelection(INITIAL_DRAW_COUNT, 'red', false);
   } else {
     enemyPromise = new Promise((resolve) => {
@@ -1411,10 +1421,25 @@ export async function startMulliganPhase() {
     });
   }
 
+  if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+    startOnlineTimer({
+      type: 'mulligan',
+      durationSec: ONLINE_TIMER_MULLIGAN_SEC,
+      owner: 'blue',
+      onTimeout: () => {
+        // マリガン制限時間終了: 現在の選択状態で引き直しを確定
+        if (typeof window.finishHandSelection === 'function') {
+          window.finishHandSelection();
+        }
+      },
+    });
+  }
+
   const [playerMulliganIndices, enemyMulliganIndices] = await Promise.all([
     playerPromise,
     enemyPromise,
   ]);
+  stopOnlineTimer();
 
   const processMulligan = (owner, indices) => {
     if (!indices || indices.length === 0) return;
@@ -1443,7 +1468,8 @@ export async function startMulliganPhase() {
 
   // 乱数消費順の整合はオンライン対戦でのみ必要。
   // オフラインは常に blue → red の固定順で処理し、シードによる再現性を保証する。
-  const processRedFirst = GameState.gameMode === 'online' && !getIsHost();
+  const processRedFirst =
+    checkIsOnlineMode(GameState.gameMode) && !getIsHost();
 
   if (!processRedFirst) {
     if (playerMulliganIndices && playerMulliganIndices.length > 0) {
@@ -1468,4 +1494,278 @@ export async function startMulliganPhase() {
   await sleep(AI_THINKING_DURATION); // マリガン終了後に少し間をあける
 
   await startTurn(GameState.firstPlayer);
+
+  // オンライン対戦かつホスト側の場合、初手配布・先攻後攻決定・第1ターン開始直後の完全な初期ステートを即時同期保存
+  if (checkIsOnlineMode(GameState.gameMode) && getIsHost()) {
+    try {
+      const initialSyncState = generateSyncState();
+      await saveLastSyncStateToRoom(initialSyncState);
+    } catch (syncErr) {
+      console.warn('初期盤面状態のルーム保存に失敗しました:', syncErr);
+    }
+  }
+}
+
+/**
+ * アプリ落ち（クラッシュ・タスクキル・リロード）したプレイヤーが進行中のオンライン対戦へ直接復帰する。
+ * 最新のルームデータおよび lastSyncState から盤面・手札・SP・山札などを完全復元し、対戦を再開する。
+ * lastSyncState が未保存（対戦開始直後）の場合は、battleSeed から決定論的に初期盤面を再構築する。
+ *
+ * @param {Object} session - { roomId, isHost, savedAt, basePath }
+ * @param {Object} roomData - Firebaseから取得した最新のルームデータ
+ * @returns {Promise<boolean>} 復帰成功ならtrue
+ */
+export async function executeRejoinBattle(session, roomData) {
+  if (!session || !roomData) return false;
+
+  // H-4対応: セッション保存から10分以上経過している場合は古いセッションとみなし復帰しない
+  const SESSION_MAX_AGE_MS = 10 * 60 * 1000;
+  if (session.savedAt && Date.now() - session.savedAt > SESSION_MAX_AGE_MS) {
+    clearActiveBattleSession();
+    return false;
+  }
+
+  try {
+    const isMeHost = session.isHost;
+    const targetBasePath = session.basePath || ROOMS_REF;
+    restoreMultiplayerSession(
+      session.roomId,
+      roomData.roomCode || null,
+      isMeHost,
+      targetBasePath
+    );
+
+    // 1. GameState の基本モード設定
+    GameState.gameMode = 'online';
+    GameState.onlineSubMode =
+      targetBasePath === QUICK_MATCH_REF ? 'quick' : 'room';
+    GameState.appState = 'battle';
+    GameState.isBattleEnded = false;
+    GameState.isInitializing = false;
+    GameState.isProcessing = false;
+
+    // 2. キャラクター設定・スキン・アイコン・ステージ・プレイマットの完全復元
+    const myData = isMeHost ? roomData.host : roomData.client;
+    const opData = isMeHost ? roomData.client : roomData.host;
+
+    // leaderConfig ラッパー構造（myData.leaderConfig.leaderConfig）または直下構造を安全に展開
+    const myLeaderObj =
+      myData?.leaderConfig?.leaderConfig || myData?.leaderConfig || {};
+    const opLeaderObj =
+      opData?.leaderConfig?.leaderConfig || opData?.leaderConfig || {};
+
+    const myCharId = myLeaderObj.id || 'android';
+    const opCharId = opLeaderObj.id || 'dragon';
+
+    GameState.playerConfig = {
+      ...(CHARACTERS[myCharId] || CHARACTERS.android),
+      ...myLeaderObj,
+      deck: toDeckObjects(myData?.leaderConfig?.deck || myLeaderObj.deck),
+    };
+    GameState.enemyConfig = {
+      ...(CHARACTERS[opCharId] || CHARACTERS.dragon),
+      ...opLeaderObj,
+      deck: toDeckObjects(opData?.leaderConfig?.deck || opLeaderObj.deck),
+    };
+
+    const mySkin = myData?.leaderConfig?.skin || 'default';
+    const opSkin = opData?.leaderConfig?.skin || 'default';
+    GameState.playerSkins = { [myCharId]: mySkin };
+    GameState.enemySkins = { [opCharId]: opSkin };
+
+    const myPlaymat = myData?.leaderConfig?.playmat || null;
+    const opPlaymat = opData?.leaderConfig?.playmat || null;
+    GameState.playerConfig.playmat = myPlaymat;
+    GameState.enemyConfig.playmat = opPlaymat;
+    GameState.selectedPlaymatId = myPlaymat;
+
+    // スキン・アイコン画像の設定
+    GameState.playerConfig.image = getSkinImage(
+      GameState.playerConfig,
+      mySkin,
+      'image'
+    );
+    GameState.playerConfig.imageLose = getSkinImage(
+      GameState.playerConfig,
+      mySkin,
+      'imageLose'
+    );
+    GameState.playerConfig.icon = myData?.leaderConfig?.icon
+      ? getPlayerIconPath({ icon: myData.leaderConfig.icon })
+      : getSkinImage(GameState.playerConfig, mySkin, 'icon');
+    GameState.playerConfig.iconDamage = myData?.leaderConfig?.icon
+      ? getPlayerIconPath({ icon: myData.leaderConfig.icon })
+      : getSkinImage(GameState.playerConfig, mySkin, 'iconDamage') ||
+        GameState.playerConfig.icon;
+
+    GameState.enemyConfig.image = getSkinImage(
+      GameState.enemyConfig,
+      opSkin,
+      'image'
+    );
+    GameState.enemyConfig.imageLose = getSkinImage(
+      GameState.enemyConfig,
+      opSkin,
+      'imageLose'
+    );
+    GameState.enemyConfig.icon = opData?.leaderConfig?.icon
+      ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
+      : getSkinImage(GameState.enemyConfig, opSkin, 'icon');
+    GameState.enemyConfig.iconDamage = opData?.leaderConfig?.icon
+      ? getPlayerIconPath({ icon: opData.leaderConfig.icon })
+      : getSkinImage(GameState.enemyConfig, opSkin, 'iconDamage') ||
+        GameState.enemyConfig.icon;
+
+    // ステージの復元（battleSeed の偶奇判定から完全再現）
+    const bSeed = roomData.battleSeed || session.savedAt || 0;
+    const hostStage = roomData.host?.leaderConfig?.stage || 'plain';
+    const clientStage = roomData.client?.leaderConfig?.stage || 'plain';
+    GameState.selectedStageId =
+      Number(bSeed) % 2 === 0 ? hostStage : clientStage;
+
+    // 3. 最新の盤面状態（lastSyncState）を適用（ホストなら反転なし、クライアントなら反転）
+    if (roomData.lastSyncState) {
+      applySyncState(roomData.lastSyncState, !isMeHost);
+    } else {
+      // 対戦開始直後等で lastSyncState が未保存の場合のフォールバック初期化
+      const sessionId = Number(bSeed) || Date.now();
+      setRNGSeed(sessionId);
+
+      const hostDeck = generateDeck(
+        'host',
+        isMeHost ? GameState.playerConfig : GameState.enemyConfig,
+        sessionId
+      );
+      const clientDeck = generateDeck(
+        'client',
+        isMeHost ? GameState.enemyConfig : GameState.playerConfig,
+        sessionId
+      );
+
+      hostDeck.forEach((c) => {
+        c.owner = isMeHost ? 'blue' : 'red';
+      });
+      clientDeck.forEach((c) => {
+        c.owner = isMeHost ? 'red' : 'blue';
+      });
+
+      GameState.playerDeck = isMeHost ? hostDeck : clientDeck;
+      GameState.enemyDeck = isMeHost ? clientDeck : hostDeck;
+      GameState.playerHand = [];
+      GameState.enemyHand = [];
+      for (let i = 0; i < INITIAL_DRAW_COUNT; i++) {
+        drawCard('blue');
+        drawCard('red');
+      }
+
+      const hostGoesFirst = getSeededRandom() < 0.5;
+      const isFirst =
+        (hostGoesFirst && isMeHost) || (!hostGoesFirst && !isMeHost);
+      GameState.firstPlayer = isFirst ? 'blue' : 'red';
+      GameState.currentTurn = isFirst ? 'player' : 'enemy';
+      GameState.turnCount = 1;
+
+      GameState.playerHP = GameState.playerConfig?.hp || 30;
+      GameState.enemyHP = GameState.enemyConfig?.hp || 30;
+      GameState.playerMaxHP = GameState.playerHP;
+      GameState.enemyMaxHP = GameState.enemyHP;
+      GameState.playerSP = 0;
+      GameState.enemySP = 0;
+      GameState.playerBoard = [null, null, null];
+      GameState.enemyBoard = [null, null, null];
+      GameState.playerDiscard = [];
+      GameState.enemyDiscard = [];
+      GameState.playerSealedLanes = [0, 0, 0];
+      GameState.enemySealedLanes = [0, 0, 0];
+      GameState.extraTurnCount = 0;
+      GameState.attackSkipCount = 0;
+      GameState.valkyriaGuardBlue = 0;
+      GameState.valkyriaGuardRed = 0;
+    }
+
+    // 4. バトルフェーズとターン状態を復元
+    // 復帰後はメインアクションフェーズとして扱い、自分のターンならカードプレイを有効化
+    GameState.battlePhase = BATTLE_PHASE.MAIN_ACTION;
+    GameState.canPlayCard = GameState.currentTurn === 'player';
+
+    // 5. ルーム変更監視を再開（相手の切断検知に必要）
+    listenToRoom(session.roomId);
+
+    // 復帰時に既に存在する過去アクションのキー一覧を収集（onChildAdded による過去ログ再実行を遮断）
+    const existingActionKeys = new Set(Object.keys(roomData.actions || {}));
+
+    // 6. アクション受信リスナー起動（過去アクションを除外し、復帰以降の新規アクションのみ受信）
+    listenToRoomActions((snapshotVal) => {
+      const { action, actor } = snapshotVal;
+      const isMe = actor === (getIsHost() ? 'host' : 'client');
+      action.owner = isMe ? 'blue' : 'red';
+      dispatchBattleAction(action, true);
+    }, existingActionKeys);
+
+    // 7. 切断監視マネージャー起動（対戦用切断ポリシー適用 & 相手のオンライン状態監視）
+    initOnlineDisconnectManager();
+
+    // 8. 画面をバトル画面へ切り替え
+    switchScreen('screen-battle');
+
+    // 9. UIを最新盤面に合わせて強制描画
+    updateHPBar('blue', GameState.playerHP);
+    updateHPBar('red', GameState.enemyHP);
+    updateSPOrbs('blue');
+    updateSPOrbs('red');
+    renderBoard();
+    renderHand();
+    if (updateBattleUIHook) updateBattleUIHook();
+
+    // 10. BGM再生
+    const { bgmKey } = resolveStageAndBgm();
+    if (AUDIO_INSTANCES[bgmKey]) {
+      playSound(AUDIO_INSTANCES[bgmKey]);
+    } else {
+      playSound(AUDIO_INSTANCES.bgmBattle);
+    }
+
+    // 11. ホスト復帰時は即座に最新ステートをクライアントにも送信
+    if (isMeHost) {
+      await sendSyncStateNow();
+    }
+
+    // 12. メインフェイズタイマーを再開（復帰時のターン所有者に応じたタイマーを起動）
+    if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+      if (GameState.currentTurn === 'player') {
+        startOnlineTimer({
+          type: 'main',
+          durationSec: ONLINE_TIMER_MAIN_PHASE_SEC,
+          owner: 'blue',
+          onTimeout: () => {
+            // メインフェイズ制限時間終了: 未操作のまま強制ターン終了アクションを送信
+            GameState.selectedCardIndex = null;
+            GameState.selectedBoardLaneIndex = null;
+            GameState.selectedBoardSide = null;
+            updateCardDetail(null);
+            renderHand();
+            renderBoard();
+            if (updateBattleUIHook) updateBattleUIHook();
+            dispatchBattleAction({ type: 'endTurn', owner: 'blue' });
+          },
+        });
+      } else {
+        startOnlineTimer({
+          type: 'main',
+          durationSec: ONLINE_TIMER_MAIN_PHASE_SEC,
+          owner: 'red',
+          onFailsafeTimeout: () => {
+            // 相手が制限時間＋通信猶予を超過しても無応答の場合、フェイルセーフで相手ターンを強制終了
+            dispatchBattleAction({ type: 'endTurn', owner: 'red' }, true);
+          },
+        });
+      }
+    }
+
+    return true;
+  } catch (err) {
+    console.error('executeRejoinBattle failed:', err);
+    clearActiveBattleSession();
+    return false;
+  }
 }

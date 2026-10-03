@@ -412,7 +412,7 @@ export const CARD_MASTER = [
     obtain: ['cthulhu_easy', 'cthulhu_normal'],
     name: '発光するクラゲ',
     rarity: 1,
-    power: 3,
+    power: 4,
     skills: [{ id: 'bless', value: 1 }],
     voiceCategory: 'monster',
     flavor: '深き暗闇の中で妖しく輝き、触れる者に不思議な活力を与える。',
@@ -1177,7 +1177,7 @@ export const CARD_MASTER = [
     obtain: ['cthulhu_easy', 'cthulhu_normal', 'cthulhu_hard'],
     name: 'ブルー・ドラゴン',
     rarity: 2,
-    power: 1,
+    power: 2,
     skills: [{ id: 'bless', value: 2 }],
     voiceCategory: 'sea',
     flavor:
@@ -1562,7 +1562,7 @@ export const CARD_MASTER = [
     obtain: ['oni_easy'],
     name: '餓者髑髏',
     rarity: 2,
-    power: 9,
+    power: 10,
     skills: [{ id: 'awake', value: 1, summonId: 'token_soul' }],
     voiceCategory: 'undead',
     flavor:
@@ -2220,7 +2220,7 @@ export const CARD_MASTER = [
     obtain: ['pack_1'],
     name: 'クロコダイル',
     rarity: 2,
-    power: 6,
+    power: 5,
     skills: [{ id: 'trigger' }, { id: 'takeover' }],
     voiceCategory: 'monster',
     flavor:
@@ -3101,7 +3101,7 @@ export const CARD_MASTER = [
     obtain: ['exchange_fortune'],
     name: '”巨人殺し”',
     rarity: 3,
-    power: 6,
+    power: 5,
     skills: [
       { id: 'equip' },
       { id: 'legendary' },
@@ -3951,7 +3951,7 @@ export const CARD_MASTER = [
     obtain: ['oni_high'],
     name: '天眼の陰陽師',
     rarity: 4,
-    power: 6,
+    power: 5,
     skills: [{ id: 'legendary' }, { id: 'choice', value: 1 }],
     choices: [
       { id: 'seal', value: 1 },

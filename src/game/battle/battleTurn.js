@@ -19,6 +19,7 @@ import {
   MAX_HAND_SIZE_END_TURN,
 } from '../../utils/constants/config.js';
 import {
+  checkIsOnlineMode,
   consumeStartupSkill,
   createDamagePopup,
   decayCardStatus,
@@ -53,6 +54,11 @@ import { dispatchBattleAction, getIsQueueProcessing } from './battleQueue.js';
 import { BATTLE_PHASE, TURN_SUB_PHASE } from './phases/phaseTypes.js';
 import { runPhases } from './phases/PhaseRunner.js';
 import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
+import { startOnlineTimer } from './onlineTimer.js';
+import {
+  ONLINE_TIMER_MAIN_PHASE_SEC,
+  checkIsOnlineTimerEnabled,
+} from '../../utils/constants/onlineTimer.js';
 
 /**
  * 移動先レーンに既存カードがある場合の解決処理を行う。
@@ -212,7 +218,7 @@ export async function handleMoveSkills(owner) {
   const b = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
   const movedIds = new Set();
 
-  if (owner !== 'blue' && GameState.gameMode !== 'online') {
+  if (owner !== 'blue' && !checkIsOnlineMode(GameState.gameMode)) {
     // AIの移動判断
     const bestMoves = evaluateAIMoves(GameState);
     if (bestMoves) {
@@ -420,10 +426,42 @@ function transitionAfterTurnStart(owner) {
       GameState.isProcessing = false;
     }
     GameState.battlePhase = BATTLE_PHASE.MAIN_ACTION;
+
+    // 自分のメインフェイズタイマー（60秒）を開始（オンライン・プラクティス時）
+    if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+      startOnlineTimer({
+        type: 'main',
+        durationSec: ONLINE_TIMER_MAIN_PHASE_SEC,
+        owner: 'blue',
+        onTimeout: () => {
+          // メインフェイズ制限時間終了: 未操作のまま強制ターン終了アクションを送信
+          GameState.selectedCardIndex = null;
+          GameState.selectedBoardLaneIndex = null;
+          GameState.selectedBoardSide = null;
+          updateCardDetail(null);
+          renderHand();
+          renderBoard();
+          if (updateBattleUIHook) updateBattleUIHook();
+          dispatchBattleAction({ type: 'endTurn', owner: 'blue' });
+        },
+      });
+    }
   } else {
     renderBoard(); // 重要: 敵ターン開始前の状態（戦闘結果等）を画面に反映
     if (!getIsQueueProcessing()) {
       GameState.isProcessing = false;
+    }
+    // オンライン対戦時：相手のメインフェイズタイマー（60秒）を開始
+    if (checkIsOnlineMode(GameState.gameMode)) {
+      startOnlineTimer({
+        type: 'main',
+        durationSec: ONLINE_TIMER_MAIN_PHASE_SEC,
+        owner: 'red',
+        onFailsafeTimeout: () => {
+          // 相手が制限時間＋通信猶予を超過しても無応答の場合、フェイルセーフで相手ターンを強制終了
+          dispatchBattleAction({ type: 'endTurn', owner: 'red' }, true);
+        },
+      });
     }
     dispatchBattleAction({ type: 'enemyTurn' });
   }
@@ -540,6 +578,7 @@ export async function endPlayerTurn() {
     );
   });
   if (!confirmed) return;
+  // ※タイマー停止は dispatchBattleAction({ type: 'endTurn' }) 内で stopOnlineTimer(true) が実行されるため、ここでの明示的停止は不要
   GameState.selectedCardIndex = null;
   GameState.selectedBoardLaneIndex = null;
   GameState.selectedBoardSide = null;

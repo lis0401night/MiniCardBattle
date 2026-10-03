@@ -7,6 +7,12 @@ import { appendVersionQuery } from '../utils/constants/config.js';
 import { getCardImgUrl } from '../utils/gameUtils.js';
 import { preloadAllGameResources } from '../utils/resourceLoader.js';
 import { unlockAudio } from '../utils/sounds.js';
+import {
+  checkCanRejoinActiveBattle,
+  clearActiveBattleSession,
+} from '../services/multiplayer.js';
+import { executeRejoinBattle } from '../game/battle/index.js';
+import { showConfirmModal } from '../services/uiModals.js';
 
 const CARD_ROTATION_INTERVAL_MS = 20000; // カード切り替え間隔（ミリ秒）
 
@@ -95,35 +101,51 @@ export default function TitleScreen() {
     };
   }, []);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (isLoading || isStarting) return;
     setIsStarting(true);
 
+    const proceedToModeSelect = () => {
+      if (typeof goToModeSelect === 'function') {
+        goToModeSelect();
+      }
+    };
+
     try {
       if (typeof unlockAudio === 'function') {
-        unlockAudio()
-          .then(() => {
-            if (typeof goToModeSelect === 'function') {
-              goToModeSelect();
-            }
-          })
-          .catch((e) => {
-            console.warn(
-              '[Title] unlockAudio failed, fallback to transition:',
-              e
-            );
-            if (typeof goToModeSelect === 'function') {
-              goToModeSelect();
-            }
-          });
-      } else {
-        if (typeof goToModeSelect === 'function') {
-          goToModeSelect();
-        }
+        await unlockAudio().catch((e) =>
+          console.warn('[Title] unlockAudio failed, fallback to transition:', e)
+        );
       }
+
+      // アプリ落ち（クラッシュ・タスクキル等）からの復帰チェック
+      const rejoinInfo = await checkCanRejoinActiveBattle();
+      if (rejoinInfo) {
+        showConfirmModal(
+          '進行中のオンライン対戦が見つかりました。\n対戦に復帰しますか？',
+          async () => {
+            const success = await executeRejoinBattle(
+              rejoinInfo.session,
+              rejoinInfo.roomData
+            );
+            if (!success) {
+              proceedToModeSelect();
+            }
+          },
+          () => {
+            clearActiveBattleSession();
+            proceedToModeSelect();
+          }
+        );
+        setIsStarting(false);
+        return;
+      }
+
+      proceedToModeSelect();
     } catch (e) {
       console.error('Failed to start:', e);
       setIsStarting(false);
+      proceedToModeSelect();
     }
   };
 

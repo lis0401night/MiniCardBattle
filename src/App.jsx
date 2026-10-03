@@ -64,6 +64,9 @@ import EndingScreen from './pages/EndingScreen.jsx';
 import GlossaryScreen from './pages/GlossaryScreen.jsx';
 import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
 import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
+import OnlineQuickMatchScreen from './pages/OnlineQuickMatchScreen.jsx';
+import OnlineQuickMatchingScreen from './pages/OnlineQuickMatchingScreen.jsx';
+import OnlineRoomMatchScreen from './pages/OnlineRoomMatchScreen.jsx';
 import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
 import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
 import StageSelectScreen from './pages/StageSelectScreen.jsx';
@@ -193,6 +196,9 @@ const SCREEN_COMPONENTS = {
   'screen-battle': BattleScreen,
   'screen-battle-dungeon': BattleDungeonScreen,
   'screen-online-menu': OnlineMenuScreen,
+  'screen-online-quick-match': OnlineQuickMatchScreen,
+  'screen-online-quick-matching': OnlineQuickMatchingScreen,
+  'screen-online-room-match': OnlineRoomMatchScreen,
   'screen-online-rules': OnlineRulesScreen,
   'screen-online-search': OnlineRoomSearchScreen,
   'screen-online-lobby': OnlineLobbyScreen,

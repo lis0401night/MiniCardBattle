@@ -1569,17 +1569,24 @@ export function getCardActiveStatuses(
   const renderedStatuses = new Set();
 
   // 戦乙女の加護（盤面全体の加護効果発動時、カード自身が持っていなくても付与表示）
-  const isGuardActive =
+  // ※ カード自身が付与された加護（card.valkyriaGuard / valkyriaGuardTurns）を持つ場合は常に有効。
+  // ※ 盤面全体への加護効果（valkyriaGuardBlue / Red）は「盤面配置中（isBoard）」かつ
+  //    「対戦画面中（GameState.appState === 'battle'）」の場合にのみ適用し、
+  //    対戦外画面（デッキ確認、デッキ編成、カード一覧等）への波及を完全に防止する。
+  const isBattle =
+    typeof GameState !== 'undefined' && GameState.appState === 'battle';
+  const isSelfGuard =
+    Boolean(card?.valkyriaGuard) || (card?.valkyriaGuardTurns || 0) > 0;
+  const isBoardGuardActive =
     isBoard &&
-    (Boolean(card?.valkyriaGuard) ||
-      (card?.valkyriaGuardTurns || 0) > 0 ||
-      (valkyriaGuardActive !== null
-        ? valkyriaGuardActive
-        : card.owner && typeof GameState !== 'undefined'
-          ? card.owner === 'blue'
-            ? (GameState.valkyriaGuardBlue || 0) > 0
-            : (GameState.valkyriaGuardRed || 0) > 0
-          : false));
+    (valkyriaGuardActive !== null
+      ? valkyriaGuardActive
+      : isBattle && card.owner
+        ? card.owner === 'blue'
+          ? (GameState.valkyriaGuardBlue || 0) > 0
+          : (GameState.valkyriaGuardRed || 0) > 0
+        : false);
+  const isGuardActive = isSelfGuard || isBoardGuardActive;
 
   // 1. スキル枠（card.skills）のスロット順（付与順）から状態エントリを抽出
   if (Array.isArray(card.skills)) {
@@ -2331,7 +2338,11 @@ export function checkIsTournamentMode(
 export function checkIsOnlineMode(
   gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
 ) {
-  return gameMode === 'online' || gameMode === 'online_deck_edit';
+  return (
+    gameMode === 'online' ||
+    gameMode === 'online_quick' ||
+    gameMode === 'online_deck_edit'
+  );
 }
 
 /**

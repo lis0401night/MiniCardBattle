@@ -21,6 +21,21 @@ import { showAlertModal } from './uiModals.js';
 import { PROFILE_ICON_KEY } from '../utils/constants/config.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
 
+// ルームマッチ・クイックマッチのFirebaseルートノード定数
+export const ROOMS_REF = 'rooms';
+export const QUICK_MATCH_REF = 'quickMatch';
+
+// 現在のセッションのベースパス（'rooms' または 'quickMatch'）
+export let currentBasePath = ROOMS_REF;
+
+/**
+ * 現在の対戦セッションのベースパスを取得する
+ * @returns {string} 'rooms' または 'quickMatch'
+ */
+export function getCurrentBasePath() {
+  return currentBasePath;
+}
+
 // 現在参加しているルームのIDおよびルームコード
 export let currentRoomId = null;
 export let currentRoomCode = null;
@@ -56,12 +71,203 @@ export function getIsHost() {
   return isHost;
 }
 
+/**
+ * 復帰（リジョイン）用に内部ルーム状態を復元する
+ * @param {string} roomId - ルームIDまたはマッチID
+ * @param {string|null} roomCode - ルームコード
+ * @param {boolean} hostFlag - ホストフラグ
+ * @param {string} [basePath=ROOMS_REF] - ベースパス（rooms または quickMatch）
+ */
+export function restoreMultiplayerSession(roomId, roomCode, hostFlag, basePath = ROOMS_REF) {
+  currentRoomId = roomId;
+  currentRoomCode = roomCode;
+  isHost = hostFlag;
+  currentBasePath = basePath || ROOMS_REF;
+  isInBattleMode = true;
+}
+
+/** 対戦中セッションのLocalStorageキー */
+export const ONLINE_ACTIVE_SESSION_KEY =
+  'mini_card_battle_active_online_session';
+
+/**
+ * 進行中の対戦セッション情報をLocalStorageに保存する
+ * @param {string} roomId - ルームID
+ * @param {boolean} hostFlag - 自身がホストかどうか
+ * @param {string} [basePath=currentBasePath] - ベースパス
+ */
+export function saveActiveBattleSession(roomId, hostFlag, basePath = currentBasePath) {
+  if (!roomId) return;
+  try {
+    localStorage.setItem(
+      ONLINE_ACTIVE_SESSION_KEY,
+      JSON.stringify({
+        roomId,
+        isHost: hostFlag,
+        basePath: basePath || currentBasePath,
+        savedAt: Date.now(),
+      })
+    );
+  } catch (e) {
+    console.warn('saveActiveBattleSession failed:', e);
+  }
+}
+
+/**
+ * 進行中の対戦セッション情報をクリアする
+ */
+export function clearActiveBattleSession() {
+  try {
+    localStorage.removeItem(ONLINE_ACTIVE_SESSION_KEY);
+  } catch (e) {
+    console.warn('clearActiveBattleSession failed:', e);
+  }
+}
+
+/**
+ * 保存された対戦セッション情報を取得する
+ * @returns {{ roomId: string, isHost: boolean, savedAt: number }|null}
+ */
+export function getActiveBattleSession() {
+  try {
+    const raw = localStorage.getItem(ONLINE_ACTIVE_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * アプリ起動時に、復帰可能な進行中の対戦ルームが存在するかどうかを確認する。
+ * @returns {Promise<{ session: Object, roomData: Object }|null>} 復帰可能な場合はセッションとルーム情報、それ以外はnull
+ */
+export async function checkCanRejoinActiveBattle() {
+  const session = getActiveBattleSession();
+  if (!session || !session.roomId || !database) return null;
+
+  try {
+    const basePath = session.basePath || ROOMS_REF;
+    const roomRef = ref(database, `${basePath}/${session.roomId}`);
+    const snapshot = await get(roomRef);
+    if (!snapshot.exists()) {
+      clearActiveBattleSession();
+      return null;
+    }
+
+    const roomData = snapshot.val();
+    // 対戦中（status === 'battle'）かつ双方が揃っていることを確認
+    if (roomData.status !== 'battle' || !roomData.host || !roomData.client) {
+      clearActiveBattleSession();
+      return null;
+    }
+
+    // プレイヤーの切断放置時間をチェック
+    const opponent = session.isHost ? roomData.client : roomData.host;
+    const me = session.isHost ? roomData.host : roomData.client;
+    const now = getServerNow();
+
+    // 相手がオフラインで切断から65秒（待機60秒＋猶予）以上経過している場合は既に不戦勝決着済みとみなす
+    if (opponent && opponent.isOnline === false && opponent.disconnectedAt) {
+      if (now - opponent.disconnectedAt > 65000) {
+        clearActiveBattleSession();
+        return null;
+      }
+    }
+
+    // 自身がオフラインで切断から65秒以上経過している場合、相手側でタイムアウト（自身の不戦敗）決着済みとみなす
+    if (me && me.isOnline === false && me.disconnectedAt) {
+      if (now - me.disconnectedAt > 65000) {
+        clearActiveBattleSession();
+        return null;
+      }
+    }
+
+    return {
+      session,
+      roomData,
+    };
+  } catch (e) {
+    console.error('checkCanRejoinActiveBattle error:', e);
+    return null;
+  }
+}
+
 /** Firebaseサーバーとローカル時刻の差分（ミリ秒）。.info/serverTimeOffset で同期する */
 let serverTimeOffsetMs = 0;
 if (database) {
   onValue(ref(database, '.info/serverTimeOffset'), (snap) => {
     serverTimeOffsetMs = snap.val() || 0;
   });
+}
+
+/** 自身のFirebaseサーバー接続状態 */
+let isFirebaseConnected = true;
+const connectionListeners = new Set();
+
+/** 対戦中フラグ（切断ハンドラーの再接続復元制御用） */
+let isInBattleMode = false;
+
+if (database) {
+  onValue(ref(database, '.info/connected'), (snap) => {
+    isFirebaseConnected = !!snap.val();
+    connectionListeners.forEach((cb) => {
+      try {
+        cb(isFirebaseConnected);
+      } catch (err) {
+        console.error('Firebase connection listener error:', err);
+      }
+    });
+
+    // 対戦中に再接続された場合、自動的に自身の isOnline を true に復旧し、切断予約を再登録する
+    if (isFirebaseConnected && isInBattleMode && currentRoomId) {
+      handleReconnectInBattle();
+    }
+  });
+}
+
+/**
+ * 現在のFirebase接続状態を取得する
+ * @returns {boolean} 接続中ならtrue
+ */
+export function getIsFirebaseConnected() {
+  return isFirebaseConnected;
+}
+
+/**
+ * Firebase接続状態の変更を監視する
+ * @param {(connected: boolean) => void} callback
+ * @returns {() => void} 購読解除関数
+ */
+export function subscribeFirebaseConnection(callback) {
+  connectionListeners.add(callback);
+  callback(isFirebaseConnected);
+  return () => {
+    connectionListeners.delete(callback);
+  };
+}
+
+/**
+ * 対戦中の再接続復帰処理。
+ * 切断によって消費された onDisconnect を再登録し、自身の isOnline を true に更新する。
+ */
+async function handleReconnectInBattle() {
+  if (!database || !currentRoomId || !isInBattleMode) return;
+  const role = isHost ? 'host' : 'client';
+  const myRef = ref(
+    database,
+    `${currentBasePath}/${currentRoomId}/${role}`
+  );
+  try {
+    // 自身のオンライン状態を true に戻し、切断時刻をクリア
+    await update(myRef, { isOnline: true, disconnectedAt: null });
+    // 切断時の false 更新＋切断時刻記録を再予約（Firebaseは一度切断すると以前の onDisconnect が消費されるため）
+    await onDisconnect(myRef).update({
+      isOnline: false,
+      disconnectedAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.warn('handleReconnectInBattle failed:', e);
+  }
 }
 
 /**
@@ -75,53 +281,181 @@ export function getServerNow() {
 /** ホスト生存信号（ハートビート）の有効期限（45秒） */
 export const ROOM_HEARTBEAT_TIMEOUT_MS = 45000;
 
+/** アクティブなセッションハートビートのタイマーID */
+let sessionHeartbeatTimerId = null;
+
 /**
- * ホストが現在ロビー画面でアプリを開いて待機中であることを示す生存信号（ハートビート）を更新する。
- * ルームが削除済みの場合は書き込まず、ゴミノードの再生成を防ぐ。
- * @param {string} roomId - 対象のルームID
+ * 待機中セッションの定期生存信号（ハートビート）送信を開始する。
+ * 5秒ごとにホスト生存信号を自動送信し、二重起動は自動防止される。
+ * @param {string} roomId - 対象のルームIDまたはマッチID
+ * @param {string} [basePath=currentBasePath] - ベースパス（rooms または quickMatch）
+ */
+export function startSessionHeartbeat(roomId, basePath = currentBasePath) {
+  stopSessionHeartbeat();
+  if (!roomId || !database) return;
+
+  // 初回即時送信
+  updateRoomHeartbeat(roomId, basePath);
+
+  sessionHeartbeatTimerId = setInterval(() => {
+    updateRoomHeartbeat(roomId, basePath);
+  }, 5000);
+}
+
+/**
+ * 待機中セッションの定期生存信号（ハートビート）送信を停止する
+ */
+export function stopSessionHeartbeat() {
+  if (sessionHeartbeatTimerId) {
+    clearInterval(sessionHeartbeatTimerId);
+    sessionHeartbeatTimerId = null;
+  }
+}
+
+/**
+ * ホストが現在アプリを開いて待機中であることを示す生存信号（ハートビート）を更新する。
+ * @param {string} roomId - 対象のルームIDまたはマッチID
+ * @param {string} [basePath=currentBasePath] - ベースパス
  * @returns {Promise<boolean>} 更新が成功したかどうか
  */
-export async function updateRoomHeartbeat(roomId) {
+export async function updateRoomHeartbeat(roomId, basePath = currentBasePath) {
   if (!roomId || !database) return false;
+  // 既にローカルで退室・キャンセル済みの場合は送信を抑止
+  if (currentRoomId && currentRoomId !== roomId) return false;
   try {
-    const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
-    // ルームが削除済みの場合は書き込まず、ゴミノードの再生成を防ぐ
-    const result = await runTransaction(roomRef, (room) => {
-      if (!room || !room.host) return undefined;
-      return {
-        ...room,
-        host: {
-          ...room.host,
-          lastActiveAt: serverTimestamp(),
-        },
-      };
+    const hostRef = ref(database, `${basePath}/${roomId}/host`);
+    await update(hostRef, {
+      lastActiveAt: serverTimestamp(),
     });
-    return result.committed;
+    return true;
   } catch (e) {
-    console.warn('updateRoomHeartbeat failed:', e);
+    console.warn(`updateRoomHeartbeat failed for ${basePath}/${roomId}:`, e);
     return false;
   }
 }
 
 /**
- * ルームのホストが生存中（直近にハートビートを送信しているか、または作成直後であるか）を判定する。
- * @param {Object} room - ルームデータ
- * @param {number} [now] - サーバー基準の現在のタイムスタンプ
+ * ルーム・セッションのホストが生存中（直近にハートビートを送信しているか、または作成直後であるか）を判定する。
+ * @param {Object} room - ルームまたはマッチデータ
+ * @param {number} [now=getServerNow()] - サーバー基準の現在のタイムスタンプ
  * @returns {boolean} ホストが生存中であればtrue
  */
 export function isHostAlive(room, now = getServerNow()) {
   if (!room || !room.host) return false;
-  const lastSeen = room.host.lastActiveAt || room.createdAt || 0;
-  if (!lastSeen) return true;
-  return now - lastSeen <= ROOM_HEARTBEAT_TIMEOUT_MS;
+  const rawLastSeen = room.host.lastActiveAt ?? room.createdAt;
+  // 作成直後などでタイムスタンプ未設定またはセンチネルオブジェクトの場合は安全のため生存と判定
+  if (!rawLastSeen) return true;
+  const lastSeen = Number(rawLastSeen);
+  if (isNaN(lastSeen)) return true;
+  const diff = now - lastSeen;
+  if (isNaN(diff)) return true;
+  // 端末とサーバーの時刻差で未来時刻になっている場合は生存中
+  if (diff < 0) return true;
+  return diff <= ROOM_HEARTBEAT_TIMEOUT_MS;
+}
+
+/**
+ * セッション本体（および必要に応じて6桁コードインデックス）を安全に削除する共通処理
+ * @param {string} roomId - 削除対象のルームIDまたはマッチID
+ * @param {Object} [options] - オプション
+ * @param {string} [options.basePath=currentBasePath] - ベースパス
+ * @param {string} [options.roomCode=null] - 削除対象の6桁ルームコード
+ * @returns {Promise<void>}
+ */
+export async function removeSessionNode(
+  roomId,
+  { basePath = currentBasePath, roomCode = null } = {}
+) {
+  if (!database || !roomId) return;
+  if (basePath === ROOMS_REF) {
+    const updates = {
+      [`${ROOMS_REF}/${roomId}`]: null,
+    };
+    if (roomCode) {
+      updates[`roomCodeIndex/${roomCode}`] = null;
+    }
+    await update(ref(database), updates);
+  } else {
+    await remove(ref(database, `${basePath}/${roomId}`)).catch(() => {});
+  }
+}
+
+/**
+ * 指定したベースパス（rooms または quickMatch）において、
+ * 特定ユーザーがホストしている過去の未完了待機部屋を一括走査して確実に削除する共通処理。
+ * @param {string} [basePath=currentBasePath] - ベースパス
+ * @param {string} [userId=getOrCreateUUID()] - ユーザーUUID
+ * @returns {Promise<void>}
+ */
+export async function cleanupUserSessions(
+  basePath = currentBasePath,
+  userId = getOrCreateUUID()
+) {
+  if (!database) return;
+  try {
+    const targetRef = ref(database, basePath);
+    const snapshot = await get(targetRef);
+    if (!snapshot || !snapshot.exists()) return;
+
+    const deletePromises = [];
+    snapshot.forEach((child) => {
+      const data = child.val();
+      if (data && data.host?.id === userId && data.status === 'waiting') {
+        deletePromises.push(
+          removeSessionNode(child.key, {
+            basePath,
+            roomCode: data.roomCode || null,
+          })
+        );
+      }
+    });
+
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
+    }
+  } catch (e) {
+    console.warn(`cleanupUserSessions failed for ${basePath}:`, e);
+  }
+}
+
+/**
+ * 指定したベースパスにおいて、ホスト生存信号（ハートビート）が途絶えた放置部屋を一括検出し、安全に削除する共通処理。
+ * @param {string} [basePath=currentBasePath] - ベースパス
+ * @returns {Promise<void>}
+ */
+export async function cleanupExpiredSessions(basePath = currentBasePath) {
+  if (!database) return;
+  try {
+    const targetRef = ref(database, basePath);
+    const snapshot = await get(targetRef);
+    if (!snapshot || !snapshot.exists()) return;
+
+    const now = getServerNow();
+    const cleanupPromises = [];
+
+    snapshot.forEach((child) => {
+      const data = child.val();
+      if (data && data.status === 'waiting' && !isHostAlive(data, now)) {
+        cleanupPromises.push(
+          removeSessionNode(child.key, {
+            basePath,
+            roomCode: data.roomCode || null,
+          })
+        );
+      }
+    });
+
+    if (cleanupPromises.length > 0) {
+      await Promise.all(cleanupPromises);
+    }
+  } catch (e) {
+    console.warn(`cleanupExpiredSessions failed for ${basePath}:`, e);
+  }
 }
 
 // リスナー解除用関数
 let roomListenerUnsubscribe = null;
 export let cachedRoomData = null;
-
-// 定数
-export const ROOMS_REF = 'rooms';
 
 /**
  * 未埋まりの公開対戦待機ルーム一覧をリアルタイム監視する共通実装。
@@ -262,18 +596,11 @@ async function reserveRoomCode(roomId) {
 /**
  * ルーム本体とルームコードインデックスを同一の原子的（アトミック）更新で同時削除する
  * @param {string} roomId - 削除対象のルームID
- * @param {string} roomCode - 削除対象の6桁ルームコード（省略可能）
+ * @param {string} [roomCode=null] - 削除対象の6桁ルームコード
  * @returns {Promise<void>}
  */
-async function removeRoomAndCode(roomId, roomCode) {
-  if (!database || !roomId) return;
-  const updates = {
-    [`${ROOMS_REF}/${roomId}`]: null,
-  };
-  if (roomCode) {
-    updates[`roomCodeIndex/${roomCode}`] = null;
-  }
-  await update(ref(database), updates);
+async function removeRoomAndCode(roomId, roomCode = null) {
+  return removeSessionNode(roomId, { basePath: ROOMS_REF, roomCode });
 }
 
 /**
@@ -312,24 +639,8 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
   const uuid = getOrCreateUUID();
   const roomsRef = ref(database, ROOMS_REF);
 
-  // 既存の自分が作ったルーム（ゴミ）を削除（部屋本体とインデックスを原子的に削除）
-  try {
-    const snapshot = await get(roomsRef);
-    if (snapshot.exists()) {
-      const deletePromises = [];
-      snapshot.forEach((child) => {
-        const roomData = child.val();
-        if (roomData.host && roomData.host.id === uuid) {
-          deletePromises.push(removeRoomAndCode(child.key, roomData.roomCode));
-        }
-      });
-      if (deletePromises.length > 0) {
-        await Promise.all(deletePromises);
-      }
-    }
-  } catch (e) {
-    console.error('Failed to cleanup old rooms:', e);
-  }
+  // 既存の自分が作った古い待機ルーム（ゴミ）を一括クリーンアップ
+  await cleanupUserSessions(ROOMS_REF, uuid);
 
   const newRoomRef = push(roomsRef);
   const roomCode = await reserveRoomCode(newRoomRef.key);
@@ -365,6 +676,7 @@ export async function createRoom(hostName, { isPublic = true } = {}) {
     throw error;
   }
 
+  currentBasePath = ROOMS_REF;
   currentRoomId = newRoomRef.key;
   currentRoomCode = roomCode;
   isHost = true;
@@ -518,6 +830,7 @@ export async function joinRoom(roomId, clientName) {
     throw new Error('指定されたルームは見つからないか、既に対戦中・満員です。');
   }
 
+  currentBasePath = ROOMS_REF;
   currentRoomId = roomId;
   // ホストが発行した6桁コードを参加側でも保持し、getCurrentRoomCode()から参照できるようにする
   currentRoomCode = result.snapshot.val()?.roomCode || null;
@@ -545,7 +858,7 @@ export function listenToRoom(roomId) {
     roomListenerUnsubscribe();
   }
 
-  const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
+  const roomRef = ref(database, `${currentBasePath}/${roomId}`);
   roomListenerUnsubscribe = onValue(roomRef, (snapshot) => {
     const data = snapshot.val();
     cachedRoomData = data;
@@ -591,7 +904,12 @@ export function listenToRoom(roomId) {
 
 let onlineActionUnsubscribe = null;
 
-export function listenToRoomActions(onActionReceived) {
+/**
+ * バトル中のアクションを監視する。
+ * @param {Function} onActionReceived - アクション受信時コールバック ({ action, actor, timestamp }) => void
+ * @param {Set<string>|null} [ignoredActionKeys=null] - 復帰（リジョイン）時にスキップする既存アクションIDのSet。過去ログの多重再実行を防止する。
+ */
+export function listenToRoomActions(onActionReceived, ignoredActionKeys = null) {
   if (!database || !currentRoomId) return;
 
   if (onlineActionUnsubscribe) {
@@ -599,9 +917,14 @@ export function listenToRoomActions(onActionReceived) {
     onlineActionUnsubscribe = null;
   }
 
-  const actionsRef = ref(database, `${ROOMS_REF}/${currentRoomId}/actions`);
+  const actionsRef = ref(database, `${currentBasePath}/${currentRoomId}/actions`);
   // Firebase v9 Modular APIでは、onChildAddedは直接Unsubscribe関数を返します
   onlineActionUnsubscribe = onChildAdded(actionsRef, (snapshot) => {
+    // 復帰時に既に存在していた過去アクションは二重実行を防ぐためスキップ
+    if (ignoredActionKeys && ignoredActionKeys.has(snapshot.key)) {
+      return;
+    }
+
     const val = snapshot.val();
     if (onActionReceived && val) {
       onActionReceived(val);
@@ -616,14 +939,46 @@ export function stopListeningToRoomActions() {
   }
 }
 
+/**
+ * オンライン対戦のアクションをFirebase RTDBへ送信する。
+ * undefinedによるFirebaseの例外発生を防ぐため、ペイロードを安全に正規化して送信する。
+ * @param {Object} action - 送信するアクションオブジェクト
+ * @returns {Promise<void>}
+ */
 export async function sendOnlineAction(action) {
-  if (!database || !currentRoomId) return;
-  const actionsRef = ref(database, `${ROOMS_REF}/${currentRoomId}/actions`);
+  if (!database || !currentRoomId || !action) return;
+  // undefined を安全に除去してFirebaseのエラーを防止
+  const sanitizedAction = JSON.parse(JSON.stringify(action));
+  const actionsRef = ref(database, `${currentBasePath}/${currentRoomId}/actions`);
   await push(actionsRef, {
     actor: isHost ? 'host' : 'client',
-    action: action,
+    action: sanitizedAction,
     timestamp: serverTimestamp(),
   });
+}
+
+/**
+ * ホストが最新の完全盤面スナップショットをルーム直下（rooms/{roomId}/lastSyncState）に保存する。
+ * アプリ落ち復帰時の高速リストアに使用する。
+ * undefinedによるFirebase例外を防ぐためサニタイズして保存する。
+ * @param {Object} state - 同期用ステートオブジェクト
+ * @returns {Promise<void>}
+ */
+export async function saveLastSyncStateToRoom(state) {
+  if (!database || !currentRoomId || !isHost || !state) return;
+  try {
+    const syncRef = ref(
+      database,
+      `${currentBasePath}/${currentRoomId}/lastSyncState`
+    );
+    const sanitizedState = JSON.parse(JSON.stringify(state));
+    await set(syncRef, {
+      ...sanitizedState,
+      savedAt: getServerNow(),
+    });
+  } catch (e) {
+    console.warn('saveLastSyncStateToRoom failed:', e);
+  }
 }
 
 // ------------------------------------------
@@ -637,7 +992,7 @@ export async function updatePlayerReady(config, isReadyStatus = true) {
   if (!currentRoomId || !database) return;
   const pRef = ref(
     database,
-    `${ROOMS_REF}/${currentRoomId}/${isHost ? 'host' : 'client'}`
+    `${currentBasePath}/${currentRoomId}/${isHost ? 'host' : 'client'}`
   );
   await update(pRef, {
     leaderConfig: config,
@@ -652,11 +1007,86 @@ export async function setPlayerReadyOnly(isReadyStatus) {
   if (!currentRoomId || !database) return;
   const pRef = ref(
     database,
-    `${ROOMS_REF}/${currentRoomId}/${isHost ? 'host' : 'client'}`
+    `${currentBasePath}/${currentRoomId}/${isHost ? 'host' : 'client'}`
   );
   await update(pRef, {
     isReady: isReadyStatus,
   });
+}
+
+/**
+ * 対戦開始時に対戦用の切断ポリシー（即時部屋削除・追い出しの解除と isOnline 状態管理）を設定する。
+ * ホスト・クライアント双方で呼び出され、電波瞬断時の部屋存続と復帰待機を実現する。
+ */
+export async function setupBattleDisconnectHandlers() {
+  if (!database || !currentRoomId) return;
+  isInBattleMode = true;
+
+  const roomId = currentRoomId;
+  const roomCode = currentRoomCode;
+  const roomRef = ref(database, `${currentBasePath}/${roomId}`);
+  const role = isHost ? 'host' : 'client';
+  const myRef = ref(database, `${currentBasePath}/${roomId}/${role}`);
+
+  try {
+    // 1. ロビー待機用の即時削除・即時退出予約を安全に解除
+    await onDisconnect(roomRef).cancel().catch(() => {});
+    if (isHost && roomCode) {
+      const codeRef = ref(database, `roomCodeIndex/${roomCode}`);
+      await onDisconnect(codeRef).cancel().catch(() => {});
+    }
+
+    // 2. 対戦用：切断時に部屋を消さず、自身の isOnline を false に設定し、
+    //    切断時刻（disconnectedAt）も記録する切断予約を登録
+    await onDisconnect(myRef).update({
+      isOnline: false,
+      disconnectedAt: serverTimestamp(),
+    });
+    // 3. 現在のオンライン状態を明示的に true に設定
+    await update(myRef, { isOnline: true, disconnectedAt: null });
+  } catch (e) {
+    console.error('setupBattleDisconnectHandlers failed:', e);
+  }
+}
+
+/**
+ * 対戦終了時またはロビー戻り時に、ロビー用の切断ポリシー（ホスト切断＝部屋削除、クライアント切断＝待機戻り）へ復元する。
+ */
+export async function restoreLobbyDisconnectHandlers() {
+  if (!database || !currentRoomId) {
+    isInBattleMode = false;
+    return;
+  }
+  isInBattleMode = false;
+
+  const roomId = currentRoomId;
+  const roomCode = currentRoomCode;
+  const roomRef = ref(database, `${currentBasePath}/${roomId}`);
+  const role = isHost ? 'host' : 'client';
+  const myRef = ref(database, `${currentBasePath}/${roomId}/${role}`);
+
+  try {
+    // 1. 対戦用の切断予約（isOnline + disconnectedAt）を解除
+    await onDisconnect(myRef).cancel().catch(() => {});
+
+    // 2. ロビー用の切断予約を再登録
+    if (isHost) {
+      await onDisconnect(roomRef).remove().catch(() => {});
+      if (roomCode) {
+        const codeRef = ref(database, `roomCodeIndex/${roomCode}`);
+        await onDisconnect(codeRef).remove().catch(() => {});
+      }
+    } else {
+      await onDisconnect(roomRef)
+        .update({
+          status: 'waiting',
+          client: null,
+        })
+        .catch(() => {});
+    }
+  } catch (e) {
+    console.warn('restoreLobbyDisconnectHandlers failed:', e);
+  }
 }
 
 /**
@@ -669,7 +1099,7 @@ export async function setPlayerReadyOnly(isReadyStatus) {
  */
 export async function setRoomStatusToBattle() {
   if (!currentRoomId || !database || !isHost) return null;
-  const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+  const roomRef = ref(database, `${currentBasePath}/${currentRoomId}`);
   const result = await runTransaction(roomRef, (room) => {
     // ルームが存在しない、または双方の準備完了が確認できない場合はコミットしない
     if (
@@ -686,14 +1116,23 @@ export async function setRoomStatusToBattle() {
       host: {
         ...room.host,
         isReady: false,
+        isOnline: true,
       },
       client: {
         ...room.client,
         isReady: false,
+        isOnline: true,
       },
     };
   });
-  return result && result.committed ? result.snapshot.val() : null;
+
+  if (result && result.committed) {
+    // ホスト側の対戦用切断ポリシー（即時削除の解除と isOnline 管理）を即時適用
+    await setupBattleDisconnectHandlers();
+    saveActiveBattleSession(currentRoomId, true);
+    return result.snapshot.val();
+  }
+  return null;
 }
 
 /**
@@ -702,8 +1141,9 @@ export async function setRoomStatusToBattle() {
  * @returns {Promise<void>}
  */
 export async function resetRoomStatusToWaiting() {
+  clearActiveBattleSession();
   if (!currentRoomId || !database) return;
-  const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+  const roomRef = ref(database, `${currentBasePath}/${currentRoomId}`);
   if (isHost) {
     await runTransaction(roomRef, (room) => {
       if (!room) return undefined;
@@ -736,6 +1176,30 @@ export async function resetRoomStatusToWaiting() {
       };
     });
   }
+
+  // 対戦終了後はロビー用の切断時ポリシー（部屋削除 / 退室）へ復元
+  await restoreLobbyDisconnectHandlers();
+}
+
+/**
+ * クイックマッチ対戦終了時にセッションステータスを 'ended' に更新する
+ * ルームを waiting に戻さないことで、戦闘後会話中などに第三者が誤ってマッチングすることを完全に防止する
+ * @returns {Promise<void>}
+ */
+export async function markQuickMatchEnded() {
+  clearActiveBattleSession();
+  if (!currentRoomId || !database) return;
+  const matchRef = ref(database, `${currentBasePath}/${currentRoomId}`);
+  try {
+    if (isHost) {
+      await update(matchRef, {
+        status: 'ended',
+        battleEndedAt: serverTimestamp(),
+      });
+    }
+  } catch (e) {
+    console.warn('markQuickMatchEnded failed:', e);
+  }
 }
 
 /**
@@ -743,7 +1207,7 @@ export async function resetRoomStatusToWaiting() {
  */
 export async function clearActionQueueAndRegenerateSeed() {
   if (!currentRoomId || !database || !isHost) return;
-  const roomRef = ref(database, `${ROOMS_REF}/${currentRoomId}`);
+  const roomRef = ref(database, `${currentBasePath}/${currentRoomId}`);
   await update(roomRef, {
     actions: null,
     battleSeed: Date.now(),
@@ -755,7 +1219,7 @@ export async function clearActionQueueAndRegenerateSeed() {
  */
 export async function sendChatMessage(text, senderName) {
   if (!currentRoomId || !database) return;
-  const chatRef = ref(database, `${ROOMS_REF}/${currentRoomId}/chat`);
+  const chatRef = ref(database, `${currentBasePath}/${currentRoomId}/chat`);
   await push(chatRef, {
     sender: senderName,
     text: text,
@@ -767,11 +1231,15 @@ export async function sendChatMessage(text, senderName) {
  * ルームから退室（または解散）する
  */
 export async function leaveRoom() {
+  clearActiveBattleSession();
+  stopSessionHeartbeat();
+
   if (!currentRoomId || !database) return;
 
   const roomId = currentRoomId;
   const roomCode = currentRoomCode;
   const wasHost = isHost;
+  const leavingBasePath = currentBasePath;
 
   // 1. ローカルの状態クリアは「最初」に無条件で安全に実行します
   // （これによりサーバー通信の成否にかかわらず、クライアントのローカル状態はクリーンになりロビーへ戻れます）
@@ -785,17 +1253,25 @@ export async function leaveRoom() {
   currentRoomCode = null;
   isHost = false;
   cachedRoomData = null;
+  isInBattleMode = false;
+  currentBasePath = ROOMS_REF;
 
-  const roomRef = ref(database, `${ROOMS_REF}/${roomId}`);
-  const codeRef = roomCode ? ref(database, `roomCodeIndex/${roomCode}`) : null;
+  const sessionRef = ref(database, `${leavingBasePath}/${roomId}`);
+  const codeRef =
+    leavingBasePath === ROOMS_REF && roomCode
+      ? ref(database, `roomCodeIndex/${roomCode}`)
+      : null;
 
   try {
     if (wasHost) {
-      // 1. DBからルームおよびコードインデックスを原子的に同時削除（先に明示操作を完了させる）
-      await removeRoomAndCode(roomId, roomCode);
+      // 1. ホストの場合：セッション本体（および必要に応じて6桁コードインデックス）を安全に削除
+      await removeSessionNode(roomId, {
+        basePath: leavingBasePath,
+        roomCode,
+      });
     } else {
-      // 1. クライアント退室時は対象フィールドをピンポイントで即時更新（ホスト側ハートビートとのトランザクション競合を防止）
-      await update(roomRef, {
+      // 1. ゲストの場合：ステータスを waiting に戻し、client を null にクリア
+      await update(sessionRef, {
         status: 'waiting',
         client: null,
       });
@@ -803,7 +1279,7 @@ export async function leaveRoom() {
 
     // 2. 明示的な退室・解散が完了した後、不要になった切断時自動削除/更新の予約を解除する
     try {
-      await onDisconnect(roomRef).cancel();
+      await onDisconnect(sessionRef).cancel();
       if (codeRef) {
         await onDisconnect(codeRef).cancel();
       }
@@ -811,12 +1287,11 @@ export async function leaveRoom() {
       console.warn('切断時予約の解除に失敗しました:', disconnectError);
     }
   } catch (e) {
-    console.error('leaveRoom failed:', e);
+    console.error(`leaveRoom failed on ${leavingBasePath}:`, e);
     // 正常退室処理に失敗した場合は、ホストの場合のみ切断時自動削除の予約を再設定します
-    // （クライアント側での onDisconnect().update は削除済みルームの再生成・ゾンビルーム化を招くため行いません）
     try {
       if (wasHost) {
-        await onDisconnect(roomRef).remove();
+        await onDisconnect(sessionRef).remove();
         if (codeRef) {
           await onDisconnect(codeRef).remove();
         }
@@ -825,6 +1300,19 @@ export async function leaveRoom() {
       console.warn('Failed to re-register onDisconnect:', disconnectError);
     }
     throw e;
+  }
+}
+
+/**
+ * 例外を安全にキャッチして退室・解散処理を実行するラッパー関数
+ * @param {string} [errorMessage='退室処理に失敗しました:'] - エラーログ出力用のプレフィックス
+ * @returns {Promise<void>}
+ */
+export async function safeLeaveRoom(errorMessage = '退室処理に失敗しました:') {
+  try {
+    await leaveRoom();
+  } catch (e) {
+    console.error(errorMessage, e);
   }
 }
 
@@ -903,3 +1391,194 @@ export async function checkHasPublicWaitingRooms() {
     return false;
   }
 }
+
+// --- Quick Match System ---
+
+/**
+ * クイックマッチのマッチングを開始する。
+ * Firebaseの /quickMatch 配下の待機エントリを探索し、
+ * 待機中のプレイヤーがいれば参加して直接対戦を開始、いなければ自身が待機エントリを作成して相手の参加を待つ。
+ *
+ * @param {string} playerName - プレイヤー名
+ * @param {Object} myLeaderConfig - 自身のリーダー・デッキ設定
+ * @param {function(Object): void} onMatched - マッチング成立時のコールバック
+ * @param {function(string): void} [onWaiting] - 待機開始時のコールバック
+ * @returns {Promise<{ isHost: boolean, roomId: string }>}
+ */
+export async function startQuickMatch(
+  playerName,
+  myLeaderConfig,
+  onMatched,
+  onWaiting
+) {
+  if (!database) throw new Error('Firebase not initialized');
+
+  const uuid = getOrCreateUUID();
+  const qmRef = ref(database, QUICK_MATCH_REF);
+  const now = getServerNow();
+
+  // 1. 待機中のクイックマッチエントリを探索
+  let matchedMatchId = null;
+  let matchedMatchData = null;
+
+  try {
+    // 探索前に自身の過去の古い待機エントリおよび期限切れ放置エントリを一括クリーンアップ
+    await cleanupUserSessions(QUICK_MATCH_REF, uuid);
+    await cleanupExpiredSessions(QUICK_MATCH_REF);
+
+    const qmSnap = await get(qmRef);
+
+    if (qmSnap && qmSnap.exists()) {
+      const candidates = [];
+
+      qmSnap.forEach((child) => {
+        const match = child.val();
+        if (
+          match &&
+          match.status === 'waiting' &&
+          !match.client &&
+          match.host?.id !== uuid &&
+          isHostAlive(match, now)
+        ) {
+          candidates.push({ matchId: child.key, ...match });
+        }
+      });
+
+      // 古い（先に待機している）順にマッチングを試みる
+      candidates.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+      for (const candidate of candidates) {
+        const targetMatchRef = ref(
+          database,
+          `${QUICK_MATCH_REF}/${candidate.matchId}`
+        );
+        const clientInfo = {
+          id: uuid,
+          name: playerName || 'Player 2',
+          icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
+          isReady: true,
+          leaderConfig: myLeaderConfig,
+          isOnline: true,
+          lastActiveAt: getServerNow(),
+        };
+
+        const result = await runTransaction(targetMatchRef, (match) => {
+          // Firebase RTDB の runTransaction は初回ローカル未キャッシュ時に match === null で呼ばれる。
+          // ここで undefined を返すとアボートされるため、candidate の既知データを元に更新値を返す。
+          const current = match || candidate;
+          if (!current || current.status !== 'waiting' || current.client) {
+            return undefined;
+          }
+          return {
+            ...current,
+            status: 'battle',
+            battleStartedAt: getServerNow(),
+            battleSeed: Date.now(),
+            client: clientInfo,
+          };
+        });
+
+        if (result.committed && result.snapshot?.exists()) {
+          matchedMatchId = candidate.matchId;
+          matchedMatchData = result.snapshot.val();
+          break;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Quick match search warning:', err);
+  }
+
+  // 2. 待機部屋に参加成功した場合（クライアント側として対戦開始）
+  if (matchedMatchId && matchedMatchData) {
+    currentBasePath = QUICK_MATCH_REF;
+    currentRoomId = matchedMatchId;
+    currentRoomCode = null;
+    isHost = false;
+
+    // 対戦中の切断ハンドラーを設定
+    await setupBattleDisconnectHandlers();
+    saveActiveBattleSession(currentRoomId, false, QUICK_MATCH_REF);
+    listenToRoom(currentRoomId);
+
+    if (onMatched) {
+      onMatched(matchedMatchData);
+    }
+    return { isHost: false, roomId: currentRoomId };
+  }
+
+  // 3. 待機部屋がない場合、ホストとして新しい待機エントリを作成して相手を待つ
+  // 作成前に念のため自身の過去の待機エントリがあれば確実に削除
+  await cleanupUserSessions(QUICK_MATCH_REF, uuid);
+
+  const newMatchRef = push(qmRef);
+  const matchId = newMatchRef.key;
+  const rngSeed = Math.floor(Math.random() * 100000000).toString();
+
+  const hostInfo = {
+    id: uuid,
+    name: playerName || 'Player 1',
+    icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
+    isReady: true,
+    leaderConfig: myLeaderConfig,
+    isOnline: true,
+    lastActiveAt: serverTimestamp(),
+  };
+
+  try {
+    // 待機中の切断時はエントリを自動削除するよう予約
+    await onDisconnect(newMatchRef).remove();
+
+    await set(newMatchRef, {
+      status: 'waiting',
+      createdAt: serverTimestamp(),
+      rngSeed: rngSeed,
+      host: hostInfo,
+      client: null,
+      actionQueue: {},
+    });
+  } catch (err) {
+    await remove(newMatchRef).catch(() => {});
+    throw err;
+  }
+
+  currentBasePath = QUICK_MATCH_REF;
+  currentRoomId = matchId;
+  currentRoomCode = null;
+  isHost = true;
+
+  // 相手の参加（status === 'battle'）を監視するリスナーを設定
+  let matchHandled = false;
+  multiplayerCallbacks.onRoomUpdated = async (data) => {
+    if (matchHandled) return;
+    if (data?.status === 'battle' && data.client && data.client.leaderConfig) {
+      matchHandled = true;
+      // 対戦用の切断ハンドラーを適用
+      await setupBattleDisconnectHandlers();
+      saveActiveBattleSession(currentRoomId, true, QUICK_MATCH_REF);
+
+      if (onMatched) {
+        onMatched(data);
+      }
+    }
+  };
+
+  listenToRoom(currentRoomId);
+
+  if (onWaiting) {
+    onWaiting(matchId);
+  }
+
+  return { isHost: true, roomId: matchId };
+}
+
+/**
+ * クイックマッチ待機をキャンセルし、待機エントリを安全に削除する統一ラッパー関数
+ */
+export async function cancelQuickMatch() {
+  stopSessionHeartbeat();
+  await safeLeaveRoom('クイックマッチのキャンセル処理に失敗しました:');
+  // 念のため自身の過去の未完了待機エントリがあれば一掃
+  await cleanupUserSessions(QUICK_MATCH_REF);
+}
+

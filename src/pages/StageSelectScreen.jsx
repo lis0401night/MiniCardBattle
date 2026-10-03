@@ -54,6 +54,7 @@ export default function StageSelectScreen() {
       defense_attack: 'assets/backgrounds/background_defense.webp',
       battle_dungeon: 'assets/backgrounds/background_challenge.webp',
       online_deck_edit: 'assets/backgrounds/background_online.webp',
+      online_quick: 'assets/backgrounds/background_online.webp',
     };
 
     let bgFile = MODE_BACKGROUND_FILES[mode];

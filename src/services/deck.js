@@ -28,6 +28,7 @@ import {
   setOwnedPlaymats,
 } from '../utils/constants/playmats.js';
 import {
+  checkIsOnlineMode,
   getCardImgUrl,
   getOrCreateUUID,
   playSound,
@@ -121,7 +122,11 @@ export function generateDeck(owner, config, sessionId) {
   let deck = [];
 
   // オンラインモード：事前に渡された専用デッキ配列を使用する
-  if (GameState.gameMode === 'online' && config && Array.isArray(config.deck)) {
+  if (
+    checkIsOnlineMode(GameState.gameMode) &&
+    config &&
+    Array.isArray(config.deck)
+  ) {
     deck = config.deck.map((t, i) => {
       const isPremium = t.isPremium || false;
       const tempObj = { ...t, isPremium: isPremium };

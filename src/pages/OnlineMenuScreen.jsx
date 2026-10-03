@@ -1,76 +1,81 @@
-import { useEffect, useRef, useState } from 'react';
-import MenuButton from '../components/common/MenuButton.jsx';
+import { useEffect, useState } from 'react';
+import MenuImageButton from '../components/common/MenuImageButton.jsx';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
-import RoomTypeSelectModal from '../components/online/RoomTypeSelectModal.jsx';
-import { createRoom } from '../services/multiplayer.js';
+import { checkHasPublicWaitingRooms } from '../services/multiplayer.js';
 import {
   goToModeSelect,
-  showOnlineLobby,
-  showOnlineRules,
-  showOnlineSearch,
+  showOnlineQuickMatch,
+  showOnlineRoomMatch,
 } from '../services/uiMainCore.js';
-import { showAlertModal } from '../services/uiModals.js';
-import { resolvePlayerName } from '../utils/gameUtils.js';
 
 /**
- * オンライン対戦メニュー画面
- * 共通コンポーネント ScreenLayout, MenuButton, RoomTypeSelectModal を用いて構成。
+ * オンライン対戦メニュー画面コンポーネント
+ * 「クイックマッチ」および「ルームマッチ」のモード選択メニューを提供する。
+ * @returns {import('react').ReactElement} オンラインメニュー画面
  */
 export default function OnlineMenuScreen() {
-  const [isMatching, setIsMatching] = useState(false);
-  const [showRoomTypeModal, setShowRoomTypeModal] = useState(false);
-  const isMountedRef = useRef(true);
+  const [hasWaitingPublicRooms, setHasWaitingPublicRooms] = useState(false);
 
   useEffect(() => {
-    isMountedRef.current = true;
+    let isMounted = true;
+
+    // 公開待機ルームの存在有無をチェックして通知バッジを更新
+    const refreshWaitingRooms = () => {
+      checkHasPublicWaitingRooms()
+        .then((hasRooms) => {
+          if (isMounted) {
+            setHasWaitingPublicRooms(hasRooms);
+          }
+        })
+        .catch((e) => {
+          console.warn('公開待機ルームの取得に失敗しました:', e);
+        });
+    };
+
+    refreshWaitingRooms();
+
+    // 画面アクティブ切り替え検知（別画面からの復帰時に通知を再評価）
+    const screen = document.getElementById('screen-online-menu');
+    let observer = null;
+    if (screen) {
+      observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (
+            mutation.attributeName === 'class' &&
+            screen.classList.contains('active')
+          ) {
+            refreshWaitingRooms();
+          }
+        });
+      });
+      observer.observe(screen, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+    }
+
     return () => {
-      isMountedRef.current = false;
+      isMounted = false;
+      observer?.disconnect();
     };
   }, []);
 
   /**
-   * ルーム作成ボタンクリック時のハンドラ
-   * 公開・非公開選択モーダルを表示する
+   * クイックマッチボタンクリック時のハンドラ
+   * クイックマッチ画面（ルール・ランキング・挑戦）へ遷移する
    * @returns {void}
    */
-  const handleCreateRoomClick = () => {
-    setShowRoomTypeModal(true);
+  const handleQuickMatchClick = () => {
+    showOnlineQuickMatch?.();
   };
 
   /**
-   * 選択された公開設定でルームを作成する
-   * @param {boolean} isPublic - 公開ルームにするかどうか
+   * ルームマッチボタンクリック時のハンドラ
+   * ルームマッチ画面（ルーム作成・検索・ルール）へ遷移する
    * @returns {void}
    */
-  const executeCreateRoom = (isPublic) => {
-    setShowRoomTypeModal(false);
-    const name = resolvePlayerName();
-
-    setIsMatching(true);
-    createRoom(name, { isPublic })
-      .then(() => {
-        if (isMountedRef.current) {
-          setIsMatching(false);
-          showOnlineLobby?.();
-        }
-      })
-      .catch((e) => {
-        console.error(e);
-        if (isMountedRef.current) {
-          setIsMatching(false);
-        }
-        const msg = e?.message || '';
-        if (
-          e?.code === 'PERMISSION_DENIED' ||
-          msg.includes('Permission denied')
-        ) {
-          showAlertModal?.(
-            '【通信エラー】サーバーの接続上限（または無料枠）に達しているため、現在オンライン機能が利用できません。'
-          );
-        } else {
-          showAlertModal?.('ルーム作成に失敗しました。');
-        }
-      });
+  const handleRoomMatchClick = () => {
+    showOnlineRoomMatch?.();
   };
 
   return (
@@ -80,43 +85,30 @@ export default function OnlineMenuScreen() {
       titleColor="#38bdf8"
       titleGlow={true}
       backgroundImage="background_online.webp"
-      // マッチング中は戻るボタンを無効化（クリックしても何もしない）にする
-      onBackClick={isMatching ? undefined : () => goToModeSelect?.()}
+      onBackClick={() => goToModeSelect?.()}
       showBackButton={true}
-      backHasBorder={false}
+      backHasBorder={true}
     >
-      {isMatching ? (
-        <div style={{ textAlign: 'center', margin: '40px 0' }}>
-          <div className="spinner" style={{ margin: '0 auto 20px' }}></div>
-          <h3 style={{ color: '#fff' }}>ルームを作成しています...</h3>
-        </div>
-      ) : (
-        <div className="menu-button-container">
-          <MenuButton
-            label="ルール"
-            variant="yellow"
-            onClick={() => showOnlineRules?.()}
-          />
-          <MenuButton
-            label="ルーム作成"
-            style={{ background: 'linear-gradient(45deg, #0284c7, #0369a1)' }}
-            onClick={handleCreateRoomClick}
-          />
-          <MenuButton
-            label="ルーム検索"
-            variant="blue"
-            onClick={() => showOnlineSearch?.()}
-          />
-        </div>
-      )}
+      <div className="menu-btn-grid">
+        {/* クイックマッチボタン */}
+        <MenuImageButton
+          label="クイックマッチ"
+          style={{
+            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+          }}
+          onClick={handleQuickMatchClick}
+        />
 
-      {/* ルーム公開 / 非公開 選択モーダル */}
-      <RoomTypeSelectModal
-        isOpen={showRoomTypeModal}
-        onSelectPublic={() => executeCreateRoom(true)}
-        onSelectPrivate={() => executeCreateRoom(false)}
-        onCancel={() => setShowRoomTypeModal(false)}
-      />
+        {/* ルームマッチボタン（従来のオンラインメニューへの遷移） */}
+        <MenuImageButton
+          label="ルームマッチ"
+          style={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+          }}
+          onClick={handleRoomMatchClick}
+          notificationBadge={hasWaitingPublicRooms}
+        />
+      </div>
     </ScreenLayout>
   );
 }

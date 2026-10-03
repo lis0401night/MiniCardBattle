@@ -40,6 +40,7 @@ import EnemyArea from '../components/battle/EnemyArea.jsx';
 import Hand from '../components/battle/Hand.jsx';
 import PlayerArea from '../components/battle/PlayerArea.jsx';
 import TurnOrderOverlay from '../components/battle/TurnOrderOverlay.jsx';
+import DisconnectWaitOverlay from '../components/battle/DisconnectWaitOverlay.jsx';
 import {
   advanceTutorialMessage,
   filterEndTurn,
@@ -467,7 +468,7 @@ export default function BattleScreen() {
   };
 
   const handleCardLongPress = (card, side, lane) => {
-    openCardPreview(card);
+    openCardPreview(card, { isBoard: true, side, lane });
     // チュートリアル: 場のカード長押し通知
     if (isTutorialMode() && side !== undefined && lane !== undefined) {
       notifyTutorialLongPress(side, lane);
@@ -476,7 +477,7 @@ export default function BattleScreen() {
 
   // チュートリアル: 手札のカード長押し
   const handleHandCardLongPress = (card) => {
-    openCardPreview(card);
+    openCardPreview(card, { isBoard: false });
     if (isTutorialMode() && card) {
       notifyTutorialHandLongPress(card.id, card.baseId);
     }
@@ -892,6 +893,9 @@ export default function BattleScreen() {
       {showMissions && (
         <MissionListModal onClose={() => setShowMissions(false)} />
       )}
+
+      {/* オンライン対戦切断待機オーバーレイ */}
+      <DisconnectWaitOverlay />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
   joinRoomByCode,
   listenToLobbyRooms,
 } from '../services/multiplayer.js';
-import { showOnlineLobby, showOnlineMenu } from '../services/uiMainCore.js';
+import { showOnlineLobby, showOnlineRoomMatch } from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import {
   getOrCreateUUID,
@@ -48,6 +48,7 @@ export default function OnlineRoomSearchScreen() {
   const debugTimeout = useRef(null);
 
   useEffect(() => {
+    isMountedRef.current = true;
     const unsubscribe = listenToLobbyRooms((availableRooms) => {
       const myId = getOrCreateUUID();
       setRooms(availableRooms.filter((r) => r.host?.id !== myId));
@@ -106,10 +107,8 @@ export default function OnlineRoomSearchScreen() {
     setIsJoining(true);
     joinRoom(roomId, name)
       .then(() => {
-        if (isMountedRef.current) {
-          setIsJoining(false);
-          showOnlineLobby?.();
-        }
+        setIsJoining(false);
+        showOnlineLobby?.();
       })
       .catch((e) => {
         console.error(e);
@@ -157,10 +156,8 @@ export default function OnlineRoomSearchScreen() {
     setIsJoining(true);
     joinRoomByCode(inputRoomCode, name)
       .then(() => {
-        if (isMountedRef.current) {
-          setIsJoining(false);
-          showOnlineLobby?.();
-        }
+        setIsJoining(false);
+        showOnlineLobby?.();
       })
       .catch((e) => {
         console.error('joinRoomByCode error:', e);
@@ -369,7 +366,10 @@ export default function OnlineRoomSearchScreen() {
       </div>
 
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <BackButton onClick={() => showOnlineMenu?.()} disabled={isJoining} />
+        <BackButton
+          onClick={() => showOnlineRoomMatch?.()}
+          disabled={isJoining}
+        />
       </div>
     </div>
   );

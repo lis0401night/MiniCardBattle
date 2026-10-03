@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
-import { showOnlineMenu } from '../services/uiMainCore.js';
+import { showOnlineRoomMatch } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 
 /**
@@ -31,7 +31,7 @@ export default function OnlineRulesScreen() {
       title="ルール"
       titleColor="#facc15"
       titleGlow={true}
-      onBackClick={() => showOnlineMenu?.()}
+      onBackClick={() => showOnlineRoomMatch?.()}
       backHasBorder={false}
     >
       <div

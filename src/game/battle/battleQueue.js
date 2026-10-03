@@ -5,7 +5,11 @@
 // キューイングし、順番に処理する。
 // ==========================================
 
-import { getIsHost, sendOnlineAction } from '../../services/multiplayer.js';
+import {
+  getIsHost,
+  sendOnlineAction,
+  saveLastSyncStateToRoom,
+} from '../../services/multiplayer.js';
 import {
   renderBoard,
   renderHand,
@@ -18,12 +22,18 @@ import {
   AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
 } from '../../utils/constants/config.js';
-import { playSound, sleep } from '../../utils/gameUtils.js';
+import {
+  checkIsOnlineMode,
+  playSound,
+  sleep,
+} from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { executeEnemyAI } from '../ai.js';
 import { activateLeaderSkill } from '../leaderSkills.js';
 import { cleanupTutorial } from '../tutorialEngine.js';
 import { showAlertModal } from '../../services/uiModals.js';
+import { stopOnlineTimer, pauseOnlineTimer } from './onlineTimer.js';
+import { checkIsOnlineTimerEnabled } from '../../utils/constants/onlineTimer.js';
 
 // ==========================================
 // 循環参照回避のための関数注入レジストリ
@@ -115,7 +125,18 @@ export function resetQueueProcessing() {
  * @param {boolean} [isRemote=false] - リモートから受信したアクションかどうか
  */
 export async function dispatchBattleAction(action, isRemote = false) {
-  if (GameState.gameMode === 'online' && !isRemote) {
+  if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+    if (action.type === 'endTurn') {
+      // ターン終了時はターンタイマーを完全停止（退避スタックもクリア）
+      stopOnlineTimer(true);
+    } else if (action.type === 'playCard' || action.type === 'leaderSkill') {
+      // カードプレイやリーダースキル発動時は、配置アニメーション中の時間減算を一時停止。
+      // 後続のオンプレイスキルや誘発・命令・選別等の選択が発生した場合、この残余時間から再開される。
+      pauseOnlineTimer();
+    }
+  }
+
+  if (checkIsOnlineMode(GameState.gameMode) && !isRemote) {
     // ローカルのアクションは直接キューに入れず、Firebaseのルームへ送信
     try {
       await sendOnlineAction(action);
@@ -209,7 +230,7 @@ export async function processActionQueue() {
             _executeTutorialEnemyTurn,
             'executeTutorialEnemyTurn'
           )();
-        } else if (GameState.gameMode !== 'online') {
+        } else if (!checkIsOnlineMode(GameState.gameMode)) {
           await sleep(AI_THINKING_DURATION);
           await executeEnemyAI();
         }
@@ -221,7 +242,7 @@ export async function processActionQueue() {
 
       // ホスト側：syncState以外のアクション処理が終わるごとに現在の正しいステートを送信する
       if (
-        GameState.gameMode === 'online' &&
+        checkIsOnlineMode(GameState.gameMode) &&
         getIsHost() &&
         action.type !== 'syncState' &&
         action.type !== 'enemyTurn' &&
@@ -229,10 +250,22 @@ export async function processActionQueue() {
       ) {
         // 同期送信の単発失敗でローカルバトル処理を中断させないよう内部保護
         try {
+          const syncState = generateSyncState();
           await sendOnlineAction({
             type: 'syncState',
-            state: generateSyncState(),
+            state: syncState,
           });
+          // クラッシュ・アプリ落ち復帰用にDBのルーム直下にも最新盤面スナップショットを保存
+          // ターン遷移や盤面更新を伴う主要アクション完了時に非同期で保存
+          if (
+            action.type === 'endTurn' ||
+            action.type === 'playCard' ||
+            action.type === 'leaderSkill'
+          ) {
+            saveLastSyncStateToRoom(syncState).catch((e) =>
+              console.warn('lastSyncState save failed:', e)
+            );
+          }
         } catch (syncErr) {
           console.error('状態同期の送信に失敗しました:', syncErr);
         }
@@ -250,63 +283,126 @@ export async function processActionQueue() {
 }
 
 /**
+ * ホスト側から最新のバトル状態（syncState）を即座に送信する。
+ * 切断復帰時や同期修正時に使用する。
+ * @returns {Promise<void>}
+ */
+export async function sendSyncStateNow() {
+  if (
+    checkIsOnlineMode(GameState.gameMode) &&
+    getIsHost() &&
+    !GameState.isBattleEnded
+  ) {
+    try {
+      const syncState = generateSyncState();
+      await sendOnlineAction({
+        type: 'syncState',
+        state: syncState,
+      });
+      // DBルーム直下にも保存
+      await saveLastSyncStateToRoom(syncState);
+    } catch (syncErr) {
+      console.error('即時状態同期の送信に失敗しました:', syncErr);
+    }
+  }
+}
+
+/**
  * オンライン対戦のホスト側から送信する同期用ステートを生成する。
+ * Firebase RTDB の制約（undefined不可）を完全に満たすため、全プロパティの安全な正規化とフォールバックを実施する。
  * @returns {object} 同期用ステートオブジェクト
  */
-function generateSyncState() {
+export function generateSyncState() {
+  const sanitizeCard = (c) => (c ? JSON.parse(JSON.stringify(c)) : null);
+  const sanitizeArr = (arr, len = null) => {
+    if (!Array.isArray(arr)) {
+      return len !== null ? Array(len).fill(null) : [];
+    }
+    const clean = arr.map(sanitizeCard);
+    if (len !== null && clean.length < len) {
+      while (clean.length < len) clean.push(null);
+    }
+    return clean;
+  };
+  const sanitizeNumericArr = (arr, len = 3) => {
+    if (!Array.isArray(arr)) return Array(len).fill(0);
+    return Array.from({ length: len }, (_, i) => Number(arr[i] || 0));
+  };
+
+  const currentTurnValue =
+    GameState.currentTurn === 'enemy' ? 'enemy' : 'player';
+
   return {
-    playerHP: GameState.playerHP,
-    enemyHP: GameState.enemyHP,
-    playerMaxHP: GameState.playerMaxHP,
-    enemyMaxHP: GameState.enemyMaxHP,
-    playerSP: GameState.playerSP,
-    enemySP: GameState.enemySP,
-    playerSealedLanes: JSON.parse(
-      JSON.stringify(GameState.playerSealedLanes || [0, 0, 0])
+    playerHP: Number(GameState.playerHP ?? GameState.playerConfig?.hp ?? 30),
+    enemyHP: Number(GameState.enemyHP ?? GameState.enemyConfig?.hp ?? 30),
+    playerMaxHP: Number(
+      GameState.playerMaxHP ?? GameState.playerConfig?.hp ?? 30
     ),
-    enemySealedLanes: JSON.parse(
-      JSON.stringify(GameState.enemySealedLanes || [0, 0, 0])
+    enemyMaxHP: Number(
+      GameState.enemyMaxHP ?? GameState.enemyConfig?.hp ?? 30
     ),
-    extraTurnCount: GameState.extraTurnCount || 0,
-    attackSkipCount: GameState.attackSkipCount || 0,
-    playerBoard: JSON.parse(JSON.stringify(GameState.playerBoard)),
-    enemyBoard: JSON.parse(JSON.stringify(GameState.enemyBoard)),
-    playerHand: JSON.parse(JSON.stringify(GameState.playerHand)),
-    enemyHand: JSON.parse(JSON.stringify(GameState.enemyHand)),
-    playerDiscard: JSON.parse(JSON.stringify(GameState.playerDiscard)),
-    enemyDiscard: JSON.parse(JSON.stringify(GameState.enemyDiscard)),
-    playerDeck: JSON.parse(JSON.stringify(GameState.playerDeck)),
-    enemyDeck: JSON.parse(JSON.stringify(GameState.enemyDeck)),
-    currentTurn: GameState.currentTurn,
-    turnCount: GameState.turnCount,
-    valkyriaGuardBlue: GameState.valkyriaGuardBlue || 0,
-    valkyriaGuardRed: GameState.valkyriaGuardRed || 0,
+    playerSP: Number(GameState.playerSP ?? 0),
+    enemySP: Number(GameState.enemySP ?? 0),
+    playerSealedLanes: sanitizeNumericArr(GameState.playerSealedLanes, 3),
+    enemySealedLanes: sanitizeNumericArr(GameState.enemySealedLanes, 3),
+    extraTurnCount: Number(GameState.extraTurnCount || 0),
+    attackSkipCount: Number(GameState.attackSkipCount || 0),
+    playerBoard: sanitizeArr(GameState.playerBoard, 3),
+    enemyBoard: sanitizeArr(GameState.enemyBoard, 3),
+    playerHand: sanitizeArr(GameState.playerHand),
+    enemyHand: sanitizeArr(GameState.enemyHand),
+    playerDiscard: sanitizeArr(GameState.playerDiscard),
+    enemyDiscard: sanitizeArr(GameState.enemyDiscard),
+    playerDeck: sanitizeArr(GameState.playerDeck),
+    enemyDeck: sanitizeArr(GameState.enemyDeck),
+    currentTurn: currentTurnValue,
+    turnCount: Number(GameState.turnCount || 1),
+    valkyriaGuardBlue: Number(GameState.valkyriaGuardBlue || 0),
+    valkyriaGuardRed: Number(GameState.valkyriaGuardRed || 0),
   };
 }
 
 /**
  * オンライン対戦時にホストから送信された同期ステートをクライアント側に適用する。
  * ホストから見た敵味方がクライアント側では反転するため、player/enemyを入れ替えて適用する。
+ * リジョイン（復帰）時にも呼び出される。
  * @param {object} state - 同期用ステートオブジェクト
+ * @param {boolean|null} [forceInvert=null] - 反転フラグ（nullの場合はホスト判定で自動決定）
  */
-function applySyncState(state) {
+export function applySyncState(state, forceInvert = null) {
   if (!state) return;
 
-  // ホスト自身がエコーを受信した場合は無視
-  if (getIsHost()) return;
+  const shouldInvert = forceInvert !== null ? forceInvert : !getIsHost();
 
-  // クライアント（受信側）はホストから見て「敵（enemy）」なので、
-  // 送られてきた状態の player と enemy を反転させてローカルに適用しなければならない。
-  GameState.playerHP = state.enemyHP || 0;
-  GameState.enemyHP = state.playerHP || 0;
-  if (typeof state.enemyMaxHP !== 'undefined') {
-    GameState.playerMaxHP = state.enemyMaxHP;
+  // 反転が不要（ホスト自身が通常のアクションエコーを受信したなど）かつforceInvertが指定されていない場合は何もしない
+  if (!shouldInvert && forceInvert === null && getIsHost()) return;
+
+  if (shouldInvert) {
+    // クライアント（受信側）はホストから見て「敵（enemy）」なので、
+    // 送られてきた状態の player と enemy を反転させてローカルに適用する。
+    GameState.playerHP = Number(state.enemyHP ?? GameState.playerHP ?? 30);
+    GameState.enemyHP = Number(state.playerHP ?? GameState.enemyHP ?? 30);
+    if (typeof state.enemyMaxHP !== 'undefined') {
+      GameState.playerMaxHP = Number(state.enemyMaxHP);
+    }
+    if (typeof state.playerMaxHP !== 'undefined') {
+      GameState.enemyMaxHP = Number(state.playerMaxHP);
+    }
+    GameState.playerSP = Number(state.enemySP ?? 0);
+    GameState.enemySP = Number(state.playerSP ?? 0);
+  } else {
+    // ホスト復帰時など反転不要の場合
+    GameState.playerHP = Number(state.playerHP ?? GameState.playerHP ?? 30);
+    GameState.enemyHP = Number(state.enemyHP ?? GameState.enemyHP ?? 30);
+    if (typeof state.playerMaxHP !== 'undefined') {
+      GameState.playerMaxHP = Number(state.playerMaxHP);
+    }
+    if (typeof state.enemyMaxHP !== 'undefined') {
+      GameState.enemyMaxHP = Number(state.enemyMaxHP);
+    }
+    GameState.playerSP = Number(state.playerSP ?? 0);
+    GameState.enemySP = Number(state.enemySP ?? 0);
   }
-  if (typeof state.playerMaxHP !== 'undefined') {
-    GameState.enemyMaxHP = state.playerMaxHP;
-  }
-  GameState.playerSP = state.enemySP || 0;
-  GameState.enemySP = state.playerSP || 0;
 
   /** owner 系プロパティを破壊的に反転する（コピーは呼び出し元で1回だけ行う） */
   const invertOwnerInPlace = (card) => {
@@ -336,9 +432,17 @@ function applySyncState(state) {
     return card;
   };
 
-  /** 受信データを一度だけディープコピーしてから反転する */
+  /** 受信データを一度だけディープコピーしてから owner を反転する（クライアント側用） */
   const invertCardOwner = (card) =>
     card ? invertOwnerInPlace(JSON.parse(JSON.stringify(card))) : null;
+
+  /**
+   * 受信データをディープコピーのみ行い、owner は反転しない（ホスト復帰用）
+   * @param {object|null} card - カードオブジェクト
+   * @returns {object|null} ディープコピーされたカード
+   */
+  const cloneCardOnly = (card) =>
+    card ? JSON.parse(JSON.stringify(card)) : null;
 
   // Firebaseでは配列に自動変換されたり省略されたりオブジェクト化されたりするため、厳密に配列化する
   const restoreArr = (arr, len = null) => {
@@ -358,38 +462,68 @@ function applySyncState(state) {
     } else {
       result = len !== null ? Array(len).fill(null) : [];
     }
-    // 反転させたうえで適用する
-    return result.map((c) => invertCardOwner(c));
+    // shouldInvert 時のみ owner を反転させる。ホスト復帰時はコピーのみ行う。
+    return result.map((c) =>
+      shouldInvert ? invertCardOwner(c) : cloneCardOnly(c)
+    );
   };
 
   const restoreNumericArr = (arr, len) =>
     Array.from({ length: len }, (_, i) => Number(arr?.[i] ?? 0));
 
-  GameState.playerBoard = restoreArr(state.enemyBoard, 3);
-  GameState.enemyBoard = restoreArr(state.playerBoard, 3);
-  GameState.playerHand = restoreArr(state.enemyHand);
-  GameState.enemyHand = restoreArr(state.playerHand);
-  GameState.playerDiscard = restoreArr(state.enemyDiscard);
-  GameState.enemyDiscard = restoreArr(state.playerDiscard);
-  GameState.playerDeck = restoreArr(state.enemyDeck);
-  GameState.enemyDeck = restoreArr(state.playerDeck);
+  if (shouldInvert) {
+    // クライアント側: ホストから見た player/enemy を反転して適用
+    GameState.playerBoard = restoreArr(state.enemyBoard, 3);
+    GameState.enemyBoard = restoreArr(state.playerBoard, 3);
+    GameState.playerHand = restoreArr(state.enemyHand);
+    GameState.enemyHand = restoreArr(state.playerHand);
+    GameState.playerDiscard = restoreArr(state.enemyDiscard);
+    GameState.enemyDiscard = restoreArr(state.playerDiscard);
+    GameState.playerDeck = restoreArr(state.enemyDeck);
+    GameState.enemyDeck = restoreArr(state.playerDeck);
 
-  // 封印レーン（敵味方を反転）と戦闘追加・スキップ状態の同期
-  GameState.playerSealedLanes = restoreNumericArr(state.enemySealedLanes, 3);
-  GameState.enemySealedLanes = restoreNumericArr(state.playerSealedLanes, 3);
-  GameState.extraTurnCount = state.extraTurnCount || 0;
-  GameState.attackSkipCount = state.attackSkipCount || 0;
+    // 封印レーン（敵味方を反転）
+    GameState.playerSealedLanes = restoreNumericArr(state.enemySealedLanes, 3);
+    GameState.enemySealedLanes = restoreNumericArr(state.playerSealedLanes, 3);
 
-  // ターン表記（player / enemy）もホストから見た主観なので逆転させる
-  if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
-  else if (state.currentTurn === 'enemy') GameState.currentTurn = 'player';
-  else GameState.currentTurn = state.currentTurn;
+    // ターン表記もホスト主観なので逆転
+    if (state.currentTurn === 'player') GameState.currentTurn = 'enemy';
+    else if (state.currentTurn === 'enemy') GameState.currentTurn = 'player';
+    else GameState.currentTurn = GameState.currentTurn || 'player';
 
-  GameState.turnCount = state.turnCount;
+    // 加護フラグ（敵味方反転）
+    GameState.valkyriaGuardBlue = state.valkyriaGuardRed || 0;
+    GameState.valkyriaGuardRed = state.valkyriaGuardBlue || 0;
 
-  // 戦乙女の加護フラグ（敵味方反転）
-  GameState.valkyriaGuardBlue = state.valkyriaGuardRed || 0;
-  GameState.valkyriaGuardRed = state.valkyriaGuardBlue || 0;
+  } else {
+    // ホスト復帰時: 反転なしでそのまま適用
+    GameState.playerBoard = restoreArr(state.playerBoard, 3);
+    GameState.enemyBoard = restoreArr(state.enemyBoard, 3);
+    GameState.playerHand = restoreArr(state.playerHand);
+    GameState.enemyHand = restoreArr(state.enemyHand);
+    GameState.playerDiscard = restoreArr(state.playerDiscard);
+    GameState.enemyDiscard = restoreArr(state.enemyDiscard);
+    GameState.playerDeck = restoreArr(state.playerDeck);
+    GameState.enemyDeck = restoreArr(state.enemyDeck);
+
+    // 封印レーン（そのまま適用）
+    GameState.playerSealedLanes = restoreNumericArr(state.playerSealedLanes, 3);
+    GameState.enemySealedLanes = restoreNumericArr(state.enemySealedLanes, 3);
+
+    // ホスト視点のままなので反転不要
+    GameState.currentTurn =
+      state.currentTurn || GameState.currentTurn || 'player';
+
+    // 加護フラグ（そのまま適用）
+    GameState.valkyriaGuardBlue = state.valkyriaGuardBlue || 0;
+    GameState.valkyriaGuardRed = state.valkyriaGuardRed || 0;
+
+  }
+
+  // 戦闘追加・スキップ状態の同期（敵味方共通のため反転不要）
+  GameState.extraTurnCount = Number(state.extraTurnCount || 0);
+  GameState.attackSkipCount = Number(state.attackSkipCount || 0);
+  GameState.turnCount = Number(state.turnCount || GameState.turnCount || 1);
 
   // 全てのUIを新しいステートに合わせて強制更新
   updateHPBar('blue', GameState.playerHP);

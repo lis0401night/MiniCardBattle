@@ -46,6 +46,7 @@ export {
   initBattleState,
   determineTurnOrder,
   startMulliganPhase,
+  executeRejoinBattle,
 } from './battleInit.js';
 
 // --- battleSelection.js: プレイヤー入力待機 ---

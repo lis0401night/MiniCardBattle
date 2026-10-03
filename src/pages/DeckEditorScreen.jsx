@@ -504,9 +504,10 @@ export default function DeckEditorScreen({ switchScreen }) {
     if (
       isDefenseConfig ||
       GameState.gameMode === 'online_deck_edit' ||
+      GameState.gameMode === 'online_quick' ||
       GameState.gameMode === 'free'
     ) {
-      // 防衛デッキ登録・オンラインデッキ設定・フリー対戦：ステージ選択画面へ遷移
+      // 防衛デッキ登録・オンラインデッキ設定・クイックマッチ・フリー対戦：ステージ選択画面へ遷移
       GameState.appState = 'select_stage';
       if (typeof window.initStageSelectScreen === 'function')
         window.initStageSelectScreen();

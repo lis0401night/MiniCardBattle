@@ -1,0 +1,67 @@
+import MenuButton from '../components/common/MenuButton.jsx';
+import ScreenLayout from '../components/common/ScreenLayout.jsx';
+import { showOnlineMenu, startQuickMatchChallenge } from '../services/uiMainCore.js';
+import { showAlertModal } from '../services/uiModals.js';
+
+/**
+ * オンライン対戦 - クイックマッチ画面コンポーネント
+ * ルール、ランキング、挑戦（デッキ一覧への遷移）を提供する。
+ * @returns {import('react').ReactElement} クイックマッチ画面
+ */
+export default function OnlineQuickMatchScreen() {
+  /**
+   * ルールボタンクリック時のハンドラ
+   * @returns {void}
+   */
+  const handleRulesClick = () => {
+    showAlertModal?.('クイックマッチのルールは準備中です。');
+  };
+
+  /**
+   * ランキングボタンクリック時のハンドラ
+   * @returns {void}
+   */
+  const handleRankingClick = () => {
+    showAlertModal?.('クイックマッチのランキングは準備中です。');
+  };
+
+  /**
+   * 挑戦ボタンクリック時のハンドラ
+   * クイックマッチ挑戦フロー（デッキ選択一覧へ遷移）を開始する
+   * @returns {void}
+   */
+  const handleChallengeClick = () => {
+    startQuickMatchChallenge?.();
+  };
+
+  return (
+    <ScreenLayout
+      id="screen-online-quick-match"
+      title="クイックマッチ"
+      titleColor="#38bdf8"
+      titleGlow={true}
+      backgroundImage="background_online.webp"
+      onBackClick={() => showOnlineMenu?.()}
+      showBackButton={true}
+      backHasBorder={false}
+    >
+      <div className="menu-button-container">
+        <MenuButton
+          label="ルール"
+          variant="yellow"
+          onClick={handleRulesClick}
+        />
+        <MenuButton
+          label="ランキング"
+          variant="blue"
+          onClick={handleRankingClick}
+        />
+        <MenuButton
+          label="挑戦"
+          variant="red"
+          onClick={handleChallengeClick}
+        />
+      </div>
+    </ScreenLayout>
+  );
+}

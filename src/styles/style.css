@@ -1,3 +1,10 @@
+/* ==========================================================================
+   【UIデザイン規約・絶対厳守】
+   本ゲームでは、端末の描画パフォーマンス維持およびデザイン統一のため、
+   背景やUI要素への「ぼかし（backdrop-filter: blur / filter: blur 等）」の使用は禁止です。
+   モーダルやオーバーレイの背景には、純粋な透過色（rgba(0, 0, 0, 0.85) 等）を使用してください。
+   ========================================================================== */
+
 *,
 *::before,
 *::after {
@@ -123,6 +130,9 @@ body.is-preparing-battle::after {
 }
 
 #screen-online-menu,
+#screen-online-quick-match,
+#screen-online-quick-matching,
+#screen-online-room-match,
 #screen-online-rules,
 #screen-online-search,
 #screen-online-lobby {
@@ -2590,6 +2600,8 @@ h2 {
   height: 115px;
 }
 
+/* モーダル共通オーバーレイ
+   ※【重要】ぼかし（backdrop-filter: blur 等）は禁止。純粋な透過黒（rgba(0, 0, 0, 0.85)）を使用すること */
 .modal-overlay {
   display: none;
   position: fixed;
