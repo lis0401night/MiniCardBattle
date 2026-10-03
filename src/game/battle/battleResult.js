@@ -822,7 +822,10 @@ export function endBattle() {
   if (updateBattleUIHook) updateBattleUIHook();
   GameState.isProcessing = false;
 
-  if (GameState.gameMode === 'online' || GameState.gameMode === 'online_quick') {
+  if (
+    GameState.gameMode === 'online' ||
+    GameState.gameMode === 'online_quick'
+  ) {
     if (
       GameState.onlineSubMode === 'quick' ||
       GameState.gameMode === 'online_quick'

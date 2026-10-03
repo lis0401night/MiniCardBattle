@@ -22,11 +22,7 @@ import {
   AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
 } from '../../utils/constants/config.js';
-import {
-  checkIsOnlineMode,
-  playSound,
-  sleep,
-} from '../../utils/gameUtils.js';
+import { checkIsOnlineMode, playSound, sleep } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { executeEnemyAI } from '../ai.js';
 import { activateLeaderSkill } from '../leaderSkills.js';
@@ -338,9 +334,7 @@ export function generateSyncState() {
     playerMaxHP: Number(
       GameState.playerMaxHP ?? GameState.playerConfig?.hp ?? 30
     ),
-    enemyMaxHP: Number(
-      GameState.enemyMaxHP ?? GameState.enemyConfig?.hp ?? 30
-    ),
+    enemyMaxHP: Number(GameState.enemyMaxHP ?? GameState.enemyConfig?.hp ?? 30),
     playerSP: Number(GameState.playerSP ?? 0),
     enemySP: Number(GameState.enemySP ?? 0),
     playerSealedLanes: sanitizeNumericArr(GameState.playerSealedLanes, 3),
@@ -494,7 +488,6 @@ export function applySyncState(state, forceInvert = null) {
     // 加護フラグ（敵味方反転）
     GameState.valkyriaGuardBlue = state.valkyriaGuardRed || 0;
     GameState.valkyriaGuardRed = state.valkyriaGuardBlue || 0;
-
   } else {
     // ホスト復帰時: 反転なしでそのまま適用
     GameState.playerBoard = restoreArr(state.playerBoard, 3);
@@ -517,7 +510,6 @@ export function applySyncState(state, forceInvert = null) {
     // 加護フラグ（そのまま適用）
     GameState.valkyriaGuardBlue = state.valkyriaGuardBlue || 0;
     GameState.valkyriaGuardRed = state.valkyriaGuardRed || 0;
-
   }
 
   // 戦闘追加・スキップ状態の同期（敵味方共通のため反転不要）

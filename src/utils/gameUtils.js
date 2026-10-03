@@ -191,7 +191,13 @@ export function createDamagePopup(targetEl, text, color = '#ef4444') {
  * @param {number|null} contextValue - ダメージ量などのコンテキスト数値
  * @returns {string|null} 抽出された台詞文字列（存在しない場合はnull）
  */
-function resolveDialogueText(entry, type, targetConfig, contextValue) {
+function resolveDialogueText(
+  entry,
+  type,
+  targetConfig,
+  contextValue,
+  targetSkinId = null
+) {
   if (entry === undefined || entry === null) return null;
   if (typeof entry === 'string') return entry;
 
@@ -220,11 +226,28 @@ function resolveDialogueText(entry, type, targetConfig, contextValue) {
 
   // 対戦相手別オブジェクト形式の場合（{ satan: '...', default: '...' }）
   if (typeof entry === 'object') {
-    if (targetConfig && entry[targetConfig.id]) {
-      const specific = entry[targetConfig.id];
-      if (typeof specific === 'string') return specific;
-      if (Array.isArray(specific) && specific.length > 0) {
-        return specific[Math.floor(getSeededRandom() * specific.length)];
+    if (targetConfig) {
+      // 1. スキン固有キーの検索（例: 'knight_assassin' や 'assassin'）
+      if (targetSkinId && targetSkinId !== 'default') {
+        const skinCombinedKey = `${targetConfig.id}_${targetSkinId}`;
+        const skinSpecific = entry[skinCombinedKey] || entry[targetSkinId];
+        if (skinSpecific) {
+          if (typeof skinSpecific === 'string') return skinSpecific;
+          if (Array.isArray(skinSpecific) && skinSpecific.length > 0) {
+            return skinSpecific[
+              Math.floor(getSeededRandom() * skinSpecific.length)
+            ];
+          }
+        }
+      }
+
+      // 2. キャラクターIDの検索（例: 'knight'）
+      if (entry[targetConfig.id]) {
+        const specific = entry[targetConfig.id];
+        if (typeof specific === 'string') return specific;
+        if (Array.isArray(specific) && specific.length > 0) {
+          return specific[Math.floor(getSeededRandom() * specific.length)];
+        }
       }
     }
     if (entry.default) {
@@ -259,14 +282,16 @@ export function getDialogue(
 ) {
   if (!speakerConfig) return '...';
 
-  // スキンによる台詞のオーバーライドをチェック
+  // 発話者のスキンによる台詞のオーバーライドをチェック
   let skinId = 'default';
   if (forceSide === 'player') {
     skinId =
+      speakerConfig.currentSkin ||
       (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) ||
       'default';
   } else if (forceSide === 'enemy') {
     skinId =
+      speakerConfig.currentSkin ||
       (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) ||
       'default';
   } else {
@@ -276,6 +301,7 @@ export function getDialogue(
       GameState.playerConfig.id === speakerConfig.id
     ) {
       skinId =
+        speakerConfig.currentSkin ||
         (GameState.playerSkins && GameState.playerSkins[speakerConfig.id]) ||
         'default';
     } else if (
@@ -283,8 +309,65 @@ export function getDialogue(
       GameState.enemyConfig.id === speakerConfig.id
     ) {
       skinId =
+        speakerConfig.currentSkin ||
         (GameState.enemySkins && GameState.enemySkins[speakerConfig.id]) ||
         'default';
+    } else if (speakerConfig.currentSkin) {
+      skinId = speakerConfig.currentSkin;
+    }
+  }
+
+  // 対戦相手（ターゲット）のスキンIDを判定
+  let targetSkinId = 'default';
+  if (targetConfig) {
+    if (forceSide === 'player') {
+      targetSkinId =
+        targetConfig.currentSkin ||
+        (GameState.enemySkins && GameState.enemySkins[targetConfig.id]) ||
+        'default';
+    } else if (forceSide === 'enemy') {
+      targetSkinId =
+        targetConfig.currentSkin ||
+        (GameState.playerSkins && GameState.playerSkins[targetConfig.id]) ||
+        'default';
+    } else {
+      if (
+        GameState.playerConfig &&
+        GameState.playerConfig.id === targetConfig.id
+      ) {
+        targetSkinId =
+          targetConfig.currentSkin ||
+          (GameState.playerSkins && GameState.playerSkins[targetConfig.id]) ||
+          'default';
+      } else if (
+        GameState.enemyConfig &&
+        GameState.enemyConfig.id === targetConfig.id
+      ) {
+        targetSkinId =
+          targetConfig.currentSkin ||
+          (GameState.enemySkins && GameState.enemySkins[targetConfig.id]) ||
+          'default';
+      } else if (targetConfig.currentSkin) {
+        targetSkinId = targetConfig.currentSkin;
+      }
+    }
+  }
+
+  // 同キャラ・同スキン（ミラーマッチ）時のイントロ処理
+  if (
+    type === 'intro' &&
+    targetConfig &&
+    speakerConfig.id === targetConfig.id &&
+    skinId === targetSkinId
+  ) {
+    // スキンに固有の mirrorIntro があれば最優先
+    const skinObj =
+      skinId !== 'default' && speakerConfig.skins && speakerConfig.skins[skinId];
+    if (skinObj?.mirrorIntro) {
+      return skinObj.mirrorIntro;
+    }
+    if (speakerConfig.mirrorIntro) {
+      return speakerConfig.mirrorIntro;
     }
   }
 
@@ -299,7 +382,8 @@ export function getDialogue(
       skinEntry,
       type,
       targetConfig,
-      contextValue
+      contextValue,
+      targetSkinId
     );
     if (skinText !== null) return skinText;
   }
@@ -310,7 +394,8 @@ export function getDialogue(
     defaultEntry,
     type,
     targetConfig,
-    contextValue
+    contextValue,
+    targetSkinId
   );
   return text !== null ? text : '...';
 }

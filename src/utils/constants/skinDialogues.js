@@ -408,6 +408,45 @@ const HIGH_DIALOGUES = {
 };
 
 // ===========================================================================
+// 暗殺者スキン台詞
+// ===========================================================================
+
+/** @type {Object<string, Object>} 暗殺者スキンの台詞データ（charId → dialogue） */
+const ASSASSIN_DIALOGUES = {
+  knight: {
+    preBattleLine: '……標的を確認。これより、排除する。',
+    mirrorIntro:
+      '……影がふたつ。どちらが本物の暗殺者か……息の根を止めて確かめる。',
+    intro: {
+      android: '……鉄の人形。心臓はなくても……急所はある。',
+      dragon: '……騒がしいトカゲ。喉を裂けば、火も吹けない。',
+      knight: '……聖騎士。隙のない構え……だが、刃は届く。',
+      cthulhu: '……不気味な気配。深淵ごと……首を落とす。',
+      elf: '……静かな射手。間合いに入れば……私の勝ち。',
+      cleric: '……狂気の祈り。神に祈る前に……終わらせる。',
+      devilhunter: '……重い棺桶。暗殺に無駄な荷物は……不要。',
+      witch: '……時を操る魔女。詠唱の前に……喉を突く。',
+      oni: '……鬼の血。暴れ出す前に……断ち切る。',
+      priest: '……墓の守護者。再び、永遠の眠りを。',
+      automata: '……冷たい鉄の瞳。関節の隙間を……穿つ。',
+      valkyria: '……飛ぶ鳥。その翼を落とせば……ただの標的。',
+      satan: '……魔王。首を獲れば……依頼金は跳ね上がる。',
+      void: '……虚空の騎士。中身が空でも……装甲の継ぎ目を断つ。',
+      succubus: '……魅惑の術。私には……感情も雑念もない。',
+      warlock: '……大賢者の亡霊。死者をもう一度……殺すだけ。',
+      default: '……標的を確認。……仕事の時間。',
+    },
+    win: '……任務完了。……標的の沈黙を確認。',
+    lose: '……刃が、届かなかった……。……退く。',
+    damage: {
+      [DAMAGE_TYPE.SMALL]: ['……浅い。', '……かすり傷。'],
+      [DAMAGE_TYPE.BIG]: ['……くっ。', '……仕留め損ねたか。'],
+    },
+    skill: '……影よ、刃となれ。……逃がさない。',
+  },
+};
+
+// ===========================================================================
 // 台詞適用関数
 // ===========================================================================
 
@@ -426,6 +465,7 @@ export function applySkinDialogues(CHARACTERS) {
     { skinType: 'summer', dialogues: SUMMER_DIALOGUES },
     { skinType: 'school', dialogues: SCHOOL_DIALOGUES },
     { skinType: 'high', dialogues: HIGH_DIALOGUES },
+    { skinType: 'assassin', dialogues: ASSASSIN_DIALOGUES },
   ];
 
   for (const { skinType, dialogues } of skinDialogueMap) {
@@ -440,7 +480,14 @@ export function applySkinDialogues(CHARACTERS) {
       const skin = char.skins[key];
       if (skin) {
         skin.dialogue = dialogue;
+        if (dialogue.preBattleLine) {
+          skin.preBattleLine = dialogue.preBattleLine;
+        }
+        if (dialogue.mirrorIntro) {
+          skin.mirrorIntro = dialogue.mirrorIntro;
+        }
       }
     }
   }
 }
+

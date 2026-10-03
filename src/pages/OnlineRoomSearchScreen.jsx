@@ -6,7 +6,10 @@ import {
   joinRoomByCode,
   listenToLobbyRooms,
 } from '../services/multiplayer.js';
-import { showOnlineLobby, showOnlineRoomMatch } from '../services/uiMainCore.js';
+import {
+  showOnlineLobby,
+  showOnlineRoomMatch,
+} from '../services/uiMainCore.js';
 import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import {
   getOrCreateUUID,

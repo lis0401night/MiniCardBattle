@@ -7,7 +7,6 @@
 /** マリガン選択の制限時間（秒） */
 export const ONLINE_TIMER_MULLIGAN_SEC = 30;
 
-
 /** メインフェイズ（ターン手番）の制限時間（秒）。1ターンの総持ち時間でもある */
 export const ONLINE_TIMER_MAIN_PHASE_SEC = 60;
 

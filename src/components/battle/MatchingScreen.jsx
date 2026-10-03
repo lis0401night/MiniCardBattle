@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
-import { CHARACTERS, getSkinImage } from '../../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getLeaderDisplayNameInfo,
+  getSkinImage,
+} from '../../utils/constants/characters.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
@@ -119,19 +123,16 @@ export default function MatchingScreen({
       : baseEnemy.icon,
   };
 
-  // 「肩書 名前」から分離するヘルパー
-  const parseName = (fullName) => {
-    if (!fullName) return { subtitle: '不明', name: 'Unknown' };
-    const parts = fullName.split(' ');
-    if (parts.length >= 2) {
-      return { subtitle: parts[0], name: parts.slice(1).join(' ') };
-    }
-    // スペースがない場合は汎用テキスト
-    return { subtitle: 'チャレンジャー', name: fullName };
-  };
+  // リーダースキン設定時はスキンの二つ名 + スキン対応名（例: ギルドの暗殺者 レダ、暗黒騎士 セレスティア等）を取得
+  const playerSkinId = GameState.playerSkins?.[player.id] || 'default';
+  const enemySkinId =
+    testEnemySkinId ||
+    GameState.enemySkins?.[enemy.id] ||
+    enemy.skin ||
+    'default';
 
-  const pData = parseName(player.name);
-  const eData = parseName(enemy.name);
+  const pData = getLeaderDisplayNameInfo(player, playerSkinId);
+  const eData = getLeaderDisplayNameInfo(enemy, enemySkinId);
 
   // バトルのステージIDを決定（initBattleStateと同じ共通ロジック）
   const stageId = resolveBattleStageId({

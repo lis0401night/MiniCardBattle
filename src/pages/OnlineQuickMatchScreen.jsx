@@ -61,11 +61,7 @@ export default function OnlineQuickMatchScreen() {
           variant="blue"
           onClick={handleRankingClick}
         />
-        <MenuButton
-          label="挑戦"
-          variant="red"
-          onClick={handleChallengeClick}
-        />
+        <MenuButton label="挑戦" variant="red" onClick={handleChallengeClick} />
       </div>
     </ScreenLayout>
   );

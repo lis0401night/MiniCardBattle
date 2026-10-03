@@ -18,6 +18,7 @@
  *   {deckSize} - 所持カード枚数
  */
 import { CARD_MASTER } from './cards.js';
+import { GameState } from '../../state/gameState.js';
 
 // HP閾値の定数
 const HP_CRITICAL_THRESHOLD = 5;
@@ -50,6 +51,9 @@ export const DUNGEON_CHARACTER_TALK_LINES = {
     ],
     knight: [
       '次なる階層から、ただならぬ邪気を感じる。\n間違いなく、強力な魔物が待ち構えていよう。\n[next]だが恐れることはない、マスター。\n我が聖なる刃が、いかなる敵からも御身を守り抜く。\nさあ、共に試練を乗り越えようぞ！',
+    ],
+    knight_assassin: [
+      '……次の標的、強い。\n……油断しない。\n……全力で仕留める。',
     ],
     cthulhu: [
       'あら……次の空間から、甘美な絶望の匂いが漂ってきますわ。\nどうやら、そこそこの手練れが待ち受けているようです。\n[next]ふふっ、どんな悲鳴を聞かせてくれるのかしら。\nあなたも、このゾクゾクするような恐怖を楽しんでいらして。\nさあ、深淵の宴を始めましょうか。',
@@ -84,6 +88,9 @@ export const DUNGEON_CHARACTER_TALK_LINES = {
     knight: [
       '……この圧倒的な重圧。空気が震えているのがわかるか。\nかつてない強敵が、我々の行く手を阻もうとしている。\n[next]しかし、ここで退くは騎士の恥辱。\nマスター、全霊をもって指示を頼む！\n我が最強の一撃で、あの闇を切り裂いてみせよう！',
     ],
+    knight_assassin: [
+      '……規格外の獲物。\n……隙を待つ。\n……一瞬で首を刈る。',
+    ],
     cthulhu: [
       '……素晴らしい。ええ、実に素晴らしいですわ。\n身の毛もよだつほどの冒涜的な気配。並の精神なら狂ってしまうでしょう。\n[next]でも、あなたは私と共にいらっしゃるのだから、大丈夫ですわよね？\nふふっ、この極上の恐怖、残さず味わい尽くしましょう。\n私から目を離してはいけませんわよ？',
     ],
@@ -116,6 +123,9 @@ export const DUNGEON_CHARACTER_TALK_LINES = {
     ],
     knight: [
       '見事な勝利であった！ マスターの采配、実に素晴らしい。\nあの強大な敵を前にしても、一歩も退かぬその姿……\n[next]我が主として、心より誇りに思う。\nこの勝利を糧に、我らは更なる高みへと至るだろう。\nさあ、次なる戦いへ参ろうか！',
+    ],
+    knight_assassin: [
+      '……標的の沈黙を確認。\n……次へ。\n……気配を消す。',
     ],
     cthulhu: [
       'ふふっ、お見事ですわ。素晴らしい結末でした。\n強者が崩れ落ちる瞬間の絶望……ああ、たまりませんわね。\n[next]あなたの指揮も、まるで悪魔のように残酷で……とても素敵でしたわ。\nもっと、もっと私を楽しませてくださいな。\n次の獲物も、きっと美味しいはずですわ。',
@@ -150,6 +160,9 @@ export const DUNGEON_CHARACTER_TALK_LINES = {
     knight: [
       'マスター！ 御身の傷、もはや限界を超えておる！\nなぜそこまでして……いや、今は説教などしている場合ではないな。\n[next]私の背に隠れよ！ これ以上の攻撃は、私が全て受け止める！\nどうか、命を粗末になさらないでくれ。\n貴方を失えば、私は……っ！',
     ],
+    knight_assassin: [
+      '……傷が深い。\n……下がって。\n……ここからは、私がやる。',
+    ],
     cthulhu: [
       'あなた、だいぶ精神と肉体がすり減っていますわよ。\nあらあら……そんなに無理をして、壊れてしまっては困りますわ。\n[next]あなたが深淵に還るのは、まだずっと先の話……。\n今は私の腕の中で、少し休みなさいな。\n……悪い夢は、私が全て食べてあげますから。',
     ],
@@ -182,6 +195,9 @@ export const DUNGEON_CHARACTER_TALK_LINES = {
     ],
     knight: [
       '少し息が上がっているようだな、マスター。\n無理を重ねていては、いずれ綻びが生じる。\n[next]勇猛であることと、無謀であることは違うのだ。\nここは一度歩みを緩め、態勢を立て直すべきだろう。\n……私が傍にいる。焦る必要はないのだ。',
+    ],
+    knight_assassin: [
+      '……被弾が増えている。\n……動きが鈍い。\n……無理はしないで。',
     ],
     cthulhu: [
       '少し消耗なさっているようですわね。\nあまり無理をしては、足元をすくわれますわよ。\n[next]深淵は、弱った心にこそ付け込むものですから。\n深呼吸をして……ええ、そうですわ。\n私の声だけを聞いていれば、大丈夫ですわよ。',
@@ -247,6 +263,20 @@ export const DUNGEON_CHARACTER_TALK_LINES = {
       ],
       [
         'こうして静かな時間を共に過ごしていると……\n戦いの中にあることを忘れてしまいそうになる。\n[next]平和な日々が訪れたなら、共に旅をするのも悪くない。\n……いや、少し気が早かったな。\n今は目の前の試練に集中せねば。',
+      ],
+    ],
+    knight_assassin: [
+      [
+        '……{floor}階。\n……気配を消して、次を討つ。\n……静かに。',
+      ],
+      [
+        '……武器、{deckSize}。\n……十分。\n……確実に仕留める。',
+      ],
+      [
+        '……次の獲物を。\n……無駄口は叩かない。\n……行く。',
+      ],
+      [
+        '…………。\n……（静かに短剣の手入れをしている）\n……（微かに頷いた）',
       ],
     ],
     cthulhu: [
@@ -1256,11 +1286,30 @@ export function buildDungeonLeaderTalkDialogue(context, playerConfig) {
   // コンテキスト判定
   const contextKey = resolveContextKey(context);
 
-  // 通常キャラクターリーダーかカードリーダーかを判定して台詞配列を取得（重複していたノード生成処理を共通化）
+  // 通常キャラクターリーダーかカードリーダーかを判定して台詞配列を取得（スキン適用時はスキン固有キーを最優先）
+  const charId = playerConfig.id;
+  const skinId =
+    playerConfig.currentSkin ||
+    (typeof GameState !== 'undefined' ? GameState.playerSkins?.[charId] : null) ||
+    (() => {
+      try {
+        return JSON.parse(
+          localStorage.getItem('mini_card_battle_player_skins') || '{}'
+        )[charId];
+      } catch {
+        return null;
+      }
+    })();
+  const skinKey = skinId ? `${charId}_${skinId}` : null;
+  const effectiveKey =
+    skinKey && DUNGEON_CHARACTER_TALK_LINES.normal[skinKey]
+      ? skinKey
+      : charId;
+
   const isCharacterLeader =
-    !!playerConfig.id && !!DUNGEON_CHARACTER_TALK_LINES.normal[playerConfig.id];
+    !!effectiveKey && !!DUNGEON_CHARACTER_TALK_LINES.normal[effectiveKey];
   const lines = isCharacterLeader
-    ? resolveCharacterLines(playerConfig.id, contextKey)
+    ? resolveCharacterLines(effectiveKey, contextKey)
     : resolveCardLeaderLines(
         resolveVoiceCategoryFromConfig(playerConfig),
         contextKey
@@ -1311,8 +1360,8 @@ function resolveTalkLines(table, key, contextKey, options) {
 }
 
 /**
- * キャラクターリーダーの台詞を解決する
- * @param {string} charId - キャラクターID
+ * キャラクターリーダー（または特定スキンキー）の台詞を解決する
+ * @param {string} charId - キャラクターID または スキンキー（例: 'knight_assassin'）
  * @param {string} contextKey - コンテキストキー
  * @returns {string[]} 台詞行の配列
  */

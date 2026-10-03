@@ -25,11 +25,7 @@ export default function DisconnectWaitOverlay() {
     return null;
   }
 
-  const {
-    isSelfDisconnected,
-    remainingSeconds,
-    isReconnectedNotice,
-  } = state;
+  const { isSelfDisconnected, remainingSeconds, isReconnectedNotice } = state;
 
   const progressPercent = Math.max(
     0,

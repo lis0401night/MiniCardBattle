@@ -107,13 +107,15 @@ export function handleProgressionNextStep() {
 
     // クイックマッチの場合はセッションを完全に破棄・退室してクイックマッチ画面へ復帰
     if (subMode === 'quick') {
-      safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(() => {
-        if (typeof showOnlineQuickMatch === 'function') {
-          showOnlineQuickMatch();
-        } else {
-          switchScreen('screen-online-quick-match');
+      safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(
+        () => {
+          if (typeof showOnlineQuickMatch === 'function') {
+            showOnlineQuickMatch();
+          } else {
+            switchScreen('screen-online-quick-match');
+          }
         }
-      });
+      );
       return;
     } else if (subMode === 'room') {
       // ルームマッチの場合はルーム内ロビー画面へ復帰（再戦用）
@@ -133,13 +135,15 @@ export function handleProgressionNextStep() {
     GameState.gameMode === 'online_quick_cpu'
   ) {
     GameState.onlineSubMode = null;
-    safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(() => {
-      if (typeof showOnlineQuickMatch === 'function') {
-        showOnlineQuickMatch();
-      } else {
-        switchScreen('screen-online-quick-match');
+    safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(
+      () => {
+        if (typeof showOnlineQuickMatch === 'function') {
+          showOnlineQuickMatch();
+        } else {
+          switchScreen('screen-online-quick-match');
+        }
       }
-    });
+    );
     return;
   } else if (GameState.gameMode === 'tournament') {
     if (GameState.appState === 'pre_battle_dialogue') {

@@ -62,7 +62,15 @@ export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
 
   GameState.appState = 'story_intro';
 
+  const playerSkinId =
+    GameState.playerSkins?.[playerCharId] ||
+    GameState.playerConfig?.currentSkin ||
+    'default';
+  const skinKey =
+    playerSkinId !== 'default' ? `${playerCharId}_${playerSkinId}` : null;
+
   const dialogues =
+    (skinKey && EVENT_DIALOGUES[modeKey]?.[skinKey]) ||
     EVENT_DIALOGUES[modeKey]?.[playerCharId] ||
     EVENT_DIALOGUES[modeKey]?.['default'] ||
     [];
@@ -103,7 +111,15 @@ export function initFortuneEventMode(playerCharId, enemyCharId) {
 
   GameState.appState = 'story_intro';
 
+  const fortuneSkinId =
+    GameState.playerSkins?.[playerCharId] ||
+    GameState.playerConfig?.currentSkin ||
+    'default';
+  const fortuneSkinKey =
+    fortuneSkinId !== 'default' ? `${playerCharId}_${fortuneSkinId}` : null;
+
   const dialogues =
+    (fortuneSkinKey && EVENT_FORTUNE_DIALOGUES[modeKey]?.[fortuneSkinKey]) ||
     EVENT_FORTUNE_DIALOGUES[modeKey]?.[playerCharId] ||
     EVENT_FORTUNE_DIALOGUES[modeKey]?.['default'] ||
     [];
@@ -169,7 +185,19 @@ export function setupEventConfrontation() {
   const isFortune = GameState.gameMode?.endsWith('_fortune');
   const dialoguesSource = isFortune ? EVENT_FORTUNE_DIALOGUES : EVENT_DIALOGUES;
   const modeDialogues = dialoguesSource[GameState.gameMode] || {};
-  const dialogs = modeDialogues[charId] || modeDialogues['default'] || [];
+
+  const confrontationSkinId =
+    GameState.playerSkins?.[charId] ||
+    GameState.playerConfig?.currentSkin ||
+    'default';
+  const confrontationSkinKey =
+    confrontationSkinId !== 'default' ? `${charId}_${confrontationSkinId}` : null;
+
+  const dialogs =
+    (confrontationSkinKey && modeDialogues[confrontationSkinKey]) ||
+    modeDialogues[charId] ||
+    modeDialogues['default'] ||
+    [];
 
   let confrontationLines = [];
   // 3:対峙描写, 4:敵ボス台詞
@@ -181,11 +209,18 @@ export function setupEventConfrontation() {
   // 無い場合でも、キャラクターの preBattleLine があれば動的にそれを第三の台詞として表示する。
   if (dialogs[5]) {
     confrontationLines.push({ ...dialogs[5] });
-  } else if (GameState.playerConfig.preBattleLine) {
-    confrontationLines.push({
-      speaker: 'player',
-      text: GameState.playerConfig.preBattleLine,
-    });
+  } else {
+    const skinDef =
+      confrontationSkinId !== 'default' &&
+      GameState.playerConfig?.skins?.[confrontationSkinId];
+    const fallbackLine =
+      skinDef?.preBattleLine || GameState.playerConfig.preBattleLine;
+    if (fallbackLine) {
+      confrontationLines.push({
+        speaker: 'player',
+        text: fallbackLine,
+      });
+    }
   }
 
   GameState.dialogueQueue = confrontationLines;

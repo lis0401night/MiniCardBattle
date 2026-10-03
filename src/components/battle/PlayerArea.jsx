@@ -92,7 +92,7 @@ export default function PlayerArea({
             id="player-name"
             style={{ color: 'var(--color-blue)' }}
           >
-            {playerConfig.name}
+            {playerConfig.displayName || playerConfig.name}
           </div>
           <div className="hp-bar-bg">
             <div

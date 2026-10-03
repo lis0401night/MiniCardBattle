@@ -57,6 +57,7 @@ import {
   canShowUnlockableCharacter,
   CHARACTERS,
   getIconFramePath,
+  getLeaderDisplayNameInfo,
   getPlayerIconPath,
   getSkinImage,
 } from '../utils/constants/characters.js';
@@ -2227,39 +2228,45 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 skinIdToUse,
                 'image'
               );
+              const displayTitle = getLeaderDisplayNameInfo(
+                charDetailData,
+                skinIdToUse
+              ).fullName;
+
               return (
-                <img
-                  src={imgSrc}
-                  style={{
-                    width: '140px',
-                    height: '175px',
-                    objectFit: 'cover',
-                    borderRadius: '8px',
-                    border: '2px solid #334155',
-                    marginBottom: '10px',
-                    flexShrink: 0,
-                    cursor: 'pointer',
-                  }}
-                  alt={charDetailData.name}
-                  onClick={() => {
-                    playSound?.(SOUNDS?.seClick);
-                    setSimpleImagePreview(imgSrc);
-                  }}
-                />
+                <>
+                  <img
+                    src={imgSrc}
+                    style={{
+                      width: '140px',
+                      height: '175px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '2px solid #334155',
+                      marginBottom: '10px',
+                      flexShrink: 0,
+                      cursor: 'pointer',
+                    }}
+                    alt={displayTitle}
+                    onClick={() => {
+                      playSound?.(SOUNDS?.seClick);
+                      setSimpleImagePreview(imgSrc);
+                    }}
+                  />
+                  <h2
+                    style={{
+                      marginBottom: '5px',
+                      color: charDetailData.color || '#facc15',
+                      fontSize: '1.3rem',
+                      textAlign: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {displayTitle}
+                  </h2>
+                </>
               );
             })()}
-
-            <h2
-              style={{
-                marginBottom: '5px',
-                color: charDetailData.color || '#facc15',
-                fontSize: '1.3rem',
-                textAlign: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {charDetailData.name}
-            </h2>
 
             {charDetailData.easeOfUse && (
               <div

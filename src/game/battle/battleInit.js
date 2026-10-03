@@ -32,6 +32,7 @@ import { incrementStat } from '../../utils/constants/achievements.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import {
   CHARACTERS,
+  getLeaderDisplayNameInfo,
   getSkinImage,
   getPlayerIconPath,
 } from '../../utils/constants/characters.js';
@@ -254,6 +255,10 @@ function applySkinToConfig(config, skinMap) {
     charObj.imageLose ||
     charObj.image;
   config.icon = getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
+  if (typeof getLeaderDisplayNameInfo === 'function') {
+    const displayInfo = getLeaderDisplayNameInfo(charObj, selSkin);
+    config.displayName = displayInfo.fullName;
+  }
 }
 
 /**
@@ -1468,8 +1473,7 @@ export async function startMulliganPhase() {
 
   // 乱数消費順の整合はオンライン対戦でのみ必要。
   // オフラインは常に blue → red の固定順で処理し、シードによる再現性を保証する。
-  const processRedFirst =
-    checkIsOnlineMode(GameState.gameMode) && !getIsHost();
+  const processRedFirst = checkIsOnlineMode(GameState.gameMode) && !getIsHost();
 
   if (!processRedFirst) {
     if (playerMulliganIndices && playerMulliganIndices.length > 0) {

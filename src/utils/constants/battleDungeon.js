@@ -3,7 +3,11 @@ import {
   getDungeonCharacterDialogue,
 } from './battleDungeonCharacter.js';
 import { CARD_MASTER } from './cards.js';
-import { CHARACTERS, getSkinImage } from './characters.js';
+import {
+  CHARACTERS,
+  getLeaderDisplayNameInfo,
+  getSkinImage,
+} from './characters.js';
 import { AI_LEVEL } from './config.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
 
@@ -535,10 +539,14 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       ? { ...templateChar.dialogue, ...skinObj.dialogue }
       : templateChar.dialogue;
 
+    const displayInfo = getLeaderDisplayNameInfo(templateChar, skinId);
+
     return {
       ...templateChar,
       ...(savedConfig || {}),
       id: id,
+      name: displayInfo.fullName,
+      displayName: displayInfo.fullName,
       leaderSkill: activeLeaderSkill ? { ...activeLeaderSkill } : null,
       icon: skinIcon ? skinIcon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp') : '',
       image: skinImg

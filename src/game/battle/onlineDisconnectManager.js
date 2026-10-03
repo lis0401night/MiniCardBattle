@@ -15,13 +15,8 @@ import {
   subscribeFirebaseConnection,
   leaveRoom,
 } from '../../services/multiplayer.js';
-import {
-  ONLINE_DISCONNECT_WAIT_SEC,
-} from '../../utils/constants/onlineTimer.js';
-import {
-  pauseOnlineTimer,
-  resumeOnlineTimer,
-} from './onlineTimer.js';
+import { ONLINE_DISCONNECT_WAIT_SEC } from '../../utils/constants/onlineTimer.js';
+import { pauseOnlineTimer, resumeOnlineTimer } from './onlineTimer.js';
 import { sendSyncStateNow } from './battleQueue.js';
 import { endBattle } from './battleResult.js';
 import { triggerFinishVisuals } from '../../services/uiBattle.js';
@@ -344,7 +339,10 @@ export function cleanupOnlineDisconnectManager() {
   // クイックマッチ（1戦完結）の場合は部屋を削除・退室するため復元不要
   if (GameState.onlineSubMode !== 'quick') {
     restoreLobbyDisconnectHandlers().catch((e) =>
-      console.warn('[DisconnectManager] restoreLobbyDisconnectHandlers failed:', e)
+      console.warn(
+        '[DisconnectManager] restoreLobbyDisconnectHandlers failed:',
+        e
+      )
     );
   }
 }

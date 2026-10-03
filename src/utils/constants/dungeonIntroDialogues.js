@@ -6,6 +6,12 @@
  * パターンB: カードリーダー（isCardLeader）→ ボイスカテゴリ別セリフ
  */
 import { CARD_MASTER } from './cards.js';
+import {
+  CHARACTERS,
+  getLeaderDisplayNameInfo,
+  getSkinImage,
+} from './characters.js';
+import { GameState } from '../../state/gameState.js';
 
 // ============================================================
 // 共通ナレーション（パターンA・B共通の冒頭部分）
@@ -48,6 +54,11 @@ const DUNGEON_INTRO_CHARACTER_LINES = {
   knight: [
     '腕試しか……騎士として、挑戦を退ける理由はない。\n我が剣にかけて、正々堂々と臨もう。',
     'リゾートとはいえ、武を磨く機会は逃すまい。\n——いざ参ろう。全力をもって応えよう。',
+  ],
+  // ギルドの暗殺者 レダ — 寡黙・冷静沈着・一人称「私」
+  knight_assassin: [
+    '……闘技場。……標的が、多数。',
+    '……無駄口は叩かない。……全員、仕留める。',
   ],
   // 深淵の呼び声 ナイア — ミステリアス・お嬢様口調・一人称「私」
   cthulhu: [
@@ -294,8 +305,8 @@ const CARD_LEADER_CLOSING = {
  * @returns {Array} ダイアログノード配列
  */
 export function buildDungeonIntroDialogue(deckData) {
-  const leaderName = deckData.name || deckData.originalData?.name || 'リーダー';
-  const leaderImage =
+  let leaderName = deckData.name || deckData.originalData?.name || 'リーダー';
+  let leaderImage =
     deckData.image ||
     deckData.originalData?.image ||
     deckData.icon ||
@@ -306,9 +317,41 @@ export function buildDungeonIntroDialogue(deckData) {
     // パターンA：通常キャラクターリーダー
     // ============================================================
     const charId = deckData.leaderId;
+    const skinId =
+      deckData.currentSkin ||
+      deckData.originalData?.currentSkin ||
+      (typeof GameState !== 'undefined' ? GameState.playerSkins?.[charId] : null) ||
+      (() => {
+        try {
+          return JSON.parse(
+            localStorage.getItem('mini_card_battle_player_skins') || '{}'
+          )[charId];
+        } catch {
+          return null;
+        }
+      })();
+
+    const skinKey = skinId ? `${charId}_${skinId}` : null;
     const lines =
+      (skinKey && DUNGEON_INTRO_CHARACTER_LINES[skinKey]) ||
       DUNGEON_INTRO_CHARACTER_LINES[charId] ||
       DUNGEON_INTRO_CHARACTER_LINES.android;
+
+    // スキンが適用されている場合はリーダー名および画像をスキン情報で補正
+    if (skinId && CHARACTERS[charId]) {
+      const charObj = CHARACTERS[charId];
+      const displayInfo = getLeaderDisplayNameInfo(charObj, skinId);
+      if (displayInfo?.fullName) {
+        leaderName = displayInfo.fullName;
+      }
+      const skinImg =
+        typeof getSkinImage === 'function'
+          ? getSkinImage(charObj, skinId, 'image')
+          : null;
+      if (skinImg) {
+        leaderImage = skinImg;
+      }
+    }
 
     // キャラクター台詞ノードを組み立て
     const characterNodes = lines.map((text) => ({

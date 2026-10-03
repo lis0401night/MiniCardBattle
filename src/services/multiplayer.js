@@ -78,7 +78,12 @@ export function getIsHost() {
  * @param {boolean} hostFlag - ホストフラグ
  * @param {string} [basePath=ROOMS_REF] - ベースパス（rooms または quickMatch）
  */
-export function restoreMultiplayerSession(roomId, roomCode, hostFlag, basePath = ROOMS_REF) {
+export function restoreMultiplayerSession(
+  roomId,
+  roomCode,
+  hostFlag,
+  basePath = ROOMS_REF
+) {
   currentRoomId = roomId;
   currentRoomCode = roomCode;
   isHost = hostFlag;
@@ -96,7 +101,11 @@ export const ONLINE_ACTIVE_SESSION_KEY =
  * @param {boolean} hostFlag - 自身がホストかどうか
  * @param {string} [basePath=currentBasePath] - ベースパス
  */
-export function saveActiveBattleSession(roomId, hostFlag, basePath = currentBasePath) {
+export function saveActiveBattleSession(
+  roomId,
+  hostFlag,
+  basePath = currentBasePath
+) {
   if (!roomId) return;
   try {
     localStorage.setItem(
@@ -253,10 +262,7 @@ export function subscribeFirebaseConnection(callback) {
 async function handleReconnectInBattle() {
   if (!database || !currentRoomId || !isInBattleMode) return;
   const role = isHost ? 'host' : 'client';
-  const myRef = ref(
-    database,
-    `${currentBasePath}/${currentRoomId}/${role}`
-  );
+  const myRef = ref(database, `${currentBasePath}/${currentRoomId}/${role}`);
   try {
     // 自身のオンライン状態を true に戻し、切断時刻をクリア
     await update(myRef, { isOnline: true, disconnectedAt: null });
@@ -909,7 +915,10 @@ let onlineActionUnsubscribe = null;
  * @param {Function} onActionReceived - アクション受信時コールバック ({ action, actor, timestamp }) => void
  * @param {Set<string>|null} [ignoredActionKeys=null] - 復帰（リジョイン）時にスキップする既存アクションIDのSet。過去ログの多重再実行を防止する。
  */
-export function listenToRoomActions(onActionReceived, ignoredActionKeys = null) {
+export function listenToRoomActions(
+  onActionReceived,
+  ignoredActionKeys = null
+) {
   if (!database || !currentRoomId) return;
 
   if (onlineActionUnsubscribe) {
@@ -917,7 +926,10 @@ export function listenToRoomActions(onActionReceived, ignoredActionKeys = null) 
     onlineActionUnsubscribe = null;
   }
 
-  const actionsRef = ref(database, `${currentBasePath}/${currentRoomId}/actions`);
+  const actionsRef = ref(
+    database,
+    `${currentBasePath}/${currentRoomId}/actions`
+  );
   // Firebase v9 Modular APIでは、onChildAddedは直接Unsubscribe関数を返します
   onlineActionUnsubscribe = onChildAdded(actionsRef, (snapshot) => {
     // 復帰時に既に存在していた過去アクションは二重実行を防ぐためスキップ
@@ -949,7 +961,10 @@ export async function sendOnlineAction(action) {
   if (!database || !currentRoomId || !action) return;
   // undefined を安全に除去してFirebaseのエラーを防止
   const sanitizedAction = JSON.parse(JSON.stringify(action));
-  const actionsRef = ref(database, `${currentBasePath}/${currentRoomId}/actions`);
+  const actionsRef = ref(
+    database,
+    `${currentBasePath}/${currentRoomId}/actions`
+  );
   await push(actionsRef, {
     actor: isHost ? 'host' : 'client',
     action: sanitizedAction,
@@ -1030,10 +1045,14 @@ export async function setupBattleDisconnectHandlers() {
 
   try {
     // 1. ロビー待機用の即時削除・即時退出予約を安全に解除
-    await onDisconnect(roomRef).cancel().catch(() => {});
+    await onDisconnect(roomRef)
+      .cancel()
+      .catch(() => {});
     if (isHost && roomCode) {
       const codeRef = ref(database, `roomCodeIndex/${roomCode}`);
-      await onDisconnect(codeRef).cancel().catch(() => {});
+      await onDisconnect(codeRef)
+        .cancel()
+        .catch(() => {});
     }
 
     // 2. 対戦用：切断時に部屋を消さず、自身の isOnline を false に設定し、
@@ -1067,14 +1086,20 @@ export async function restoreLobbyDisconnectHandlers() {
 
   try {
     // 1. 対戦用の切断予約（isOnline + disconnectedAt）を解除
-    await onDisconnect(myRef).cancel().catch(() => {});
+    await onDisconnect(myRef)
+      .cancel()
+      .catch(() => {});
 
     // 2. ロビー用の切断予約を再登録
     if (isHost) {
-      await onDisconnect(roomRef).remove().catch(() => {});
+      await onDisconnect(roomRef)
+        .remove()
+        .catch(() => {});
       if (roomCode) {
         const codeRef = ref(database, `roomCodeIndex/${roomCode}`);
-        await onDisconnect(codeRef).remove().catch(() => {});
+        await onDisconnect(codeRef)
+          .remove()
+          .catch(() => {});
       }
     } else {
       await onDisconnect(roomRef)
@@ -1581,4 +1606,3 @@ export async function cancelQuickMatch() {
   // 念のため自身の過去の未完了待機エントリがあれば一掃
   await cleanupUserSessions(QUICK_MATCH_REF);
 }
-

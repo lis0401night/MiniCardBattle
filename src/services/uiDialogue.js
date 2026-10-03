@@ -488,7 +488,9 @@ export async function showNextDialogue(force = false) {
 
   if (cur.speaker === 'player') {
     window.currentDialogueData.speakerName =
-      cur.speakerName || GameState.playerConfig.name;
+      cur.speakerName ||
+      GameState.playerConfig?.displayName ||
+      GameState.playerConfig?.name;
     window.currentDialogueData.nameColor = GameState.playerConfig.color;
     window.currentDialogueData.leftActive = true;
     if (GameState.appState !== 'ending_dialogue')
@@ -527,7 +529,8 @@ export async function showNextDialogue(force = false) {
       };
     }
 
-    window.currentDialogueData.speakerName = charConfig.name;
+    window.currentDialogueData.speakerName =
+      charConfig?.displayName || charConfig?.name || '';
     window.currentDialogueData.nameColor = charConfig.color;
     window.currentDialogueData.boxBorderColor = charConfig.color;
 

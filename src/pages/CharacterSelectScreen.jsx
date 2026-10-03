@@ -6,6 +6,7 @@ import { goBackFromSelect, showCharDetail } from '../services/uiMainCore.js';
 import { achievementData } from '../utils/constants/achievements.js';
 import {
   CHARACTERS,
+  getLeaderDisplayNameInfo,
   getSkinImage,
   BOSS_CHARACTER_IDS,
   canShowUnlockableCharacter,
@@ -163,6 +164,10 @@ export default function CharacterSelectScreen() {
             const bgImage = getSkinImage
               ? getSkinImage(char, skinIdToUse, 'image', true)
               : char.image;
+            const displayTitle = getLeaderDisplayNameInfo(
+              char,
+              skinIdToUse
+            ).fullName;
             return (
               <div
                 key={char.id + '_' + renderVersion}
@@ -171,7 +176,7 @@ export default function CharacterSelectScreen() {
                 onClick={() => handleSelect(char)}
               >
                 <div className="char-name" style={{ color: char.color }}>
-                  {char.name}
+                  {displayTitle}
                 </div>
               </div>
             );

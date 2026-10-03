@@ -51,6 +51,8 @@ export const CHARACTERS = {
           '対象：バルタザール。100年前の大賢者と一致。危険度極大と判定し、即時排除を開始します。',
         valkyria:
           'アグニカ教圏の天使型戦闘種を検知。戦闘能力は高いですが、経験値データに矛盾あり。……新型でしょうか。迎撃します。',
+        knight_assassin:
+          '対象、ギルド所属の暗殺者と確認。感情反応極小、極めて高い暗殺能力を検知。排除行動を開始します。',
       },
       win: {
         dragon: '熱源の鎮火を確認。',
@@ -137,6 +139,8 @@ export const CHARACTERS = {
           'あんたが100年前の大賢者ね！ 私のドラゴンの熱い炎で、その小賢しい魔術ごと灰にしてやるわ！',
         valkyria:
           'なんか偉そうな羽根つきが来たわね！ 天使だか戦乙女だか知らないけど、炎の勝負ならアタシが上に決まってるでしょ！',
+        knight_assassin:
+          'なによあんた、ジトッとした目で見てんじゃないわよ！ 暗殺者だか何だか知らないけど、燃やされたいわけ！？',
       },
       win: {
         android: 'ただのガラクタになっちゃったわね！',
@@ -223,6 +227,8 @@ export const CHARACTERS = {
           '100年前に王国の守護者と呼ばれた伝説の賢者が、なぜ生贄を貪る邪教の主などに！ 騎士の誇りに懸けてあなたを討つ！',
         valkyria:
           'アグニカの戦乙女か。天界からの使者とあらば、その力、正面から受け止めよう。だが、その自信……少々過剰ではないかな？',
+        knight_assassin:
+          'ギルドの暗殺者か……！ 聖なる光の下に、お前のような者の凶刃を通すわけにはいかない！',
       },
       win: {
         android: '見事な剣筋だった。',
@@ -312,6 +318,8 @@ export const CHARACTERS = {
           'おや、100年前の狂気に触れて闇に堕ちた賢者様。その血塗られた魔術、私の深淵で飲み込んで差し上げましょう。',
         valkyria:
           'あら、天界のお使いさん？ フフフ、エリートを気取っているけれど……その羽根、まだ生え揃ったばかりに見えますわよ？',
+        knight_assassin:
+          'うふふ……暗がりに潜む殺し屋さんね。静かに近づいて息の根を止める……とても素敵な趣味ですわ。',
       },
       win: {
         android: 'あら、壊れちゃいました。',
@@ -401,6 +409,8 @@ export const CHARACTERS = {
           'バルタザール……あなたの暗黒の魔術、私の失われた記憶の奥でかすかに響く……。あなたは何者なの？',
         valkyria:
           '天界から来た戦乙女……。あなたの翼からは、まだ故郷の風の匂いがする。……少し、羨ましいわ。',
+        knight_assassin:
+          '足音が全く聞こえない……。気配を完全に消しているわ。相当な手練れの暗殺者ね……！',
       },
       win: {
         android: '壊してしまって……ごめんなさい。',
@@ -489,6 +499,8 @@ export const CHARACTERS = {
           '教会の禁書に記された100年前の裏切り者の大賢者ね！ 他人の命を貪って生きる外道め、神罰の鉄槌を下してあげるわ！',
         valkyria:
           'アグニカの戦乙女ですって？ アハハハ！ そんなマイナーな神の遣いが、この私に逆らうなんて身の程知らずもいいところね！',
+        knight_assassin:
+          'あら、影に隠れて生きる哀れなネズミが一匹。神の裁きの光で、その汚らわしい刃ごと焼き払ってあげるわ！',
       },
       win: {
         android: 'ただの鉄くずには、祈りも必要ないわね。',
@@ -580,6 +592,8 @@ export const CHARACTERS = {
           '100年前に消息を絶ったはずの「伝説の大賢者」が今回のターゲットね。ハントの報酬はたっぷり貰わせてもらうわよ！',
         valkyria:
           '天界の戦乙女ね。エリート気取ってるけど、その喋り方……新米丸出しよ。まあ、手加減はしないけど。',
+        knight_assassin:
+          'ギルドの凄腕アサシンね。私を狙うなら依頼人を恨みな。アンタにぴったりの棺桶、用意してあるわ。',
       },
       win: {
         android: 'ただのスクラップね。資源回収にでも回すわ。',
@@ -668,6 +682,8 @@ export const CHARACTERS = {
           'バルタザール……大書庫の歴史年表に載っている、100年前の大賢者ですね。時間の流れを歪め、他人の命を貪る罪は重いです！',
         valkyria:
           '天界の戦乙女ですか。次から次へと珍妙な人が出てきますね。……はぁ、面倒ですね。',
+        knight_assassin:
+          'うわ、足音もなしに背後に立たないでください……！ 私、そういう物騒な殺し屋に狙われる筋合いなんてないんですけど！',
       },
       win: {
         android: 'はい、スクラップの出来上がり。先輩、片付けお願いしますね。',
@@ -756,6 +772,8 @@ export const CHARACTERS = {
           '古文書に記された伝説の大賢者バルタザール殿ですね。無辜の生贄を捧げ、歪んだ生にしがみつくその罪、我が白狐の結界で祓います！',
         valkyria:
           'アグニカの戦乙女ですか。その翼に宿る炎、確かに強大ですが……気負いが先走っていますね。',
+        knight_assassin:
+          '一切の迷いがない、研ぎ澄まされた冷たい殺気……！ 私の中の鬼が、危険な相手だと警戒を叫んでいます……！',
       },
       win: {
         android: '術式展開、完了。絡繰りよ、静かに眠りなさい。',
@@ -848,6 +866,8 @@ export const CHARACTERS = {
         warlock:
           'バルタザール……100年前に死ぬべきだった大賢者。サタンの魔力と無数の生贄で歪んで生き永らえる魂、我が墓所に永劫に封印しよう。',
         valkyria: '……天界の小娘。よく喋るその口、王墓の静寂で閉ざしてやる……。',
+        knight_assassin:
+          '……墓荒らしでも、侵入者でもない……。静かに命を刈り取る影……。王墓に踏み入る前に、排除する……。',
       },
       win: {
         android: '鉄屑は、砂の中に埋もれるのがお似合い……。',
@@ -962,6 +982,8 @@ export const CHARACTERS = {
           '千年前の遺物め、サタン様の御前を塞ぐ不届き者め！ その包帯を剥ぎ取って塵にしてあげるわ！',
         valkyria:
           'アグニカの戦乙女？ サタン様の前では天界の小娘も地を這う虫と同じよ！ そのちっぽけな翼、もいでやるわ！',
+        knight_assassin:
+          'あらぁ、冷たい目をした殺し屋さんねぇ。そんな物騒な仕事はやめて、私の可愛い下僕になりなさい？',
         default:
           'サタン様の御前に立ち塞がる不敬なる者……、この私が隷属させてあげるわ！',
       },
@@ -1023,6 +1045,8 @@ export const CHARACTERS = {
       '魔王の力すらも我が魔術の糧よ……。邪魔する愚か者どもめ、塵にしてくれよう。',
     dialogue: {
       intro: {
+        knight_assassin:
+          'ギルドの殺し屋風情が、この大賢者の首を獲れると思ったか？ お前の命、暗黒魔術の生贄にしてくれよう。',
         default:
           '魔王の力すらも私の野望のための道具に過ぎん。お前の命、ここで潰えさせてやろう。',
       },
@@ -1068,6 +1092,8 @@ export const CHARACTERS = {
           '千年前の亡霊ごときが、魔王の前に立ちはだかるか！ その包帯ごと消し炭にしてくれるわ！',
         valkyria:
           'アグニカの戦乙女か。天界の雛鳥風情が、この魔王に挑むとは笑止。その矮小な翼ごと折ってやろう。',
+        knight_assassin:
+          'ククク……我が命を狙う暗殺者か。身の程知らずのネズミめ、その冷たい短剣ごと絶望の闇に沈むがいい。',
         default:
           'ほう、矮小なる人間がここまで辿り着くとはな。我は魔王サタン……絶望の淵へ沈むがよい。',
       },
@@ -1138,6 +1164,8 @@ export const CHARACTERS = {
         priest: '死者を守る番人……私たちは、生きながら捨てられた存在よ。',
         valkyria:
           '天界から来た戦乙女……。あなたは神に使われる存在。私たちは人間に捨てられた存在……。似ているようで、まるで違うわ。',
+        knight_assassin:
+          '無駄口を叩かず、ただ標的を排除する……。あなた、まるで心を持たない機械のようね。でも、負けない。',
         default: '廃鉄の歌を聞きなさい。',
       },
       win: {
@@ -1229,6 +1257,8 @@ export const CHARACTERS = {
           '100年生きてるジジイ？ ふんっ、天界の時間に比べりゃ赤ちゃんみたいなもんよ！ アタシがその腐った魔術ごと叩き潰してやるわ！',
         satan:
           'ま、魔王……！？ ふ、ふんっ、べ、別にビビってなんかないわよ！ 遂に会えたわね！覚悟しなさい！',
+        knight_assassin:
+          'なんなのアンタ、陰気くさい顔して！ エリート戦乙女の首でも狙いに来たわけ！？ 返り討ちにしてあげる！',
       },
       win: {
         android:
@@ -1329,6 +1359,8 @@ Object.values(CHARACTERS).forEach((char) => {
       imageLose: skinData.imageLose,
       icon: skinData.icon,
       iconDamage: skinData.iconDamage,
+      ...(skinData.characterName && { characterName: skinData.characterName }),
+      ...(skinData.fullName && { fullName: skinData.fullName }),
       // unlockCondition と description は SKIN_MASTER から直接取得
       ...(skinData.unlockCondition && {
         unlockCondition: skinData.unlockCondition,
@@ -1533,4 +1565,74 @@ export function canShowUnlockableCharacter(characterId, isEnemySelect = false) {
     console.error('Failed to parse unlocked characters:', e);
   }
   return unlockedChars.includes(characterId);
+}
+
+/**
+ * キャラクター設定とスキンIDから、マッチング画面等で表示する二つ名（subtitle）と名前（name）を解決する。
+ * リーダースキンが設定されている場合は、スキンの二つ名 + スキン対応名前（未設定時はキャラ名）を返す。
+ *
+ * @param {Object} charObj - キャラクター設定オブジェクト（CHARACTERS[id] または GameState.playerConfig等）
+ * @param {string} [skinId='default'] - 選択されているスキンID（'default', 'summer', 'school', 'knight_high', 'assassin' 等）
+ * @returns {{ subtitle: string, name: string, fullName: string }} 解決された二つ名・名前・フルネーム
+ */
+export function getLeaderDisplayNameInfo(charObj, skinId = 'default') {
+  if (!charObj) {
+    return { subtitle: '不明', name: 'Unknown', fullName: '不明 Unknown' };
+  }
+
+  // 1. ベースキャラクター定義の取得
+  const baseChar =
+    charObj.id && CHARACTERS[charObj.id] ? CHARACTERS[charObj.id] : charObj;
+  const rawBaseName = baseChar.name || charObj.name || '';
+  const baseParts = rawBaseName.split(' ');
+  const defaultSubtitle = baseParts.length >= 2 ? baseParts[0] : '';
+  const defaultCharName =
+    baseParts.length >= 2 ? baseParts.slice(1).join(' ') : rawBaseName;
+
+  // 2. 通常スキン（default）または無効なスキンの場合
+  if (!skinId || skinId === 'default') {
+    return {
+      subtitle: defaultSubtitle || 'チャレンジャー',
+      name: defaultCharName || 'Unknown',
+      fullName: rawBaseName || `${defaultSubtitle} ${defaultCharName}`.trim(),
+    };
+  }
+
+  // 3. スキン定義の検索（baseChar.skins または charObj.skins から該当スキンを取得）
+  const skinDef =
+    baseChar.skins?.[skinId] ||
+    charObj.skins?.[skinId] ||
+    // 高難易度スキン等のキー揺らぎ（例: skinId が 'high' の場合に 'knight_high' を参照）
+    baseChar.skins?.[`${baseChar.id}_${skinId}`] ||
+    charObj.skins?.[`${charObj.id}_${skinId}`];
+
+  if (!skinDef) {
+    // スキン定義が見つからない場合は通常スキン表示にフォールバック
+    return {
+      subtitle: defaultSubtitle || 'チャレンジャー',
+      name: defaultCharName || 'Unknown',
+      fullName: rawBaseName,
+    };
+  }
+
+  // 4. スキン定義からの二つ名・名前の解決
+  // スキン側で fullName が明示されている場合はそれを優先パース（例: 'ギルドの暗殺者 レダ'）
+  if (skinDef.fullName) {
+    const fullParts = skinDef.fullName.split(' ');
+    if (fullParts.length >= 2) {
+      return {
+        subtitle: fullParts[0],
+        name: fullParts.slice(1).join(' '),
+        fullName: skinDef.fullName,
+      };
+    }
+  }
+
+  // スキンの二つ名: skinDef.name（例: '暗黒騎士', '放課後ディストーション', 'ギルドの暗殺者'）
+  const subtitle = skinDef.name || defaultSubtitle || 'チャレンジャー';
+  // スキンの名前: skinDef.characterName があればそれを使い、なければベースの名前（'セレスティア', 'イグニス' 等）
+  const name = skinDef.characterName || defaultCharName || 'Unknown';
+  const fullName = `${subtitle} ${name}`;
+
+  return { subtitle, name, fullName };
 }

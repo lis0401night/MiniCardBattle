@@ -144,7 +144,7 @@ export default function EnemyArea({
             id="enemy-name"
             style={{ color: 'var(--color-red)' }}
           >
-            {enemyConfig.name}
+            {enemyConfig.displayName || enemyConfig.name}
           </div>
           <div className="hp-bar-bg">
             <div

@@ -187,7 +187,8 @@ export default function OnlineQuickMatchingScreen() {
       // ステージの決定: battleSeed が偶数ならホスト、奇数ならゲストのステージを採用
       const hostStage = roomData.host?.leaderConfig?.stage || 'plain';
       const clientStage = roomData.client?.leaderConfig?.stage || 'plain';
-      GameState.selectedStageId = Number(bSeed) % 2 === 0 ? hostStage : clientStage;
+      GameState.selectedStageId =
+        Number(bSeed) % 2 === 0 ? hostStage : clientStage;
 
       // 対戦中の切断時コールバックをセット
       multiplayerCallbacks.onRoomClosed = async () => {
@@ -239,7 +240,10 @@ export default function OnlineQuickMatchingScreen() {
     try {
       // 1. Firebase 上の自身のクイックマッチ待機登録を安全にキャンセル・削除
       await cancelQuickMatch().catch((err) => {
-        console.warn('タイムアウト時のクイックマッチ待機解除に失敗しました:', err);
+        console.warn(
+          'タイムアウト時のクイックマッチ待機解除に失敗しました:',
+          err
+        );
       });
 
       // 2. プレイヤー自身のデッキ設定を正規化・取得
@@ -259,7 +263,8 @@ export default function OnlineQuickMatchingScreen() {
       // 3. 対戦相手となる専用CPU設定をランダムに抽選（自身のキャラクターと被らないように選定）
       const playerCharId = GameState.playerConfig?.id;
       const cpuConfig = getRandomQuickCpuConfig(playerCharId);
-      const enemyCharTemplate = CHARACTERS[cpuConfig.characterId] || CHARACTERS.android;
+      const enemyCharTemplate =
+        CHARACTERS[cpuConfig.characterId] || CHARACTERS.android;
 
       GameState.enemyConfig = {
         ...enemyCharTemplate,
@@ -275,7 +280,8 @@ export default function OnlineQuickMatchingScreen() {
       GameState.enemySkins = GameState.enemySkins || {};
       GameState.playerSkins[GameState.playerConfig.id] =
         GameState.playerSkins[GameState.playerConfig.id] || 'default';
-      GameState.enemySkins[GameState.enemyConfig.id] = cpuConfig.skin || 'default';
+      GameState.enemySkins[GameState.enemyConfig.id] =
+        cpuConfig.skin || 'default';
 
       GameState.playerConfig.playmat = GameState.selectedPlaymatId || null;
       GameState.enemyConfig.playmat = cpuConfig.playmat || null;
@@ -296,16 +302,21 @@ export default function OnlineQuickMatchingScreen() {
         GameState.playerSkins[GameState.playerConfig.id],
         'imageLose'
       );
-      GameState.playerConfig.icon = GameState.playerConfig.icon || getSkinImage(
-        GameState.playerConfig,
-        GameState.playerSkins[GameState.playerConfig.id],
-        'icon'
-      );
-      GameState.playerConfig.iconDamage = GameState.playerConfig.iconDamage || getSkinImage(
-        GameState.playerConfig,
-        GameState.playerSkins[GameState.playerConfig.id],
-        'iconDamage'
-      ) || GameState.playerConfig.icon;
+      GameState.playerConfig.icon =
+        GameState.playerConfig.icon ||
+        getSkinImage(
+          GameState.playerConfig,
+          GameState.playerSkins[GameState.playerConfig.id],
+          'icon'
+        );
+      GameState.playerConfig.iconDamage =
+        GameState.playerConfig.iconDamage ||
+        getSkinImage(
+          GameState.playerConfig,
+          GameState.playerSkins[GameState.playerConfig.id],
+          'iconDamage'
+        ) ||
+        GameState.playerConfig.icon;
 
       GameState.enemyConfig.image = getSkinImage(
         GameState.enemyConfig,
@@ -322,11 +333,12 @@ export default function OnlineQuickMatchingScreen() {
         cpuConfig.skin || 'default',
         'icon'
       );
-      GameState.enemyConfig.iconDamage = getSkinImage(
-        GameState.enemyConfig,
-        cpuConfig.skin || 'default',
-        'iconDamage'
-      ) || GameState.enemyConfig.icon;
+      GameState.enemyConfig.iconDamage =
+        getSkinImage(
+          GameState.enemyConfig,
+          cpuConfig.skin || 'default',
+          'iconDamage'
+        ) || GameState.enemyConfig.icon;
 
       // 6. 対戦シードの設定
       GameState.battleSeed = Date.now();
@@ -514,9 +526,18 @@ export default function OnlineQuickMatchingScreen() {
       >
         {!isMatchFound ? (
           <>
-            <div className="spinner" style={{ width: '50px', height: '50px' }}></div>
+            <div
+              className="spinner"
+              style={{ width: '50px', height: '50px' }}
+            ></div>
             <div>
-              <h3 style={{ color: '#fff', fontSize: '1.3rem', margin: '0 0 8px 0' }}>
+              <h3
+                style={{
+                  color: '#fff',
+                  fontSize: '1.3rem',
+                  margin: '0 0 8px 0',
+                }}
+              >
                 対戦相手を探しています...
               </h3>
               <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
@@ -534,7 +555,10 @@ export default function OnlineQuickMatchingScreen() {
           </>
         ) : (
           <div>
-            <div className="spinner" style={{ width: '50px', height: '50px', margin: '0 auto 16px' }}></div>
+            <div
+              className="spinner"
+              style={{ width: '50px', height: '50px', margin: '0 auto 16px' }}
+            ></div>
             <h3 style={{ color: '#38bdf8', fontSize: '1.4rem' }}>
               {matchTitle}
             </h3>

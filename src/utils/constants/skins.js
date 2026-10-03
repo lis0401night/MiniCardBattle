@@ -210,6 +210,21 @@ const HIGH_SKINS = {
 };
 
 // ---------------------------------------------------------------------------
+// 暗殺者スキン（セレスティア専用新スキン）
+// ---------------------------------------------------------------------------
+
+/** @type {Record<string, Object>} 暗殺者スキンマスタ */
+const ASSASSIN_SKINS = {
+  knight: makeSkinEntry('knight', 'assassin', 'ギルドの暗殺者', {
+    characterName: 'レダ',
+    fullName: 'ギルドの暗殺者 レダ',
+    description:
+      '2本の短剣を持つ女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。',
+    unlockCondition: '未定',
+  }),
+};
+
+// ---------------------------------------------------------------------------
 // エクスポート
 // ---------------------------------------------------------------------------
 
@@ -224,6 +239,7 @@ export const SKIN_MASTER = {
   summer: SUMMER_SKINS,
   school: SCHOOL_SKINS,
   high: HIGH_SKINS,
+  assassin: ASSASSIN_SKINS,
 };
 
 /**
@@ -234,6 +250,7 @@ export const SKIN_TYPE_INFO = {
   summer: { label: '水着' },
   school: { label: '学園' },
   high: { label: '高難易度' },
+  assassin: { label: '暗殺者' },
 };
 
 /**
@@ -247,6 +264,7 @@ export const SKIN_KEY_MAP = {
   summer: (_charId) => ({ key: 'summer', id: 'summer' }),
   school: (_charId) => ({ key: 'school', id: 'school' }),
   high: (charId) => ({ key: `${charId}_high`, id: `${charId}_high` }),
+  assassin: (_charId) => ({ key: 'assassin', id: 'assassin' }),
 };
 
 /**
