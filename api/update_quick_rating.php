@@ -45,7 +45,7 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
     return true;
 }, $defaultName);
 
-if ($updateResult) {
+if (!empty($updateResult['success'])) {
     echo json_encode([
         'success' => true,
         'quick_rating' => max(0, $rating),
@@ -53,6 +53,6 @@ if ($updateResult) {
 } else {
     echo json_encode([
         'success' => false,
-        'error' => 'Failed to save quick rating',
+        'error' => $updateResult['error'] ?? 'Failed to save quick rating',
     ]);
 }

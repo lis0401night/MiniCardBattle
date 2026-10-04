@@ -102,6 +102,7 @@ import {
   sendSyncStateNow,
   setPendingChoiceResolver,
   setLastProcessedActionKey,
+  getLastProcessedActionKey,
 } from './battleQueue.js';
 import { checkWinCondition } from './battleResult.js';
 import { waitPlayerHandSelection } from './battleSelection.js';
@@ -1471,7 +1472,10 @@ export async function startMulliganPhase() {
   if (checkIsOnlineMode(GameState.gameMode) && getIsHost()) {
     try {
       const initialSyncState = generateSyncState();
-      await saveLastSyncStateToRoom(initialSyncState, null);
+      await saveLastSyncStateToRoom(
+        initialSyncState,
+        getLastProcessedActionKey() || null
+      );
     } catch (syncErr) {
       console.warn('初期盤面状態のルーム保存に失敗しました:', syncErr);
     }
@@ -1628,7 +1632,9 @@ export async function executeRejoinBattle(session, roomData) {
       setLastProcessedActionKey(lastAppliedKey);
       const allActionKeys = Object.keys(roomData.actions || {});
       existingActionKeys = new Set(
-        allActionKeys.filter((k) => lastAppliedKey && k <= lastAppliedKey)
+        lastAppliedKey
+          ? allActionKeys.filter((k) => k <= lastAppliedKey)
+          : allActionKeys
       );
     } else {
       existingActionKeys = new Set(Object.keys(roomData.actions || {}));

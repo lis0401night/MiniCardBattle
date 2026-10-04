@@ -70,7 +70,10 @@ import {
   showPointAcquisitionModal,
 } from '../../services/uiModals.js';
 import { recordDailyMissionWin } from '../../services/dailyMissions.js';
-import { recordQuickMatchWin } from '../../utils/constants/battlePass.js';
+import {
+  recordQuickMatchWin,
+  QUICK_RATING_KEY,
+} from '../../utils/constants/battlePass.js';
 import { showDefenseBattleList } from '../../services/uiMainCore.js';
 import {
   DEFENSE_POINTS_KEY,
@@ -866,6 +869,10 @@ export function endBattle() {
       GameState.onlineSubMode === 'quick')
   ) {
     incrementStat('quickWins');
+    // 対戦前の正規レートを取得（サーバーログ送信時、敗者の対戦前レートと基準時点を揃えるため）
+    const preBattleRating =
+      parseInt(localStorage.getItem(QUICK_RATING_KEY), 10) || 0;
+
     // クイックマッチ勝利時のバトルパスポイント加算およびレート加算
     try {
       const isCpu = GameState.gameMode === 'online_quick_cpu';
@@ -886,9 +893,7 @@ export function endBattle() {
         const qInfo = GameState.quickMatchInfo || {};
         const myUuid = qInfo.myUuid || getOrCreateUUID();
         const myName = qInfo.myName || resolvePlayerName();
-        const myRating =
-          parseInt(localStorage.getItem('mini_card_battle_quick_rating'), 10) ||
-          0;
+        const myRating = preBattleRating;
         const myDeckObjects =
           Array.isArray(GameState.battleStartPlayerDeckObjects) &&
           GameState.battleStartPlayerDeckObjects.length > 0

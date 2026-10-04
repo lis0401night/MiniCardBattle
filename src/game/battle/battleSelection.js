@@ -48,6 +48,111 @@ import { checkIsOnlineTimerEnabled } from '../../utils/constants/onlineTimer.js'
 import { BATTLE_PHASE } from './phases/phaseTypes.js';
 
 /**
+ * 配置または召喚において、特定レーンが盤面状況および制約条件に合致しているかを判定するヘルパー関数。
+ * 封印レーン、指定可能レーン、先攻初手中央制約、伝説・生贄・頂点・挑戦等の制約を包括的にチェックする。
+ *
+ * @param {number} lane - 判定対象のレーンインデックス (0, 1, 2)
+ * @param {Object} ctx - 判定コンテキスト
+ * @param {Array<Object|null>} ctx.board - 配置側プレイヤーの盤面配列
+ * @param {Array<number>} ctx.sealedLanes - 配置側プレイヤーの封印レーン状態配列
+ * @param {Array<number>|null} [ctx.tokenLanes] - 配置可能レーン制限（指定がある場合）
+ * @param {boolean} [ctx.checkConstraints=false] - 召喚制約（伝説・生贄・頂点・挑戦など）を適用するかどうか
+ * @param {Object|null} [ctx.tokenCard] - 配置・召喚するカードオブジェクト
+ * @param {'blue'|'red'} ctx.owner - 配置を行うプレイヤー
+ * @returns {boolean} 合法な配置候補レーンであれば true
+ */
+function isPlacementCandidateLane(lane, ctx) {
+  const { board, sealedLanes, tokenLanes, checkConstraints, tokenCard, owner } =
+    ctx;
+  if (sealedLanes[lane] !== 0) return false;
+  if (
+    tokenLanes !== null &&
+    Array.isArray(tokenLanes) &&
+    !tokenLanes.includes(lane)
+  ) {
+    return false;
+  }
+  if (checkConstraints && tokenCard) {
+    if (
+      GameState.turnCount === 1 &&
+      GameState.firstPlayer === owner &&
+      lane !== 1
+    ) {
+      return false;
+    }
+    const hasLegendary = hasSkill(tokenCard, 'legendary');
+    const hasTakeover = hasSkill(tokenCard, 'takeover');
+    const hasApex = hasSkill(tokenCard, 'apex');
+    const hasChallenge = hasSkill(tokenCard, 'challenge');
+
+    if (hasLegendary && lane !== 1) {
+      return false;
+    }
+    if (hasTakeover && board[lane] === null) {
+      return false;
+    }
+    if (hasApex) {
+      const targetCard = board[lane];
+      if (!targetCard || !hasSkill(targetCard, 'legendary')) {
+        return false;
+      }
+    }
+    if (hasChallenge) {
+      const oppBoard =
+        owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+      if (oppBoard[lane] === null) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * キャンセル不可の配置選択において、未選択枠を制約に合致するレーンから自動補完する（空き枠優先、次に既存上書き）。
+ * 選択済みレーンの重複追加を確実に防止する（DRY原則）。
+ *
+ * @param {Array<number>} selectedLanes - 現在選択済みのレーン配列
+ * @param {number} targetCount - 要求される総配置数
+ * @param {Object} ctx - 判定コンテキスト
+ * @param {Array<Object|null>} ctx.board - 配置側プレイヤーの盤面配列
+ * @param {Array<number>} ctx.sealedLanes - 配置側プレイヤーの封印レーン状態配列
+ * @param {Array<number>|null} [ctx.tokenLanes] - 配置可能レーン制限
+ * @param {boolean} [ctx.checkConstraints=false] - 召喚制約の有効フラグ
+ * @param {Object|null} [ctx.tokenCard] - 配置・召喚するカードオブジェクト
+ * @param {'blue'|'red'} ctx.owner - 配置を行うプレイヤー
+ * @returns {Array<number>} 補完後のレーン配列
+ */
+function fillRemainingPlacementLanes(selectedLanes, targetCount, ctx) {
+  const result = [...selectedLanes];
+  const { board } = ctx;
+
+  // 1. 空きレーンのうち、未選択かつ合法な候補を優先追加
+  const validEmptyLanes = [0, 1, 2].filter(
+    (i) =>
+      board[i] === null &&
+      !result.includes(i) &&
+      isPlacementCandidateLane(i, ctx)
+  );
+  while (result.length < targetCount && validEmptyLanes.length > 0) {
+    result.push(validEmptyLanes.shift());
+  }
+
+  // 2. 占有レーン（上書き）のうち、未選択かつ合法な候補を追加
+  const validOccupiedLanes = [0, 1, 2].filter(
+    (i) =>
+      board[i] !== null &&
+      !result.includes(i) &&
+      isPlacementCandidateLane(i, ctx)
+  );
+  while (result.length < targetCount && validOccupiedLanes.length > 0) {
+    result.push(validOccupiedLanes.shift());
+  }
+
+  return result;
+}
+
+/**
  * プレイヤーまたはAIのカード配置レーン選択を非同期で待機する。
  * @param {number} count - 配置を行う枚数
  * @param {string} owner - プレイヤー種別 ('blue' | 'red')
@@ -80,6 +185,15 @@ export async function waitPlayerLaneSelection(
       : GameState.enemySealedLanes || [0, 0, 0];
   // Check for Remote Choice Wait
   if (GameState.gameMode === 'online' && owner === 'red') {
+    const placementCtx = {
+      board,
+      sealedLanes,
+      tokenLanes,
+      checkConstraints,
+      tokenCard,
+      owner,
+    };
+
     startOnlineTimer({
       type: 'choice',
       owner: 'red',
@@ -87,7 +201,12 @@ export async function waitPlayerLaneSelection(
         if (pendingChoiceResolver) {
           const resolver = pendingChoiceResolver;
           setPendingChoiceResolver(null);
-          resolver(null);
+          // フェイルセーフタイムアウト（相手の応答途絶）時：
+          // キャンセル不可なら送信側と同一の決定論的補完を行い、キャンセル可能なら空で解決
+          const fallback = !canCancel
+            ? fillRemainingPlacementLanes([], count, placementCtx)
+            : [];
+          resolver(fallback);
         }
       },
     });
@@ -168,10 +287,12 @@ export async function waitPlayerLaneSelection(
     // 送信値が合法手か検証
     let resultLanes = parsedLanes.filter((i) => validLanes.includes(i));
 
-    // 補正は送信側（blue の cleanUp 前）で確定済み。受信側で独自補正すると盤面が分岐するため行わない
-    if (resultLanes.length === 0 && !canCancel && validLanes.length > 0) {
-      console.warn(
-        '[online] 空のレーン選択を受信しました。送信側の確定値をそのまま適用します。'
+    // 送信側から未達または空でキャンセル不可の場合は決定論的に補完して盤面乖離を防止
+    if (resultLanes.length < count && !canCancel && validLanes.length > 0) {
+      resultLanes = fillRemainingPlacementLanes(
+        resultLanes,
+        count,
+        placementCtx
       );
     }
 
@@ -388,71 +509,19 @@ export async function waitPlayerLaneSelection(
 
       // キャンセル不可（!canCancel）で未選択枠が残っている場合、有効レーンから補完する
       if (!canCancel && GameState.placementSelectedLanes.length < count) {
-        let validEmptyLanes = board
-          .map((c, i) => (c === null && sealedLanes[i] === 0 ? i : -1))
-          .filter((i) => i !== -1);
-        let validOccupiedLanes = [0, 1, 2].filter(
-          (i) =>
-            !validEmptyLanes.includes(i) &&
-            !GameState.placementSelectedLanes.includes(i) &&
-            sealedLanes[i] === 0
+        const placementCtx = {
+          board,
+          sealedLanes,
+          tokenLanes,
+          checkConstraints,
+          tokenCard,
+          owner,
+        };
+        GameState.placementSelectedLanes = fillRemainingPlacementLanes(
+          GameState.placementSelectedLanes,
+          count,
+          placementCtx
         );
-        if (tokenLanes !== null && Array.isArray(tokenLanes)) {
-          validEmptyLanes = validEmptyLanes.filter((i) =>
-            tokenLanes.includes(i)
-          );
-          validOccupiedLanes = validOccupiedLanes.filter((i) =>
-            tokenLanes.includes(i)
-          );
-        }
-        if (checkConstraints && tokenCard) {
-          if (GameState.turnCount === 1 && GameState.firstPlayer === owner) {
-            validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
-            validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
-          }
-          const hasLegendary = hasSkill(tokenCard, 'legendary');
-          const hasTakeover = hasSkill(tokenCard, 'takeover');
-          const hasApex = hasSkill(tokenCard, 'apex');
-          const hasChallenge = hasSkill(tokenCard, 'challenge');
-
-          if (hasLegendary) {
-            validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
-            validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
-          }
-          if (hasTakeover) {
-            validEmptyLanes = [];
-          }
-          if (hasApex) {
-            validEmptyLanes = validEmptyLanes.filter(
-              (i) => board[i] && hasSkill(board[i], 'legendary')
-            );
-            validOccupiedLanes = validOccupiedLanes.filter(
-              (i) => board[i] && hasSkill(board[i], 'legendary')
-            );
-          }
-          if (hasChallenge) {
-            const oppBoard =
-              owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-            validEmptyLanes = validEmptyLanes.filter(
-              (i) => oppBoard[i] !== null
-            );
-            validOccupiedLanes = validOccupiedLanes.filter(
-              (i) => oppBoard[i] !== null
-            );
-          }
-        }
-        while (
-          GameState.placementSelectedLanes.length < count &&
-          validEmptyLanes.length > 0
-        ) {
-          GameState.placementSelectedLanes.push(validEmptyLanes.shift());
-        }
-        while (
-          GameState.placementSelectedLanes.length < count &&
-          validOccupiedLanes.length > 0
-        ) {
-          GameState.placementSelectedLanes.push(validOccupiedLanes.shift());
-        }
       }
 
       GameState.isPlacementMode = false;
@@ -488,72 +557,6 @@ export async function waitPlayerLaneSelection(
         owner: 'blue',
         onTimeout: async () => {
           if (isCleanedUp) return;
-          // 未選択分を有効レーンから補完
-          let validEmptyLanes = board
-            .map((c, i) => (c === null && sealedLanes[i] === 0 ? i : -1))
-            .filter((i) => i !== -1);
-          let validOccupiedLanes = [0, 1, 2].filter(
-            (i) =>
-              !validEmptyLanes.includes(i) &&
-              !GameState.placementSelectedLanes.includes(i) &&
-              sealedLanes[i] === 0
-          );
-          if (tokenLanes !== null && Array.isArray(tokenLanes)) {
-            validEmptyLanes = validEmptyLanes.filter((i) =>
-              tokenLanes.includes(i)
-            );
-            validOccupiedLanes = validOccupiedLanes.filter((i) =>
-              tokenLanes.includes(i)
-            );
-          }
-          if (checkConstraints && tokenCard) {
-            if (GameState.turnCount === 1 && GameState.firstPlayer === owner) {
-              validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
-              validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
-            }
-            const hasLegendary = hasSkill(tokenCard, 'legendary');
-            const hasTakeover = hasSkill(tokenCard, 'takeover');
-            const hasApex = hasSkill(tokenCard, 'apex');
-            const hasChallenge = hasSkill(tokenCard, 'challenge');
-
-            if (hasLegendary) {
-              validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
-              validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
-            }
-            if (hasTakeover) {
-              validEmptyLanes = [];
-            }
-            if (hasApex) {
-              validEmptyLanes = validEmptyLanes.filter(
-                (i) => board[i] && hasSkill(board[i], 'legendary')
-              );
-              validOccupiedLanes = validOccupiedLanes.filter(
-                (i) => board[i] && hasSkill(board[i], 'legendary')
-              );
-            }
-            if (hasChallenge) {
-              const oppBoard =
-                owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
-              validEmptyLanes = validEmptyLanes.filter(
-                (i) => oppBoard[i] !== null
-              );
-              validOccupiedLanes = validOccupiedLanes.filter(
-                (i) => oppBoard[i] !== null
-              );
-            }
-          }
-          while (
-            GameState.placementSelectedLanes.length < count &&
-            validEmptyLanes.length > 0
-          ) {
-            GameState.placementSelectedLanes.push(validEmptyLanes.shift());
-          }
-          while (
-            GameState.placementSelectedLanes.length < count &&
-            validOccupiedLanes.length > 0
-          ) {
-            GameState.placementSelectedLanes.push(validOccupiedLanes.shift());
-          }
           resolve(await cleanUp());
         },
       });
@@ -821,7 +824,12 @@ export async function waitPlayerEnemyLaneSelection(
         if (pendingChoiceResolver) {
           const resolver = pendingChoiceResolver;
           setPendingChoiceResolver(null);
-          resolver(validLanes.length > 0 ? [validLanes[0]] : []);
+          // フェイルセーフタイムアウト時：キャンセル不可なら有効レーンから決定論的に補完
+          resolver(
+            !canCancel && validLanes.length > 0
+              ? validLanes.slice(0, count)
+              : []
+          );
         }
       },
     });
@@ -940,10 +948,12 @@ export async function waitPlayerEnemyLaneSelection(
         owner: 'blue',
         onTimeout: () => {
           if (isCleanedUp) return;
-          for (const lane of validLanes) {
-            if (GameState.targetSelectedLanes.length >= count) break;
-            if (!GameState.targetSelectedLanes.includes(lane)) {
-              GameState.targetSelectedLanes.push(lane);
+          if (!canCancel) {
+            for (const lane of validLanes) {
+              if (GameState.targetSelectedLanes.length >= count) break;
+              if (!GameState.targetSelectedLanes.includes(lane)) {
+                GameState.targetSelectedLanes.push(lane);
+              }
             }
           }
           onFinishEnemyTargetSelection();
@@ -1060,7 +1070,11 @@ export async function waitPlayerAlliedLaneSelection(
         if (pendingChoiceResolver) {
           const resolver = pendingChoiceResolver;
           setPendingChoiceResolver(null);
-          resolver(occupiedLanes.length > 0 ? [occupiedLanes[0]] : []);
+          resolver(
+            !canCancel && occupiedLanes.length > 0
+              ? occupiedLanes.slice(0, count)
+              : []
+          );
         }
       },
     });
@@ -1155,10 +1169,12 @@ export async function waitPlayerAlliedLaneSelection(
         owner: 'blue',
         onTimeout: () => {
           if (isCleanedUp) return;
-          for (const lane of occupiedLanes) {
-            if (GameState.targetSelectedLanes.length >= count) break;
-            if (!GameState.targetSelectedLanes.includes(lane)) {
-              GameState.targetSelectedLanes.push(lane);
+          if (!canCancel) {
+            for (const lane of occupiedLanes) {
+              if (GameState.targetSelectedLanes.length >= count) break;
+              if (!GameState.targetSelectedLanes.includes(lane)) {
+                GameState.targetSelectedLanes.push(lane);
+              }
             }
           }
           onFinishAlliedSelection();
@@ -1259,10 +1275,12 @@ export async function waitPlayerHandSelection(
           if (pendingChoiceResolver) {
             const resolver = pendingChoiceResolver;
             setPendingChoiceResolver(null);
-            const fallback = Array.from(
-              { length: Math.min(count, hand.length) },
-              (_, i) => hand.length - 1 - i
-            );
+            const fallback = forceExact
+              ? Array.from(
+                  { length: Math.min(count, hand.length) },
+                  (_, i) => hand.length - 1 - i
+                )
+              : [];
             resolver(fallback);
           }
         },
@@ -1484,13 +1502,17 @@ export async function waitPlayerDiscardSelection(
         if (pendingChoiceResolver) {
           const resolver = pendingChoiceResolver;
           setPendingChoiceResolver(null);
-          resolver(
-            validCards.length > 0
-              ? maxChoices > 1
-                ? [validCards[0].uid || validCards[0].id]
-                : validCards[0].uid || validCards[0].id
-              : null
-          );
+          if (canCancel) {
+            resolver(maxChoices > 1 ? [] : null);
+          } else {
+            resolver(
+              validCards.length > 0
+                ? maxChoices > 1
+                  ? validCards.slice(0, maxChoices).map((c) => c.uid || c.id)
+                  : validCards[0].uid || validCards[0].id
+                : null
+            );
+          }
         }
       },
     });
@@ -1763,7 +1785,9 @@ export async function waitPlayerDualDiscardSelection(
           setPendingChoiceResolver(null);
           const allCards = [...blueCards, ...redCards];
           resolver(
-            allCards.length > 0 ? [allCards[0].uid || allCards[0].id] : []
+            !canCancel && allCards.length > 0
+              ? allCards.slice(0, maxChoices).map((c) => c.uid || c.id)
+              : []
           );
         }
       },
@@ -1943,7 +1967,7 @@ export async function waitSkillChoice(
         if (pendingChoiceResolver) {
           const resolver = pendingChoiceResolver;
           setPendingChoiceResolver(null);
-          resolver(choices.length > 0 ? [choices[0]] : []);
+          resolver(choices.slice(0, Math.min(maxChoices, choices.length)));
         }
       },
     });

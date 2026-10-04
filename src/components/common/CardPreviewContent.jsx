@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { GameState } from '../../state/gameState.js';
-import { appendVersionQuery } from '../../utils/constants/config.js';
+import {
+  appendVersionQuery,
+  SHINE_TICKET_COST,
+} from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import {
   DEFAULT_PACK_COVER_CARD_ID,
@@ -1001,7 +1004,7 @@ function CardPreviewContent({
                       <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
                         交換レート
                       </span>
-                      <span>共通 10 Pt</span>
+                      <span>共通 {SHINE_TICKET_COST} Pt</span>
                     </div>
                   </div>
                 </div>

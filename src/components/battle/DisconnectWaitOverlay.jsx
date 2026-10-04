@@ -194,7 +194,8 @@ export default function DisconnectWaitOverlay() {
                 marginTop: '12px',
               }}
             >
-              ※60秒以内に復帰しなかった場合は対戦終了となります。
+              ※{ONLINE_DISCONNECT_WAIT_SEC}
+              秒以内に復帰しなかった場合は対戦終了となります。
             </div>
           </>
         )}

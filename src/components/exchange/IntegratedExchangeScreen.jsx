@@ -35,6 +35,7 @@ import {
   COMMON_TOTAL_POINTS_KEY,
   PACK_EXCHANGE_COST,
   INVENTORY_KEY,
+  SHINE_TICKET_COST,
 } from '../../utils/constants/config.js';
 import {
   DEFAULT_PACK_COVER_CARD_ID,
@@ -416,15 +417,46 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
   );
 
   /**
-   * シャインチケット交換処理ハンドラ
-   * 共通ポイントを消費してシャインチケットを獲得し、専用ダイアログを表示します。
+   * シャインチケット交換処理の実行関数（共通処理）。
+   * 共通ポイントを消費してシャインチケットを加算・永続化し、専用ダイアログを表示する。
+   *
+   * @param {number} count - 交換枚数
+   * @param {string} [itemName='シャインチケット'] - アイテム表示名
+   * @returns {void}
+   */
+  const executeShineTicketExchange = useCallback(
+    (count, itemName = 'シャインチケット') => {
+      const totalCost = SHINE_TICKET_COST * count;
+      try {
+        // ポイント減算
+        const newCurrent = Math.max(0, currentPoints - totalCost);
+        setCurrentPoints(newCurrent);
+        localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
+        savePointsToServer('update_common_points.php', newCurrent, totalPoints);
+
+        // チケット加算
+        addShineTickets(count);
+
+        playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seCardPlace);
+        // 専用のシャインチケット獲得ダイアログを表示
+        showItemAcquisitionModal(itemName, count);
+      } catch (err) {
+        console.error('[CommonExchange] シャインチケット交換エラー:', err);
+        showAlertModal('シャインチケットの交換中にエラーが発生しました。');
+      }
+    },
+    [currentPoints, totalPoints]
+  );
+
+  /**
+   * シャインチケット交換確認ハンドラ
    *
    * @param {Object} item - 交換対象アイテム
    * @param {number} [count=1] - 交換個数
    */
   const handleExchangeShineTicket = useCallback(
     (item, count = 1) => {
-      const unitCost = item.cost ?? 10;
+      const unitCost = item.cost ?? SHINE_TICKET_COST;
       const totalCost = unitCost * count;
 
       if (currentPoints < totalCost) {
@@ -435,31 +467,11 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
       showConfirmModal(
         `共通ポイント ${totalCost} Pt を消費して【${item.name}】を ${count}枚 交換しますか？`,
         () => {
-          try {
-            // ポイント減算
-            const newCurrent = Math.max(0, currentPoints - totalCost);
-            setCurrentPoints(newCurrent);
-            localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
-            savePointsToServer(
-              'update_common_points.php',
-              newCurrent,
-              totalPoints
-            );
-
-            // チケット加算
-            addShineTickets(count);
-
-            playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seCardPlace);
-            // 専用のシャインチケット獲得ダイアログを表示
-            showItemAcquisitionModal(item.name || 'シャインチケット', count);
-          } catch (err) {
-            console.error('[CommonExchange] シャインチケット交換エラー:', err);
-            showAlertModal('シャインチケットの交換中にエラーが発生しました。');
-          }
+          executeShineTicketExchange(count, item.name || 'シャインチケット');
         }
       );
     },
-    [currentPoints, totalPoints]
+    [currentPoints, executeShineTicketExchange]
   );
 
   // 共通交換所ラインナップ（拡張パック + バトルパス）
@@ -797,10 +809,13 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
                   style={{
                     padding: '2px 10px',
                     background:
-                      currentPoints >= 10
+                      currentPoints >= SHINE_TICKET_COST
                         ? 'linear-gradient(45deg, #eab308, #ca8a04)'
                         : '#334155',
-                    color: currentPoints >= 10 ? '#000000' : '#64748b',
+                    color:
+                      currentPoints >= SHINE_TICKET_COST
+                        ? '#000000'
+                        : '#64748b',
                     borderRadius: '12px',
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
@@ -808,7 +823,7 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
                     boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
                   }}
                 >
-                  10 Pt
+                  {SHINE_TICKET_COST} Pt
                 </div>
               </div>
             </div>
@@ -870,31 +885,10 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
       {isShineTicketModalOpen && (
         <ShineTicketExchangeModal
           commonPoints={currentPoints}
-          costPerTicket={10}
+          costPerTicket={SHINE_TICKET_COST}
           onConfirm={(chosenCount) => {
             setIsShineTicketModalOpen(false);
-            const totalCost = 10 * chosenCount;
-            try {
-              const newCurrent = Math.max(0, currentPoints - totalCost);
-              setCurrentPoints(newCurrent);
-              localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
-              savePointsToServer(
-                'update_common_points.php',
-                newCurrent,
-                totalPoints
-              );
-              addShineTickets(chosenCount);
-              playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seCardPlace);
-              showItemAcquisitionModal('シャインチケット', chosenCount);
-            } catch (err) {
-              console.error(
-                '[CommonExchange] シャインチケット交換エラー:',
-                err
-              );
-              showAlertModal(
-                'シャインチケットの交換中にエラーが発生しました。'
-              );
-            }
+            executeShineTicketExchange(chosenCount, 'シャインチケット');
           }}
           onClose={() => setIsShineTicketModalOpen(false)}
         />

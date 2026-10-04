@@ -192,7 +192,16 @@ function _runTimerInternal({
     // 1. 自分側のタイムアウト判定（0秒到達）
     if (owner === 'blue' && remainingMs <= 0 && !isTimeoutTriggered) {
       isTimeoutTriggered = true;
-      stopOnlineTimer();
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      // choice（サブ選択）タイマーの場合、ここで stopOnlineTimer() を呼ぶとスタックから退避中タイマーが早期 pop され、
+      // 直後の onTimeout 内の cleanUp() -> stopOnlineTimer() で復元されたメインタイマーが誤って破棄されてしまう。
+      // そのため choice のスタック復元はコールバック側に任せ、choice 以外のみここで停止する。
+      if (type !== 'choice') {
+        stopOnlineTimer();
+      }
       if (typeof onTimeout === 'function') {
         try {
           onTimeout();
@@ -212,7 +221,14 @@ function _runTimerInternal({
       !isTimeoutTriggered
     ) {
       isTimeoutTriggered = true;
-      stopOnlineTimer();
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      // choice（サブ選択）タイマーの場合、スタック復元はコールバック側に委ねる
+      if (type !== 'choice') {
+        stopOnlineTimer();
+      }
       if (typeof onFailsafeTimeout === 'function') {
         try {
           onFailsafeTimeout();

@@ -15,6 +15,9 @@ import {
   MID_TIER_PICK_COUNT,
   PROFILE_NAME_KEY,
   AI_LEVEL,
+  SHINE_TICKETS_KEY,
+  UNLOCKED_SHINE_CARDS_KEY,
+  SHINE_CARDS_KEY,
 } from './constants/config.js';
 import {
   ACTIVE_SKILLS,
@@ -1494,48 +1497,69 @@ export function consumeShineTicket(cardId) {
     return false;
   }
 
-  // 1. チケットを1枚消費
+  // ロールバック用の実行前スナップショットを退避
+  const prevTickets = GameState.shineTickets;
+  const prevUnlocked = Array.isArray(GameState.unlockedShineCards)
+    ? [...GameState.unlockedShineCards]
+    : [];
+  const prevShineCards = Array.isArray(GameState.shineCards)
+    ? [...GameState.shineCards]
+    : [];
+  const rawTickets = localStorage.getItem(SHINE_TICKETS_KEY);
+  const rawUnlocked = localStorage.getItem(UNLOCKED_SHINE_CARDS_KEY);
+  const rawShineCards = localStorage.getItem(SHINE_CARDS_KEY);
+
+  // 新しい状態の算出
   const nextTickets = tickets - 1;
-  GameState.shineTickets = nextTickets;
-  try {
-    localStorage.setItem('mini_card_battle_shine_tickets', String(nextTickets));
-  } catch (e) {
-    console.error('Failed to save shine tickets to localStorage:', e);
-  }
+  const nextUnlocked = prevUnlocked.includes(cardId)
+    ? prevUnlocked
+    : [...prevUnlocked, cardId];
+  const nextShineCards = prevShineCards.includes(cardId)
+    ? prevShineCards
+    : [...prevShineCards, cardId];
 
-  // 2. 解放済みリストに追加
-  if (!Array.isArray(GameState.unlockedShineCards)) {
-    GameState.unlockedShineCards = [];
-  }
-  if (!GameState.unlockedShineCards.includes(cardId)) {
-    GameState.unlockedShineCards.push(cardId);
-  }
   try {
+    // 3つの保存処理を単一のトランザクションとして実行
+    localStorage.setItem(SHINE_TICKETS_KEY, String(nextTickets));
     localStorage.setItem(
-      'mini_card_battle_unlocked_shine_cards',
-      JSON.stringify(GameState.unlockedShineCards)
+      UNLOCKED_SHINE_CARDS_KEY,
+      JSON.stringify(nextUnlocked)
     );
+    localStorage.setItem(SHINE_CARDS_KEY, JSON.stringify(nextShineCards));
+
+    // すべての永続化に成功した場合のみ GameState をコミット
+    GameState.shineTickets = nextTickets;
+    GameState.unlockedShineCards = nextUnlocked;
+    GameState.shineCards = nextShineCards;
+    return true;
   } catch (e) {
-    console.error('Failed to save unlocked shine cards to localStorage:', e);
-  }
-
-  // 3. シャインONに自動設定
-  if (!Array.isArray(GameState.shineCards)) {
-    GameState.shineCards = [];
-  }
-  if (!GameState.shineCards.includes(cardId)) {
-    GameState.shineCards.push(cardId);
+    console.error(
+      '[ShineUnlock] LocalStorage transaction failed, rolling back:',
+      e
+    );
+    // ロールバック: LocalStorage を実行前の生文字列に復元
     try {
-      localStorage.setItem(
-        'mini_card_battle_shine_cards',
-        JSON.stringify(GameState.shineCards)
-      );
-    } catch (e) {
-      console.error('Failed to save shine cards to localStorage:', e);
-    }
-  }
+      if (rawTickets !== null)
+        localStorage.setItem(SHINE_TICKETS_KEY, rawTickets);
+      else localStorage.removeItem(SHINE_TICKETS_KEY);
 
-  return true;
+      if (rawUnlocked !== null)
+        localStorage.setItem(UNLOCKED_SHINE_CARDS_KEY, rawUnlocked);
+      else localStorage.removeItem(UNLOCKED_SHINE_CARDS_KEY);
+
+      if (rawShineCards !== null)
+        localStorage.setItem(SHINE_CARDS_KEY, rawShineCards);
+      else localStorage.removeItem(SHINE_CARDS_KEY);
+    } catch (rollbackErr) {
+      console.error('[ShineUnlock] Rollback failed:', rollbackErr);
+    }
+
+    // GameState も元の値に復元
+    GameState.shineTickets = prevTickets;
+    GameState.unlockedShineCards = prevUnlocked;
+    GameState.shineCards = prevShineCards;
+    return false;
+  }
 }
 
 /**

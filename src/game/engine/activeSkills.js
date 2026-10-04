@@ -777,9 +777,6 @@ export function applyActiveSkillLogic(
 
         const actualCount = Math.min(count, validTargets.length);
         const newTokens = [];
-        console.log(
-          `[DEBUG] morph executed. val(skillValue): ${val}, count: ${count}, validTargets length: ${validTargets.length}, actualCount: ${actualCount}`
-        );
 
         for (let i = 0; i < actualCount; i++) {
           const targetInfo = validTargets[i];

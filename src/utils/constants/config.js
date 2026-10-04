@@ -97,6 +97,8 @@ export const UNLOCKED_PREMIUM_CARDS_KEY =
 export const SHINE_CARDS_KEY = 'mini_card_battle_shine_cards';
 export const UNLOCKED_SHINE_CARDS_KEY = 'mini_card_battle_unlocked_shine_cards';
 export const SHINE_TICKETS_KEY = 'mini_card_battle_shine_tickets';
+/** シャインチケット1枚あたりの共通ポイント交換コスト */
+export const SHINE_TICKET_COST = 10;
 export const BGM_VOLUME_KEY = 'mini_card_battle_bgm_volume';
 export const SE_VOLUME_KEY = 'mini_card_battle_se_volume';
 export const BGM_MUTED_KEY = 'mini_card_battle_bgm_muted';

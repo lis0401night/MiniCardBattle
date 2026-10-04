@@ -1693,24 +1693,17 @@ export function applySkinToConfig(config, skinMapOrSkinId) {
   config.characterName = displayInfo.name;
   config.subtitle = displayInfo.subtitle;
 
-  // スキン固有の台詞・前口上・ミラー口上の適用
+  // スキン固有の台詞・前口上・ミラー口上の適用（ベースの台詞を基準にし、スキン固有定義が存在する項目のみ上書き）
   const skinsObj = config.skins || charObj.skins;
-  if (skinsObj) {
-    const skinDef =
-      skinsObj[selSkin] ||
+  const skinDef = skinsObj
+    ? skinsObj[selSkin] ||
       skinsObj[`${config.id}_${selSkin}`] ||
       (selSkin.includes('_')
         ? skinsObj[selSkin.split('_').slice(1).join('_')]
-        : null);
-    if (skinDef) {
-      if (skinDef.dialogue) config.dialogue = skinDef.dialogue;
-      if (skinDef.preBattleLine) config.preBattleLine = skinDef.preBattleLine;
-      if (skinDef.mirrorIntro) config.mirrorIntro = skinDef.mirrorIntro;
-    } else {
-      // スキン固有定義がない（'default'等）場合はベースキャラの台詞に戻す
-      if (charObj.dialogue) config.dialogue = charObj.dialogue;
-      if (charObj.preBattleLine) config.preBattleLine = charObj.preBattleLine;
-      if (charObj.mirrorIntro) config.mirrorIntro = charObj.mirrorIntro;
-    }
-  }
+        : null)
+    : null;
+
+  config.dialogue = skinDef?.dialogue || charObj.dialogue;
+  config.preBattleLine = skinDef?.preBattleLine || charObj.preBattleLine;
+  config.mirrorIntro = skinDef?.mirrorIntro || charObj.mirrorIntro;
 }

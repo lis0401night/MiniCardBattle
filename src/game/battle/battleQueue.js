@@ -28,7 +28,12 @@ import { executeEnemyAI } from '../ai.js';
 import { activateLeaderSkill } from '../leaderSkills.js';
 import { cleanupTutorial } from '../tutorialEngine.js';
 import { showAlertModal } from '../../services/uiModals.js';
-import { stopOnlineTimer, pauseOnlineTimer } from './onlineTimer.js';
+import {
+  stopOnlineTimer,
+  pauseOnlineTimer,
+  resumeOnlineTimer,
+  isOnlineTimerPaused,
+} from './onlineTimer.js';
 import { checkIsOnlineTimerEnabled } from '../../utils/constants/onlineTimer.js';
 
 // ==========================================
@@ -169,6 +174,11 @@ export async function dispatchBattleAction(action, isRemote = false) {
     // 自分が送信した選択結果の反響(echo)は完全に無視する（自分のローカルはUIのPromiseで既に勝手に解決されているため）
     if (action.owner === 'blue') return;
 
+    // 【重要】受信したアクションキーを記録し、復帰時の二重実行防止に備える
+    if (action._actionKey) {
+      setLastProcessedActionKey(action._actionKey);
+    }
+
     // Firebase仕様で空配列[]が送信されないため、undefinedで来た場合は空文字列とみなす
     const choiceData = action.choiceData !== undefined ? action.choiceData : '';
 
@@ -262,6 +272,17 @@ export async function processActionQueue() {
       }
 
       if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
+
+      // 【タイマー再開処理】
+      // playCard または leaderSkill により一時停止されたタイマーが、
+      // 選択を伴わないスキルやプレイ不成立等で pause されたまま残っている場合、残余時間から再開する
+      if (
+        checkIsOnlineTimerEnabled(GameState.gameMode) &&
+        (action.type === 'playCard' || action.type === 'leaderSkill') &&
+        isOnlineTimerPaused()
+      ) {
+        resumeOnlineTimer();
+      }
 
       // ホスト側：syncState以外のアクション処理が終わるごとに現在の正しいステートを送信する
       if (
