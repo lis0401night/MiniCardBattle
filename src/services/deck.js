@@ -134,19 +134,18 @@ export function generateDeck(owner, config, sessionId) {
           : t.name && t.power !== undefined
             ? t
             : CARD_MASTER.find((m) => m.id === t.id) || t;
-      const isMyDeck =
-        owner === 'blue' || config === GameState.playerConfig;
+      const isMyDeck = owner === 'blue' || config === GameState.playerConfig;
       const isPremium = Boolean(
         (typeof t === 'object' && typeof t.isPremium === 'boolean'
           ? t.isPremium
           : cardObj.isPremium) ||
-          (isMyDeck && (GameState.premiumCards || []).includes(cardObj.id))
+        (isMyDeck && (GameState.premiumCards || []).includes(cardObj.id))
       );
       const isShine = Boolean(
         (typeof t === 'object' && typeof t.isShine === 'boolean'
           ? t.isShine
           : cardObj.isShine) ||
-          (isMyDeck && (GameState.shineCards || []).includes(cardObj.id))
+        (isMyDeck && (GameState.shineCards || []).includes(cardObj.id))
       );
       const tempObj = { ...cardObj, isPremium: isPremium, isShine: isShine };
       const imgUrl = getCardImgUrl(tempObj);

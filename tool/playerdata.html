@@ -1615,10 +1615,7 @@
         }
 
         // 2. 所持シャインカードリストに含まれている場合
-        if (
-          Array.isArray(shineCardsList) &&
-          shineCardsList.includes(cardId)
-        ) {
+        if (Array.isArray(shineCardsList) && shineCardsList.includes(cardId)) {
           return true;
         }
 
@@ -1633,7 +1630,11 @@
        * @param {Array<string>} [shineCardsList=[]] - シャインカードID配列
        * @returns {Array<string|Object>} ソート済みのカード配列のシャローコピー
        */
-      function sortCardsByMasterOrder(cards, premiumCardsList = [], shineCardsList = []) {
+      function sortCardsByMasterOrder(
+        cards,
+        premiumCardsList = [],
+        shineCardsList = []
+      ) {
         if (!Array.isArray(cards)) return [];
         const cardOrderMap = new Map();
         (CARD_MASTER || []).forEach((c, i) => cardOrderMap.set(c.id, i));
@@ -2830,7 +2831,9 @@
             typeof favRaw === 'object' ? !!favRaw.isPremium : false;
           const isFavShine =
             typeof favRaw === 'object' ? !!favRaw.isShine : false;
-          const favCardObj = (CARD_MASTER || []).find((c) => c.id === favCardId);
+          const favCardObj = (CARD_MASTER || []).find(
+            (c) => c.id === favCardId
+          );
           if (favCardObj) {
             favHtml = `
               <div class="mt-3 flex flex-col items-center p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/60 max-w-xs w-full">
@@ -5823,9 +5826,7 @@
           )
             ? atkPlayer.unlocked_premium_cards
             : [];
-          const atkShineCards = Array.isArray(
-            atkPlayer?.unlocked_shine_cards
-          )
+          const atkShineCards = Array.isArray(atkPlayer?.unlocked_shine_cards)
             ? atkPlayer.unlocked_shine_cards
             : [];
           showGenericDeckModal({
