@@ -2296,6 +2296,22 @@
             loserSkin: losePlayer.skin,
             loserRating: Math.max(0, losePlayer.quick_rating - 15),
             loserDeck: losePlayer.registered_decks[1]?.cards || losePlayer.deck,
+            winner: {
+              uuid: winPlayer.uuid,
+              name: winPlayer.name,
+              character: winPlayer.character,
+              skin: winPlayer.skin,
+              rating: winPlayer.quick_rating,
+              deck: winPlayer.deck,
+            },
+            loser: {
+              uuid: losePlayer.uuid,
+              name: losePlayer.name,
+              character: losePlayer.character,
+              skin: losePlayer.skin,
+              rating: Math.max(0, losePlayer.quick_rating - 15),
+              deck: losePlayer.registered_decks[1]?.cards || losePlayer.deck,
+            },
           });
         }
 
@@ -5215,6 +5231,81 @@
       // =============================
 
       /**
+       * クイックマッチの対戦記録オブジェクトから勝者・敗者の情報を正規化して取得するヘルパー関数。
+       * サーバー保存データの形式（フラット形式: winnerName, winnerCharacter 等）および
+       * オブジェクト形式（ネスト形式: winner.name, winner.character 等）の双方に対応し、
+       * どちらの構造であっても完全なプレイヤー情報オブジェクトとして安全に取得・展開する。
+       *
+       * @param {Object} rec - クイックマッチ対戦履歴レコード
+       * @returns {{ winner: { uuid: string, name: string, character: string, skin: string, rating: number|null, deck: Array }, loser: { uuid: string, name: string, character: string, skin: string, rating: number|null, deck: Array } }} 正規化された勝者・敗者データ
+       */
+      function resolveQuickBattleParticipants(rec) {
+        if (!rec || typeof rec !== 'object') {
+          return {
+            winner: {
+              uuid: '',
+              name: '不明',
+              character: 'android',
+              skin: 'default',
+              rating: null,
+              deck: [],
+            },
+            loser: {
+              uuid: '',
+              name: '不明',
+              character: 'android',
+              skin: 'default',
+              rating: null,
+              deck: [],
+            },
+          };
+        }
+
+        const winnerObj =
+          rec.winner && typeof rec.winner === 'object' ? rec.winner : {};
+        const loserObj =
+          rec.loser && typeof rec.loser === 'object' ? rec.loser : {};
+
+        const winner = {
+          uuid: winnerObj.uuid || rec.winnerUuid || '',
+          name: winnerObj.name || rec.winnerName || '不明',
+          character: winnerObj.character || rec.winnerCharacter || 'android',
+          skin: winnerObj.skin || rec.winnerSkin || 'default',
+          rating:
+            typeof winnerObj.rating === 'number'
+              ? winnerObj.rating
+              : typeof rec.winnerRating === 'number'
+                ? rec.winnerRating
+                : null,
+          deck: Array.isArray(winnerObj.deck)
+            ? winnerObj.deck
+            : Array.isArray(rec.winnerDeck)
+              ? rec.winnerDeck
+              : [],
+        };
+
+        const loser = {
+          uuid: loserObj.uuid || rec.loserUuid || '',
+          name: loserObj.name || rec.loserName || '不明',
+          character: loserObj.character || rec.loserCharacter || 'android',
+          skin: loserObj.skin || rec.loserSkin || 'default',
+          rating:
+            typeof loserObj.rating === 'number'
+              ? loserObj.rating
+              : typeof rec.loserRating === 'number'
+                ? rec.loserRating
+                : null,
+          deck: Array.isArray(loserObj.deck)
+            ? loserObj.deck
+            : Array.isArray(rec.loserDeck)
+              ? rec.loserDeck
+              : [],
+        };
+
+        return { winner, loser };
+      }
+
+      /**
        * クイックマッチ（対人戦）結果一覧テーブルを描画する
        * 検索フィルター（対戦者名、キャラ名、UUID、match_id）および表示件数制限を適用する
        */
@@ -5239,8 +5330,7 @@
         // 検索フィルター (対戦者名・キャラ名・UUID・match_id)
         if (searchQuery) {
           logs = logs.filter((r) => {
-            const winner = r.winner || {};
-            const loser = r.loser || {};
+            const { winner, loser } = resolveQuickBattleParticipants(r);
 
             const winnerName = (winner.name || '').toLowerCase();
             const loserName = (loser.name || '').toLowerCase();
@@ -5307,8 +5397,7 @@
                 })
               : '--';
 
-            const winner = rec.winner || {};
-            const loser = rec.loser || {};
+            const { winner, loser } = resolveQuickBattleParticipants(rec);
 
             // 勝者アイコン
             const winnerCharId = winner.character || 'android';
@@ -5424,9 +5513,8 @@
        */
       function openQuickBattleDeckModal(recordIndex, role = 'winner') {
         const rec = recentQuickBattles[recordIndex];
-        if (!rec) return;
-
-        const targetData = role === 'winner' ? rec.winner : rec.loser;
+        const { winner, loser } = resolveQuickBattleParticipants(rec);
+        const targetData = role === 'winner' ? winner : loser;
         if (!targetData) return;
 
         const deck = Array.isArray(targetData.deck) ? targetData.deck : [];

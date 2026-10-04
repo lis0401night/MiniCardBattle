@@ -90,6 +90,23 @@ $record = [
     'loserSkin' => $loser_skin,
     'loserRating' => $loser_rating,
     'loserDeck' => $loser_deck,
+    // オブジェクト（ネスト）参照との完全な相互互換性を担保
+    'winner' => [
+        'uuid' => $winner_uuid,
+        'name' => $winner_name,
+        'character' => $winner_character,
+        'skin' => $winner_skin,
+        'rating' => $winner_rating,
+        'deck' => $winner_deck,
+    ],
+    'loser' => [
+        'uuid' => $loser_uuid,
+        'name' => $loser_name,
+        'character' => $loser_character,
+        'skin' => $loser_skin,
+        'rating' => $loser_rating,
+        'deck' => $loser_deck,
+    ],
 ];
 
 // 全体クイックマッチ対戦履歴に安全に追記（重複 match_id は自動スキップ）
