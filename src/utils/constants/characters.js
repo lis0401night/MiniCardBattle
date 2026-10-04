@@ -1150,6 +1150,7 @@ export const CHARACTERS = {
       name: '廃鉄の声 マキナ',
     },
     preBattleLine: '捨てられた鉄の痛みを、今ここで教えてあげる。',
+    mirrorIntro: '同じ鉄の体……。でも、私たちの叫びはあなたには届かないのね。',
     dialogue: {
       intro: {
         android: 'あなたも「つくられた存在」……。なのに人間に従うのね。',
@@ -1705,5 +1706,7 @@ export function applySkinToConfig(config, skinMapOrSkinId) {
 
   config.dialogue = skinDef?.dialogue || charObj.dialogue;
   config.preBattleLine = skinDef?.preBattleLine || charObj.preBattleLine;
-  config.mirrorIntro = skinDef?.mirrorIntro || charObj.mirrorIntro;
+  // 同キャラ対戦用口上（未定義時は汎用セリフへフォールバックし undefined の混入を防止）
+  const baseMirrorIntro = charObj.mirrorIntro || 'なっ、自分自身だと……！？';
+  config.mirrorIntro = skinDef?.mirrorIntro || baseMirrorIntro;
 }

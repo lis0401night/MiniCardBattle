@@ -29,6 +29,37 @@ export const QUICK_MATCH_REF = 'quickMatch';
 export let currentBasePath = ROOMS_REF;
 
 /**
+ * Firebase Realtime Database への書き込みデータから undefined を再帰的に安全処理するサニタイズ関数。
+ * Firebase SDK は undefined を含むオブジェクトの書き込み時に即座に例外をスローするため、
+ * undefined を除外または安全に変換して通信エラーを恒久的に防止する。
+ *
+ * @param {*} val - サニタイズ対象のデータ
+ * @returns {*} サニタイズ済みの安全なデータ
+ */
+export function sanitizeForFirebase(val) {
+  if (val === undefined) return null;
+  if (val === null || typeof val !== 'object') return val;
+  // Firebaseのセンチネルオブジェクト（serverTimestamp等）やプレーンオブジェクト以外のインスタンスは維持
+  if (
+    val.constructor &&
+    val.constructor.name !== 'Object' &&
+    !Array.isArray(val)
+  ) {
+    return val;
+  }
+  if (Array.isArray(val)) {
+    return val.map((item) => sanitizeForFirebase(item));
+  }
+  const result = {};
+  for (const [key, value] of Object.entries(val)) {
+    if (value !== undefined) {
+      result[key] = sanitizeForFirebase(value);
+    }
+  }
+  return result;
+}
+
+/**
  * 現在の対戦セッションのベースパスを取得する
  * @returns {string} 'rooms' または 'quickMatch'
  */
@@ -368,6 +399,62 @@ export function isHostAlive(room, now = getServerNow()) {
   // 端末とサーバーの時刻差で未来時刻になっている場合は生存中
   if (diff < 0) return true;
   return diff <= ROOM_HEARTBEAT_TIMEOUT_MS;
+}
+
+/**
+ * 対象ノードの最新スナップショットを事前に同期（preload）し、ローカルキャッシュを確定させる共通ヘルパー関数。
+ *
+ * 【設計背景】
+ * Firebase Realtime Database の runTransaction は、対象パスのローカルキャッシュが存在しない場合、
+ * サーバー問い合わせ前に初回呼び出しが `null` で即時評価される仕様を持つ。
+ * そのため、ノードの存在を厳格に要求するトランザクション処理（if (!match) return undefined;）において、
+ * サーバーへリクエストが送信される前に自己中断（アボート）されてしまう重大な問題が発生する。
+ * 本関数は一時的な onValue リスナーを確立してサーバー上の最新状態を確実に同期し、
+ * トランザクションが正確な実データに基づいてアトミックに実行されることを保証する。
+ *
+ * @param {import('firebase/database').DatabaseReference} targetRef - 対象ノードのFirebase参照
+ * @param {number} [timeoutMs=3000] - サーバー応答待機の最大許容時間（ミリ秒）
+ * @returns {Promise<{ snapVal: any, unsubscribe: function(): void }>} 取得された最新データ値とリスナー解除関数のペア
+ */
+export async function preloadNodeSnapshot(targetRef, timeoutMs = 3000) {
+  let unsubscribe = null;
+  const snapVal = await new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(null);
+      }
+    }, timeoutMs);
+
+    unsubscribe = onValue(
+      targetRef,
+      (snap) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(snap.val());
+        }
+      },
+      () => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(null);
+        }
+      }
+    );
+  });
+
+  return {
+    snapVal,
+    unsubscribe: () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    },
+  };
 }
 
 /**
@@ -827,41 +914,63 @@ export async function joinRoom(roomId, clientName) {
     leaderConfig: null,
   };
 
-  // 1回の原子的トランザクションで参加状態（status === 'waiting' && client == null）を確認して参加更新を実行
-  const result = await runTransaction(roomRef, (room) => {
-    // Firebase RTDBでは undefined を返した場合のみトランザクション中断となる（null は削除コミットになる）
-    if (room === null) return undefined;
-    if (room.status !== 'waiting' || room.client) {
-      return undefined; // 条件を満たさない場合はトランザクションを中断してコミットしない
+  // 対象ルームの最新データを事前に同期（preload）して存在確認とローカルキャッシュを確定
+  const { snapVal: initialRoom, unsubscribe } =
+    await preloadNodeSnapshot(roomRef);
+
+  try {
+    if (
+      !initialRoom ||
+      initialRoom.status !== 'waiting' ||
+      initialRoom.client
+    ) {
+      throw new Error(
+        '指定されたルームは見つからないか、既に対戦中・満員です。'
+      );
     }
-    return {
-      ...room,
-      status: 'playing',
-      client: clientInfo,
-      battleSeed: Date.now(),
-    };
-  });
 
-  if (!result.committed || !result.snapshot?.exists()) {
-    throw new Error('指定されたルームは見つからないか、既に対戦中・満員です。');
+    let attempts = 0;
+    // 1回の原子的トランザクションで参加状態（status === 'waiting' && client == null）を確認して参加更新を実行
+    const result = await runTransaction(roomRef, (room) => {
+      attempts++;
+      // 初回未キャッシュ時の null を事前同期データで安全に補完
+      const current = room || (attempts === 1 ? initialRoom : null);
+      if (!current || current.status !== 'waiting' || current.client) {
+        return undefined; // 条件を満たさない場合はトランザクションを中断してコミットしない
+      }
+      return {
+        ...current,
+        status: 'playing',
+        client: clientInfo,
+        battleSeed: Date.now(),
+      };
+    });
+
+    if (!result.committed || !result.snapshot?.exists()) {
+      throw new Error(
+        '指定されたルームは見つからないか、既に対戦中・満員です。'
+      );
+    }
+
+    currentBasePath = ROOMS_REF;
+    currentRoomId = roomId;
+    // ホストが発行した6桁コードを参加側でも保持し、getCurrentRoomCode()から参照できるようにする
+    currentRoomCode = result.snapshot.val()?.roomCode || null;
+    isHost = false;
+
+    // クライアント切断時の自動ロビー戻り（クライアント削除 & ステータス復元）を予約
+    onDisconnect(roomRef)
+      .update({
+        status: 'waiting',
+        client: null,
+      })
+      .catch((e) => console.error('onDisconnect error:', e));
+
+    listenToRoom(currentRoomId);
+    return currentRoomId;
+  } finally {
+    unsubscribe();
   }
-
-  currentBasePath = ROOMS_REF;
-  currentRoomId = roomId;
-  // ホストが発行した6桁コードを参加側でも保持し、getCurrentRoomCode()から参照できるようにする
-  currentRoomCode = result.snapshot.val()?.roomCode || null;
-  isHost = false;
-
-  // クライアント切断時の自動ロビー戻り（クライアント削除 & ステータス復元）を予約
-  onDisconnect(roomRef)
-    .update({
-      status: 'waiting',
-      client: null,
-    })
-    .catch((e) => console.error('onDisconnect error:', e));
-
-  listenToRoom(currentRoomId);
-  return currentRoomId;
 }
 
 /**
@@ -1022,7 +1131,7 @@ export async function updatePlayerReady(config, isReadyStatus = true) {
     `${currentBasePath}/${currentRoomId}/${isHost ? 'host' : 'client'}`
   );
   await update(pRef, {
-    leaderConfig: config,
+    leaderConfig: sanitizeForFirebase(config),
     isReady: isReadyStatus,
   });
 }
@@ -1467,6 +1576,8 @@ export async function startQuickMatch(
   const uuid = getOrCreateUUID();
   const qmRef = ref(database, QUICK_MATCH_REF);
   const now = getServerNow();
+  // Firebase 書き込み用に undefined を除外・サニタイズしたリーダー設定
+  const safeLeaderConfig = sanitizeForFirebase(myLeaderConfig);
 
   // 1. 待機中のクイックマッチエントリを探索
   let matchedMatchId = null;
@@ -1508,30 +1619,49 @@ export async function startQuickMatch(
           name: playerName || 'Player 2',
           icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
           isReady: true,
-          leaderConfig: myLeaderConfig,
+          leaderConfig: safeLeaderConfig,
           isOnline: true,
           lastActiveAt: getServerNow(),
         };
 
-        const result = await runTransaction(targetMatchRef, (match) => {
-          // ノードが存在しない（削除・キャンセル済み）または待機中でない場合は安全にアボート
-          // ※ candidate でフォールバックすると削除済みマッチを誤って再生成してしまうため、match の実在を厳格に要求する
-          if (!match || match.status !== 'waiting' || match.client) {
-            return undefined;
-          }
-          return {
-            ...match,
-            status: 'battle',
-            battleStartedAt: getServerNow(),
-            battleSeed: Date.now(),
-            client: clientInfo,
-          };
-        });
+        // 相手の部屋ノードを事前に同期（preload）し、ローカルキャッシュを満たすと共に最新の実在性を検証
+        const { snapVal: latestMatch, unsubscribe } =
+          await preloadNodeSnapshot(targetMatchRef);
 
-        if (result.committed && result.snapshot?.exists()) {
-          matchedMatchId = candidate.matchId;
-          matchedMatchData = result.snapshot.val();
-          break;
+        try {
+          // サーバー上で既に削除・キャンセルされている、または待機中でない場合は安全にスキップ（削除済みノードの誤再生成を完全に防止）
+          if (
+            !latestMatch ||
+            latestMatch.status !== 'waiting' ||
+            latestMatch.client
+          ) {
+            continue;
+          }
+
+          let attempts = 0;
+          const result = await runTransaction(targetMatchRef, (match) => {
+            attempts++;
+            // 初回呼び出し時、万が一未キャッシュの null が渡った場合でも事前同期済みの latestMatch で安全にフォールバック
+            const current = match || (attempts === 1 ? latestMatch : null);
+            if (!current || current.status !== 'waiting' || current.client) {
+              return undefined;
+            }
+            return {
+              ...current,
+              status: 'battle',
+              battleStartedAt: getServerNow(),
+              battleSeed: Date.now(),
+              client: clientInfo,
+            };
+          });
+
+          if (result.committed && result.snapshot?.exists()) {
+            matchedMatchId = candidate.matchId;
+            matchedMatchData = result.snapshot.val();
+            break;
+          }
+        } finally {
+          unsubscribe();
         }
       }
     }
@@ -1570,7 +1700,7 @@ export async function startQuickMatch(
     name: playerName || 'Player 1',
     icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
     isReady: true,
-    leaderConfig: myLeaderConfig,
+    leaderConfig: safeLeaderConfig,
     isOnline: true,
     lastActiveAt: serverTimestamp(),
   };
