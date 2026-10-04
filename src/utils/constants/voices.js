@@ -309,8 +309,9 @@ export const PREMIUM_VOICE_MAP = {
   dragoon: 'human_female_normal',
   bountyhunter: 'lizard',
   cavalry: 'human_male_ikemen',
-  gorilla: 'human_male_warrior',
   royalguard: 'human_female_cool',
+  gorilla: 'human_male_warrior',
+  warriormonk: 'human_male_normal',
   ghoul: 'human_male_ikemen',
 };
 

@@ -5,9 +5,11 @@
  * およびクイックマッチ勝利時のレート加算・サーバー同期処理を一元管理します。
  */
 
-import { savePointsToServer } from '../apiUtils.js';
+import { savePointsToServer, addCommonPoints } from '../apiUtils.js';
 import { addShineTickets, safeParseArray } from '../gameUtils.js';
 import {
+  INVENTORY_KEY,
+  UNLOCKED_PREMIUM_KEY,
   UNLOCKED_SKINS_KEY,
   UNLOCKED_ICONS_KEY,
   OWNED_PLAYMATS_KEY,
@@ -41,63 +43,129 @@ export const BATTLE_PASS_S1_LEVEL_THRESHOLDS = Object.freeze([
   {
     level: 1,
     points: 10,
-    rewardName: 'シャインチケット',
-    rewardType: 'shine_ticket',
-    rewardId: 'shine_ticket',
-    rewardDisplayName: 'シャインチケット',
-    count: 1,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'royalguard',
+    rewardDisplayName: '帝国近衛兵',
   },
-  { level: 2, points: 20, rewardName: '準備中' },
+  {
+    level: 2,
+    points: 20,
+    rewardName: '共通ポイント20Pt',
+    rewardType: 'common_points',
+    rewardId: 'common_points',
+    rewardDisplayName: '共通ポイント 20Pt',
+    count: 20,
+  },
   {
     level: 3,
     points: 30,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'ghoul',
+    rewardDisplayName: '堕ちたる審問官',
+  },
+  {
+    level: 4,
+    points: 40,
     rewardName: 'シャインチケット',
     rewardType: 'shine_ticket',
     rewardId: 'shine_ticket',
     rewardDisplayName: 'シャインチケット',
     count: 1,
   },
-  { level: 4, points: 40, rewardName: '準備中' },
   {
     level: 5,
     points: 50,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'gorilla',
+    rewardDisplayName: 'ゴリラの族長',
+  },
+  {
+    level: 6,
+    points: 60,
+    rewardName: '共通ポイント20Pt',
+    rewardType: 'common_points',
+    rewardId: 'common_points',
+    rewardDisplayName: '共通ポイント 20Pt',
+    count: 20,
+  },
+  {
+    level: 7,
+    points: 70,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'omnipotent',
+    rewardDisplayName: '全知のウィザード',
+  },
+  {
+    level: 8,
+    points: 80,
     rewardName: 'シャインチケット',
     rewardType: 'shine_ticket',
     rewardId: 'shine_ticket',
     rewardDisplayName: 'シャインチケット',
     count: 1,
   },
-  { level: 6, points: 60, rewardName: '準備中' },
-  { level: 7, points: 70, rewardName: '準備中' },
   {
-    level: 8,
-    points: 80,
+    level: 9,
+    points: 90,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'warriormonk',
+    rewardDisplayName: '残光の守護者',
+  },
+  {
+    level: 10,
+    points: 100,
+    rewardName: '共通ポイント20Pt',
+    rewardType: 'common_points',
+    rewardId: 'common_points',
+    rewardDisplayName: '共通ポイント 20Pt',
+    count: 20,
+  },
+  {
+    level: 11,
+    points: 110,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'yasha',
+    rewardDisplayName: '黒夜叉',
+  },
+  {
+    level: 12,
+    points: 120,
+    rewardName: 'シャインチケット',
+    rewardType: 'shine_ticket',
+    rewardId: 'shine_ticket',
+    rewardDisplayName: 'シャインチケット',
+    count: 1,
+  },
+  {
+    level: 13,
+    points: 130,
     rewardName: 'スキン',
     rewardType: 'skin',
     rewardId: 'knight_assassin',
     rewardDisplayName: 'ギルドの暗殺者 レダ',
   },
   {
-    level: 9,
-    points: 90,
+    level: 14,
+    points: 140,
     rewardName: 'プレイマット',
     rewardType: 'playmat',
     rewardId: 'pm_knight_assassin',
     rewardDisplayName: 'レダ',
   },
   {
-    level: 10,
-    points: 100,
+    level: 15,
+    points: 150,
     rewardName: 'アイコン',
     rewardType: 'icon',
     rewardId: 'knight_assassin',
     rewardDisplayName: 'レダ',
   },
-  { level: 11, points: 110, rewardName: '準備中' },
-  { level: 12, points: 120, rewardName: '準備中' },
-  { level: 13, points: 130, rewardName: '準備中' },
-  { level: 14, points: 140, rewardName: '準備中' },
-  { level: 15, points: 150, rewardName: '準備中' },
 ]);
 
 /** 既存コード・互換用エイリアス（デフォルトはS1の達成段階） */
@@ -361,6 +429,52 @@ export function claimLevelReward(threshold) {
       }
     } else if (threshold.rewardType === 'shine_ticket') {
       addShineTickets(threshold.count || 1);
+    } else if (threshold.rewardType === 'common_points') {
+      addCommonPoints(threshold.count || 20);
+    } else if (threshold.rewardType === 'premium') {
+      const cardId = threshold.rewardId;
+      // 1. 解放済みプレミアムリスト（UNLOCKED_PREMIUM_KEY）に追加・永続化
+      const currentUnlocked = safeParseArray(UNLOCKED_PREMIUM_KEY);
+      if (!currentUnlocked.includes(cardId)) {
+        currentUnlocked.push(cardId);
+        localStorage.setItem(
+          UNLOCKED_PREMIUM_KEY,
+          JSON.stringify(currentUnlocked)
+        );
+      }
+      if (typeof GameState !== 'undefined') {
+        if (!GameState.unlockedPremiumCards)
+          GameState.unlockedPremiumCards = [];
+        if (!GameState.unlockedPremiumCards.includes(cardId)) {
+          GameState.unlockedPremiumCards.push(cardId);
+        }
+
+        // 2. プレミアム表示の自動有効化（デッキ・一覧でプレミアム絵柄を即時反映）
+        const currentActive = safeParseArray('mini_card_battle_premium_cards');
+        if (!currentActive.includes(cardId)) {
+          currentActive.push(cardId);
+          localStorage.setItem(
+            'mini_card_battle_premium_cards',
+            JSON.stringify(currentActive)
+          );
+        }
+        if (!GameState.premiumCards) GameState.premiumCards = [];
+        if (!GameState.premiumCards.includes(cardId)) {
+          GameState.premiumCards.push(cardId);
+        }
+
+        // 3. インベントリ未所持カードの場合は初期所持数1枚を保証
+        if (GameState.playerInventory) {
+          const owned = GameState.playerInventory[cardId] || 0;
+          if (owned <= 0) {
+            GameState.playerInventory[cardId] = 1;
+            localStorage.setItem(
+              INVENTORY_KEY,
+              JSON.stringify(GameState.playerInventory)
+            );
+          }
+        }
+      }
     }
   } catch (e) {
     console.error('報酬解放処理エラー:', e);

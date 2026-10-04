@@ -1,4 +1,5 @@
 import { stopAllBGM } from '../utils/gameUtils.js';
+import { COMMON_POINTS_KEY } from '../utils/constants/config.js';
 
 // ==========================================
 // UI Modal Logic Bridge (Confirm, Alert, Error)
@@ -111,6 +112,38 @@ export function showPointAcquisitionModal(data) {
   console.warn(
     'GlobalModals not mounted: showPointAcquisitionModal fallback missing'
   );
+}
+
+/**
+ * 共通ポイント獲得ダイアログを表示する
+ *
+ * @param {number} points - 獲得した共通ポイント数
+ * @param {Object} [options={}] - ダイアログ表示オプション
+ * @param {string} [options.title='共通ポイント獲得！'] - ダイアログタイトル
+ * @param {string} [options.message] - 説明文
+ * @param {number} [options.totalPoints] - 現在の所持ポイント数
+ * @param {Function} [options.onClose] - ダイアログ終了時コールバック
+ * @returns {void}
+ */
+export function showCommonPointsAcquisitionModal(points, options = {}) {
+  const curPoints =
+    options.totalPoints !== undefined
+      ? options.totalPoints
+      : parseInt(localStorage.getItem(COMMON_POINTS_KEY), 10) || 0;
+
+  showPointAcquisitionModal({
+    title: options.title || '共通ポイント獲得！',
+    message:
+      options.message ||
+      `共通ポイントを ${points} Pt 獲得しました！\n共通交換所で様々なアイテムと交換できます。`,
+    points: points,
+    totalPoints: curPoints,
+    totalLabel: '現在の所持',
+    iconEmoji: '💎',
+    color: '#38bdf8',
+    darkColor: '#0284c7',
+    onClose: options.onClose,
+  });
 }
 
 export let showProfileModalHook = null;

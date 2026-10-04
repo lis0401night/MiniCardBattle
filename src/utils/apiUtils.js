@@ -3,6 +3,8 @@ import { resolveValidIconId } from './constants/avatars.js';
 import {
   CHALLENGE_POINTS_KEY,
   CHALLENGE_TOTAL_POINTS_KEY,
+  COMMON_POINTS_KEY,
+  COMMON_TOTAL_POINTS_KEY,
   DEFENSE_POINTS_KEY,
   DEFENSE_TOTAL_POINTS_KEY,
   DEFENSE_WINS_KEY,
@@ -1125,4 +1127,64 @@ export async function sendHeartbeat() {
     console.error('ハートビート送信で通信エラーが発生しました:', err);
     return false;
   }
+}
+
+/**
+ * 現在の共通ポイント所持数を取得する
+ * @returns {number} 現在の共通ポイント
+ */
+export function getCommonPoints() {
+  try {
+    const raw = localStorage.getItem(COMMON_POINTS_KEY);
+    return raw !== null ? parseInt(raw, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 現在の共通ポイント累計数を取得する
+ * @returns {number} 累計共通ポイント
+ */
+export function getCommonTotalPoints() {
+  try {
+    const raw = localStorage.getItem(COMMON_TOTAL_POINTS_KEY);
+    return raw !== null ? parseInt(raw, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 共通ポイントを加算し、LocalStorageに保存してサーバーへ非同期同期する
+ * @param {number} amount - 加算する共通ポイント数
+ * @returns {{ newPoints: number, newTotalPoints: number }} 更新後のポイント情報
+ */
+export function addCommonPoints(amount) {
+  const add = Math.max(0, Math.floor(Number(amount) || 0));
+  if (add === 0) {
+    return {
+      newPoints: getCommonPoints(),
+      newTotalPoints: getCommonTotalPoints(),
+    };
+  }
+
+  const curPoints = getCommonPoints();
+  const curTotal = getCommonTotalPoints();
+  const newPoints = curPoints + add;
+  const newTotal = curTotal + add;
+
+  localStorage.setItem(COMMON_POINTS_KEY, String(newPoints));
+  localStorage.setItem(COMMON_TOTAL_POINTS_KEY, String(newTotal));
+
+  savePointsToServer('update_common_points.php', newPoints, newTotal).catch(
+    (e) => {
+      console.warn(
+        '[CommonPoints] update_common_points server sync failed:',
+        e
+      );
+    }
+  );
+
+  return { newPoints, newTotalPoints: newTotal };
 }

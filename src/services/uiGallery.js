@@ -23,7 +23,10 @@ import {
   incrementRulesClickCount,
   resetRulesClickCount,
 } from './uiMainCore.js';
-import { showAlertModal } from './uiModals.js';
+import {
+  showAlertModal,
+  showCommonPointsAcquisitionModal,
+} from './uiModals.js';
 
 const DEBUG_CLICK_THRESHOLD = import.meta.env.DEV ? 10 : Infinity;
 
@@ -228,6 +231,8 @@ export function showItemAcquisitionModal(name, count = 1, options = {}) {
   if (showItemAcquisitionModalHook)
     return showItemAcquisitionModalHook(name, count, options);
 }
+
+export { showCommonPointsAcquisitionModal };
 
 export function executePlaymatAcquisitionModal() {
   // Legacy DOM logic removed. Modals are rendered natively in GlobalModals.jsx via the React hook.

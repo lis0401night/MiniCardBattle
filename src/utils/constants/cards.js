@@ -4480,8 +4480,10 @@ export const PREMIUM_CARD_IDS = [
   // --- バトルパスS1 ---
   'royalguard',
   'gorilla',
+  'warriormonk',
   'ghoul',
   'omnipotent',
+  'yasha',
   // --- 運命の邂逅 ---
   'liberator',
   'dwarf',
@@ -4489,4 +4491,5 @@ export const PREMIUM_CARD_IDS = [
   'sniper',
   'cheetah',
   'tortoise',
+  'falcon',
 ];

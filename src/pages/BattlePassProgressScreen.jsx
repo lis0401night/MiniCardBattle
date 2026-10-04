@@ -24,6 +24,8 @@ import {
   showPlaymatAcquisitionModal,
   showIconAcquisitionModal,
   showItemAcquisitionModal,
+  showPremiumAcquisitionModal,
+  showCommonPointsAcquisitionModal,
 } from '../services/uiGallery.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { playSound } from '../utils/gameUtils.js';
@@ -135,6 +137,13 @@ export default function BattlePassProgressScreen() {
           iconEmoji: '🎟️',
         }
       );
+    } else if (threshold.rewardType === 'premium') {
+      showPremiumAcquisitionModal?.(threshold.rewardId);
+    } else if (threshold.rewardType === 'common_points') {
+      showCommonPointsAcquisitionModal?.(threshold.count || 20, {
+        title: 'バトルパス報酬獲得！',
+        message: `バトルパス報酬として\n共通ポイントを ${threshold.count || 20} Pt 獲得しました！\n共通交換所で様々なアイテムと交換できます。`,
+      });
     }
   };
 

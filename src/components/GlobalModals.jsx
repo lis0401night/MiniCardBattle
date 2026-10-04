@@ -48,6 +48,10 @@ import {
   PROFILE_NAME_KEY,
 } from '../utils/constants/config.js';
 import { DEFAULT_PACK_COVER_CARD_ID } from '../utils/constants/packs.js';
+import {
+  BATTLE_PASS_MASTER,
+  getBattlePassById,
+} from '../utils/constants/battlePass.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
 import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
@@ -952,9 +956,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           } else if (prev.type === 'playmat') {
             currentId = prev.playmat?.id;
           } else {
-            currentId = prev.id;
+            currentId = prev.id || prev.name;
           }
-          if (prev.type === type && currentId === uniqueId) {
+          if (prev.type === type && (!uniqueId || currentId === uniqueId)) {
             return { ...prev, canClose: true };
           }
           return prev;
@@ -1056,20 +1060,28 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     });
 
     setShowBattlePassAcquisitionModalHook((name, passId) => {
-      playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
+      const pass = getBattlePassById(passId) || BATTLE_PASS_MASTER[0];
+      const resolvedPassId = passId || pass?.id || 'battle_pass';
+      const img = appendVersionQuery(
+        pass?.imgUrl || 'assets/characters/char_knight_assassin.webp'
+      );
+      playSound?.(SOUNDS?.seSkill);
       setAcquisitionData({
         type: 'battle_pass',
-        name,
-        id: passId,
+        name: name || pass?.name || 'バトルパス S1',
+        id: resolvedPassId,
+        image: img,
         canClose: false,
       });
-      triggerCloseTimer('battle_pass', passId || 'battle_pass');
+      triggerCloseTimer('battle_pass', resolvedPassId);
     });
 
     setShowItemAcquisitionModalHook((name, count = 1, options = {}) => {
       playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
+      const itemId = options.id || name;
       setAcquisitionData({
         type: 'item',
+        id: itemId,
         name: count > 1 ? `${name} x${count}` : name,
         iconEmoji: options.icon || (name.includes('シャイン') ? '🌟' : '🎁'),
         title: options.title || 'アイテム獲得！',
@@ -1080,7 +1092,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             : ''),
         canClose: false,
       });
-      triggerCloseTimer('item', name);
+      triggerCloseTimer('item', itemId);
     });
 
     window.showCharDetailModal = (char) => {
@@ -2219,14 +2231,22 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           {acquisitionData.type === 'battle_pass' && (
             <AcquisitionModal
               title="バトルパス解放！"
-              borderColor="#f59e0b"
-              shadowColor="rgba(245, 158, 11, 0.5)"
-              iconEmoji="🎟️"
+              borderColor="#eab308"
+              shadowColor="rgba(234, 179, 8, 0.5)"
+              imageSrc={acquisitionData.image}
+              imageStyle={{
+                width: '160px',
+                height: '220px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                border: '2px solid #eab308',
+                marginBottom: '20px',
+                boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
+              }}
               itemName={acquisitionData.name}
-              itemTypeName="シーズンパス"
-              description="クイックマッチで勝利してポイントを集め、様々な限定報酬を獲得しましょう！"
-              btnBg="linear-gradient(45deg, #f59e0b, #d97706)"
-              btnColor="#000"
+              itemTypeName="バトルパス"
+              btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
+              btnColor="#fff"
               canClose={acquisitionData.canClose}
               onClose={() => setAcquisitionData(null)}
             />
@@ -2308,7 +2328,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 textShadow: `0 0 20px ${pointAcquisitionData.color || '#facc15'}`,
               }}
             >
-              ✨{' '}
+              {pointAcquisitionData.iconEmoji || '✨'}{' '}
               <span style={{ color: pointAcquisitionData.color || '#facc15' }}>
                 {pointAcquisitionData.points}
               </span>{' '}
@@ -2323,7 +2343,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   marginBottom: '30px',
                 }}
               >
-                現在の累計: {pointAcquisitionData.totalPoints} Pt
+                {pointAcquisitionData.totalLabel || '現在の累計'}:{' '}
+                {pointAcquisitionData.totalPoints} Pt
               </p>
             )}
 

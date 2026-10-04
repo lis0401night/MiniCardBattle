@@ -23,5 +23,10 @@
     "rewardType": "premium",
     "rewardValue": "sniper",
     "rewardName": "森の射手"
+  },
+  "F8L2-C9K4-P5M1-T7D3": {
+    "rewardType": "premium",
+    "rewardValue": "falcon",
+    "rewardName": "急襲する隼"
   }
 }

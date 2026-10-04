@@ -903,17 +903,6 @@ function CardPreviewContent({
                           : 'Lv.15'}
                       </span>
                     </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
-                        主な獲得報酬
-                      </span>
-                      <span>限定スキン「レダ」/ マット / アイコン等</span>
-                    </div>
                   </div>
                 </div>
 
@@ -929,7 +918,7 @@ function CardPreviewContent({
                     lineHeight: '1.4',
                   }}
                 >
-                  クイックマッチ（オンライン・対CPU問わず）で勝利することでパスポイントが蓄積され、各レベルの限定報酬が解放されます。
+                  クイックマッチで勝利することでパスポイントが蓄積され、各レベルの限定報酬が解放されます。
                 </div>
               </div>
             )}
