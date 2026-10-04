@@ -8,6 +8,7 @@ import {
   showOnlineQuickMatch,
   showOnlineRoomMatch,
 } from '../services/uiMainCore.js';
+import { UI_IMAGES } from '../utils/constants/uiImages.js';
 
 /**
  * オンライン対戦メニュー画面コンポーネント
@@ -103,18 +104,14 @@ export default function OnlineMenuScreen() {
         {/* クイックマッチボタン */}
         <MenuImageButton
           label="クイックマッチ"
-          style={{
-            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-          }}
+          image={UI_IMAGES.ONLINE_QUICK_MATCH}
           onClick={handleQuickMatchClick}
         />
 
         {/* ルームマッチボタン（従来のオンラインメニューへの遷移） */}
         <MenuImageButton
           label="ルームマッチ"
-          style={{
-            background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
-          }}
+          image={UI_IMAGES.ONLINE_ROOM_MATCH}
           onClick={handleRoomMatchClick}
           notificationBadge={hasWaitingPublicRooms}
         />
@@ -122,9 +119,7 @@ export default function OnlineMenuScreen() {
         {/* バトルパスボタン */}
         <MenuImageButton
           label="バトルパス"
-          style={{
-            background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-          }}
+          image={UI_IMAGES.ONLINE_BATTLE_PASS}
           onClick={handleBattlePassClick}
         />
       </div>
