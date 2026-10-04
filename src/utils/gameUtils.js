@@ -1422,6 +1422,176 @@ export function togglePremiumCard(cardId, saveToGlobal = true) {
   }
 }
 
+/**
+ * 対象カードのシャインが解放されているかを判定する。
+ *
+ * @param {string} cardId - カードID
+ * @returns {boolean} 解放状態（解放済みならtrue、未解放ならfalse）
+ */
+export function checkIsShineUnlocked(cardId) {
+  if (!cardId) return false;
+  return Boolean(
+    GameState.unlockedShineCards &&
+    GameState.unlockedShineCards.includes(cardId)
+  );
+}
+
+/**
+ * プレイヤーの現在所持しているシャインチケット数を取得する。
+ *
+ * @returns {number} 所持シャインチケット枚数
+ */
+export function getShineTicketsCount() {
+  if (typeof GameState.shineTickets === 'number') {
+    return Math.max(0, GameState.shineTickets);
+  }
+  try {
+    const raw = localStorage.getItem('mini_card_battle_shine_tickets');
+    const val = raw !== null ? parseInt(raw, 10) || 0 : 0;
+    GameState.shineTickets = val;
+    return val;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * シャインチケットを所持数に加算し、LocalStorageに永続化する。
+ *
+ * @param {number} [amount=1] - 加算するチケット枚数
+ * @returns {number} 加算後の最新チケット所持数
+ */
+export function addShineTickets(amount = 1) {
+  const current = getShineTicketsCount();
+  const next = Math.max(0, current + Math.max(0, Number(amount) || 0));
+  GameState.shineTickets = next;
+  try {
+    localStorage.setItem('mini_card_battle_shine_tickets', String(next));
+  } catch (e) {
+    console.error('Failed to save shine tickets to localStorage:', e);
+  }
+  return next;
+}
+
+/**
+ * シャインチケットを1枚消費して、対象カードをシャイン化（解放）する。
+ * 解放後は自動的にシャインON状態（shineCardsに追加）に設定し、永続化します。
+ *
+ * @param {string} cardId - シャイン化するカードID
+ * @returns {boolean} 消費・解放に成功した場合はtrue、チケット不足や既に解放済みの場合はfalse
+ */
+export function consumeShineTicket(cardId) {
+  if (!cardId) return false;
+
+  // 既に解放済みの場合は消費不要
+  if (checkIsShineUnlocked(cardId)) {
+    return false;
+  }
+
+  // チケット枚数チェック
+  const tickets = getShineTicketsCount();
+  if (tickets <= 0) {
+    return false;
+  }
+
+  // 1. チケットを1枚消費
+  const nextTickets = tickets - 1;
+  GameState.shineTickets = nextTickets;
+  try {
+    localStorage.setItem('mini_card_battle_shine_tickets', String(nextTickets));
+  } catch (e) {
+    console.error('Failed to save shine tickets to localStorage:', e);
+  }
+
+  // 2. 解放済みリストに追加
+  if (!Array.isArray(GameState.unlockedShineCards)) {
+    GameState.unlockedShineCards = [];
+  }
+  if (!GameState.unlockedShineCards.includes(cardId)) {
+    GameState.unlockedShineCards.push(cardId);
+  }
+  try {
+    localStorage.setItem(
+      'mini_card_battle_unlocked_shine_cards',
+      JSON.stringify(GameState.unlockedShineCards)
+    );
+  } catch (e) {
+    console.error('Failed to save unlocked shine cards to localStorage:', e);
+  }
+
+  // 3. シャインONに自動設定
+  if (!Array.isArray(GameState.shineCards)) {
+    GameState.shineCards = [];
+  }
+  if (!GameState.shineCards.includes(cardId)) {
+    GameState.shineCards.push(cardId);
+    try {
+      localStorage.setItem(
+        'mini_card_battle_shine_cards',
+        JSON.stringify(GameState.shineCards)
+      );
+    } catch (e) {
+      console.error('Failed to save shine cards to localStorage:', e);
+    }
+  }
+
+  return true;
+}
+
+/**
+ * シャインカード設定（ON/OFF）を切り替える。
+ *
+ * @param {string} cardId - 切り替え対象のカードID
+ * @param {boolean} [saveToGlobal=true] - LocalStorageにグローバル設定として永続化するかどうか
+ */
+export function toggleShineCard(cardId, saveToGlobal = true) {
+  if (!cardId) return;
+  if (!Array.isArray(GameState.shineCards)) {
+    GameState.shineCards = [];
+  }
+  const index = GameState.shineCards.indexOf(cardId);
+  if (index === -1) {
+    GameState.shineCards.push(cardId);
+  } else {
+    GameState.shineCards.splice(index, 1);
+  }
+  if (saveToGlobal) {
+    try {
+      localStorage.setItem(
+        'mini_card_battle_shine_cards',
+        JSON.stringify(GameState.shineCards)
+      );
+    } catch (e) {
+      console.error('Failed to save shine cards to localStorage:', e);
+    }
+  }
+}
+
+/**
+ * カードがシャイン（明度に合わせて光る特殊オーバーレイ）有効状態であるかを判定する。
+ * カード個別プロパティ（card.isShine）があればそれを最優先し、未定義の場合はGameState.shineCardsを参照する。
+ *
+ * @param {Object} card - カードオブジェクト
+ * @param {string} [fallbackLookupId=''] - フォールバック用カードID
+ * @returns {boolean} シャイン有効状態ならtrue
+ */
+export function checkIsShineActive(card, fallbackLookupId = '') {
+  if (!card) return false;
+  // カードオブジェクト自身にisShineフラグが指定されている場合はそれを優先
+  if (typeof card.isShine === 'boolean') {
+    return card.isShine;
+  }
+  // 敵カード（red）でisShineが明示されていない場合は無効
+  if (card.owner === 'red') {
+    return false;
+  }
+  const lookupId = String(card.baseId || card.id || fallbackLookupId || '');
+  if (!lookupId) return false;
+  return Boolean(
+    GameState.shineCards && GameState.shineCards.includes(lookupId)
+  );
+}
+
 // プレイヤーの一意なIDを取得または生成
 export function getOrCreateUUID() {
   let uuid = localStorage.getItem('mini_card_battle_uuid');

@@ -139,7 +139,12 @@ export function generateDeck(owner, config, sessionId) {
         (owner === 'blue' &&
           (GameState.premiumCards || []).includes(cardObj.id)) ||
         false;
-      const tempObj = { ...cardObj, isPremium: isPremium };
+      const isShine =
+        cardObj.isShine ||
+        (owner === 'blue' &&
+          (GameState.shineCards || []).includes(cardObj.id)) ||
+        false;
+      const tempObj = { ...cardObj, isPremium: isPremium, isShine: isShine };
       const imgUrl = getCardImgUrl(tempObj);
       return {
         ...cardObj,
@@ -152,6 +157,7 @@ export function generateDeck(owner, config, sessionId) {
         basePower: cardObj.power,
         currentPower: cardObj.power,
         isPremium: isPremium,
+        isShine: isShine,
         skills: Array.isArray(cardObj.skills)
           ? cardObj.skills.map((s) => ({ ...s }))
           : [],
@@ -169,7 +175,8 @@ export function generateDeck(owner, config, sessionId) {
   if (owner === 'blue') {
     deck = GameState.playerDeckSelection.map((t, i) => {
       const isPremium = (GameState.premiumCards || []).includes(t.id);
-      const tempObj = { ...t, isPremium: isPremium };
+      const isShine = (GameState.shineCards || []).includes(t.id);
+      const tempObj = { ...t, isPremium: isPremium, isShine: isShine };
       const imgUrl = getCardImgUrl(tempObj);
       return {
         ...t,
@@ -182,6 +189,7 @@ export function generateDeck(owner, config, sessionId) {
         basePower: t.power,
         currentPower: t.power,
         isPremium: isPremium,
+        isShine: isShine,
         skills: Array.isArray(t.skills) ? t.skills.map((s) => ({ ...s })) : [],
         choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
         choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
@@ -299,11 +307,13 @@ export function generateDeck(owner, config, sessionId) {
       cardId = migrateCardId(cardId);
       let isPremium =
         typeof cardItem === 'object' ? cardItem.isPremium || false : false;
+      let isShine =
+        typeof cardItem === 'object' ? cardItem.isShine || false : false;
 
       const t = CARD_MASTER.find((m) => m.id === cardId) || CARD_MASTER[0];
       let p = t.power;
 
-      const tempObj = { ...t, isPremium: isPremium };
+      const tempObj = { ...t, isPremium: isPremium, isShine: isShine };
       const imgUrl = getCardImgUrl(tempObj);
       deck.push({
         ...t,
@@ -316,6 +326,7 @@ export function generateDeck(owner, config, sessionId) {
         basePower: t.power,
         currentPower: p,
         isPremium: isPremium,
+        isShine: isShine,
         skills: Array.isArray(t.skills) ? t.skills.map((s) => ({ ...s })) : [],
         choices: t.choices ? t.choices.map((c) => ({ ...c })) : undefined,
         choices2: t.choices2 ? t.choices2.map((c) => ({ ...c })) : undefined,
@@ -866,6 +877,47 @@ export function loadDeck() {
     GameState.unlockedPremiumCards = [];
   }
 
+  // シャインカード設定の読み込み（全体デフォルト）
+  const shineKey = `mini_card_battle_shine_cards`;
+  const shineSaved = localStorage.getItem(shineKey);
+  if (shineSaved) {
+    try {
+      const parsedShine = JSON.parse(shineSaved);
+      GameState.shineCards = Array.isArray(parsedShine) ? parsedShine : [];
+    } catch {
+      GameState.shineCards = [];
+    }
+  } else {
+    GameState.shineCards = [];
+  }
+
+  // 解放済みシャインカードの読み込み
+  const unlockedShineKey = `mini_card_battle_unlocked_shine_cards`;
+  const legacyUnlockedShineKey = `mini_card_battle_unlocked_shine`;
+  const unlockedShineSaved =
+    localStorage.getItem(unlockedShineKey) ||
+    localStorage.getItem(legacyUnlockedShineKey);
+  if (unlockedShineSaved) {
+    try {
+      const parsedUnlockedShine = JSON.parse(unlockedShineSaved);
+      GameState.unlockedShineCards = Array.isArray(parsedUnlockedShine)
+        ? parsedUnlockedShine
+        : [];
+    } catch {
+      GameState.unlockedShineCards = [];
+    }
+  } else {
+    GameState.unlockedShineCards = [];
+  }
+
+  // 所持シャインチケットの読み込み
+  const shineTicketsKey = `mini_card_battle_shine_tickets`;
+  const shineTicketsSaved = localStorage.getItem(shineTicketsKey);
+  GameState.shineTickets =
+    shineTicketsSaved !== null
+      ? Math.max(0, parseInt(shineTicketsSaved, 10) || 0)
+      : 0;
+
   // 所持プレイマットの読み込み
   const playmatsKey = `mini_card_battle_owned_playmats`;
   const playmatsSaved = localStorage.getItem(playmatsKey);
@@ -1095,6 +1147,13 @@ export function loadDeck() {
       } else {
         activeDeck.premiumCards = [...GameState.premiumCards];
       }
+      if (activeDeck.shineCards) {
+        GameState.shineCards = [...activeDeck.shineCards];
+      } else {
+        activeDeck.shineCards = Array.isArray(GameState.shineCards)
+          ? [...GameState.shineCards]
+          : [];
+      }
     }
 
     // トーナメント進行中またはダンジョンモード進行中（ダンジョンスナップショットロード済み）の場合は上書きしない
@@ -1150,6 +1209,19 @@ export function createNewDeck(leaderId) {
     }
   }
 
+  // 新規作成時のデフォルトシャイン設定もグローバル設定から取得
+  const globalShineSrc = localStorage.getItem('mini_card_battle_shine_cards');
+  let globalShineCards = [];
+  if (globalShineSrc) {
+    try {
+      const parsedShine = JSON.parse(globalShineSrc);
+      globalShineCards = Array.isArray(parsedShine) ? parsedShine : [];
+    } catch (e) {
+      console.error('Failed to parse global shine cards in createNewDeck:', e);
+      globalShineCards = [];
+    }
+  }
+
   const newDeck = {
     id: `deck_${Date.now()}_${GameState.decks.length}`,
     name: `デッキ${GameState.decks.length + 1}`,
@@ -1157,6 +1229,7 @@ export function createNewDeck(leaderId) {
     playmatId: null,
     playerSkins: {},
     premiumCards: globalPremiumCards,
+    shineCards: globalShineCards,
     cards: getInitialDeck().map((c) => c.id),
   };
   GameState.decks.push(newDeck);
@@ -1204,6 +1277,11 @@ export function saveCurrentEditDeck() {
           : activeDeck.premiumCards
             ? [...activeDeck.premiumCards]
             : [],
+        shineCards: Array.isArray(GameState.shineCards)
+          ? [...GameState.shineCards]
+          : activeDeck.shineCards
+            ? [...activeDeck.shineCards]
+            : [],
         cards: GameState.playerDeckSelection.map((c) =>
           typeof c === 'string' ? c : c.baseId || c.id
         ),
@@ -1219,6 +1297,9 @@ export function saveCurrentEditDeck() {
     activeDeck.playerSkins = { ...GameState.playerSkins };
 
     activeDeck.premiumCards = [...GameState.premiumCards];
+    activeDeck.shineCards = Array.isArray(GameState.shineCards)
+      ? [...GameState.shineCards]
+      : [];
     activeDeck.cards = GameState.playerDeckSelection.map((c) =>
       typeof c === 'string' ? c : c.baseId || c.id
     );

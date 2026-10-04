@@ -196,6 +196,39 @@ export function showStageAcquisitionModal(name, id) {
     return showStageAcquisitionModalHook(name, id);
 }
 
+let showBattlePassAcquisitionModalHook = null;
+export function setShowBattlePassAcquisitionModalHook(hook) {
+  showBattlePassAcquisitionModalHook = hook;
+}
+/**
+ * バトルパス解放ダイアログを表示する。
+ *
+ * @param {string} name - バトルパス名
+ * @param {string} [passId] - バトルパスID
+ * @returns {void}
+ */
+export function showBattlePassAcquisitionModal(name, passId) {
+  if (showBattlePassAcquisitionModalHook)
+    return showBattlePassAcquisitionModalHook(name, passId);
+}
+
+let showItemAcquisitionModalHook = null;
+export function setShowItemAcquisitionModalHook(hook) {
+  showItemAcquisitionModalHook = hook;
+}
+/**
+ * アイテム（シャインチケット等）獲得ダイアログを表示する。
+ *
+ * @param {string} name - アイテム名
+ * @param {number} [count=1] - 獲得個数
+ * @param {Object} [options={}] - 表示オプション（icon, description, title等）
+ * @returns {void}
+ */
+export function showItemAcquisitionModal(name, count = 1, options = {}) {
+  if (showItemAcquisitionModalHook)
+    return showItemAcquisitionModalHook(name, count, options);
+}
+
 export function executePlaymatAcquisitionModal() {
   // Legacy DOM logic removed. Modals are rendered natively in GlobalModals.jsx via the React hook.
 }

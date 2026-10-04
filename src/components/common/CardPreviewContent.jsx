@@ -11,12 +11,14 @@ import { STATUSES } from '../../utils/constants/statuses.js';
 import {
   getCardActiveStatuses,
   getCardImgUrl,
+  getShineTicketsCount,
   getSkillBadgeInfo,
   playSound,
   resolveCardChoices,
   resolveCardSupremacySkills,
 } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import CardShineOverlay from './CardShineOverlay.jsx';
 import PackCoverImage from './PackCoverImage.jsx';
 
 /**
@@ -35,6 +37,7 @@ import PackCoverImage from './PackCoverImage.jsx';
  * @param {Function|null} [props.onEquipClick=null] - スキン・称号などの装備/解除ボタンクリック時のコールバック関数
  * @param {Function|null} [props.onLinkClick=null] - スキル説明文内のカードリンククリック時のコールバック関数 (targetId: string, segment: object) => void
  * @param {Function|null} [props.onParentBack=null] - トークンや関連カードから親カード詳細へ戻るボタンクリック時のコールバック関数
+ * @param {Function|null} [props.onToggleShine=null] - 通常/シャイン表示切り替え時のコールバック関数
  * @param {Function|null} [props.onTogglePremium=null] - 通常/プレミアム表示切り替え時のコールバック関数
  * @param {Function|null} [props.onClosePreview=null] - プレビューモーダルを閉じる際のコールバック関数
  * @param {Function|null} [props.onAcquisitionOk=null] - 報酬獲得確認「OK」ボタンクリック時のコールバック関数
@@ -58,6 +61,7 @@ function CardPreviewContent({
   onEquipClick = null,
   onLinkClick = null,
   onParentBack = null,
+  onToggleShine = null,
   onTogglePremium = null,
   onClosePreview = null,
   onAcquisitionOk = null,
@@ -73,8 +77,11 @@ function CardPreviewContent({
 
   const isSkin = styleProps.isSkin || false;
   const isPack = styleProps.isPack || false;
+  const isBattlePass = styleProps.isBattlePass || false;
+  const isShineTicket = styleProps.isShineTicket || false;
+  const isItemLike = isPack || isBattlePass || isShineTicket;
   const isStandardCard =
-    !isSkin && !styleProps.isPlaymat && !styleProps.isIcon && !isPack;
+    !isSkin && !styleProps.isPlaymat && !styleProps.isIcon && !isItemLike;
 
   // パックの場合の排出確率を動的に算出（PACK_DEFAULT_RARITY_WEIGHTSフォールバック付き）
   const packWeights = styleProps.rarityWeights || PACK_DEFAULT_RARITY_WEIGHTS;
@@ -152,6 +159,7 @@ function CardPreviewContent({
   let lookupId = String(card.baseId || card.id || '');
   let isPremiumActive = false;
   let isPremiumUnlocked = false;
+  let isShineActive = false;
 
   // For Reward overlay, ignore premium unlock checks visually unless forced
   if (isRevealed) {
@@ -162,6 +170,16 @@ function CardPreviewContent({
     } else {
       isPremiumActive = GameState.premiumCards?.includes(lookupId);
       isPremiumUnlocked = GameState.unlockedPremiumCards?.includes(lookupId);
+    }
+
+    if (card.isShine !== undefined) {
+      isShineActive = card.isShine;
+    } else if (card.owner === 'red') {
+      isShineActive = false;
+    } else {
+      isShineActive = Boolean(
+        GameState.shineCards && GameState.shineCards.includes(lookupId)
+      );
     }
   }
 
@@ -182,13 +200,18 @@ function CardPreviewContent({
     return null;
   };
 
+  // 各アイテム種別の実アセット比率に基づいたプレビュー領域の寸法定義
+  // - プレイマット: 400x200 (2:1 比率)
+  // - アイコン: 正方形 (1:1 比率)
+  // - パック: packimg01.png 298x500 (155:260 = 約 0.596 比率)
+  // - バトルパス / カード / スキン / チケット: 400x600・800x1200 (2:3 = 160:240 比率)
   const cardDims = styleProps.isPlaymat
     ? { width: 280, height: 140 }
     : styleProps.isIcon
       ? { width: 140, height: 140 }
       : styleProps.isPack
         ? { width: 155, height: 260 }
-        : { width: 180, height: 240 };
+        : { width: 160, height: 240 };
 
   const hasPackCards = Boolean(styleProps?.packCardIds?.length > 0);
 
@@ -277,21 +300,33 @@ function CardPreviewContent({
           >
             <div
               className={
-                styleProps.isPlaymat || styleProps.isIcon || styleProps.isPack
+                styleProps.isPlaymat ||
+                styleProps.isIcon ||
+                styleProps.isPack ||
+                isBattlePass ||
+                isShineTicket
                   ? ''
                   : `card blue${!isSkin ? rarityClass : ''}`
               }
               style={
-                styleProps.isPack
+                styleProps.isPack || isBattlePass || isShineTicket
                   ? {
                       width: `${cardDims.width}px`,
                       height: `${cardDims.height}px`,
                       position: 'relative',
                       overflow: 'hidden',
                       cursor: 'pointer',
-                      border: '2px solid rgba(250, 204, 21, 0.6)',
+                      border: isBattlePass
+                        ? '2px solid rgba(245, 158, 11, 0.6)'
+                        : isShineTicket
+                          ? '2px solid rgba(234, 179, 8, 0.6)'
+                          : '2px solid rgba(250, 204, 21, 0.6)',
                       borderRadius: '8px',
-                      boxShadow: '0 4px 15px rgba(250, 204, 21, 0.3)',
+                      boxShadow: isBattlePass
+                        ? '0 4px 15px rgba(245, 158, 11, 0.3)'
+                        : isShineTicket
+                          ? '0 4px 15px rgba(234, 179, 8, 0.3)'
+                          : '0 4px 15px rgba(250, 204, 21, 0.3)',
                       backgroundColor: '#0f172a',
                     }
                   : styleProps.isPlaymat
@@ -355,6 +390,93 @@ function CardPreviewContent({
                         logoUrl={styleProps.logoUrl || card.logoUrl}
                       />
                     </div>
+                  ) : isBattlePass ? (
+                    <div
+                      className="card-bg"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'relative',
+                        backgroundColor: '#0f172a',
+                      }}
+                    >
+                      {imgUrl && (
+                        <img
+                          src={imgUrl}
+                          alt={card.name}
+                          decoding="sync"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center 15%',
+                            filter: filter,
+                            display: 'block',
+                          }}
+                        />
+                      )}
+                    </div>
+                  ) : isShineTicket ? (
+                    <div
+                      className="card-bg"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'relative',
+                        backgroundColor: '#0f172a',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '12px',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '6px',
+                          left: '6px',
+                          background: 'rgba(234, 179, 8, 0.95)',
+                          color: '#000000',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem',
+                          zIndex: 2,
+                        }}
+                      >
+                        アイテム
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '3.6rem',
+                          marginBottom: '8px',
+                          filter:
+                            'drop-shadow(0 2px 10px rgba(234, 179, 8, 0.8))',
+                          lineHeight: 1,
+                          zIndex: 1,
+                        }}
+                      >
+                        🌟
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          color: '#facc15',
+                          marginBottom: '6px',
+                          textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)',
+                          textAlign: 'center',
+                          zIndex: 1,
+                        }}
+                      >
+                        {styleProps.titleName ||
+                          card.name ||
+                          'シャインチケット'}
+                      </div>
+                      <CardShineOverlay />
+                    </div>
                   ) : (
                     <div
                       className="card-bg"
@@ -411,6 +533,7 @@ function CardPreviewContent({
                       }}
                     />
                   )}
+                  {isStandardCard && isShineActive && <CardShineOverlay />}
                   {isStandardCard && (
                     <div
                       className="card-power"
@@ -708,6 +831,208 @@ function CardPreviewContent({
                 </div>
               </div>
             )}
+            {isBattlePass && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
+                {/* パック説明文と統一された枠内説明 */}
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#cbd5e1',
+                    lineHeight: '1.5',
+                    background: 'rgba(15, 23, 42, 0.4)',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(148, 163, 184, 0.1)',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {styleProps.flavorOverride ||
+                    card?.flavor ||
+                    card?.description ||
+                    'クイックマッチで勝利してポイントを貯め、様々な報酬を獲得できるバトルパス。'}
+                </div>
+
+                {/* パス情報 */}
+                <div
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      color: '#f59e0b',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    バトルパス特典
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#cbd5e1',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
+                        最大レベル
+                      </span>
+                      <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                        {card?.levels?.length
+                          ? `Lv.${card.levels.length}`
+                          : 'Lv.15'}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
+                        主な獲得報酬
+                      </span>
+                      <span>限定スキン「レダ」/ マット / アイコン等</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 遊び方 */}
+                <div
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.6)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                    color: '#94a3b8',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  クイックマッチ（オンライン・対CPU問わず）で勝利することでパスポイントが蓄積され、各レベルの限定報酬が解放されます。
+                </div>
+              </div>
+            )}
+            {isShineTicket && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
+                {/* パック説明文と統一された枠内説明 */}
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#cbd5e1',
+                    lineHeight: '1.5',
+                    background: 'rgba(15, 23, 42, 0.4)',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(148, 163, 184, 0.1)',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {styleProps.flavorOverride ||
+                    card?.flavor ||
+                    card?.description ||
+                    'カード一覧画面またはデッキ編集画面から、お好きなカードをシャイン化（ホログラム加工）できる専用チケット。'}
+                </div>
+
+                {/* アイテム情報 */}
+                <div
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(234, 179, 8, 0.3)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      color: '#facc15',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    アイテム情報
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#cbd5e1',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
+                        現在所持数
+                      </span>
+                      <span style={{ color: '#facc15', fontWeight: 'bold' }}>
+                        {getShineTicketsCount()} 枚
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
+                        交換レート
+                      </span>
+                      <span>共通 10 Pt</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 使い方 */}
+                <div
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.6)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                    color: '#94a3b8',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  カード一覧画面またはデッキ編集画面で、各カードの「🌟」アイコンをクリックすることでチケットを1枚消費してシャイン加工を解放できます。
+                </div>
+              </div>
+            )}
             {isStandardCard && (
               <div className="preview-skills-list">
                 {!isRevealed ? (
@@ -902,7 +1227,7 @@ function CardPreviewContent({
                 )}
               </div>
             )}
-            {isRevealed && !isPack && (
+            {isRevealed && !isPack && !isBattlePass && !isShineTicket && (
               <p className="preview-flavor-text" style={{ display: 'block' }}>
                 {styleProps.flavorOverride || card.flavor || '...'}
               </p>
@@ -933,6 +1258,30 @@ function CardPreviewContent({
           {customActionSlot}
 
           {/* Preview Modal Actions */}
+          {styleProps.showPreviewActions &&
+            isRevealed &&
+            isStandardCard &&
+            card.owner !== 'red' && (
+              <button
+                className="btn"
+                style={{
+                  marginTop: '10px',
+                  width: '100%',
+                  flexShrink: 0,
+                  background: isShineActive
+                    ? 'linear-gradient(45deg, #eab308, #ca8a04)'
+                    : '#475569',
+                  fontSize: '0.9rem',
+                  padding: '10px 5px',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onToggleShine) onToggleShine(card.id);
+                }}
+              >
+                {isShineActive ? '🌟 シャインON' : '🌟 シャインOFF'}
+              </button>
+            )}
           {styleProps.showPreviewActions &&
             isRevealed &&
             isPremiumUnlocked &&
@@ -1157,19 +1506,30 @@ function CardPreviewContent({
               />
             </div>
           ) : (
-            <img
-              src={imgUrl}
-              decoding="sync"
+            <div
               style={{
-                width: 'min(95vw, calc(95dvh * 2 / 3))',
-                height: 'min(95dvh, calc(95vw * 3 / 2))',
-                objectFit: 'contain',
+                position: 'relative',
+                display: 'inline-block',
                 borderRadius: '12px',
-                boxShadow: '0 0 40px rgba(0,0,0,0.8)',
-                backgroundColor: isSkin ? 'transparent' : '#000',
+                overflow: 'hidden',
               }}
-              alt="Enlarged"
-            />
+            >
+              <img
+                src={imgUrl}
+                decoding="sync"
+                style={{
+                  width: 'min(95vw, calc(95dvh * 2 / 3))',
+                  height: 'min(95dvh, calc(95vw * 3 / 2))',
+                  objectFit: 'contain',
+                  borderRadius: '12px',
+                  boxShadow: '0 0 40px rgba(0,0,0,0.8)',
+                  backgroundColor: isSkin ? 'transparent' : '#000',
+                  display: 'block',
+                }}
+                alt="Enlarged"
+              />
+              {isStandardCard && isShineActive && <CardShineOverlay />}
+            </div>
           )}
         </div>
       )}

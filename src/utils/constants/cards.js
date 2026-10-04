@@ -4477,6 +4477,11 @@ export const PREMIUM_CARD_IDS = [
   'cavalry',
   'employee',
   'mjolnir',
+  // --- バトルパスS1 ---
+  'royalguard',
+  'gorilla',
+  'ghoul',
+  'omnipotent',
   // --- 運命の邂逅 ---
   'liberator',
   'dwarf',

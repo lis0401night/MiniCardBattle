@@ -24,11 +24,7 @@ export const UI_IMAGES = {
   GUIDE_RULES: appendVersionQuery('assets/ui/ui_Instructionsbutton01.png'),
   GUIDE_TUTORIAL: appendVersionQuery('assets/ui/ui_tutorialbutton01.png'),
   EVENT_FORTUNE: appendVersionQuery('assets/ui/ui_event_fortunebutton01.png'),
-  ONLINE_QUICK_MATCH: appendVersionQuery(
-    'assets/ui/ui_quickmatchbutton01.png'
-  ),
+  ONLINE_QUICK_MATCH: appendVersionQuery('assets/ui/ui_quickmatchbutton01.png'),
   ONLINE_ROOM_MATCH: appendVersionQuery('assets/ui/ui_roommatchbutton01.png'),
-  ONLINE_BATTLE_PASS: appendVersionQuery(
-    'assets/ui/ui_battlepassbutton01.png'
-  ),
+  ONLINE_BATTLE_PASS: appendVersionQuery('assets/ui/ui_battlepassbutton01.png'),
 };

@@ -23,6 +23,7 @@ import {
   showSkinAcquisitionModal,
   showPlaymatAcquisitionModal,
   showIconAcquisitionModal,
+  showItemAcquisitionModal,
 } from '../services/uiGallery.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { playSound } from '../utils/gameUtils.js';
@@ -123,10 +124,21 @@ export default function BattlePassProgressScreen() {
         threshold.rewardDisplayName,
         threshold.rewardId
       );
+    } else if (threshold.rewardType === 'shine_ticket') {
+      showItemAcquisitionModal?.(
+        threshold.rewardDisplayName || 'シャインチケット',
+        threshold.count || 1,
+        {
+          title: 'バトルパス報酬獲得！',
+          description:
+            'カード一覧画面からお好きなカードをシャイン化（ホログラム加工）できます。',
+          iconEmoji: '🎟️',
+        }
+      );
     }
   };
 
-  const maxPoints = passData?.maxPoints || 100;
+  const maxPoints = passData?.maxPoints || 150;
   const overallPercentage = Math.min(
     100,
     Math.round((currentPoints / maxPoints) * 100)
@@ -238,7 +250,7 @@ export default function BattlePassProgressScreen() {
           </p>
         </div>
 
-        {/* 達成レベル一覧（10段階） */}
+        {/* 達成レベル一覧（15段階） */}
         <div
           style={{
             width: '100%',

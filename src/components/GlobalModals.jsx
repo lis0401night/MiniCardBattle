@@ -20,6 +20,8 @@ import {
   setShowPremiumAcquisitionModalHook,
   setShowSkinAcquisitionModalHook,
   setShowStageAcquisitionModalHook,
+  setShowBattlePassAcquisitionModalHook,
+  setShowItemAcquisitionModalHook,
 } from '../services/uiGallery.js';
 import {
   backupDataToXML,
@@ -35,6 +37,7 @@ import {
   setShowPointAcquisitionModalHook,
   setShowProfileModalHook,
   showAlertModal,
+  showConfirmModal,
 } from '../services/uiModals.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import {
@@ -69,8 +72,11 @@ import {
 } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
+  checkIsShineUnlocked,
+  consumeShineTicket,
   getCardImgUrl,
   getOrCreateUUID,
+  getShineTicketsCount,
   getSkillBadgeInfo,
   hasSkillDeep,
   playSound,
@@ -78,6 +84,7 @@ import {
   safeParseArrayOrNull,
   stopAllBGM,
   togglePremiumCard,
+  toggleShineCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
@@ -88,6 +95,8 @@ const EXCHANGE_DISPLAY_TYPE_LABELS = {
   premium: 'プレミアム',
   skin: 'スキン',
   pack: 'パック',
+  battle_pass: 'バトルパス',
+  shine_ticket: 'アイテム',
 };
 
 // ============================================================
@@ -644,14 +653,16 @@ function FavoriteCardSelectionModal({
 // 共通の獲得モーダルコンポーネント
 function AcquisitionModal({
   title,
-  borderColor,
-  shadowColor,
+  borderColor = '#eab308',
+  shadowColor = 'rgba(234, 179, 8, 0.5)',
   imageSrc,
+  iconEmoji,
   imageStyle,
   itemName,
-  itemTypeName, // 'プレイマット', 'スキン', 'アイコン' などの日本語名
-  btnBg,
-  btnColor,
+  itemTypeName, // 'プレイマット', 'スキン', 'アイコン', 'アイテム', 'シーズンパス' などの日本語名
+  description,
+  btnBg = 'linear-gradient(45deg, #eab308, #ca8a04)',
+  btnColor = '#000',
   canClose,
   onClose,
   isIcon,
@@ -673,40 +684,75 @@ function AcquisitionModal({
       onClick={(e) => e.stopPropagation()}
     >
       <h2 style={{ color: borderColor, marginBottom: '20px' }}>{title}</h2>
-      <div style={{ position: 'relative', ...imageStyle }}>
-        <img
-          src={imageSrc}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          alt={itemTypeName}
-        />
-        {isIcon && (
+      {imageSrc ? (
+        <div style={{ position: 'relative', ...imageStyle }}>
           <img
-            src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
-            alt=""
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              pointerEvents: 'none',
-              zIndex: 5,
-            }}
+            src={imageSrc}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            alt={itemTypeName}
           />
-        )}
-      </div>
+          {isIcon && (
+            <img
+              src={appendVersionQuery('assets/icons/iconframe_gold.webp')}
+              alt=""
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                pointerEvents: 'none',
+                zIndex: 5,
+              }}
+            />
+          )}
+        </div>
+      ) : (
+        <div
+          style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '16px',
+            background: 'rgba(15, 23, 42, 0.8)',
+            border: `2px solid ${borderColor}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '3.5rem',
+            marginBottom: '20px',
+            boxShadow: `0 0 20px ${shadowColor}`,
+            filter: 'drop-shadow(0 0 10px rgba(250, 204, 21, 0.6))',
+          }}
+        >
+          {iconEmoji || '🎁'}
+        </div>
+      )}
       <p
         style={{
           color: '#fff',
           fontSize: '1.1rem',
           fontWeight: 'bold',
           textAlign: 'center',
-          marginBottom: '25px',
+          marginBottom: description ? '8px' : '25px',
         }}
       >
         {itemTypeName}「{itemName}」を入手しました！
       </p>
+      {description && (
+        <p
+          style={{
+            color: '#94a3b8',
+            fontSize: '0.85rem',
+            textAlign: 'center',
+            marginBottom: '20px',
+            lineHeight: 1.4,
+            whiteSpace: 'pre-line',
+          }}
+        >
+          {description}
+        </p>
+      )}
       <button
         className="btn ok-button"
         style={{
@@ -1009,6 +1055,34 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       }
     });
 
+    setShowBattlePassAcquisitionModalHook((name, passId) => {
+      playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
+      setAcquisitionData({
+        type: 'battle_pass',
+        name,
+        id: passId,
+        canClose: false,
+      });
+      triggerCloseTimer('battle_pass', passId || 'battle_pass');
+    });
+
+    setShowItemAcquisitionModalHook((name, count = 1, options = {}) => {
+      playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
+      setAcquisitionData({
+        type: 'item',
+        name: count > 1 ? `${name} x${count}` : name,
+        iconEmoji: options.icon || (name.includes('シャイン') ? '🌟' : '🎁'),
+        title: options.title || 'アイテム獲得！',
+        description:
+          options.description ||
+          (name.includes('シャイン')
+            ? 'カード一覧画面でお好きなカードをシャイン化（ホログラム加工）できます。'
+            : ''),
+        canClose: false,
+      });
+      triggerCloseTimer('item', name);
+    });
+
     window.showCharDetailModal = (char) => {
       playSound?.(SOUNDS?.seClick);
       setCharDetailData(char);
@@ -1062,6 +1136,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
           isPlaymat: data.type === 'playmat',
           isIcon: data.type === 'icon',
           isPack: data.type === 'pack',
+          isBattlePass: data.type === 'battle_pass',
+          isShineTicket: data.type === 'shine_ticket',
           coverCardId: data.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
           logoUrl: data.logoUrl || data.packObj?.logoUrl,
           packDescription:
@@ -1197,6 +1273,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       setShowIconAcquisitionModalHook(null);
       setShowCharacterAcquisitionModalHook(null);
       setShowStageAcquisitionModalHook(null);
+      setShowBattlePassAcquisitionModalHook(null);
+      setShowItemAcquisitionModalHook(null);
       setCloseEnemyDeckModalHook(null);
 
       delete window.showPlayerProfileModal;
@@ -1244,6 +1322,88 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       .getElementById('screen-card-list')
       ?.classList.contains('active');
     togglePremiumCard?.(cardId, isCardListScreen);
+
+    if (!isCardListScreen && window.saveCurrentEditDeck) {
+      window.saveCurrentEditDeck();
+    }
+
+    if (typeof renderCardList === 'function' && isCardListScreen) {
+      renderCardList();
+    }
+    if (
+      typeof renderDeckEdit === 'function' &&
+      document.getElementById('screen-deck-edit')?.classList.contains('active')
+    ) {
+      renderDeckEdit();
+    }
+    setCardPreviewData((prev) => ({ ...prev }));
+  };
+
+  /**
+   * シャインカード設定（ON/OFF）を切り替えるハンドラー。
+   *
+   * @param {Object} e - クリックイベントオブジェクト
+   * @param {string} cardId - 切り替え対象のカードID
+   */
+  const handleToggleShine = (e, cardId) => {
+    e.stopPropagation();
+
+    const isUnlocked = checkIsShineUnlocked(cardId);
+    if (!isUnlocked) {
+      const ticketCount = getShineTicketsCount();
+      const cardMaster = CARD_MASTER.find((c) => c.id === cardId);
+      const cardName = cardMaster?.name || 'カード';
+
+      if (ticketCount <= 0) {
+        playSound?.(SOUNDS?.seClick);
+        showAlertModal?.(
+          'シャインチケットが不足しています。\n共通交換所またはバトルパス報酬で獲得できます。'
+        );
+        return;
+      }
+
+      playSound?.(SOUNDS?.seClick);
+      showConfirmModal?.(
+        `シャインチケットを1枚消費して【${cardName}】をシャイン化しますか？\n（所持チケット: ${ticketCount}枚）`,
+        () => {
+          const success = consumeShineTicket(cardId);
+          if (success) {
+            playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
+            const isCardListScreen = !!document
+              .getElementById('screen-card-list')
+              ?.classList.contains('active');
+            if (!isCardListScreen && window.saveCurrentEditDeck) {
+              window.saveCurrentEditDeck();
+            }
+            if (typeof renderCardList === 'function' && isCardListScreen) {
+              renderCardList();
+            }
+            if (
+              typeof renderDeckEdit === 'function' &&
+              document
+                .getElementById('screen-deck-edit')
+                ?.classList.contains('active')
+            ) {
+              renderDeckEdit();
+            }
+            setCardPreviewData((prev) => ({ ...prev }));
+            showAlertModal?.(
+              `【${cardName}】をシャイン化しました！\n以後、🌟ボタンで自由にON/OFFを切り替えられます。`
+            );
+          } else {
+            showAlertModal?.('シャイン化の処理に失敗しました。');
+          }
+        }
+      );
+      return;
+    }
+
+    playSound?.(SOUNDS?.seClick);
+
+    const isCardListScreen = !!document
+      .getElementById('screen-card-list')
+      ?.classList.contains('active');
+    toggleShineCard?.(cardId, isCardListScreen);
 
     if (!isCardListScreen && window.saveCurrentEditDeck) {
       window.saveCurrentEditDeck();
@@ -1342,6 +1502,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
             setCardPreviewData(null);
           }
           playSound?.(SOUNDS?.seClick);
+        }}
+        onToggleShine={(cardId) => {
+          handleToggleShine({ stopPropagation: () => {} }, cardId);
         }}
         onTogglePremium={(cardId) => {
           handleTogglePremium({ stopPropagation: () => {} }, cardId);
@@ -2048,6 +2211,38 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
               itemTypeName="ステージ"
               btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
               btnColor="#fff"
+              canClose={acquisitionData.canClose}
+              onClose={() => setAcquisitionData(null)}
+            />
+          )}
+
+          {acquisitionData.type === 'battle_pass' && (
+            <AcquisitionModal
+              title="バトルパス解放！"
+              borderColor="#f59e0b"
+              shadowColor="rgba(245, 158, 11, 0.5)"
+              iconEmoji="🎟️"
+              itemName={acquisitionData.name}
+              itemTypeName="シーズンパス"
+              description="クイックマッチで勝利してポイントを集め、様々な限定報酬を獲得しましょう！"
+              btnBg="linear-gradient(45deg, #f59e0b, #d97706)"
+              btnColor="#000"
+              canClose={acquisitionData.canClose}
+              onClose={() => setAcquisitionData(null)}
+            />
+          )}
+
+          {acquisitionData.type === 'item' && (
+            <AcquisitionModal
+              title={acquisitionData.title || 'アイテム獲得！'}
+              borderColor="#eab308"
+              shadowColor="rgba(234, 179, 8, 0.5)"
+              iconEmoji={acquisitionData.iconEmoji || '🌟'}
+              itemName={acquisitionData.name}
+              itemTypeName="アイテム"
+              description={acquisitionData.description}
+              btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
+              btnColor="#000"
               canClose={acquisitionData.canClose}
               onClose={() => setAcquisitionData(null)}
             />

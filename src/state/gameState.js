@@ -152,6 +152,12 @@ export const GameState = {
   gameVolume: DEFAULT_SOUND_VOLUME,
   premiumCards: [],
   unlockedPremiumCards: [],
+  // シャインカード設定（明度に合わせて光る特殊オーバーレイが有効なカードID配列）
+  shineCards: [],
+  // 解放済みシャインカード（シャインチケットを消費してシャイン化したカードID配列）
+  unlockedShineCards: [],
+  // 所持シャインチケット数（カードをシャイン化するためのアイテム）
+  shineTickets: 0,
   selectedPlaymatId: null,
   dungeonWinStreak: 0,
   dungeonCards: [],

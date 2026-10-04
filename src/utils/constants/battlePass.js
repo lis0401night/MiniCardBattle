@@ -6,7 +6,7 @@
  */
 
 import { savePointsToServer } from '../apiUtils.js';
-import { safeParseArray } from '../gameUtils.js';
+import { addShineTickets, safeParseArray } from '../gameUtils.js';
 import {
   UNLOCKED_SKINS_KEY,
   UNLOCKED_ICONS_KEY,
@@ -36,13 +36,37 @@ export const QUICK_WIN_POINTS_PVP = 3;
 /** クイックマッチ勝利時の獲得ポイント（CPU戦: 1pt） */
 export const QUICK_WIN_POINTS_CPU = 1;
 
-/** バトルパスの達成段階（10段階: 10, 20, 30, ..., 100） */
-export const BATTLE_PASS_LEVEL_THRESHOLDS = Object.freeze([
-  { level: 1, points: 10, rewardName: '準備中' },
+/** バトルパスS1の達成段階（15段階: 10, 20, 30, ..., 150） */
+export const BATTLE_PASS_S1_LEVEL_THRESHOLDS = Object.freeze([
+  {
+    level: 1,
+    points: 10,
+    rewardName: 'シャインチケット',
+    rewardType: 'shine_ticket',
+    rewardId: 'shine_ticket',
+    rewardDisplayName: 'シャインチケット',
+    count: 1,
+  },
   { level: 2, points: 20, rewardName: '準備中' },
-  { level: 3, points: 30, rewardName: '準備中' },
+  {
+    level: 3,
+    points: 30,
+    rewardName: 'シャインチケット',
+    rewardType: 'shine_ticket',
+    rewardId: 'shine_ticket',
+    rewardDisplayName: 'シャインチケット',
+    count: 1,
+  },
   { level: 4, points: 40, rewardName: '準備中' },
-  { level: 5, points: 50, rewardName: '準備中' },
+  {
+    level: 5,
+    points: 50,
+    rewardName: 'シャインチケット',
+    rewardType: 'shine_ticket',
+    rewardId: 'shine_ticket',
+    rewardDisplayName: 'シャインチケット',
+    count: 1,
+  },
   { level: 6, points: 60, rewardName: '準備中' },
   { level: 7, points: 70, rewardName: '準備中' },
   {
@@ -69,28 +93,40 @@ export const BATTLE_PASS_LEVEL_THRESHOLDS = Object.freeze([
     rewardId: 'knight_assassin',
     rewardDisplayName: 'レダ',
   },
+  { level: 11, points: 110, rewardName: '準備中' },
+  { level: 12, points: 120, rewardName: '準備中' },
+  { level: 13, points: 130, rewardName: '準備中' },
+  { level: 14, points: 140, rewardName: '準備中' },
+  { level: 15, points: 150, rewardName: '準備中' },
 ]);
+
+/** 既存コード・互換用エイリアス（デフォルトはS1の達成段階） */
+export const BATTLE_PASS_LEVEL_THRESHOLDS = BATTLE_PASS_S1_LEVEL_THRESHOLDS;
 
 /**
  * バトルパスマスターデータ定義一覧
+ * 各シーズン（S1, 将来のS2等）ごとに固有のID・最大ポイント・報酬段階リストを保持します。
+ *
  * @type {ReadonlyArray<{
  *   id: string,
  *   name: string,
  *   description: string,
  *   cost: number,
  *   maxPoints: number,
- *   levels: typeof BATTLE_PASS_LEVEL_THRESHOLDS
+ *   levels: typeof BATTLE_PASS_S1_LEVEL_THRESHOLDS
  * }>}
  */
 export const BATTLE_PASS_MASTER = Object.freeze([
   {
     id: 'battle_pass_vol1',
-    name: 'バトルパス.vol1',
+    name: 'バトルパス S1',
     description:
-      'クイックマッチで勝利してポイントを貯め、様々な報酬を獲得できるシーズンパス。',
+      'クイックマッチで勝利してポイントを貯め、様々な報酬を獲得できるバトルパス。',
     cost: 30,
-    maxPoints: 100,
-    levels: BATTLE_PASS_LEVEL_THRESHOLDS,
+    maxPoints: 150,
+    imgUrl: 'assets/characters/char_knight_assassin.webp',
+    thumbUrl: 'assets/characters/char_knight_assassin_thumb.webp',
+    levels: BATTLE_PASS_S1_LEVEL_THRESHOLDS,
   },
 ]);
 
@@ -167,7 +203,12 @@ export function getBattlePassPoints(passId) {
  */
 export function setBattlePassPoints(passId, points) {
   if (!passId) return;
-  const safePoints = Math.max(0, Math.floor(Number(points) || 0));
+  const pass = getBattlePassById(passId);
+  const maxPts = pass?.maxPoints ?? Infinity;
+  const safePoints = Math.max(
+    0,
+    Math.min(maxPts, Math.floor(Number(points) || 0))
+  );
   localStorage.setItem(
     `${BATTLE_PASS_POINTS_KEY_PREFIX}${passId}`,
     String(safePoints)
@@ -318,6 +359,8 @@ export function claimLevelReward(threshold) {
           GameState.unlockedIcons.push(threshold.rewardId);
         }
       }
+    } else if (threshold.rewardType === 'shine_ticket') {
+      addShineTickets(threshold.count || 1);
     }
   } catch (e) {
     console.error('報酬解放処理エラー:', e);
@@ -326,7 +369,7 @@ export function claimLevelReward(threshold) {
 
 /**
  * バトルパスを全レベル達成状態にする（デバッグ・イースターエッグ用）
- * ポイントを100pt（最大値）に設定して全レベル達成状態とし、受取ボタンを押せるようにします。
+ * ポイントを最大値（150pt）に設定して全レベル達成状態とし、受取ボタンを押せるようにします。
  * 既に受取済みの場合でもテストできるよう受取済み状態をリセットします。
  *
  * @param {string} [passId='battle_pass_vol1'] - バトルパスID
@@ -336,8 +379,10 @@ export function unlockAllBattlePass(passId = 'battle_pass_vol1') {
   // 1. バトルパス自体を未アンロックならアンロック
   unlockBattlePass(passId);
 
-  // 2. ポイントを最大値（100pt）に設定
-  setBattlePassPoints(passId, 100);
+  // 2. ポイントを最大値（対象パスの maxPoints または 150pt）に設定
+  const pass = getBattlePassById(passId);
+  const targetMax = pass?.maxPoints || 150;
+  setBattlePassPoints(passId, targetMax);
 
   // 3. 受取ボタンを押せるようにするため、受取済みリストを未受取（空配列）にリセット
   localStorage.setItem(
@@ -346,7 +391,7 @@ export function unlockAllBattlePass(passId = 'battle_pass_vol1') {
   );
 
   return {
-    currentPoints: 100,
+    currentPoints: targetMax,
     claimedLevels: [],
   };
 }

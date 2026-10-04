@@ -345,6 +345,11 @@ export function calculateExchangeMaxCount(
     itemType === 'playmat' ||
     itemType === 'icon';
 
+  if (itemType === 'shine_ticket') {
+    // シャインチケットは所持ポイントの許す限り何枚でも交換可能
+    return pointMax;
+  }
+
   if (isOneTimeItem) {
     // スキン、プレミアム、プレイマット、アイコン等は1回限定アンロック
     return Math.min(pointMax, 1);

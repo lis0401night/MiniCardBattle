@@ -94,6 +94,9 @@ export const OWNED_PLAYMATS_KEY = 'mini_card_battle_owned_playmats';
 export const UNLOCKED_PREMIUM_KEY = 'mini_card_battle_unlocked_premium';
 export const UNLOCKED_PREMIUM_CARDS_KEY =
   'mini_card_battle_unlocked_premium_cards';
+export const SHINE_CARDS_KEY = 'mini_card_battle_shine_cards';
+export const UNLOCKED_SHINE_CARDS_KEY = 'mini_card_battle_unlocked_shine_cards';
+export const SHINE_TICKETS_KEY = 'mini_card_battle_shine_tickets';
 export const BGM_VOLUME_KEY = 'mini_card_battle_bgm_volume';
 export const SE_VOLUME_KEY = 'mini_card_battle_se_volume';
 export const BGM_MUTED_KEY = 'mini_card_battle_bgm_muted';

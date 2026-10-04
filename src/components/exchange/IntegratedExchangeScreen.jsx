@@ -6,9 +6,14 @@ import { useExchangeScreen } from '../../hooks/useExchangeScreen.js';
 import { useGridVirtualizer } from '../../hooks/useGridVirtualizer.js';
 import { saveDeck } from '../../services/deck.js';
 import { showAlertModal, showConfirmModal } from '../../services/uiModals.js';
+import {
+  showBattlePassAcquisitionModal,
+  showItemAcquisitionModal,
+} from '../../services/uiGallery.js';
 import ExchangeQuantityModal from './ExchangeQuantityModal.jsx';
 import PackOpeningModal from './PackOpeningModal.jsx';
 import PointConversionModal from './PointConversionModal.jsx';
+import ShineTicketExchangeModal from './ShineTicketExchangeModal.jsx';
 import { GameState } from '../../state/gameState.js';
 import {
   getLatestOwnership,
@@ -43,8 +48,10 @@ import {
   unlockBattlePass,
 } from '../../utils/constants/battlePass.js';
 import {
+  addShineTickets,
   currentBgmAudio,
   getOrCreateUUID,
+  getShineTicketsCount,
   playSound,
   switchScreen as defaultSwitchScreen,
 } from '../../utils/gameUtils.js';
@@ -176,6 +183,8 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
   const [quantityModalItem, setQuantityModalItem] = useState(null);
   // ポイント変換モーダル表示フラグ
   const [isConversionModalOpen, setIsConversionModalOpen] = useState(false);
+  // シャインチケット交換モーダル表示フラグ
+  const [isShineTicketModalOpen, setIsShineTicketModalOpen] = useState(false);
   // プレイヤーの最新カードインベントリ
   const [inventory, setInventory] = useState(
     () => getLatestOwnership()?.inventory || {}
@@ -391,8 +400,10 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
             setUnlockedBattlePasses(getUnlockedBattlePasses());
 
             playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seCardPlace);
-            showAlertModal(
-              `【${item.name}】を解放しました！\nクイックマッチで勝利してポイントを集めましょう！`
+            // 専用のバトルパス解放ダイアログを表示
+            showBattlePassAcquisitionModal(
+              item.name || 'バトルパス S1',
+              passId
             );
           } catch (err) {
             console.error('[CommonExchange] バトルパス解放エラー:', err);
@@ -402,6 +413,53 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
       );
     },
     [unlockedBattlePasses, currentPoints, totalPoints]
+  );
+
+  /**
+   * シャインチケット交換処理ハンドラ
+   * 共通ポイントを消費してシャインチケットを獲得し、専用ダイアログを表示します。
+   *
+   * @param {Object} item - 交換対象アイテム
+   * @param {number} [count=1] - 交換個数
+   */
+  const handleExchangeShineTicket = useCallback(
+    (item, count = 1) => {
+      const unitCost = item.cost ?? 10;
+      const totalCost = unitCost * count;
+
+      if (currentPoints < totalCost) {
+        showAlertModal('共通ポイントが不足しています。');
+        return;
+      }
+
+      showConfirmModal(
+        `共通ポイント ${totalCost} Pt を消費して【${item.name}】を ${count}枚 交換しますか？`,
+        () => {
+          try {
+            // ポイント減算
+            const newCurrent = Math.max(0, currentPoints - totalCost);
+            setCurrentPoints(newCurrent);
+            localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
+            savePointsToServer(
+              'update_common_points.php',
+              newCurrent,
+              totalPoints
+            );
+
+            // チケット加算
+            addShineTickets(count);
+
+            playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seCardPlace);
+            // 専用のシャインチケット獲得ダイアログを表示
+            showItemAcquisitionModal(item.name || 'シャインチケット', count);
+          } catch (err) {
+            console.error('[CommonExchange] シャインチケット交換エラー:', err);
+            showAlertModal('シャインチケットの交換中にエラーが発生しました。');
+          }
+        }
+      );
+    },
+    [currentPoints, totalPoints]
   );
 
   // 共通交換所ラインナップ（拡張パック + バトルパス）
@@ -422,6 +480,8 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
       cost: pass.cost,
       name: pass.name,
       description: pass.description,
+      imgUrl: pass.imgUrl,
+      thumbUrl: pass.thumbUrl,
       passObj: pass,
     }));
     return [...packItems, ...passItems];
@@ -597,6 +657,163 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
             </div>
           </div>
 
+          {/* シャインチケット交換枠（画像がないためポイント変換と同様に独自タイルとして配置） */}
+          <div
+            className="deck-card-item shine-ticket-item"
+            style={{
+              cursor: 'pointer',
+              userSelect: 'none',
+              transition: 'transform 0.15s ease',
+            }}
+            onClick={() => {
+              playSound?.(SOUNDS?.seClick);
+              setIsShineTicketModalOpen(true);
+            }}
+            title="共通ポイントを消費してシャインチケットを獲得します"
+          >
+            <div
+              className="card blue"
+              style={{
+                backgroundColor: '#0f172a',
+                border: '2px solid #eab308',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(234, 179, 8, 0.25)',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 4px',
+                  boxSizing: 'border-box',
+                  position: 'relative',
+                  textAlign: 'center',
+                }}
+              >
+                {/* 背景グロー装飾（中央配置） */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: '120px',
+                    height: '120px',
+                    background:
+                      'radial-gradient(circle, rgba(234, 179, 8, 0.2) 0%, transparent 70%)',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+
+                {/* 上部バッジ */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    left: '4px',
+                    background: 'rgba(234, 179, 8, 0.95)',
+                    color: '#000000',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    fontWeight: 'bold',
+                    fontSize: '0.65rem',
+                    zIndex: 2,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  アイテム
+                </div>
+
+                {/* 右上所持数バッジ */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    background: 'rgba(0, 0, 0, 0.85)',
+                    color: '#facc15',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    fontWeight: 'bold',
+                    fontSize: '0.65rem',
+                    zIndex: 2,
+                    border: '1px solid #eab308',
+                  }}
+                >
+                  所持 {getShineTicketsCount()}
+                </div>
+
+                {/* アイコン */}
+                <div
+                  style={{
+                    fontSize: '2.2rem',
+                    marginBottom: '4px',
+                    filter:
+                      'drop-shadow(0 2px 8px rgba(234, 179, 8, 0.7)) drop-shadow(0 0 12px rgba(250, 204, 21, 0.5))',
+                    lineHeight: 1,
+                    zIndex: 1,
+                  }}
+                >
+                  🌟
+                </div>
+
+                {/* タイトル */}
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    color: '#facc15',
+                    marginBottom: '4px',
+                    textShadow: '0 1px 4px rgba(0, 0, 0, 0.8)',
+                    zIndex: 1,
+                  }}
+                >
+                  シャインチケット
+                </div>
+
+                {/* 説明テキスト */}
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    color: '#94a3b8',
+                    lineHeight: '1.25',
+                    zIndex: 1,
+                    padding: '0 2px',
+                    marginBottom: '6px',
+                  }}
+                >
+                  カードを
+                  <br />
+                  シャイン化加工
+                </div>
+
+                {/* コスト表示ボタン */}
+                <div
+                  style={{
+                    padding: '2px 10px',
+                    background:
+                      currentPoints >= 10
+                        ? 'linear-gradient(45deg, #eab308, #ca8a04)'
+                        : '#334155',
+                    color: currentPoints >= 10 ? '#000000' : '#64748b',
+                    borderRadius: '12px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    zIndex: 1,
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                  }}
+                >
+                  10 Pt
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 交換ラインナップアイテム（バトルパス・拡張パック） */}
           {lineup.map((item) => (
             <ExchangeItemCard
@@ -609,6 +826,12 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
                 const target = clickedItem || item;
                 if (target.type === 'battle_pass') {
                   handleExchangeBattlePass(target);
+                } else if (target.type === 'shine_ticket') {
+                  setQuantityModalItem({
+                    ...target,
+                    type: 'shine_ticket',
+                    cost: target.cost ?? 10,
+                  });
                 } else {
                   const pack =
                     target.packObj ||
@@ -643,6 +866,40 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
         />
       )}
 
+      {/* シャインチケット交換モーダル（独自実装） */}
+      {isShineTicketModalOpen && (
+        <ShineTicketExchangeModal
+          commonPoints={currentPoints}
+          costPerTicket={10}
+          onConfirm={(chosenCount) => {
+            setIsShineTicketModalOpen(false);
+            const totalCost = 10 * chosenCount;
+            try {
+              const newCurrent = Math.max(0, currentPoints - totalCost);
+              setCurrentPoints(newCurrent);
+              localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
+              savePointsToServer(
+                'update_common_points.php',
+                newCurrent,
+                totalPoints
+              );
+              addShineTickets(chosenCount);
+              playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seCardPlace);
+              showItemAcquisitionModal('シャインチケット', chosenCount);
+            } catch (err) {
+              console.error(
+                '[CommonExchange] シャインチケット交換エラー:',
+                err
+              );
+              showAlertModal(
+                'シャインチケットの交換中にエラーが発生しました。'
+              );
+            }
+          }}
+          onClose={() => setIsShineTicketModalOpen(false)}
+        />
+      )}
+
       {/* 交換個数確認モーダル */}
       {quantityModalItem && (
         <ExchangeQuantityModal
@@ -651,7 +908,11 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
           inventory={inventory}
           onConfirm={(targetItem, chosenCount) => {
             setQuantityModalItem(null);
-            handleOpenPack(targetItem.packObj || targetItem, chosenCount);
+            if (targetItem.type === 'shine_ticket') {
+              handleExchangeShineTicket(targetItem, chosenCount);
+            } else {
+              handleOpenPack(targetItem.packObj || targetItem, chosenCount);
+            }
           }}
           onCancel={() => setQuantityModalItem(null)}
         />

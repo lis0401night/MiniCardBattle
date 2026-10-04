@@ -1,6 +1,24 @@
 import { useRef, useEffect } from 'react';
-import { getCardImgUrl, renderSkillTag } from '../../utils/gameUtils.js';
+import CardShineOverlay from '../common/CardShineOverlay.jsx';
+import {
+  checkIsShineActive,
+  getCardImgUrl,
+  renderSkillTag,
+} from '../../utils/gameUtils.js';
 
+/**
+ * バトル画面（手札・盤面など）でカードをレンダリングする共通コンポーネント。
+ * 通常/プレミアム/シャインの各種表示および長押し詳細プレビューに対応。
+ *
+ * @param {Object} props - プロパティ
+ * @param {Object} props.cardObj - カードオブジェクト
+ * @param {boolean} [props.isBoard=false] - 盤面カードかどうか
+ * @param {boolean|null} [props.isValkyriaGuardActive=null] - 戦乙女の加護状態
+ * @param {string} [props.className=''] - 追加CSSクラス
+ * @param {Function} [props.onClick] - クリックイベントハンドラー
+ * @param {Function} [props.onLongPress] - 長押しイベントハンドラー
+ * @returns {JSX.Element|null} カード要素
+ */
 export default function Card({
   cardObj,
   isBoard = false,
@@ -28,8 +46,8 @@ export default function Card({
       ? ` rarity-${cardObj.rarity}`
       : '';
   const filter = cardObj.filter;
-  // シャドウ化の特殊処理（敵側のみ）は削除
 
+  const isShineActive = checkIsShineActive(cardObj);
   const imgUrl = getCardImgUrl(cardObj, true);
 
   // スキルタグのHTML生成（Reactレンダー内に安全に埋め込み）
@@ -84,6 +102,7 @@ export default function Card({
           filter: filter || 'none',
         }}
       ></div>
+      {isShineActive && <CardShineOverlay />}
       {/* 
         安全確認: skillTagHtml は静的なゲームマスターデータ定義(SKILLS)のみから生成されたバッジHTMLであり、
         外部のユーザー入力が一切混入しないため、XSSなどの脆弱性の恐れはありません。

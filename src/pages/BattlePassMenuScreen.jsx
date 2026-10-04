@@ -178,7 +178,7 @@ export default function BattlePassMenuScreen() {
           >
             {unlockedList.map((pass) => {
               const currentPoints = getBattlePassPoints(pass.id);
-              const maxPoints = pass.maxPoints || 100;
+              const maxPoints = pass.maxPoints || 150;
               const percentage = Math.min(
                 100,
                 Math.round((currentPoints / maxPoints) * 100)
