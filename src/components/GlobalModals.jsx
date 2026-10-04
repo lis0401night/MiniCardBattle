@@ -376,9 +376,7 @@ const FAV_CARD_ASPECT_RATIO = 1.5;
  * @param {Function} props.setFavoriteCardState - お気に入りカード更新関数
  * @param {Array<Object>} props.ownedMasterCards - プレイヤー所持カード配列
  * @param {Object} props.favCardPremiumMap - プレミアム表示状態マップ
- * @param {Function} props.setFavCardPremiumMap - プレミアム表示状態更新関数
  * @param {Object} props.favCardShineMap - シャイン表示状態マップ
- * @param {Function} props.setFavCardShineMap - シャイン表示状態更新関数
  * @returns {JSX.Element|null}
  */
 function FavoriteCardSelectionModal({
@@ -388,9 +386,7 @@ function FavoriteCardSelectionModal({
   setFavoriteCardState,
   ownedMasterCards,
   favCardPremiumMap,
-  setFavCardPremiumMap,
   favCardShineMap,
-  setFavCardShineMap,
 }) {
   const listContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(380);
@@ -649,90 +645,6 @@ function FavoriteCardSelectionModal({
                           />
 
                           {isCardShine && <CardShineOverlay />}
-
-                          {hasPremiumUnlocked && (
-                            <div
-                              className="premium-toggle-icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                playSound?.(SOUNDS?.seClick);
-                                const nextPremium = !isCardPremium;
-                                setFavCardPremiumMap((prev) => ({
-                                  ...prev,
-                                  [card.id]: nextPremium,
-                                }));
-                                if (favoriteCardState?.cardId === card.id) {
-                                  setFavoriteCardState({
-                                    cardId: card.id,
-                                    isPremium: nextPremium,
-                                    isShine: isCardShine,
-                                  });
-                                }
-                              }}
-                              style={{
-                                position: 'absolute',
-                                top: '4px',
-                                left: '4px',
-                                background: 'rgba(0,0,0,0.85)',
-                                color: isCardPremium ? '#d946ef' : '#94a3b8',
-                                padding: '2px 6px',
-                                borderRadius: '10px',
-                                fontSize: '0.8rem',
-                                zIndex: 7,
-                                border: `1px solid ${isCardPremium ? '#d946ef' : '#475569'}`,
-                                cursor: 'pointer',
-                              }}
-                              title={
-                                isCardPremium
-                                  ? '通常版に切り替え'
-                                  : 'プレミアム版に切り替え'
-                              }
-                            >
-                              ✨
-                            </div>
-                          )}
-
-                          {hasShineUnlocked && (
-                            <div
-                              className="shine-toggle-icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                playSound?.(SOUNDS?.seClick);
-                                const nextShine = !isCardShine;
-                                setFavCardShineMap((prev) => ({
-                                  ...prev,
-                                  [card.id]: nextShine,
-                                }));
-                                if (favoriteCardState?.cardId === card.id) {
-                                  setFavoriteCardState({
-                                    cardId: card.id,
-                                    isPremium: isCardPremium,
-                                    isShine: nextShine,
-                                  });
-                                }
-                              }}
-                              style={{
-                                position: 'absolute',
-                                top: '4px',
-                                right: '4px',
-                                background: 'rgba(0,0,0,0.85)',
-                                color: isCardShine ? '#38bdf8' : '#94a3b8',
-                                padding: '2px 6px',
-                                borderRadius: '10px',
-                                fontSize: '0.8rem',
-                                zIndex: 7,
-                                border: `1px solid ${isCardShine ? '#38bdf8' : '#475569'}`,
-                                cursor: 'pointer',
-                              }}
-                              title={
-                                isCardShine
-                                  ? 'シャインOFFに切り替え'
-                                  : 'シャインONに切り替え'
-                              }
-                            >
-                              🌟
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
@@ -4866,9 +4778,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         setFavoriteCardState={setFavoriteCardState}
         ownedMasterCards={ownedMasterCards}
         favCardPremiumMap={favCardPremiumMap}
-        setFavCardPremiumMap={setFavCardPremiumMap}
         favCardShineMap={favCardShineMap}
-        setFavCardShineMap={setFavCardShineMap}
       />
 
       {/* 他プレイヤー閲覧専用プロフィールモーダル */}

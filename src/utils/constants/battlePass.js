@@ -490,6 +490,14 @@ export function claimLevelReward(threshold) {
  * @returns {{ currentPoints: number, claimedLevels: number[] }} 最新状態オブジェクト
  */
 export function unlockAllBattlePass(passId = 'battle_pass_vol1') {
+  // 本番環境（プロダクション）では安全のため実行を無効化
+  if (!import.meta.env.DEV) {
+    return {
+      currentPoints: getBattlePassPoints(passId),
+      claimedLevels: getBattlePassClaimedLevels(passId),
+    };
+  }
+
   // 1. バトルパス自体を未アンロックならアンロック
   unlockBattlePass(passId);
 

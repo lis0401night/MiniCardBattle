@@ -83,9 +83,13 @@ export default function BattlePassProgressScreen() {
 
   /**
    * デバッグ・イースターエッグによるバトルパス全レベル達成処理
+   * （開発環境限定: import.meta.env.DEV のみ動作）
    * タイトルやヘッダーを10回クリックすることで、ポイントを最大化して全レベルの受取ボタンを押せる状態にします。
    */
   const handleDebugUnlockAll = () => {
+    // 本番環境では絶対に実行されないよう環境ガード
+    if (!import.meta.env.DEV) return;
+
     const res = unlockAllBattlePass(passId);
     setCurrentPoints(res.currentPoints);
     setClaimedLevels(res.claimedLevels);
@@ -95,8 +99,8 @@ export default function BattlePassProgressScreen() {
     );
   };
 
-  // 10回クリックで全解放（本番環境でも10回で確実に動作するよう targetCount=10 を明示）
-  const handleTitleClick = useEasterEgg(handleDebugUnlockAll, 10);
+  // 10回クリックで全解放（開発環境のみ発動。本番環境では Infinity となり発動不可）
+  const handleTitleClick = useEasterEgg(handleDebugUnlockAll);
 
   /**
    * 個別達成レベルの報酬受取処理
@@ -162,7 +166,7 @@ export default function BattlePassProgressScreen() {
       onBackClick={() => showBattlePassMenu?.()}
       showBackButton={true}
       backHasBorder={true}
-      onTitleClick={handleTitleClick}
+      onTitleClick={import.meta.env.DEV ? handleTitleClick : undefined}
     >
       <div
         style={{
@@ -196,15 +200,15 @@ export default function BattlePassProgressScreen() {
             }}
           >
             <span
-              onClick={handleTitleClick}
+              onClick={import.meta.env.DEV ? handleTitleClick : undefined}
               style={{
                 fontSize: '1rem',
                 fontWeight: 'bold',
                 color: '#f8fafc',
-                cursor: 'pointer',
+                cursor: import.meta.env.DEV ? 'pointer' : 'default',
                 userSelect: 'none',
               }}
-              title="10回タップで全解放"
+              title={import.meta.env.DEV ? '10回タップで全解放' : undefined}
             >
               累計ポイント
             </span>

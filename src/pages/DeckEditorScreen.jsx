@@ -38,15 +38,10 @@ import {
   checkIsFortuneMode,
   checkIsHighDiffMode,
   checkShowMissionButton,
-  checkIsShineUnlocked,
-  getShineTicketsCount,
-  consumeShineTicket,
   hasActiveFilters,
   getCardImgUrl,
   getEventEnemyCharId,
   playSound,
-  togglePremiumCard,
-  toggleShineCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -101,9 +96,6 @@ export default function DeckEditorScreen({ switchScreen }) {
   const [inventory, setInventory] = useState(computeInventory);
   const [masterCards, setMasterCards] = useState(() =>
     computeMasterCards(computeInventory())
-  );
-  const [unlockedPremium, setUnlockedPremium] = useState(
-    () => GameState.unlockedPremiumCards || []
   );
   const [isDefenseConfig, setIsDefenseConfig] = useState(
     () => GameState.gameMode === 'defense_register'
@@ -337,8 +329,6 @@ export default function DeckEditorScreen({ switchScreen }) {
       currentDeck.name || `デッキ${(GameState.currentDeckIndex || 0) + 1}`
     );
 
-    setUnlockedPremium(GameState.unlockedPremiumCards || []);
-
     if (GameState.gameMode === 'battle_dungeon') {
       const dInv = {};
       (GameState.dungeonCards || []).forEach((id) => {
@@ -554,66 +544,6 @@ export default function DeckEditorScreen({ switchScreen }) {
     showConfirmModal?.('デッキのカードをすべて削除しますか？', () => {
       syncToGlobal([]);
     });
-  };
-
-  /**
-   * デッキ編集画面からプレミアム設定（ON/OFF）を切り替える。
-   *
-   * @param {Object} e - クリックイベントオブジェクト
-   * @param {string} cardId - 対象カードID
-   */
-  const handleTogglePremium = (e, cardId) => {
-    e.stopPropagation();
-    playSound?.(SOUNDS?.seClick);
-    togglePremiumCard?.(cardId, false);
-    updateDeckEditor();
-  };
-
-  /**
-   * デッキ編集画面からシャイン設定（ON/OFF）を切り替える。
-   * 未解放の場合はシャインチケットを1枚消費してシャイン化するか確認するモーダルを表示し、
-   * 解放済みの場合は通常のON/OFF切り替えを行います。
-   *
-   * @param {Object} e - クリックイベントオブジェクト
-   * @param {string} cardId - 対象カードID
-   */
-  const handleToggleShine = (e, cardId) => {
-    e.stopPropagation();
-    const isUnlocked = checkIsShineUnlocked(cardId);
-    if (!isUnlocked) {
-      const ticketCount = getShineTicketsCount();
-      const cardMaster = (CARD_MASTER || []).find((c) => c.id === cardId);
-      const cardName = cardMaster?.name || 'カード';
-
-      if (ticketCount <= 0) {
-        playSound?.(SOUNDS?.seClick);
-        showAlertModal?.(
-          'シャインチケットが不足しています。\n共通交換所またはバトルパス報酬で獲得できます。'
-        );
-        return;
-      }
-
-      playSound?.(SOUNDS?.seClick);
-      showConfirmModal?.(
-        `シャインチケットを1枚消費して【${cardName}】をシャイン化しますか？\n（所持チケット: ${ticketCount}枚）`,
-        () => {
-          const success = consumeShineTicket(cardId);
-          if (success) {
-            playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
-            updateDeckEditor();
-            showAlertModal?.(
-              `【${cardName}】をシャイン化しました！\n以後、🌟ボタンで自由にON/OFFを切り替えられます。`
-            );
-          } else {
-            showAlertModal?.('シャイン化の処理に失敗しました。');
-          }
-        }
-      );
-    } else {
-      playSound?.(SOUNDS?.seClick);
-      toggleShineCard?.(cardId, false);
-      updateDeckEditor();
-    }
   };
 
   const handleSaveDeckName = () => {
@@ -1077,14 +1007,9 @@ export default function DeckEditorScreen({ switchScreen }) {
                     ? ` rarity-${card.rarity}`
                     : '';
                   const imgUrl = getCardImgUrl ? getCardImgUrl(card, true) : '';
-                  const isPremUnlocked = unlockedPremium.includes(card.id);
-                  const isPremActive = (GameState.premiumCards || []).includes(
+                  const isShineActive = (GameState.shineCards || []).includes(
                     card.id
                   );
-                  const isShineUnlocked = checkIsShineUnlocked(card.id);
-                  const isShineActive =
-                    isShineUnlocked &&
-                    (GameState.shineCards || []).includes(card.id);
 
                   return (
                     <div
@@ -1129,72 +1054,6 @@ export default function DeckEditorScreen({ switchScreen }) {
                         )}
 
                         {isShineActive && <CardShineOverlay />}
-
-                        {/* シャイン切り替えボタン（プレミアムトグルボタンの上に配置） */}
-                        <div
-                          className="shine-toggle-icon"
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={(e) => handleToggleShine(e, card.id)}
-                          title={
-                            !isShineUnlocked
-                              ? 'シャイン未解放（クリックで解放）'
-                              : isShineActive
-                                ? 'シャインON'
-                                : 'シャインOFF'
-                          }
-                          style={{
-                            position: 'absolute',
-                            top: '4px',
-                            left: '4px',
-                            background: 'rgba(0,0,0,0.85)',
-                            color: isShineActive
-                              ? '#facc15'
-                              : isShineUnlocked
-                                ? '#94a3b8'
-                                : '#64748b',
-                            padding: '2px 6px',
-                            borderRadius: '10px',
-                            fontSize: '0.8rem',
-                            zIndex: 7,
-                            border: `1px solid ${
-                              isShineActive
-                                ? '#facc15'
-                                : isShineUnlocked
-                                  ? '#475569'
-                                  : '#334155'
-                            }`,
-                            opacity: isShineUnlocked ? 1 : 0.75,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🌟
-                        </div>
-
-                        {isPremUnlocked && (
-                          <div
-                            className="premium-toggle-icon"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => handleTogglePremium(e, card.id)}
-                            title={
-                              isPremActive ? 'プレミアムON' : 'プレミアムOFF'
-                            }
-                            style={{
-                              position: 'absolute',
-                              top: '28px',
-                              left: '4px',
-                              background: 'rgba(0,0,0,0.85)',
-                              color: isPremActive ? '#d946ef' : '#94a3b8',
-                              padding: '2px 6px',
-                              borderRadius: '10px',
-                              fontSize: '0.8rem',
-                              zIndex: 7,
-                              border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            ✨
-                          </div>
-                        )}
 
                         <div
                           className="card-power"
@@ -1432,18 +1291,9 @@ export default function DeckEditorScreen({ switchScreen }) {
                           const imgUrl = getCardImgUrl
                             ? getCardImgUrl(template, true)
                             : '';
-                          const isPremUnlocked = unlockedPremium.includes(
-                            template.id
-                          );
-                          const isPremActive = (
-                            GameState.premiumCards || []
+                          const isShineActive = (
+                            GameState.shineCards || []
                           ).includes(template.id);
-                          const isShineUnlocked = checkIsShineUnlocked(
-                            template.id
-                          );
-                          const isShineActive =
-                            isShineUnlocked &&
-                            (GameState.shineCards || []).includes(template.id);
 
                           return (
                             <div
@@ -1496,80 +1346,6 @@ export default function DeckEditorScreen({ switchScreen }) {
                                 )}
 
                                 {isShineActive && <CardShineOverlay />}
-
-                                {/* シャイン切り替えボタン（プレミアムトグルボタンの上に配置） */}
-                                <div
-                                  className="shine-toggle-icon"
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                  onClick={(e) =>
-                                    handleToggleShine(e, template.id)
-                                  }
-                                  title={
-                                    !isShineUnlocked
-                                      ? 'シャイン未解放（クリックで解放）'
-                                      : isShineActive
-                                        ? 'シャインON'
-                                        : 'シャインOFF'
-                                  }
-                                  style={{
-                                    position: 'absolute',
-                                    top: '4px',
-                                    left: '4px',
-                                    background: 'rgba(0,0,0,0.85)',
-                                    color: isShineActive
-                                      ? '#facc15'
-                                      : isShineUnlocked
-                                        ? '#94a3b8'
-                                        : '#64748b',
-                                    padding: '2px 6px',
-                                    borderRadius: '10px',
-                                    fontSize: '0.8rem',
-                                    zIndex: 7,
-                                    border: `1px solid ${
-                                      isShineActive
-                                        ? '#facc15'
-                                        : isShineUnlocked
-                                          ? '#475569'
-                                          : '#334155'
-                                    }`,
-                                    opacity: isShineUnlocked ? 1 : 0.75,
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  🌟
-                                </div>
-
-                                {isPremUnlocked && (
-                                  <div
-                                    className="premium-toggle-icon"
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                    onClick={(e) =>
-                                      handleTogglePremium(e, template.id)
-                                    }
-                                    title={
-                                      isPremActive
-                                        ? 'プレミアムON'
-                                        : 'プレミアムOFF'
-                                    }
-                                    style={{
-                                      position: 'absolute',
-                                      top: '28px',
-                                      left: '4px',
-                                      background: 'rgba(0,0,0,0.85)',
-                                      color: isPremActive
-                                        ? '#d946ef'
-                                        : '#94a3b8',
-                                      padding: '2px 6px',
-                                      borderRadius: '10px',
-                                      fontSize: '0.8rem',
-                                      zIndex: 7,
-                                      border: `1px solid ${isPremActive ? '#d946ef' : '#475569'}`,
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    ✨
-                                  </div>
-                                )}
 
                                 <div
                                   className="card-power"

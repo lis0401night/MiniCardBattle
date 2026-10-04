@@ -21,15 +21,10 @@ import {
   MAX_CARD_COPIES,
 } from '../utils/constants/config.js';
 import {
-  checkIsShineUnlocked,
-  consumeShineTicket,
   getCardImgUrl,
-  getShineTicketsCount,
   hasActiveFilters,
   isTransitioning,
   playSound,
-  togglePremiumCard,
-  toggleShineCard,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -47,10 +42,7 @@ export default function CardListScreen() {
   const [masterCards, setMasterCards] = useState([]);
   const [ownedKindCount, setOwnedKindCount] = useState(0);
   const [inventory, setInventory] = useState({});
-  const [unlockedPremium, setUnlockedPremium] = useState([]);
-  const [activePremium, setActivePremium] = useState([]);
   const [activeShine, setActiveShine] = useState([]);
-  const [unlockedShine, setUnlockedShine] = useState([]);
 
   const {
     gridDensity,
@@ -207,10 +199,7 @@ export default function CardListScreen() {
     const _inventory = GameState.playerInventory || {};
     setInventory(_inventory);
 
-    setUnlockedPremium(GameState.unlockedPremiumCards || []);
-    setActivePremium(GameState.premiumCards || []);
     setActiveShine(GameState.shineCards || []);
-    setUnlockedShine(GameState.unlockedShineCards || []);
 
     let count = 0;
     _masterCards.forEach((template) => {
@@ -233,68 +222,6 @@ export default function CardListScreen() {
       setRenderCardListHook(null);
     };
   }, []);
-
-  /**
-   * カード一覧画面からプレミアム設定（ON/OFF）を切り替える。
-   *
-   * @param {Object} e - クリックイベントオブジェクト
-   * @param {string} templateId - 対象カードID
-   */
-  const handleTogglePremium = (e, templateId) => {
-    e.stopPropagation();
-    if (isTransitioning) return;
-    playSound?.(SOUNDS?.seClick);
-    togglePremiumCard?.(templateId, true); // カード一覧からは常にグローバル保存
-    updateList();
-  };
-
-  /**
-   * カード一覧画面からシャイン設定（ON/OFF）を切り替える。
-   * 未解放の場合はシャインチケットを1枚消費してシャイン化するか確認するモーダルを表示し、
-   * 解放済みの場合は通常のON/OFF切り替えを行います。
-   *
-   * @param {Object} e - クリックイベントオブジェクト
-   * @param {Object} template - 対象カードマスタオブジェクト
-   */
-  const handleToggleShine = (e, template) => {
-    e.stopPropagation();
-    if (isTransitioning) return;
-
-    const isUnlocked = checkIsShineUnlocked(template.id);
-    if (!isUnlocked) {
-      // 未解放の場合：シャインチケットの所持枚数を確認
-      const ticketCount = getShineTicketsCount();
-      if (ticketCount <= 0) {
-        playSound?.(SOUNDS?.seClick);
-        showAlertModal?.(
-          'シャインチケットが不足しています。\n共通交換所またはバトルパス報酬で獲得できます。'
-        );
-        return;
-      }
-
-      playSound?.(SOUNDS?.seClick);
-      showConfirmModal?.(
-        `シャインチケットを1枚消費して【${template.name}】をシャイン化しますか？\n（所持チケット: ${ticketCount}枚）`,
-        () => {
-          const success = consumeShineTicket(template.id);
-          if (success) {
-            playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
-            updateList();
-            showAlertModal?.(
-              `【${template.name}】をシャイン化しました！\n以後、🌟ボタンで自由にON/OFFを切り替えられます。`
-            );
-          } else {
-            showAlertModal?.('シャイン化の処理に失敗しました。');
-          }
-        }
-      );
-    } else {
-      // 解放済みの場合：ON/OFF切り替え
-      playSound?.(SOUNDS?.seClick);
-      toggleShineCard?.(template.id, true); // カード一覧からは常にグローバル保存
-      updateList();
-    }
-  };
 
   return (
     <CompactScreenLayout
@@ -438,12 +365,7 @@ export default function CardListScreen() {
                     : '';
                   const filter = template.filter || 'none';
 
-                  const hasPremiumUnlocked = unlockedPremium.includes(
-                    template.id
-                  );
-                  const isPremiumActive = activePremium.includes(template.id);
                   const isShineActive = activeShine.includes(template.id);
-                  const isShineUnlocked = unlockedShine.includes(template.id);
 
                   return (
                     <div
@@ -480,69 +402,6 @@ export default function CardListScreen() {
                         )}
 
                         {isShineActive && <CardShineOverlay />}
-
-                        {/* シャイン切り替えボタン（未解放時はタップで確認モーダル表示、解放後はON/OFF切り替え） */}
-                        <div
-                          className="shine-toggle-icon"
-                          onClick={(e) => handleToggleShine(e, template)}
-                          title={
-                            isShineUnlocked
-                              ? isShineActive
-                                ? 'シャインON'
-                                : 'シャインOFF'
-                              : 'シャイン未解放（タップでチケットを消費して解放）'
-                          }
-                          style={{
-                            position: 'absolute',
-                            top: '4px',
-                            left: '4px',
-                            background: 'rgba(0,0,0,0.85)',
-                            color: isShineUnlocked
-                              ? isShineActive
-                                ? '#facc15'
-                                : '#94a3b8'
-                              : '#64748b',
-                            padding: '2px 6px',
-                            borderRadius: '10px',
-                            fontSize: '0.8rem',
-                            zIndex: 7,
-                            border: `1px solid ${
-                              isShineUnlocked
-                                ? isShineActive
-                                  ? '#facc15'
-                                  : '#475569'
-                                : '#334155'
-                            }`,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          🌟
-                        </div>
-
-                        {hasPremiumUnlocked && (
-                          <div
-                            className="premium-toggle-icon"
-                            onClick={(e) => handleTogglePremium(e, template.id)}
-                            title={
-                              isPremiumActive ? 'プレミアムON' : 'プレミアムOFF'
-                            }
-                            style={{
-                              position: 'absolute',
-                              top: '28px',
-                              left: '4px',
-                              background: 'rgba(0,0,0,0.85)',
-                              color: isPremiumActive ? '#d946ef' : '#94a3b8',
-                              padding: '2px 6px',
-                              borderRadius: '10px',
-                              fontSize: '0.8rem',
-                              zIndex: 7,
-                              border: `1px solid ${isPremiumActive ? '#d946ef' : '#475569'}`,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            ✨
-                          </div>
-                        )}
 
                         <div
                           className="card-power"
