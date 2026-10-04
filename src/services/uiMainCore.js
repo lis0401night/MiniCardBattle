@@ -4,7 +4,11 @@ import {
   loadPlayerDeck,
 } from '../game/events.js';
 import { initTournamentMode } from '../game/tournament.js';
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getSkinImage,
+  applySkinToConfig,
+} from '../utils/constants/characters.js';
 import {
   DEFAULT_PLAYER_NAME,
   GAME_KEY_PREFIX,
@@ -1375,20 +1379,7 @@ export function applyPlayerConfigWithSkin(leaderId, skinId = 'default') {
   if (!templateChar) return;
 
   GameState.playerConfig = { ...templateChar };
-  if (typeof getSkinImage === 'function') {
-    GameState.playerConfig.image =
-      getSkinImage(templateChar, skinId, 'image') || templateChar.image;
-    GameState.playerConfig.imageLose =
-      getSkinImage(templateChar, skinId, 'imageLose') ||
-      templateChar.imageLose ||
-      templateChar.image;
-    GameState.playerConfig.icon =
-      getSkinImage(templateChar, skinId, 'icon') || templateChar.icon;
-    GameState.playerConfig.iconDamage =
-      getSkinImage(templateChar, skinId, 'iconDamage') ||
-      templateChar.iconDamage ||
-      templateChar.icon;
-  }
+  applySkinToConfig(GameState.playerConfig, skinId);
 }
 
 /**
@@ -1656,15 +1647,18 @@ export function confirmCharSelect() {
       }, 50);
     } else if (GameState.gameMode === 'defense_attack') {
       // 攻撃側：キャラクター選択後は対戦相手選択をスキップして即デッキ編成へ
-      GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+      GameState.playerConfig = { ...CHARACTERS[GameState.pendingCharId] };
+      applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
       startBattleFlow();
     } else if (GameState.gameMode === 'free') {
-      GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+      GameState.playerConfig = { ...CHARACTERS[GameState.pendingCharId] };
+      applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
       GameState.appState = 'select_stage';
       initStageSelectScreen();
       switchScreen('screen-stage-select');
     } else {
-      GameState.playerConfig = CHARACTERS[GameState.pendingCharId];
+      GameState.playerConfig = { ...CHARACTERS[GameState.pendingCharId] };
+      applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
       GameState.appState = 'select_enemy';
       initSelectScreen(false);
       switchScreen('screen-select');
@@ -1818,6 +1812,8 @@ export function confirmStageSelect(stageId) {
     performFadeTransition(() => {
       GameState.battleCount = 1;
       GameState.appState = 'pre_dialogue';
+      applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
+      applySkinToConfig(GameState.enemyConfig, GameState.enemySkins);
       GameState.dialogueQueue = [
         {
           speaker: 'enemy',
@@ -2056,4 +2052,33 @@ export function showOnlineLobby() {
   GameState.appState = 'lobby'; // バトル後のステータス残存による誤動作を防止
   setPlayerReadyOnly(false); // バトル終了後などにルームへ戻った際は準備完了状態を解除
   switchScreen('screen-online-lobby');
+}
+
+/**
+ * クイックマッチのレートランキング画面を表示し、BGMを再生します。
+ */
+export function showOnlineQuickRanking() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  switchScreen('screen-online-quick-ranking');
+}
+
+/**
+ * 解放済みバトルパス一覧メニュー画面を表示し、BGMを再生します。
+ */
+export function showBattlePassMenu() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  switchScreen('screen-battle-pass-menu');
+}
+
+/**
+ * 指定したバトルパスの達成状況画面を表示し、BGMを再生します。
+ * @param {string} [passId='battle_pass_vol1'] - 表示対象のバトルパスID
+ */
+export function showBattlePassProgress(passId = 'battle_pass_vol1') {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  GameState.activeBattlePassId = passId;
+  switchScreen('screen-battle-pass-progress');
 }

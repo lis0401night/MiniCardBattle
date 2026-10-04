@@ -1,4 +1,10 @@
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getSkinImage,
+  getLeaderDisplayNameInfo,
+  getStoredPlayerSkinId,
+  applySkinToConfig,
+} from '../utils/constants/characters.js';
 import { incrementStat } from '../utils/constants/achievements.js';
 import {
   getDialogue,
@@ -247,7 +253,11 @@ export function setupDialogueScreen() {
     GameState.appState === 'dungeon_talk_dialogue';
   const enemyConfig = GameState.enemyConfig;
 
-  let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
+  let playerSkinId =
+    GameState.playerSkins?.[GameState.playerConfig?.id] ||
+    GameState.playerConfig?.currentSkin ||
+    getStoredPlayerSkinId(GameState.playerConfig?.id) ||
+    'default';
   let enemySkinId =
     GameState.enemySkins && enemyConfig
       ? GameState.enemySkins[enemyConfig.id]
@@ -258,8 +268,15 @@ export function setupDialogueScreen() {
     enemySkinId = 'school';
   }
 
+  if (GameState.playerConfig) {
+    if (!GameState.playerSkins) GameState.playerSkins = {};
+    GameState.playerSkins[GameState.playerConfig.id] = playerSkinId;
+    applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
+  }
+
   let pLeftImg =
     getSkinImage(GameState.playerConfig, playerSkinId, 'image') ||
+    GameState.playerConfig?.image ||
     getCardImgUrl(GameState.playerConfig);
 
   let pRightImg = null;
@@ -487,9 +504,23 @@ export async function showNextDialogue(force = false) {
   }
 
   if (cur.speaker === 'player') {
+    let playerSkinId =
+      GameState.playerSkins?.[GameState.playerConfig?.id] ||
+      GameState.playerConfig?.currentSkin ||
+      getStoredPlayerSkinId(GameState.playerConfig?.id) ||
+      'default';
+    if (GameState.gameMode === 'tournament') {
+      playerSkinId = 'school';
+    }
+    const playerDisplayInfo = getLeaderDisplayNameInfo(
+      GameState.playerConfig,
+      playerSkinId
+    );
+
     window.currentDialogueData.speakerName =
       cur.speakerName ||
       GameState.playerConfig?.displayName ||
+      playerDisplayInfo.fullName ||
       GameState.playerConfig?.name;
     window.currentDialogueData.nameColor = GameState.playerConfig.color;
     window.currentDialogueData.leftActive = true;
@@ -498,10 +529,6 @@ export async function showNextDialogue(force = false) {
     window.currentDialogueData.boxBorderColor = GameState.playerConfig.color;
 
     if (window.currentDialogueData.centerMode && !cur.leftImage) {
-      let playerSkinId = GameState.playerSkins[GameState.playerConfig.id];
-      if (GameState.gameMode === 'tournament') {
-        playerSkinId = 'school';
-      }
       window.currentDialogueData.leftImage =
         getSkinImage(GameState.playerConfig, playerSkinId, 'image') ||
         GameState.playerConfig.image ||
@@ -529,8 +556,20 @@ export async function showNextDialogue(force = false) {
       };
     }
 
+    let enemySkinId = GameState.enemySkins
+      ? GameState.enemySkins[charConfig.id]
+      : 'default';
+    if (GameState.gameMode === 'tournament') {
+      enemySkinId = 'school';
+    }
+    const enemyDisplayInfo = getLeaderDisplayNameInfo(charConfig, enemySkinId);
+
     window.currentDialogueData.speakerName =
-      charConfig?.displayName || charConfig?.name || '';
+      cur.speakerName ||
+      charConfig?.displayName ||
+      enemyDisplayInfo.fullName ||
+      charConfig?.name ||
+      '';
     window.currentDialogueData.nameColor = charConfig.color;
     window.currentDialogueData.boxBorderColor = charConfig.color;
 

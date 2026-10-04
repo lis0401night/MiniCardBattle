@@ -33,9 +33,10 @@ import { incrementStat } from '../../utils/constants/achievements.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import {
   CHARACTERS,
-  getLeaderDisplayNameInfo,
   getSkinImage,
   getPlayerIconPath,
+  applySkinToConfig,
+  getStoredPlayerSkinId,
 } from '../../utils/constants/characters.js';
 import {
   AI_LEVEL,
@@ -240,28 +241,7 @@ function resolveStageAndBgm() {
   return { stageId, bgmKey };
 }
 
-/**
- * 指定した対戦者のConfigへ、選択中スキンの画像・敗北画像・アイコンを適用する。
- * @param {object} config - GameState.playerConfig または GameState.enemyConfig
- * @param {object} skinMap - GameState.playerSkins または GameState.enemySkins
- */
-function applySkinToConfig(config, skinMap) {
-  if (!config || !skinMap || !skinMap[config.id]) return;
-  if (typeof getSkinImage !== 'function') return;
-
-  const selSkin = skinMap[config.id];
-  const charObj = CHARACTERS[config.id] || config;
-  config.image = getSkinImage(charObj, selSkin, 'image') || charObj.image;
-  config.imageLose =
-    getSkinImage(charObj, selSkin, 'imageLose') ||
-    charObj.imageLose ||
-    charObj.image;
-  config.icon = getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
-  if (typeof getLeaderDisplayNameInfo === 'function') {
-    const displayInfo = getLeaderDisplayNameInfo(charObj, selSkin);
-    config.displayName = displayInfo.fullName;
-  }
-}
+export { applySkinToConfig };
 
 /**
  * 現在のゲームモードに応じて、プレイヤーと敵のスキンを同期する。
@@ -269,6 +249,12 @@ function applySkinToConfig(config, skinMap) {
  */
 function syncConfigSkins() {
   if (checkIsTutorialMode()) return;
+  if (!GameState.playerSkins && GameState.playerConfig?.id) {
+    const stored = getStoredPlayerSkinId(GameState.playerConfig.id);
+    if (stored) {
+      GameState.playerSkins = { [GameState.playerConfig.id]: stored };
+    }
+  }
   applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
   if (checkIsStoryMode() || checkIsFreeMode()) return;
   applySkinToConfig(GameState.enemyConfig, GameState.enemySkins);
@@ -739,9 +725,13 @@ export function initBattleState() {
       GameState.playerConfig.id &&
       CHARACTERS[GameState.playerConfig.id]
     ) {
-      // 各モード固有のカスタム設定（闘技祭での学園名、宮殿でのHP/スキル、オンラインのプレイマットなど）を退避
+      // 各モード固有のカスタム設定（闘技祭での学園名、宮殿でのHP/スキル、オンラインのプレイマット、スキン表示名など）を退避
       const savedPlayerProps = {
         name: GameState.playerConfig.name,
+        displayName: GameState.playerConfig.displayName,
+        characterName: GameState.playerConfig.characterName,
+        subtitle: GameState.playerConfig.subtitle,
+        currentSkin: GameState.playerConfig.currentSkin,
         hp: GameState.playerConfig.hp,
         leaderSkill: GameState.playerConfig.leaderSkill,
         playmat: GameState.playerConfig.playmat,
@@ -762,6 +752,10 @@ export function initBattleState() {
       // 各モード固有のカスタム設定（高難易度のHP/スキル/リーダースキル、防衛戦情報、影戦フラグ、闘技祭での学園名など）を退避
       const savedEnemyProps = {
         name: GameState.enemyConfig.name,
+        displayName: GameState.enemyConfig.displayName,
+        characterName: GameState.enemyConfig.characterName,
+        subtitle: GameState.enemyConfig.subtitle,
+        currentSkin: GameState.enemyConfig.currentSkin,
         hp: GameState.enemyConfig.hp,
         leaderSkill: GameState.enemyConfig.leaderSkill,
         isShadow: GameState.enemyConfig.isShadow,
@@ -781,50 +775,14 @@ export function initBattleState() {
       Object.assign(GameState.enemyConfig, savedEnemyProps);
     }
 
-    // --- JSON.stringifyによる初期化リセット後のスキン再適用（一瞬初期スキン画像に戻るチラつきを防止） ---
+    // --- JSON.stringifyによる初期化リセット後のスキン再適用（一瞬初期スキン画像に戻るチラつきを防止＆表示名・台詞の同期） ---
     // ※チュートリアルモードでは常にデフォルトスキンを使用するためスキン再適用をスキップする
-    if (
-      !checkIsTutorialMode() &&
-      GameState.playerConfig &&
-      GameState.playerSkins &&
-      GameState.playerSkins[GameState.playerConfig.id]
-    ) {
-      const selSkin = GameState.playerSkins[GameState.playerConfig.id];
-      const charObj =
-        CHARACTERS[GameState.playerConfig.id] || GameState.playerConfig;
-      if (typeof getSkinImage === 'function') {
-        GameState.playerConfig.image =
-          getSkinImage(charObj, selSkin, 'image') || charObj.image;
-        GameState.playerConfig.imageLose =
-          getSkinImage(charObj, selSkin, 'imageLose') ||
-          charObj.imageLose ||
-          charObj.image;
-        GameState.playerConfig.icon =
-          getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
-      }
+    if (!checkIsTutorialMode()) {
+      applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
     }
     // フリーバトル・ストーリー・チュートリアルは標準キャラクター画像を使用するため敵スキン自動同期を適用しない
-    if (
-      !checkIsTutorialMode() &&
-      !checkIsStoryMode() &&
-      !checkIsFreeMode() &&
-      GameState.enemyConfig &&
-      GameState.enemySkins &&
-      GameState.enemySkins[GameState.enemyConfig.id]
-    ) {
-      const selSkin = GameState.enemySkins[GameState.enemyConfig.id];
-      const charObj =
-        CHARACTERS[GameState.enemyConfig.id] || GameState.enemyConfig;
-      if (typeof getSkinImage === 'function') {
-        GameState.enemyConfig.image =
-          getSkinImage(charObj, selSkin, 'image') || charObj.image;
-        GameState.enemyConfig.imageLose =
-          getSkinImage(charObj, selSkin, 'imageLose') ||
-          charObj.imageLose ||
-          charObj.image;
-        GameState.enemyConfig.icon =
-          getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
-      }
+    if (!checkIsTutorialMode() && !checkIsStoryMode() && !checkIsFreeMode()) {
+      applySkinToConfig(GameState.enemyConfig, GameState.enemySkins);
     }
 
     let fortuneHPPlayerMod = 0;

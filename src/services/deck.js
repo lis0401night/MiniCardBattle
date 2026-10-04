@@ -7,7 +7,8 @@ import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   BOSS_CHARACTER_IDS,
   CHARACTERS,
-  getSkinImage,
+  applySkinToConfig,
+  getStoredPlayerSkinId,
 } from '../utils/constants/characters.js';
 import {
   DECKS_BACKUP_KEY,
@@ -84,34 +85,21 @@ export function migrateCardId(id) {
 }
 
 /**
- * デッキ固有のスキン設定から、現在のキャラクターに対応するスキン画像を
- * playerConfig に適用します（プレイヤースキンの適用）。
+ * デッキ固有のスキン設定から、現在のキャラクターに対応するスキン画像・表示名・台詞等を
+ * playerConfig に包括的に適用します（プレイヤースキンの適用）。
+ *
+ * @returns {void}
  */
 function applySkinToPlayerConfig() {
   if (GameState.playerConfig && GameState.playerConfig.id) {
     if (!GameState.playerSkins) GameState.playerSkins = {};
     const skinIdToUse =
-      GameState.playerSkins[GameState.playerConfig.id] || 'default';
-    // getSkinImage が関数として存在する場合のみ実行（後方互換性維持）
-    if (typeof getSkinImage === 'function') {
-      const templateChar = CHARACTERS[GameState.playerConfig.id];
-      if (templateChar) {
-        // スキンに対応する画像を取得、存在しない場合はテンプレート画像にフォールバック
-        GameState.playerConfig.image =
-          getSkinImage(templateChar, skinIdToUse, 'image') ||
-          templateChar.image;
-        GameState.playerConfig.imageLose =
-          getSkinImage(templateChar, skinIdToUse, 'imageLose') ||
-          templateChar.imageLose ||
-          templateChar.image;
-        GameState.playerConfig.icon =
-          getSkinImage(templateChar, skinIdToUse, 'icon') || templateChar.icon;
-        GameState.playerConfig.iconDamage =
-          getSkinImage(templateChar, skinIdToUse, 'iconDamage') ||
-          templateChar.iconDamage ||
-          templateChar.icon;
-      }
-    }
+      GameState.playerSkins[GameState.playerConfig.id] ||
+      GameState.playerConfig.currentSkin ||
+      getStoredPlayerSkinId(GameState.playerConfig.id) ||
+      'default';
+    GameState.playerSkins[GameState.playerConfig.id] = skinIdToUse;
+    applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
   }
 }
 

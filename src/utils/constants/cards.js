@@ -2081,7 +2081,7 @@ export const CARD_MASTER = [
     obtain: ['pack_1'],
     name: '光る毬藻',
     rarity: 2,
-    power: 5,
+    power: 7,
     skills: [
       { id: 'defender' },
       { id: 'stealth', value: 1 },

@@ -18,7 +18,9 @@ import {
   fetchPlayerDecks,
   syncModePoints,
   resolveFortuneMaxCostAutomata,
+  savePointsToServer,
 } from '../../utils/apiUtils.js';
+import { QUICK_RATING_KEY } from '../../utils/constants/battlePass.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import {
   CHALLENGE_POINTS_KEY,
@@ -124,6 +126,11 @@ export default function RankingScreen({
               syncMode = 'fortune';
             } else if (baseField?.includes('high_difficulty')) {
               syncMode = 'high_difficulty';
+            } else if (
+              baseField?.includes('quick') ||
+              baseField?.includes('rating')
+            ) {
+              syncMode = 'quick_rating';
             }
 
             if (syncMode && myData) {
@@ -154,6 +161,26 @@ export default function RankingScreen({
                   myData.high_difficulty_points = syncResult.points;
                   myData.high_difficulty_total_points = syncResult.totalPoints;
                 }
+              }
+
+              // クイックマッチレートのローカル・サーバー同期
+              const localQuickRating =
+                parseInt(localStorage.getItem(QUICK_RATING_KEY), 10) || 0;
+              const serverQuickRating = myData.quick_rating || 0;
+              const mergedRating = Math.max(
+                localQuickRating,
+                serverQuickRating
+              );
+              myData.quick_rating = mergedRating;
+              if (localQuickRating < mergedRating) {
+                localStorage.setItem(QUICK_RATING_KEY, String(mergedRating));
+              } else if (localQuickRating > serverQuickRating) {
+                savePointsToServer(
+                  'update_quick_rating.php',
+                  mergedRating,
+                  mergedRating,
+                  { quick_rating: mergedRating }
+                ).catch(() => {});
               }
             }
 
@@ -216,6 +243,8 @@ export default function RankingScreen({
                   localStorage.getItem(HIGH_DIFFICULTY_TOTAL_POINTS_KEY),
                   10
                 ) || 0;
+              const quickRatingPts =
+                parseInt(localStorage.getItem(QUICK_RATING_KEY), 10) || 0;
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
@@ -242,6 +271,14 @@ export default function RankingScreen({
               ) {
                 const res = await syncModePoints('high_difficulty', null);
                 hasCreated = Boolean(res);
+              } else if (syncMode === 'quick_rating' && quickRatingPts > 0) {
+                const res = await savePointsToServer(
+                  'update_quick_rating.php',
+                  quickRatingPts,
+                  quickRatingPts,
+                  { quick_rating: quickRatingPts }
+                ).catch(() => null);
+                hasCreated = Boolean(res?.success);
               }
 
               // 初回のみ仮想的な自分のレコードをソート用に追加（再読み込みを不要にするため）
@@ -271,6 +308,7 @@ export default function RankingScreen({
                   fortune_total_cost_valkyria: fortuneTotalCostValkyria,
                   high_difficulty_points: highDifficultyPts,
                   high_difficulty_total_points: highDifficultyTotalPts,
+                  quick_rating: quickRatingPts,
                 };
                 activePlayers.push(virtualPlayer);
               }

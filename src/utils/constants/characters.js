@@ -52,7 +52,7 @@ export const CHARACTERS = {
         valkyria:
           'アグニカ教圏の天使型戦闘種を検知。戦闘能力は高いですが、経験値データに矛盾あり。……新型でしょうか。迎撃します。',
         knight_assassin:
-          '対象、ギルド所属の暗殺者と確認。感情反応極小、極めて高い暗殺能力を検知。排除行動を開始します。',
+          '対象、ギルド所属の暗殺者と確認。感情反応極小、極めて高い奇襲能力を検知。戦闘プロトコルを開始します。',
       },
       win: {
         dragon: '熱源の鎮火を確認。',
@@ -140,7 +140,7 @@ export const CHARACTERS = {
         valkyria:
           'なんか偉そうな羽根つきが来たわね！ 天使だか戦乙女だか知らないけど、炎の勝負ならアタシが上に決まってるでしょ！',
         knight_assassin:
-          'なによあんた、ジトッとした目で見てんじゃないわよ！ 暗殺者だか何だか知らないけど、燃やされたいわけ！？',
+          'なによあんた、ジトッとした目で見てんじゃないわよ！ ギルドの暗殺者だか何だか知らないけど、燃やされたいわけ！？',
       },
       win: {
         android: 'ただのガラクタになっちゃったわね！',
@@ -228,7 +228,7 @@ export const CHARACTERS = {
         valkyria:
           'アグニカの戦乙女か。天界からの使者とあらば、その力、正面から受け止めよう。だが、その自信……少々過剰ではないかな？',
         knight_assassin:
-          'ギルドの暗殺者か……！ 聖なる光の下に、お前のような者の凶刃を通すわけにはいかない！',
+          'ギルドの暗殺者、レダ殿ですね。表と裏、道は違えど共に民を守る者同士。その研ぎ澄まされた刃、我が聖剣で正面から受け止めましょう！',
       },
       win: {
         android: '見事な剣筋だった。',
@@ -319,7 +319,7 @@ export const CHARACTERS = {
         valkyria:
           'あら、天界のお使いさん？ フフフ、エリートを気取っているけれど……その羽根、まだ生え揃ったばかりに見えますわよ？',
         knight_assassin:
-          'うふふ……暗がりに潜む殺し屋さんね。静かに近づいて息の根を止める……とても素敵な趣味ですわ。',
+          'うふふ……ギルドの影に潜む暗殺者さんね。静かに近づいて息の根を止める……とても素敵な趣味ですわ。',
       },
       win: {
         android: 'あら、壊れちゃいました。',
@@ -410,7 +410,7 @@ export const CHARACTERS = {
         valkyria:
           '天界から来た戦乙女……。あなたの翼からは、まだ故郷の風の匂いがする。……少し、羨ましいわ。',
         knight_assassin:
-          '足音が全く聞こえない……。気配を完全に消しているわ。相当な手練れの暗殺者ね……！',
+          '足音が全く聞こえない……。気配を完全に消しているわ。ギルド随一と呼ばれる手練れの暗殺者ね……！',
       },
       win: {
         android: '壊してしまって……ごめんなさい。',
@@ -500,7 +500,7 @@ export const CHARACTERS = {
         valkyria:
           'アグニカの戦乙女ですって？ アハハハ！ そんなマイナーな神の遣いが、この私に逆らうなんて身の程知らずもいいところね！',
         knight_assassin:
-          'あら、影に隠れて生きる哀れなネズミが一匹。神の裁きの光で、その汚らわしい刃ごと焼き払ってあげるわ！',
+          'あら、ギルドの影で蠢く仕事人さん？ 影に潜むお仕事も結構だけど、神の裁きの光の前ではどんな刃も隠せなくてよ！',
       },
       win: {
         android: 'ただの鉄くずには、祈りも必要ないわね。',
@@ -593,7 +593,7 @@ export const CHARACTERS = {
         valkyria:
           '天界の戦乙女ね。エリート気取ってるけど、その喋り方……新米丸出しよ。まあ、手加減はしないけど。',
         knight_assassin:
-          'ギルドの凄腕アサシンね。私を狙うなら依頼人を恨みな。アンタにぴったりの棺桶、用意してあるわ。',
+          'ギルドの凄腕アサシンね。お互い獲物を追う仕事人同士だけど、手合わせなら容赦はしないわよ。',
       },
       win: {
         android: 'ただのスクラップね。資源回収にでも回すわ。',
@@ -683,7 +683,7 @@ export const CHARACTERS = {
         valkyria:
           '天界の戦乙女ですか。次から次へと珍妙な人が出てきますね。……はぁ、面倒ですね。',
         knight_assassin:
-          'うわ、足音もなしに背後に立たないでください……！ 私、そういう物騒な殺し屋に狙われる筋合いなんてないんですけど！',
+          'うわ、足音もなしに背後に立たないでください……！ ギルドの依頼か何か知りませんけど、急に現れるのは心臓に悪いです！',
       },
       win: {
         android: 'はい、スクラップの出来上がり。先輩、片付けお願いしますね。',
@@ -1258,7 +1258,7 @@ export const CHARACTERS = {
         satan:
           'ま、魔王……！？ ふ、ふんっ、べ、別にビビってなんかないわよ！ 遂に会えたわね！覚悟しなさい！',
         knight_assassin:
-          'なんなのアンタ、陰気くさい顔して！ エリート戦乙女の首でも狙いに来たわけ！？ 返り討ちにしてあげる！',
+          'なんなのアンタ、音もなく現れて！ 地上のギルドってそんなに気配を消すのが得意なわけ！？ エリート戦乙女の実力、見せてあげるわ！',
       },
       win: {
         android:
@@ -1653,5 +1653,64 @@ export function getStoredPlayerSkinId(charId) {
     return parsed?.[charId] || null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * 指定した対戦者のConfigへ、選択中スキンの画像・敗北画像・アイコン・名前・台詞等を包括的に適用する。
+ * スキンの二つ名・名前・フルネーム（例: 'ギルドの暗殺者 レダ'）および専用台詞・前口上・ミラー口上を注入する。
+ *
+ * @param {Object} config - GameState.playerConfig または GameState.enemyConfig
+ * @param {Object|string} [skinMapOrSkinId] - GameState.playerSkins / GameState.enemySkins オブジェクト、または単一のスキンID文字列
+ * @returns {void}
+ */
+export function applySkinToConfig(config, skinMapOrSkinId) {
+  if (!config || !config.id) return;
+
+  const charObj = CHARACTERS[config.id] || config;
+  const selSkin =
+    typeof skinMapOrSkinId === 'string'
+      ? skinMapOrSkinId
+      : skinMapOrSkinId?.[config.id] ||
+        config.currentSkin ||
+        getStoredPlayerSkinId(config.id) ||
+        'default';
+
+  config.currentSkin = selSkin;
+  config.image = getSkinImage(charObj, selSkin, 'image') || charObj.image;
+  config.imageLose =
+    getSkinImage(charObj, selSkin, 'imageLose') ||
+    charObj.imageLose ||
+    charObj.image;
+  config.icon = getSkinImage(charObj, selSkin, 'icon') || charObj.icon;
+  config.iconDamage =
+    getSkinImage(charObj, selSkin, 'iconDamage') ||
+    charObj.iconDamage ||
+    charObj.icon;
+
+  const displayInfo = getLeaderDisplayNameInfo(charObj, selSkin);
+  config.displayName = displayInfo.fullName;
+  config.characterName = displayInfo.name;
+  config.subtitle = displayInfo.subtitle;
+
+  // スキン固有の台詞・前口上・ミラー口上の適用
+  const skinsObj = config.skins || charObj.skins;
+  if (skinsObj) {
+    const skinDef =
+      skinsObj[selSkin] ||
+      skinsObj[`${config.id}_${selSkin}`] ||
+      (selSkin.includes('_')
+        ? skinsObj[selSkin.split('_').slice(1).join('_')]
+        : null);
+    if (skinDef) {
+      if (skinDef.dialogue) config.dialogue = skinDef.dialogue;
+      if (skinDef.preBattleLine) config.preBattleLine = skinDef.preBattleLine;
+      if (skinDef.mirrorIntro) config.mirrorIntro = skinDef.mirrorIntro;
+    } else {
+      // スキン固有定義がない（'default'等）場合はベースキャラの台詞に戻す
+      if (charObj.dialogue) config.dialogue = charObj.dialogue;
+      if (charObj.preBattleLine) config.preBattleLine = charObj.preBattleLine;
+      if (charObj.mirrorIntro) config.mirrorIntro = charObj.mirrorIntro;
+    }
   }
 }

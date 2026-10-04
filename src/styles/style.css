@@ -136,7 +136,10 @@ body.is-preparing-battle::after {
 #screen-online-quick-rules,
 #screen-online-rules,
 #screen-online-search,
-#screen-online-lobby {
+#screen-online-lobby,
+#screen-online-quick-ranking,
+#screen-battle-pass-menu,
+#screen-battle-pass-progress {
   background-color: #0f172a;
   background-size: cover;
   background-position: center;

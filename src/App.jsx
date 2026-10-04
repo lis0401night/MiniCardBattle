@@ -43,6 +43,8 @@ import {
 } from './game/battle/index.js';
 import AchievementsScreen from './pages/AchievementsScreen.jsx';
 import BattleDungeonScreen from './pages/BattleDungeonScreen.jsx';
+import BattlePassMenuScreen from './pages/BattlePassMenuScreen.jsx';
+import BattlePassProgressScreen from './pages/BattlePassProgressScreen.jsx';
 import BattleScreen from './pages/BattleScreen.jsx';
 import CardListScreen from './pages/CardListScreen.jsx';
 import ChallengeExchangeScreen from './pages/ChallengeExchangeScreen.jsx';
@@ -67,6 +69,7 @@ import OnlineLobbyScreen from './pages/OnlineLobbyScreen.jsx';
 import OnlineMenuScreen from './pages/OnlineMenuScreen.jsx';
 import OnlineQuickMatchScreen from './pages/OnlineQuickMatchScreen.jsx';
 import OnlineQuickMatchingScreen from './pages/OnlineQuickMatchingScreen.jsx';
+import OnlineQuickRankingScreen from './pages/OnlineQuickRankingScreen.jsx';
 import OnlineQuickRulesScreen from './pages/OnlineQuickRulesScreen.jsx';
 import OnlineRoomMatchScreen from './pages/OnlineRoomMatchScreen.jsx';
 import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
@@ -205,6 +208,9 @@ const SCREEN_COMPONENTS = {
   'screen-online-rules': OnlineRulesScreen,
   'screen-online-search': OnlineRoomSearchScreen,
   'screen-online-lobby': OnlineLobbyScreen,
+  'screen-online-quick-ranking': OnlineQuickRankingScreen,
+  'screen-battle-pass-menu': BattlePassMenuScreen,
+  'screen-battle-pass-progress': BattlePassProgressScreen,
   'screen-continue': ContinueScreen,
   'screen-ending-illust': EndingScreen,
   'screen-debug-battle': DebugBattleScreen,

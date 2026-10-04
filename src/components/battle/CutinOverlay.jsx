@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameState } from '../../state/gameState.js';
-import { getSkinImage } from '../../utils/constants/characters.js';
+import {
+  getSkinImage,
+  getStoredPlayerSkinId,
+} from '../../utils/constants/characters.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import {
   checkIsTutorialMode,
@@ -102,10 +105,13 @@ export default function CutinOverlay() {
   const skinId = isBlue
     ? checkIsTutorialMode()
       ? 'default'
-      : GameState.playerSkins?.[config.id]
+      : GameState.playerSkins?.[config.id] ||
+        config.currentSkin ||
+        getStoredPlayerSkinId(config.id) ||
+        'default'
     : checkIsTutorialMode() || checkIsStoryMode() || checkIsFreeMode()
       ? 'default'
-      : GameState.enemySkins?.[config.id];
+      : GameState.enemySkins?.[config.id] || config.currentSkin || 'default';
 
   const rawImgSrc = getSkinImage(config, skinId, 'image');
   const charImgSrc = appendVersionQuery(rawImgSrc);

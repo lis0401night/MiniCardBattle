@@ -2,10 +2,10 @@ import MenuButton from '../components/common/MenuButton.jsx';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import {
   showOnlineMenu,
+  showOnlineQuickRanking,
   showOnlineQuickRules,
   startQuickMatchChallenge,
 } from '../services/uiMainCore.js';
-import { showAlertModal } from '../services/uiModals.js';
 
 /**
  * オンライン対戦 - クイックマッチ画面コンポーネント
@@ -24,10 +24,11 @@ export default function OnlineQuickMatchScreen() {
 
   /**
    * ランキングボタンクリック時のハンドラ
+   * クイックマッチのレートランキング画面へ遷移する
    * @returns {void}
    */
   const handleRankingClick = () => {
-    showAlertModal?.('クイックマッチのランキングは準備中です。');
+    showOnlineQuickRanking?.();
   };
 
   /**

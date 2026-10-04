@@ -38,6 +38,11 @@ import {
   getPackById,
 } from '../../utils/constants/packs.js';
 import {
+  BATTLE_PASS_MASTER,
+  getUnlockedBattlePasses,
+  unlockBattlePass,
+} from '../../utils/constants/battlePass.js';
+import {
   currentBgmAudio,
   getOrCreateUUID,
   playSound,
@@ -174,6 +179,10 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
   // プレイヤーの最新カードインベントリ
   const [inventory, setInventory] = useState(
     () => getLatestOwnership()?.inventory || {}
+  );
+  // 解放済みバトルパスIDリスト
+  const [unlockedBattlePasses, setUnlockedBattlePasses] = useState(() =>
+    getUnlockedBattlePasses()
   );
 
   /**
@@ -340,21 +349,83 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
     [isOpening, currentPoints, totalPoints]
   );
 
-  // 共通交換所ラインナップ
-  const lineup = useMemo(
-    () =>
-      PACK_MASTER.map((pack) => ({
-        id: pack.id,
-        type: 'pack',
-        cost: pack.cost,
-        name: pack.name,
-        description: pack.description,
-        coverCardId: pack.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
-        logoUrl: pack.logoUrl,
-        packObj: pack,
-      })),
-    []
+  /**
+   * バトルパス交換・解放処理ハンドラ
+   * 共通ポイントを消費してバトルパスを解放し、LocalStorageおよびサーバーへ同期します。
+   *
+   * @param {Object} item - 交換対象のバトルパスアイテム定義オブジェクト
+   */
+  const handleExchangeBattlePass = useCallback(
+    (item) => {
+      const passId = item.id;
+      const cost = item.cost ?? 30;
+
+      // 既に解放済みか判定
+      if (unlockedBattlePasses.includes(passId)) {
+        showAlertModal('このバトルパスは既に解放済みです。');
+        return;
+      }
+
+      // ポイント残高チェック
+      if (currentPoints < cost) {
+        showAlertModal('ポイントが不足しています。');
+        return;
+      }
+
+      showConfirmModal(
+        `共通ポイント ${cost} Pt を消費して【${item.name}】を解放しますか？`,
+        () => {
+          try {
+            // ポイント減算
+            const newCurrent = Math.max(0, currentPoints - cost);
+            setCurrentPoints(newCurrent);
+            localStorage.setItem(COMMON_POINTS_KEY, String(newCurrent));
+            savePointsToServer(
+              'update_common_points.php',
+              newCurrent,
+              totalPoints
+            );
+
+            // バトルパス解放
+            unlockBattlePass(passId);
+            setUnlockedBattlePasses(getUnlockedBattlePasses());
+
+            playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seCardPlace);
+            showAlertModal(
+              `【${item.name}】を解放しました！\nクイックマッチで勝利してポイントを集めましょう！`
+            );
+          } catch (err) {
+            console.error('[CommonExchange] バトルパス解放エラー:', err);
+            showAlertModal('バトルパスの解放中にエラーが発生しました。');
+          }
+        }
+      );
+    },
+    [unlockedBattlePasses, currentPoints, totalPoints]
   );
+
+  // 共通交換所ラインナップ（拡張パック + バトルパス）
+  const lineup = useMemo(() => {
+    const packItems = PACK_MASTER.map((pack) => ({
+      id: pack.id,
+      type: 'pack',
+      cost: pack.cost,
+      name: pack.name,
+      description: pack.description,
+      coverCardId: pack.coverCardId || DEFAULT_PACK_COVER_CARD_ID,
+      logoUrl: pack.logoUrl,
+      packObj: pack,
+    }));
+    const passItems = BATTLE_PASS_MASTER.map((pass) => ({
+      id: pass.id,
+      type: 'battle_pass',
+      cost: pass.cost,
+      name: pass.name,
+      description: pass.description,
+      passObj: pass,
+    }));
+    return [...packItems, ...passItems];
+  }, []);
 
   return (
     <>
@@ -526,26 +597,31 @@ function CommonExchangeTabContent({ tabConfig, onMountDebugGrant }) {
             </div>
           </div>
 
-          {/* 拡張パック */}
+          {/* 交換ラインナップアイテム（バトルパス・拡張パック） */}
           {lineup.map((item) => (
             <ExchangeItemCard
               key={`${item.type}_${item.id}`}
               item={item}
               currentPoints={currentPoints}
               inventory={inventory}
+              unlockedBattlePasses={unlockedBattlePasses}
               onExchange={(clickedItem) => {
                 const target = clickedItem || item;
-                const pack =
-                  target.packObj ||
-                  getPackById(target.packId || target.id || target) ||
-                  PACK_MASTER[0];
-                setQuantityModalItem({
-                  ...pack,
-                  ...target,
-                  type: 'pack',
-                  packObj: pack,
-                  cost: target.cost ?? pack.cost ?? PACK_EXCHANGE_COST,
-                });
+                if (target.type === 'battle_pass') {
+                  handleExchangeBattlePass(target);
+                } else {
+                  const pack =
+                    target.packObj ||
+                    getPackById(target.packId || target.id || target) ||
+                    PACK_MASTER[0];
+                  setQuantityModalItem({
+                    ...pack,
+                    ...target,
+                    type: 'pack',
+                    packObj: pack,
+                    cost: target.cost ?? pack.cost ?? PACK_EXCHANGE_COST,
+                  });
+                }
               }}
             />
           ))}

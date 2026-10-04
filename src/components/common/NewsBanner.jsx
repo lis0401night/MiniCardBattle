@@ -64,6 +64,9 @@ const ALLOWED_SHORTCUTS = [
   'screen-online-rules',
   'screen-online-search',
   'screen-online-lobby',
+  'screen-online-quick-ranking',
+  'screen-battle-pass-menu',
+  'screen-battle-pass-progress',
   'screen-continue',
   'screen-ending-illust',
 ];

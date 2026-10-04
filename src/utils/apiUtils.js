@@ -102,6 +102,50 @@ export async function savePointsToServer(
 }
 
 /**
+ * プレイヤーのクイックマッチレートをサーバーへ同期・送信します。
+ * クイックマッチ勝利時に呼び出され、ランキング表示用としてサーバーに記録されます。
+ *
+ * @param {number} rating - 更新後のクイックマッチレート
+ * @returns {Promise<boolean>} 送信成功したかどうか
+ */
+export async function saveQuickRatingToServer(rating) {
+  try {
+    const uuid = getOrCreateUUID?.();
+    if (!uuid) return false;
+
+    const playerName = resolvePlayerName();
+
+    const result = await asyncPost(
+      'update_quick_rating.php',
+      {
+        uuid: uuid,
+        name: playerName,
+        quick_rating: rating,
+      },
+      {
+        timeout: DEFAULT_API_TIMEOUT_MS,
+        keepalive: true,
+      }
+    );
+
+    if (!result || !result.success) {
+      console.error(
+        'サーバーへのクイックマッチレート同期が失敗しました:',
+        result?.error || 'Unknown error'
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(
+      'サーバーへのクイックマッチレート同期で通信エラーが発生しました:',
+      err
+    );
+    return false;
+  }
+}
+
+/**
  * 全プレイヤーのデッキ・プロフィールデータをサーバーから取得します（キャッシュ対策パラメータ付き）。
  *
  * @returns {Promise<Object>} APIレスポンスオブジェクト

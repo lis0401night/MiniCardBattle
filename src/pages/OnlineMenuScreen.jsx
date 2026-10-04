@@ -4,13 +4,14 @@ import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { checkHasPublicWaitingRooms } from '../services/multiplayer.js';
 import {
   goToModeSelect,
+  showBattlePassMenu,
   showOnlineQuickMatch,
   showOnlineRoomMatch,
 } from '../services/uiMainCore.js';
 
 /**
  * オンライン対戦メニュー画面コンポーネント
- * 「クイックマッチ」および「ルームマッチ」のモード選択メニューを提供する。
+ * 「クイックマッチ」「ルームマッチ」および「バトルパス」のモード選択メニューを提供する。
  * @returns {import('react').ReactElement} オンラインメニュー画面
  */
 export default function OnlineMenuScreen() {
@@ -78,10 +79,19 @@ export default function OnlineMenuScreen() {
     showOnlineRoomMatch?.();
   };
 
+  /**
+   * バトルパスボタンクリック時のハンドラ
+   * 解放済みバトルパス一覧画面へ遷移する
+   * @returns {void}
+   */
+  const handleBattlePassClick = () => {
+    showBattlePassMenu?.();
+  };
+
   return (
     <ScreenLayout
       id="screen-online-menu"
-      title="オンライン対戦"
+      title="オンライン"
       titleColor="#38bdf8"
       titleGlow={true}
       backgroundImage="background_online.webp"
@@ -107,6 +117,15 @@ export default function OnlineMenuScreen() {
           }}
           onClick={handleRoomMatchClick}
           notificationBadge={hasWaitingPublicRooms}
+        />
+
+        {/* バトルパスボタン */}
+        <MenuImageButton
+          label="バトルパス"
+          style={{
+            background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+          }}
+          onClick={handleBattlePassClick}
         />
       </div>
     </ScreenLayout>

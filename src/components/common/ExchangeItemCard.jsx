@@ -43,6 +43,7 @@ export default function ExchangeItemCard({
   unlockedPlaymats = [],
   unlockedIcons = [],
   unlockedPremium = [],
+  unlockedBattlePasses = [],
   onExchange,
 }) {
   const isCard = item.type === 'card';
@@ -50,6 +51,7 @@ export default function ExchangeItemCard({
   const isPlaymat = item.type === 'playmat';
   const isIcon = item.type === 'icon';
   const isPack = item.type === 'pack';
+  const isBattlePass = item.type === 'battle_pass';
 
   // アンロック/最大所持状態の判定（パックは全封入カードが上限カンストしている場合に最大到達）
   let isUnlocked = false;
@@ -76,6 +78,8 @@ export default function ExchangeItemCard({
     isUnlocked = unlockedPlaymats.includes(item.id);
   } else if (isIcon) {
     isUnlocked = unlockedIcons.includes(item.id);
+  } else if (isBattlePass) {
+    isUnlocked = unlockedBattlePasses.includes(item.id) || !!item.isUnlocked;
   } else {
     isUnlocked = unlockedSkins.includes(item.id);
   }
@@ -104,7 +108,12 @@ export default function ExchangeItemCard({
   let displayName = item.name;
   let displayDesc = item.description;
 
-  if (isPack) {
+  if (isBattlePass) {
+    displayName = item.name || 'バトルパス.vol1';
+    displayDesc =
+      item.description ||
+      'クイックマッチで勝利してポイントを貯め、様々な報酬を獲得できるシーズンパス。';
+  } else if (isPack) {
     displayName = item.name || 'vol01:ビギニング';
     displayDesc = item.description || '';
   } else if (isCard || isPremium) {
@@ -154,17 +163,19 @@ export default function ExchangeItemCard({
   imgUrl = appendVersionQuery(imgUrl);
   originalImgUrl = appendVersionQuery(originalImgUrl);
 
-  const displayTypeLabel = isPack
-    ? 'パック'
-    : isCard
-      ? 'カード'
-      : isPremium
-        ? 'プレミアム特典'
-        : isPlaymat
-          ? 'プレイマット'
-          : isIcon
-            ? 'アイコン'
-            : 'スキン';
+  const displayTypeLabel = isBattlePass
+    ? 'バトルパス'
+    : isPack
+      ? 'パック'
+      : isCard
+        ? 'カード'
+        : isPremium
+          ? 'プレミアム特典'
+          : isPlaymat
+            ? 'プレイマット'
+            : isIcon
+              ? 'アイコン'
+              : 'スキン';
 
   /**
    * アイテムカードクリック時の詳細モーダル表示処理
@@ -225,10 +236,92 @@ export default function ExchangeItemCard({
         className={`card blue${rarityClass}`}
         style={{
           backgroundColor:
-            isPlaymat || isIcon || isPack ? '#0f172a' : undefined,
+            isPlaymat || isIcon || isPack || isBattlePass
+              ? '#0f172a'
+              : undefined,
         }}
       >
-        {isPack ? (
+        {isBattlePass ? (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 4px',
+              boxSizing: 'border-box',
+              position: 'relative',
+              textAlign: 'center',
+            }}
+          >
+            {/* 上部バッジ */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '4px',
+                left: '4px',
+                background: isUnlocked ? '#64748b' : 'rgba(245, 158, 11, 0.95)',
+                color: '#000000',
+                padding: '1px 6px',
+                borderRadius: '10px',
+                fontWeight: 'bold',
+                fontSize: '0.65rem',
+                zIndex: 2,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+              }}
+            >
+              {isUnlocked ? '解放済' : 'PASS'}
+            </div>
+
+            {/* アイコン */}
+            <div
+              style={{
+                fontSize: '2.4rem',
+                marginBottom: '4px',
+                filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.7))',
+                lineHeight: 1,
+                zIndex: 1,
+              }}
+            >
+              🎟️
+            </div>
+
+            {/* タイトル */}
+            <div
+              style={{
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                color: '#fbbf24',
+                marginBottom: '4px',
+                textShadow: '0 1px 4px rgba(0, 0, 0, 0.8)',
+                zIndex: 1,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {displayName}
+            </div>
+
+            {/* コスト / 解放状態 */}
+            <div
+              style={{
+                padding: '2px 8px',
+                background: isUnlocked
+                  ? '#334155'
+                  : 'linear-gradient(45deg, #f59e0b, #d97706)',
+                color: isUnlocked ? '#94a3b8' : '#000000',
+                borderRadius: '12px',
+                fontSize: '0.7rem',
+                fontWeight: 'bold',
+                zIndex: 1,
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+              }}
+            >
+              {isUnlocked ? '解放済み' : `${item.cost} Pt`}
+            </div>
+          </div>
+        ) : isPack ? (
           <PackCoverImage
             coverCardId={
               item.coverCardId ||

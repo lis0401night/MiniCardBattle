@@ -60,6 +60,7 @@ import {
   getLeaderDisplayNameInfo,
   getPlayerIconPath,
   getSkinImage,
+  applySkinToConfig,
 } from '../utils/constants/characters.js';
 import {
   ownedPlaymats,
@@ -734,21 +735,7 @@ const syncPlayerConfigImages = (charDetailData, skinId) => {
     GameState.playerConfig &&
     GameState.playerConfig.id === charDetailData.id
   ) {
-    const charObj =
-      Object.values(CHARACTERS || {}).find((c) => c.id === charDetailData.id) ||
-      charDetailData;
-    GameState.playerConfig.image =
-      getSkinImage(charObj, skinId, 'image') || charObj.image;
-    GameState.playerConfig.imageLose =
-      getSkinImage(charObj, skinId, 'imageLose') ||
-      charObj.imageLose ||
-      charObj.image;
-    GameState.playerConfig.icon =
-      getSkinImage(charObj, skinId, 'icon') || charObj.icon;
-    GameState.playerConfig.iconDamage =
-      getSkinImage(charObj, skinId, 'iconDamage') ||
-      charObj.iconDamage ||
-      charObj.icon;
+    applySkinToConfig(GameState.playerConfig, skinId);
   }
 };
 

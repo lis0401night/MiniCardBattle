@@ -353,6 +353,21 @@ export function getDialogue(
     }
   }
 
+  // スキンオブジェクトの安全な解決（キー揺らぎ・CHARACTERS定義フォールバック対応）
+  const resolveSkinDef = (cfg, sId) => {
+    if (!cfg || !sId || sId === 'default') return null;
+    const baseChar = (cfg.id && CHARACTERS[cfg.id]) || cfg;
+    const skinsObj = cfg.skins || baseChar.skins;
+    if (!skinsObj) return null;
+    return (
+      skinsObj[sId] ||
+      skinsObj[`${cfg.id}_${sId}`] ||
+      (sId.includes('_') ? skinsObj[sId.split('_').slice(1).join('_')] : null)
+    );
+  };
+
+  const speakerSkinDef = resolveSkinDef(speakerConfig, skinId);
+
   // 同キャラ・同スキン（ミラーマッチ）時のイントロ処理
   if (
     type === 'intro' &&
@@ -361,25 +376,16 @@ export function getDialogue(
     skinId === targetSkinId
   ) {
     // スキンに固有の mirrorIntro があれば最優先
-    const skinObj =
-      skinId !== 'default' &&
-      speakerConfig.skins &&
-      speakerConfig.skins[skinId];
-    if (skinObj?.mirrorIntro) {
-      return skinObj.mirrorIntro;
+    if (speakerSkinDef?.mirrorIntro) {
+      return speakerSkinDef.mirrorIntro;
     }
     if (speakerConfig.mirrorIntro) {
       return speakerConfig.mirrorIntro;
     }
   }
 
-  if (
-    skinId !== 'default' &&
-    speakerConfig.skins &&
-    speakerConfig.skins[skinId] &&
-    speakerConfig.skins[skinId].dialogue
-  ) {
-    const skinEntry = speakerConfig.skins[skinId].dialogue[type];
+  if (speakerSkinDef && speakerSkinDef.dialogue) {
+    const skinEntry = speakerSkinDef.dialogue[type];
     const skinText = resolveDialogueText(
       skinEntry,
       type,

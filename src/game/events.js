@@ -1,4 +1,8 @@
-import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  getSkinImage,
+  getStoredPlayerSkinId,
+} from '../utils/constants/characters.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
 import { EVENT_DIALOGUES } from '../utils/constants/eventDialogues.js';
 import { EVENT_FORTUNE_DIALOGUES } from '../utils/constants/eventFortuneDialogues.js';
@@ -13,6 +17,7 @@ import {
 } from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
 import { startPreparedBattle } from './progression.js';
+import { applySkinToConfig } from './battle/battleInit.js';
 
 /**
  * 汎用：高難易度イベントの初期化（サタン含む全高難易度キャラ共通）
@@ -65,7 +70,12 @@ export function initHighDifficultyEventMode(playerCharId, enemyCharId) {
   const playerSkinId =
     GameState.playerSkins?.[playerCharId] ||
     GameState.playerConfig?.currentSkin ||
+    getStoredPlayerSkinId(playerCharId) ||
     'default';
+  if (!GameState.playerSkins) GameState.playerSkins = {};
+  GameState.playerSkins[playerCharId] = playerSkinId;
+  applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
+
   const skinKey =
     playerSkinId !== 'default' ? `${playerCharId}_${playerSkinId}` : null;
 
@@ -114,7 +124,12 @@ export function initFortuneEventMode(playerCharId, enemyCharId) {
   const fortuneSkinId =
     GameState.playerSkins?.[playerCharId] ||
     GameState.playerConfig?.currentSkin ||
+    getStoredPlayerSkinId(playerCharId) ||
     'default';
+  if (!GameState.playerSkins) GameState.playerSkins = {};
+  GameState.playerSkins[playerCharId] = fortuneSkinId;
+  applySkinToConfig(GameState.playerConfig, GameState.playerSkins);
+
   const fortuneSkinKey =
     fortuneSkinId !== 'default' ? `${playerCharId}_${fortuneSkinId}` : null;
 
@@ -212,11 +227,18 @@ export function setupEventConfrontation() {
   if (dialogs[5]) {
     confrontationLines.push({ ...dialogs[5] });
   } else {
+    const baseChar = CHARACTERS[charId] || GameState.playerConfig;
+    const skinsObj = GameState.playerConfig?.skins || baseChar?.skins;
     const skinDef =
       confrontationSkinId !== 'default' &&
-      GameState.playerConfig?.skins?.[confrontationSkinId];
+      skinsObj &&
+      (skinsObj[confrontationSkinId] ||
+        skinsObj[`${charId}_${confrontationSkinId}`] ||
+        (confrontationSkinId.includes('_')
+          ? skinsObj[confrontationSkinId.split('_').slice(1).join('_')]
+          : null));
     const fallbackLine =
-      skinDef?.preBattleLine || GameState.playerConfig.preBattleLine;
+      skinDef?.preBattleLine || GameState.playerConfig?.preBattleLine;
     if (fallbackLine) {
       confrontationLines.push({
         speaker: 'player',

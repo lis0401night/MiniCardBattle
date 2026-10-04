@@ -69,6 +69,7 @@ import {
   showPointAcquisitionModal,
 } from '../../services/uiModals.js';
 import { recordDailyMissionWin } from '../../services/dailyMissions.js';
+import { recordQuickMatchWin } from '../../utils/constants/battlePass.js';
 import { showDefenseBattleList } from '../../services/uiMainCore.js';
 import {
   DEFENSE_POINTS_KEY,
@@ -864,6 +865,13 @@ export function endBattle() {
       GameState.onlineSubMode === 'quick')
   ) {
     incrementStat('quickWins');
+    // クイックマッチ勝利時のバトルパスポイント加算およびレート加算
+    try {
+      const isCpu = GameState.gameMode === 'online_quick_cpu';
+      recordQuickMatchWin(isCpu);
+    } catch (e) {
+      console.warn('[BattleResult] recordQuickMatchWin failed:', e);
+    }
   }
 
   // デイリーミッション進捗記録（防衛戦・試練の宮殿・夢幻の闘技祭）
