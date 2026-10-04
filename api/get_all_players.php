@@ -18,8 +18,12 @@ $players = loadAllPlayers(true);
 // 全体対戦ログ (api/decks/recent_battles.json) の読み込み（共有ロック付き）
 $recentBattles = loadRecentBattles();
 
+// クイックマッチ対戦ログ (api/decks/recent_quick_battles.json) の読み込み（共有ロック付き）
+$recentQuickBattles = loadRecentQuickBattles();
+
 echo json_encode([
     'success' => true,
     'players' => $players,
     'recent_battles' => $recentBattles,
+    'recent_quick_battles' => $recentQuickBattles,
 ]);

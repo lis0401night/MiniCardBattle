@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { filterDiscardSelectionSubmit } from '../game/tutorialEngine.js';
 import {
@@ -13,15 +13,15 @@ import {
   renderCardList,
   setCloseCardPreviewHook,
   setOpenCardPreviewHook,
+  setShowBattlePassAcquisitionModalHook,
   setShowCardAcquisitionModalHook,
   setShowCharacterAcquisitionModalHook,
   setShowIconAcquisitionModalHook,
+  setShowItemAcquisitionModalHook,
   setShowPlaymatAcquisitionModalHook,
   setShowPremiumAcquisitionModalHook,
   setShowSkinAcquisitionModalHook,
   setShowStageAcquisitionModalHook,
-  setShowBattlePassAcquisitionModalHook,
-  setShowItemAcquisitionModalHook,
 } from '../services/uiGallery.js';
 import {
   backupDataToXML,
@@ -41,6 +41,10 @@ import {
 } from '../services/uiModals.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import {
+  BATTLE_PASS_MASTER,
+  getBattlePassById,
+} from '../utils/constants/battlePass.js';
+import {
   appendVersionQuery,
   DEFAULT_PLAYER_ICON,
   DEFAULT_PLAYER_NAME,
@@ -48,18 +52,15 @@ import {
   PROFILE_NAME_KEY,
 } from '../utils/constants/config.js';
 import { DEFAULT_PACK_COVER_CARD_ID } from '../utils/constants/packs.js';
-import {
-  BATTLE_PASS_MASTER,
-  getBattlePassById,
-} from '../utils/constants/battlePass.js';
 
 import { AVAILABLE_ICONS, EXTRA_ICONS } from '../utils/constants/avatars.js';
-import { STAGES, getStageImgUrl } from '../utils/constants/stages.js';
+import { getStageImgUrl, STAGES } from '../utils/constants/stages.js';
 
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { getLatestOwnership, syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
+  applySkinToConfig,
   BOSS_CHARACTER_IDS,
   canShowUnlockableCharacter,
   CHARACTERS,
@@ -67,12 +68,11 @@ import {
   getLeaderDisplayNameInfo,
   getPlayerIconPath,
   getSkinImage,
-  applySkinToConfig,
 } from '../utils/constants/characters.js';
 import {
+  getPlaymatImgUrl,
   ownedPlaymats,
   PLAYMAT_MASTER,
-  getPlaymatImgUrl,
 } from '../utils/constants/playmats.js';
 import { SKILLS } from '../utils/constants/skills.js';
 import {
@@ -92,6 +92,7 @@ import {
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
+import CardShineOverlay from './common/CardShineOverlay.jsx';
 
 const EXCHANGE_DISPLAY_TYPE_LABELS = {
   playmat: 'プレイマット',
@@ -163,6 +164,12 @@ function resolveSkinImageById(id) {
 
 /**
  * お気に入りカード選択一覧における対象カードのプレミアム状態を判定するヘルパー関数
+ * @param {string} cardId - カードID
+ * @param {boolean} hasPremiumUnlocked - プレミアム解放済みフラグ
+ * @param {Object} favCardPremiumMap - モーダル内ローカルプレミアム状態マップ
+ * @param {Object|null} favoriteCardState - 現在選択中のお気に入りカード情報
+ * @param {Array<string>} globalPremiumCards - グローバルプレミアム所持カード配列
+ * @returns {boolean} プレミアム有効状態
  */
 function determineIsCardPremium(
   cardId,
@@ -189,7 +196,42 @@ function determineIsCardPremium(
 }
 
 /**
- * favorite_card / favoriteCard のキー表記揺れや文字列/オブジェクト形式を統一オブジェクト { cardId, isPremium } に正規化するヘルパー関数
+ * お気に入りカード選択一覧における対象カードのシャイン状態を判定するヘルパー関数
+ * @param {string} cardId - カードID
+ * @param {boolean} hasShineUnlocked - シャイン解放済みフラグ
+ * @param {Object} favCardShineMap - モーダル内ローカルシャイン状態マップ
+ * @param {Object|null} favoriteCardState - 現在選択中のお気に入りカード情報
+ * @param {Array<string>} globalShineCards - グローバルシャイン有効カード配列
+ * @returns {boolean} シャイン有効状態
+ */
+function determineIsCardShine(
+  cardId,
+  hasShineUnlocked,
+  favCardShineMap,
+  favoriteCardState,
+  globalShineCards
+) {
+  // シャインが解禁されていないカードは常に通常版 (false)
+  if (!hasShineUnlocked) return false;
+
+  // モーダル内でユーザーが手動切り替えした状態があれば最優先
+  if (favCardShineMap && favCardShineMap[cardId] !== undefined) {
+    return !!favCardShineMap[cardId];
+  }
+
+  // 現在選択中のお気に入りカードの設定状態
+  if (favoriteCardState?.cardId === cardId) {
+    return !!favoriteCardState?.isShine;
+  }
+
+  // グローバルのシャインカード設定を参照
+  return (globalShineCards || []).includes(cardId);
+}
+
+/**
+ * favorite_card / favoriteCard のキー表記揺れや文字列/オブジェクト形式を統一オブジェクト { cardId, isPremium, isShine } に正規化するヘルパー関数
+ * @param {string|Object|null} input - 入力カード情報
+ * @returns {{cardId: string, isPremium: boolean, isShine: boolean}|null} 正規化されたお気に入りカードオブジェクト
  */
 function normalizeFavoriteCard(input) {
   if (!input) return null;
@@ -212,10 +254,10 @@ function normalizeFavoriteCard(input) {
       try {
         raw = JSON.parse(trimmed);
       } catch {
-        return { cardId: trimmed, isPremium: false };
+        return { cardId: trimmed, isPremium: false, isShine: false };
       }
     } else {
-      return { cardId: trimmed, isPremium: false };
+      return { cardId: trimmed, isPremium: false, isShine: false };
     }
   }
 
@@ -225,6 +267,7 @@ function normalizeFavoriteCard(input) {
     return {
       cardId: String(cardId),
       isPremium: !!(raw.isPremium || raw.is_premium),
+      isShine: !!(raw.isShine || raw.is_shine),
     };
   }
 
@@ -233,6 +276,11 @@ function normalizeFavoriteCard(input) {
 
 /**
  * プロフィール画面でのお気に入りカード表示用コンポーネント (DRY共通化)
+ * @param {Object} props - プロパティ
+ * @param {Object|string|null} props.favoriteCard - お気に入りカード情報
+ * @param {Function} [props.onClick] - クリックハンドラー
+ * @param {string} [props.placeholderText='お気に入りカード未設定'] - 未設定時のプレースホルダー文字列
+ * @returns {JSX.Element} お気に入りカード表示コンポーネント
  */
 function FavoriteCardDisplay({
   favoriteCard,
@@ -246,6 +294,7 @@ function FavoriteCardDisplay({
       ? ` rarity-${masterCard.rarity}`
       : '';
     const isPremium = !!fav.isPremium;
+    const isShine = !!fav.isShine;
 
     return (
       <div
@@ -271,6 +320,7 @@ function FavoriteCardDisplay({
             src={getCardImgUrl({
               id: fav.cardId,
               isPremium: isPremium,
+              isShine: isShine,
             })}
             alt="Favorite Card"
             style={{
@@ -279,6 +329,7 @@ function FavoriteCardDisplay({
               height: '100%',
             }}
           />
+          {isShine && <CardShineOverlay />}
         </div>
       </div>
     );
@@ -326,6 +377,8 @@ const FAV_CARD_ASPECT_RATIO = 1.5;
  * @param {Array<Object>} props.ownedMasterCards - プレイヤー所持カード配列
  * @param {Object} props.favCardPremiumMap - プレミアム表示状態マップ
  * @param {Function} props.setFavCardPremiumMap - プレミアム表示状態更新関数
+ * @param {Object} props.favCardShineMap - シャイン表示状態マップ
+ * @param {Function} props.setFavCardShineMap - シャイン表示状態更新関数
  * @returns {JSX.Element|null}
  */
 function FavoriteCardSelectionModal({
@@ -336,6 +389,8 @@ function FavoriteCardSelectionModal({
   ownedMasterCards,
   favCardPremiumMap,
   setFavCardPremiumMap,
+  favCardShineMap,
+  setFavCardShineMap,
 }) {
   const listContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(380);
@@ -524,6 +579,7 @@ function FavoriteCardSelectionModal({
                     const hasPremiumUnlocked = unlockedPremiumList.includes(
                       card.id
                     );
+                    const hasShineUnlocked = checkIsShineUnlocked(card.id);
 
                     const isCardPremium = determineIsCardPremium(
                       card.id,
@@ -533,9 +589,18 @@ function FavoriteCardSelectionModal({
                       GameState.premiumCards
                     );
 
+                    const isCardShine = determineIsCardShine(
+                      card.id,
+                      hasShineUnlocked,
+                      favCardShineMap,
+                      favoriteCardState,
+                      GameState.shineCards
+                    );
+
                     const isSelected =
                       favoriteCardState?.cardId === card.id &&
-                      !!favoriteCardState?.isPremium === isCardPremium;
+                      !!favoriteCardState?.isPremium === isCardPremium &&
+                      !!favoriteCardState?.isShine === isCardShine;
 
                     const rarityClass = card.rarity
                       ? ` rarity-${card.rarity}`
@@ -559,6 +624,7 @@ function FavoriteCardSelectionModal({
                           setFavoriteCardState({
                             cardId: card.id,
                             isPremium: isCardPremium,
+                            isShine: isCardShine,
                           });
                           onClose();
                         }}
@@ -570,6 +636,7 @@ function FavoriteCardSelectionModal({
                               {
                                 ...card,
                                 isPremium: isCardPremium,
+                                isShine: isCardShine,
                               },
                               true
                             )}
@@ -580,6 +647,8 @@ function FavoriteCardSelectionModal({
                               height: '100%',
                             }}
                           />
+
+                          {isCardShine && <CardShineOverlay />}
 
                           {hasPremiumUnlocked && (
                             <div
@@ -596,6 +665,7 @@ function FavoriteCardSelectionModal({
                                   setFavoriteCardState({
                                     cardId: card.id,
                                     isPremium: nextPremium,
+                                    isShine: isCardShine,
                                   });
                                 }
                               }}
@@ -619,6 +689,48 @@ function FavoriteCardSelectionModal({
                               }
                             >
                               ✨
+                            </div>
+                          )}
+
+                          {hasShineUnlocked && (
+                            <div
+                              className="shine-toggle-icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playSound?.(SOUNDS?.seClick);
+                                const nextShine = !isCardShine;
+                                setFavCardShineMap((prev) => ({
+                                  ...prev,
+                                  [card.id]: nextShine,
+                                }));
+                                if (favoriteCardState?.cardId === card.id) {
+                                  setFavoriteCardState({
+                                    cardId: card.id,
+                                    isPremium: isCardPremium,
+                                    isShine: nextShine,
+                                  });
+                                }
+                              }}
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                right: '4px',
+                                background: 'rgba(0,0,0,0.85)',
+                                color: isCardShine ? '#38bdf8' : '#94a3b8',
+                                padding: '2px 6px',
+                                borderRadius: '10px',
+                                fontSize: '0.8rem',
+                                zIndex: 7,
+                                border: `1px solid ${isCardShine ? '#38bdf8' : '#475569'}`,
+                                cursor: 'pointer',
+                              }}
+                              title={
+                                isCardShine
+                                  ? 'シャインOFFに切り替え'
+                                  : 'シャインONに切り替え'
+                              }
+                            >
+                              🌟
                             </div>
                           )}
                         </div>
@@ -828,6 +940,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
   const [iconSelectModalOpen, setIconSelectModalOpen] = useState(false);
   const [favCardModalOpen, setFavCardModalOpen] = useState(false);
   const [favCardPremiumMap, setFavCardPremiumMap] = useState({});
+  const [favCardShineMap, setFavCardShineMap] = useState({});
   const [viewProfileData, setViewProfileData] = useState(null);
   const [cardListModalData, setCardListModalData] = useState(null);
   // 収録カード一覧モーダルでの所持枚数表示切替トグル状態
@@ -903,8 +1016,9 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
       setProfileNameInput(GameState.userProfile?.name || DEFAULT_PLAYER_NAME);
       setProfileIconInput(GameState.userProfile?.icon || DEFAULT_PLAYER_ICON);
       setFavoriteCardState(GameState.userProfile?.favoriteCard || null);
-      // プロフィール編集モーダルオープン時にお気に入りカードのプレミアム一時表示マップをリセット
+      // プロフィール編集モーダルオープン時にお気に入りカードのプレミアム・シャイン一時表示マップをリセット
       setFavCardPremiumMap({});
+      setFavCardShineMap({});
       setProfileModalVisible(true);
     });
 
@@ -1088,7 +1202,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         description:
           options.description ||
           (name.includes('シャイン')
-            ? 'カード一覧画面でお好きなカードをシャイン化（ホログラム加工）できます。'
+            ? 'カード一覧画面でカードをシャイン化できます。'
             : ''),
         canClose: false,
       });
@@ -4753,6 +4867,8 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         ownedMasterCards={ownedMasterCards}
         favCardPremiumMap={favCardPremiumMap}
         setFavCardPremiumMap={setFavCardPremiumMap}
+        favCardShineMap={favCardShineMap}
+        setFavCardShineMap={setFavCardShineMap}
       />
 
       {/* 他プレイヤー閲覧専用プロフィールモーダル */}

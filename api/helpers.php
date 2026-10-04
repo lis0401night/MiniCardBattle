@@ -59,6 +59,8 @@ function createDefaultPlayerData($uuid, $name = 'プレイヤー', $points = 0, 
         'unlocked_icons' => [],
         'unlocked_skins' => [],
         'owned_playmats' => [],
+        'unlocked_battle_passes' => [],
+        'battle_pass_points' => [],
         'registered_decks' => [],
         'lastAccessAt' => time()
     ];
@@ -160,11 +162,42 @@ function sanitizeUnlockedPremiumCards($unlockedPremium): array {
     return $unique;
 }
 
+/**
+ * 解放済みシャインカード配列をサニタイズします。
+ * カードマスタに存在する安全なカードIDのみを抽出し、重複を排除します。
+ * 
+ * @param mixed $unlockedShine 入力シャインカード配列
+ * @return array サニタイズ済みシャインカードID配列
+ */
+function sanitizeUnlockedShineCards($unlockedShine): array {
+    if (!is_array($unlockedShine)) {
+        return [];
+    }
+    $cardOrderMap = getCardOrderMap();
+    $sanitized = [];
+    foreach ($unlockedShine as $cardId) {
+        $safeCardId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $cardId);
+        if ($safeCardId !== '' && isset($cardOrderMap[$safeCardId])) {
+            $sanitized[] = $safeCardId;
+        }
+    }
+    $unique = array_values(array_unique($sanitized));
+    usort($unique, function($a, $b) use ($cardOrderMap) {
+        $idxA = $cardOrderMap[$a] ?? PHP_INT_MAX;
+        $idxB = $cardOrderMap[$b] ?? PHP_INT_MAX;
+        if ($idxA !== $idxB) {
+            return $idxA <=> $idxB;
+        }
+        return strcmp($a, $b);
+    });
+    return $unique;
+}
+
 /** デッキ配列の最大保存枚数 */
 const MAX_RECORDED_DECK_SIZE = 20;
 
 /**
- * カード配列（カードID文字列 または {id, isPremium} オブジェクト）を CARD_MASTER の定義順（ID順）にソート（正規化）します。
+ * カード配列（カードID文字列 または {id, isPremium, isShine} オブジェクト）を CARD_MASTER の定義順（ID順）にソート（正規化）します。
  * 
  * @param array $cards カード配列
  * @return array ソート済みカード配列
@@ -182,15 +215,21 @@ function sortDeckCardsByMasterOrder(array $cards): array {
         }
         $premA = is_array($a) && !empty($a['isPremium']) ? 1 : 0;
         $premB = is_array($b) && !empty($b['isPremium']) ? 1 : 0;
-        return $premA <=> $premB;
+        if ($premA !== $premB) {
+            return $premA <=> $premB;
+        }
+        $shineA = is_array($a) && !empty($a['isShine']) ? 1 : 0;
+        $shineB = is_array($b) && !empty($b['isShine']) ? 1 : 0;
+        return $shineA <=> $shineB;
     });
 
     return $cards;
 }
 
 /**
- * デッキ配列（カードID文字列 または {id, isPremium} オブジェクト）をサニタイズし、定義順（ID順）にソートします。
+ * デッキ配列（カードID文字列 または {id, isPremium, isShine} オブジェクト）をサニタイズし、定義順（ID順）にソートします。
  * 最大枚数（MAX_RECORDED_DECK_SIZE枚）まで安全な文字（[a-zA-Z0-9_]）かつカードマスタに存在するIDのみを抽出・保持します。
+ * 既存の防衛戦デッキなどシャイン化キーが存在しないデータに対しても完全な後方互換性を維持します。
  * 
  * @param mixed $rawDeck リクエストまたは保存データ由来のデッキ配列
  * @return array サニタイズおよびソート済みデッキ配列
@@ -215,7 +254,19 @@ function sanitizeDeckList($rawDeck): array {
             $cleaned_id = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $item['id']);
             if ($cleaned_id !== '' && isset($cardOrderMap[$cleaned_id])) {
                 $isPrem = !empty($item['isPremium']);
-                $result[] = $isPrem ? ['id' => $cleaned_id, 'isPremium' => true] : $cleaned_id;
+                $isShine = !empty($item['isShine']);
+                if ($isPrem || $isShine) {
+                    $cardObj = ['id' => $cleaned_id];
+                    if ($isPrem) {
+                        $cardObj['isPremium'] = true;
+                    }
+                    if ($isShine) {
+                        $cardObj['isShine'] = true;
+                    }
+                    $result[] = $cardObj;
+                } else {
+                    $result[] = $cleaned_id;
+                }
             }
         }
     }
@@ -348,13 +399,57 @@ function sanitizeOwnedPlaymats($ownedPlaymats): array {
 }
 
 /**
- * プレイヤーデータに対して、リクエストから渡されたインベントリ、プレミアム解放カード、解放済みアイコン、解放済みスキン、所持プレイマット、登録デッキの更新を適用します。
+ * 解放済みバトルパスID配列をサニタイズします。
+ * 安全な文字（[a-zA-Z0-9_]）のみを抽出し、重複を排除します。
+ * 
+ * @param mixed $unlockedPasses 入力バトルパスID配列
+ * @return array サニタイズ済みバトルパスID配列
+ */
+function sanitizeUnlockedBattlePasses($unlockedPasses): array {
+    if (!is_array($unlockedPasses)) {
+        return [];
+    }
+    $sanitized = [];
+    foreach ($unlockedPasses as $passId) {
+        $safePassId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $passId);
+        if ($safePassId !== '') {
+            $sanitized[] = $safePassId;
+        }
+    }
+    return array_values(array_unique($sanitized));
+}
+
+/**
+ * バトルパスポイント連想配列（[passId => points]）をサニタイズします。
+ * 
+ * @param mixed $pointsMap 入力バトルパスポイント連想配列
+ * @return array サニタイズ済みバトルパスポイント連想配列
+ */
+function sanitizeBattlePassPoints($pointsMap): array {
+    if (!is_array($pointsMap)) {
+        return [];
+    }
+    $sanitized = [];
+    foreach ($pointsMap as $passId => $pts) {
+        $safePassId = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $passId);
+        if ($safePassId !== '') {
+            $sanitized[$safePassId] = max(0, min(10000, intval($pts)));
+        }
+    }
+    return $sanitized;
+}
+
+/**
+ * プレイヤーデータに対して、リクエストから渡されたインベントリ、プレミアム解放カード、解放済みアイコン、解放済みスキン、所持プレイマット、バトルパス、登録デッキの更新を適用します。
  * キャメルケース・スネークケースの別名キー解決を一元化します。
  * 
  * @param array &$player_data 更新対象のプレイヤーデータ配列（参照渡し）
  * @param array $data リクエスト本文データ
  */
 function applyPlayerCollectionUpdates(array &$player_data, array $data): void {
+    if (isset($data['quick_rating'])) {
+        $player_data['quick_rating'] = max(0, intval($data['quick_rating']));
+    }
     if (isset($data['inventory'])) {
         $player_data['inventory'] = sanitizeInventory($data['inventory']);
     }
@@ -373,6 +468,21 @@ function applyPlayerCollectionUpdates(array &$player_data, array $data): void {
     $rawOwnedPlaymats = $data['owned_playmats'] ?? $data['ownedPlaymats'] ?? null;
     if ($rawOwnedPlaymats !== null) {
         $player_data['owned_playmats'] = sanitizeOwnedPlaymats($rawOwnedPlaymats);
+    }
+    $rawBattlePasses = $data['unlocked_battle_passes'] ?? $data['unlockedBattlePasses'] ?? null;
+    if ($rawBattlePasses !== null) {
+        $player_data['unlocked_battle_passes'] = sanitizeUnlockedBattlePasses($rawBattlePasses);
+    }
+    $rawBattlePassPoints = $data['battle_pass_points'] ?? $data['battlePassPoints'] ?? null;
+    if ($rawBattlePassPoints !== null) {
+        $player_data['battle_pass_points'] = sanitizeBattlePassPoints($rawBattlePassPoints);
+    }
+    $rawUnlockedShine = $data['unlocked_shine_cards'] ?? $data['unlockedShineCards'] ?? null;
+    if ($rawUnlockedShine !== null) {
+        $player_data['unlocked_shine_cards'] = sanitizeUnlockedShineCards($rawUnlockedShine);
+    }
+    if (isset($data['shine_tickets'])) {
+        $player_data['shine_tickets'] = max(0, intval($data['shine_tickets']));
     }
     $rawDecks = $data['registered_decks'] ?? $data['decks'] ?? null;
     if ($rawDecks !== null) {
@@ -850,6 +960,140 @@ function appendRecentBattle(array $record, ?string $dir = null, int $limit = MAX
     } else {
         @unlink($tmpPath);
         error_log('recent_battles.json の一時ファイル書き込みが不完全です。');
+    }
+
+    flock($lockFp, LOCK_UN);
+    fclose($lockFp);
+
+    return $success;
+}
+
+/**
+ * 全体クイックマッチ対戦ログファイル（recent_quick_battles.json）の絶対パスを取得します。
+ *
+ * @param string|null $dir 保存ディレクトリ（省略時は api/decks を使用）
+ * @return string ファイルパス
+ */
+function getRecentQuickBattlesFilePath(?string $dir = null): string {
+    $baseDir = $dir ?? (__DIR__ . '/decks');
+    return "{$baseDir}/recent_quick_battles.json";
+}
+
+/**
+ * 全体クイックマッチ対戦ログ（recent_quick_battles.json）を安全に読み込みます。
+ * 専用ロックファイル（recent_quick_battles.json.lock）に対する共有ロック（LOCK_SH）により、
+ * 書き込み処理との競合や不完全データの読み取りを防止します。
+ *
+ * @param string|null $dir 保存ディレクトリ（省略時は api/decks を使用）
+ * @param int $limit 取得上限件数（デフォルト: MAX_RECENT_BATTLES）
+ * @return array<array> 直近クイックマッチ対戦ログ配列（新しい順）
+ */
+function loadRecentQuickBattles(?string $dir = null, int $limit = MAX_RECENT_BATTLES): array {
+    $filePath = getRecentQuickBattlesFilePath($dir);
+    $lockPath = $filePath . '.lock';
+
+    if (!file_exists($filePath)) {
+        return [];
+    }
+
+    $lockFp = @fopen($lockPath, 'c');
+    $content = false;
+    if ($lockFp) {
+        if (flock($lockFp, LOCK_SH)) {
+            $content = @file_get_contents($filePath);
+            flock($lockFp, LOCK_UN);
+        }
+        fclose($lockFp);
+    } else {
+        $content = @file_get_contents($filePath);
+    }
+
+    if ($content === false || $content === '') {
+        return [];
+    }
+
+    $decoded = json_decode($content, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    return array_slice($decoded, 0, $limit);
+}
+
+/**
+ * 全体クイックマッチ対戦ログ（recent_quick_battles.json）に新しい対戦記録を安全に追記（先頭追加）します。
+ *
+ * 【二重記録の絶対防止】
+ * 対戦一意識別子（match_id）が指定されている場合、すでに記録済みのログ内に同一の match_id が存在するか照合し、
+ * 重複している場合は追加をスキップして安全に終了します。
+ *
+ * 専用ロックファイルによる排他ロック（LOCK_EX）と、
+ * 一時ファイルへの完全書き込み＋アトミック置換（rename）により破損を防ぎます。
+ *
+ * @param array $record 追加する対戦記録
+ * @param string|null $dir 保存ディレクトリ（省略時は api/decks を使用）
+ * @param int $limit 保持上限件数（デフォルト: MAX_RECENT_BATTLES）
+ * @return bool 保存に成功したかどうか
+ */
+function appendRecentQuickBattle(array $record, ?string $dir = null, int $limit = MAX_RECENT_BATTLES): bool {
+    $filePath = getRecentQuickBattlesFilePath($dir);
+    $lockPath = $filePath . '.lock';
+
+    $lockFp = @fopen($lockPath, 'c');
+    if (!$lockFp || !flock($lockFp, LOCK_EX)) {
+        if ($lockFp) {
+            fclose($lockFp);
+        }
+        error_log('recent_quick_battles.json のロック取得に失敗しました。');
+        return false;
+    }
+
+    clearstatcache(true, $filePath);
+    $content = is_file($filePath) ? (string) @file_get_contents($filePath) : '';
+    $recentBattles = $content !== '' ? json_decode($content, true) : [];
+    if (!is_array($recentBattles)) {
+        $recentBattles = [];
+    }
+
+    // 二重記録防止: match_id が一致する既存レコードがある場合は追記せず成功として終了
+    if (!empty($record['match_id'])) {
+        foreach ($recentBattles as $existing) {
+            if (isset($existing['match_id']) && $existing['match_id'] === $record['match_id']) {
+                flock($lockFp, LOCK_UN);
+                fclose($lockFp);
+                return true; // 既に記録済みのため成功扱い
+            }
+        }
+    }
+
+    array_unshift($recentBattles, $record);
+    if (count($recentBattles) > $limit) {
+        $recentBattles = array_slice($recentBattles, 0, $limit);
+    }
+
+    $jsonString = json_encode($recentBattles, JSON_UNESCAPED_UNICODE);
+    if ($jsonString === false) {
+        error_log('recent_quick_battles.json のエンコードに失敗しました: ' . json_last_error_msg());
+        flock($lockFp, LOCK_UN);
+        fclose($lockFp);
+        return false;
+    }
+
+    // 一時ファイルへ完全に書き込んでからアトミック置換（rename）
+    $tmpPath = $filePath . '.tmp.' . uniqid('', true);
+    $written = @file_put_contents($tmpPath, $jsonString, LOCK_EX);
+
+    $success = false;
+    if ($written !== false && $written === strlen($jsonString)) {
+        if (@rename($tmpPath, $filePath)) {
+            $success = true;
+        } else {
+            @unlink($tmpPath);
+            error_log('recent_quick_battles.json のリネーム置換に失敗しました。');
+        }
+    } else {
+        @unlink($tmpPath);
+        error_log('recent_quick_battles.json の一時ファイル書き込みが不完全です。');
     }
 
     flock($lockFp, LOCK_UN);

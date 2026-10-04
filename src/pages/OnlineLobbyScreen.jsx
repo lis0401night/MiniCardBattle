@@ -99,9 +99,12 @@ export default function OnlineLobbyScreen() {
             const actualId = typeof cardId === 'object' ? cardId.id : cardId;
             const isPremium = activeDeck.premiumCards
               ? activeDeck.premiumCards.includes(actualId)
-              : false;
+              : (GameState.premiumCards || []).includes(actualId);
+            const isShine = activeDeck.shineCards
+              ? activeDeck.shineCards.includes(actualId)
+              : (GameState.shineCards || []).includes(actualId);
             const template = CARD_MASTER.find((c) => c.id === actualId);
-            return template ? { ...template, isPremium } : null;
+            return template ? { ...template, isPremium, isShine } : null;
           })
           .filter(Boolean);
 

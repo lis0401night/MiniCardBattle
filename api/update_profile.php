@@ -48,10 +48,11 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$player_data) u
             ? preg_replace('/[^a-zA-Z0-9_]/', '', (string) $data['favoriteCard']['cardId'])
             : '';
         if ($cleaned_card_id !== '') {
-            // cardIdのみサニタイズし、isPremiumはbool型で保持
+            // cardIdのみサニタイズし、isPremium, isShineはbool型で保持
             $player_data['favorite_card'] = [
                 'cardId' => $cleaned_card_id,
                 'isPremium' => !empty($data['favoriteCard']['isPremium']),
+                'isShine' => !empty($data['favoriteCard']['isShine']),
             ];
         } else {
             // nullや空のcardIdが送られた場合はお気に入り解除

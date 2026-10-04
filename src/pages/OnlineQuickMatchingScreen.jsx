@@ -46,15 +46,39 @@ const MATCHING_TIMEOUT_MS = 60000;
  */
 const normalizeDeckCards = (rawDeck) => {
   if (!Array.isArray(rawDeck)) return [];
+  const currentActiveDeck = GameState.decks?.[GameState.currentDeckIndex];
   return rawDeck
     .map((c) => {
       if (!c) return null;
-      if (typeof c === 'object' && c.name && c.power !== undefined) {
-        return { ...c };
-      }
-      const actualId = typeof c === 'object' ? c.id : c;
+      const actualId =
+        typeof c === 'string'
+          ? c
+          : typeof c?.baseId === 'string' && c.baseId.length > 0
+            ? c.baseId
+            : typeof c?.id === 'string' && c.id.length > 0
+              ? c.id
+              : null;
+      if (!actualId) return null;
       const template = CARD_MASTER.find((m) => m.id === actualId);
-      return template ? { ...template } : null;
+      if (!template) return null;
+      const isPremium =
+        typeof c === 'object' && typeof c.isPremium === 'boolean'
+          ? c.isPremium
+          : currentActiveDeck?.premiumCards
+            ? currentActiveDeck.premiumCards.includes(actualId)
+            : (GameState.premiumCards || []).includes(actualId);
+      const isShine =
+        typeof c === 'object' && typeof c.isShine === 'boolean'
+          ? c.isShine
+          : currentActiveDeck?.shineCards
+            ? currentActiveDeck.shineCards.includes(actualId)
+            : (GameState.shineCards || []).includes(actualId);
+      return {
+        ...template,
+        ...(typeof c === 'object' ? c : {}),
+        isPremium,
+        isShine,
+      };
     })
     .filter(Boolean);
 };
@@ -116,6 +140,29 @@ export default function OnlineQuickMatchingScreen() {
       // 共通の対戦シードを同期
       const bSeed = roomData.battleSeed || Date.now();
       GameState.battleSeed = bSeed;
+
+      // 一意な対戦IDの決定（FirebaseルームID、またはシードと両者UUIDから一意に決定）
+      const matchId =
+        roomData.roomId ||
+        roomData.id ||
+        `quick_${bSeed}_${meData.id || myUuid}_${opData.id || 'op'}`;
+
+      GameState.quickMatchInfo = {
+        matchId,
+        isPvP: true,
+        myUuid,
+        myName: meData.name || resolvePlayerName(),
+        myRating:
+          meData.leaderConfig?.rating ??
+          (parseInt(
+            localStorage.getItem('mini_card_battle_quick_rating'),
+            10
+          ) ||
+            0),
+        opponentUuid: opData.id || '',
+        opponentName: opData.name || '対戦相手',
+        opponentRating: opData.leaderConfig?.rating ?? 0,
+      };
 
       // プレイヤー・対戦相手の情報をGameStateに反映
       GameState.playerConfig = {
@@ -396,17 +443,7 @@ export default function OnlineQuickMatchingScreen() {
       GameState.decks?.[GameState.currentDeckIndex]?.cards ||
       [];
 
-    const activeDeckCards = rawDeckCards
-      .map((c) => {
-        if (!c) return null;
-        if (typeof c === 'object' && c.name && c.power !== undefined) {
-          return { ...c };
-        }
-        const actualId = typeof c === 'object' ? c.id : c;
-        const template = CARD_MASTER.find((m) => m.id === actualId);
-        return template ? { ...template } : null;
-      })
-      .filter(Boolean);
+    const activeDeckCards = normalizeDeckCards(rawDeckCards);
 
     const myLeaderConfig = {
       leaderConfig: { ...GameState.playerConfig },
@@ -415,6 +452,9 @@ export default function OnlineQuickMatchingScreen() {
       icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
       playmat: GameState.selectedPlaymatId || null,
       stage: GameState.selectedStageId || 'plain',
+      rating:
+        parseInt(localStorage.getItem('mini_card_battle_quick_rating'), 10) ||
+        0,
     };
 
     const matchPromise = startQuickMatch(

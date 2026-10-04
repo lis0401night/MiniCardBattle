@@ -212,6 +212,14 @@
               プレイマット一覧
             </button>
             <button
+              id="tab-quick-battles"
+              class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              onclick="window.switchTab('quick-battles')"
+              title="クイックマッチ結果一覧"
+            >
+              クイックマッチ結果
+            </button>
+            <button
               id="tab-battles"
               class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
               onclick="window.switchTab('battles')"
@@ -296,10 +304,10 @@
 
           <!-- 横縦ともにこのコンテナだけでスクロールさせ、thead の sticky を機能させる -->
           <div class="scroll-custom overflow-auto max-h-[70dvh]">
-            <div class="min-w-[980px]">
+            <div class="min-w-[1140px]">
               <table class="w-full text-left">
                 <thead
-                  class="bg-white/95 backdrop-blur-sm text-[10px] font-black uppercase text-slate-400 tracking-widest border-b sticky top-0 z-20 shadow-sm"
+                  class="bg-white text-[10px] font-black uppercase text-slate-400 tracking-widest border-b sticky top-0 z-20 shadow-sm"
                 >
                   <tr>
                     <th class="p-2 md:p-3 w-10 text-center">#</th>
@@ -311,6 +319,16 @@
                     </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 110px">
                       リーダー
+                    </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 70px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('quick_rating')"
+                        aria-label="レートで並び替え"
+                      >
+                        レート
+                      </button>
                     </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 80px">
                       <button
@@ -402,6 +420,16 @@
                         等級（アンジェ）
                       </button>
                     </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 90px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('battle_pass_s1')"
+                        aria-label="バトルパスS1で並び替え"
+                      >
+                        バトルパスS1
+                      </button>
+                    </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 65px">
                       <button
                         type="button"
@@ -420,6 +448,16 @@
                         aria-label="プレミアムで並び替え"
                       >
                         プレミアム
+                      </button>
+                    </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 65px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('owned_shine')"
+                        aria-label="シャインで並び替え"
+                      >
+                        シャイン
                       </button>
                     </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 50px">
@@ -752,6 +790,87 @@
         </div>
       </div>
 
+      <!-- クイックマッチ結果一覧ビュー -->
+      <div
+        id="view-quick-battles"
+        class="main-container max-w-[1600px] mx-auto hidden bg-white rounded-3xl shadow-sm border border-slate-200 flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 md:p-5 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3"
+        >
+          <div>
+            <h2
+              class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1"
+            >
+              データベース
+            </h2>
+            <div class="flex items-center gap-3">
+              <div class="text-xl font-black text-slate-800 tracking-tight">
+                クイックマッチ結果一覧 (対人対戦履歴)
+                <span
+                  id="quick-battles-count"
+                  class="text-sm font-bold text-slate-500 ml-2"
+                ></span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                id="quick-battle-search-input"
+                placeholder="対戦者名・UUIDで検索..."
+                class="bg-white text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all w-48 shadow-sm"
+                oninput="window.renderQuickBattleLogsList()"
+              />
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500">表示件数:</span>
+              <select
+                id="quick-battle-limit-filter"
+                class="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 shadow-sm"
+                onchange="window.renderQuickBattleLogsList()"
+              >
+                <option value="50">直近 50 試合</option>
+                <option value="100" selected>直近 100 試合</option>
+                <option value="200">直近 200 試合</option>
+                <option value="500">直近 500 試合</option>
+                <option value="all">全試合 (無制限)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="panel-scroll scroll-custom w-full">
+          <table class="w-full text-left border-collapse">
+            <thead
+              class="bg-white/95 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b sticky top-0 z-20 shadow-sm"
+            >
+              <tr>
+                <th class="p-3 w-12 text-center">#</th>
+                <th class="p-3" style="min-width: 150px">対戦日時</th>
+                <th class="p-3" style="min-width: 200px">勝者プレイヤー</th>
+                <th class="p-3" style="min-width: 200px">敗者プレイヤー</th>
+                <th class="p-3 text-center" style="min-width: 100px">
+                  勝敗 / ターン
+                </th>
+                <th class="p-3 text-center" style="min-width: 140px">
+                  勝者デッキ
+                </th>
+                <th class="p-3 text-center" style="min-width: 140px">
+                  敗者デッキ
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              id="quick-battles-table-body"
+              class="divide-y divide-slate-100"
+            >
+              <!-- JS Injection -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- 防衛戦結果一覧ビュー -->
       <div
         id="view-battles"
@@ -817,7 +936,7 @@
         <div class="panel-scroll scroll-custom w-full">
           <table class="w-full text-left border-collapse">
             <thead
-              class="bg-white/95 backdrop-blur-sm text-[10px] font-black uppercase text-slate-400 tracking-widest border-b sticky top-0 z-20 shadow-sm"
+              class="bg-white text-[10px] font-black uppercase text-slate-400 tracking-widest border-b sticky top-0 z-20 shadow-sm"
             >
               <tr>
                 <th class="p-3 w-12 text-center">#</th>
@@ -849,7 +968,7 @@
         aria-modal="true"
         aria-labelledby="modal-player-title"
         tabindex="-1"
-        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 hidden"
+        class="fixed inset-0 bg-slate-950/85 z-50 flex items-center justify-center p-2 md:p-4 hidden"
         onclick="if (event.target === this) window.closePlayerDetailModal();"
       >
         <div
@@ -905,6 +1024,10 @@
             <div id="section-owned-playmats"></div>
             <!-- 所持プレミアムセクション -->
             <div id="section-premium"></div>
+            <!-- 所持シャインセクション -->
+            <div id="section-shine"></div>
+            <!-- バトルパスS1セクション -->
+            <div id="section-battle-pass"></div>
             <!-- 所持カード・収集率セクション -->
             <div id="section-inventory"></div>
             <!-- デッキセクション -->
@@ -932,7 +1055,7 @@
         aria-modal="true"
         aria-labelledby="modal-deck-title"
         tabindex="-1"
-        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden"
+        class="fixed inset-0 bg-slate-950/85 z-[60] flex items-center justify-center p-4 hidden"
         onclick="if (event.target === this) window.closeBattleDeckModal();"
       >
         <div
@@ -1001,7 +1124,7 @@
         aria-modal="true"
         aria-labelledby="modal-card-detail-title"
         tabindex="-1"
-        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 hidden"
+        class="fixed inset-0 bg-slate-950/85 z-50 flex items-center justify-center p-2 md:p-4 hidden"
         onclick="if (event.target === this) window.closeCardDetailModal();"
       >
         <div
@@ -1078,7 +1201,7 @@
         aria-modal="true"
         aria-labelledby="modal-leader-detail-title"
         tabindex="-1"
-        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 hidden"
+        class="fixed inset-0 bg-slate-950/85 z-50 flex items-center justify-center p-2 md:p-4 hidden"
         onclick="if (event.target === this) window.closeLeaderDetailModal();"
       >
         <div
@@ -1469,13 +1592,48 @@
       }
 
       /**
+       * カード配列エントリー（カードIDまたはカードオブジェクト）がシャイン化状態であるかを判定する共通ヘルパー
+       * 1. entry がオブジェクトで isShine (boolean) が明示されている場合はそれを最優先
+       * 2. 指定がない場合は shineCardsList（プレイヤー所持またはデッキ設定のシャインカードID配列）を参照
+       *
+       * @param {string|Object} entry - カードIDまたはカードオブジェクト
+       * @param {Array<string>} [shineCardsList=[]] - 解放済みシャインカードID配列
+       * @returns {boolean} シャイン対象であるか
+       */
+      function checkIsCardShine(entry, shineCardsList = []) {
+        if (!entry) return false;
+        const cardId = resolveCardId(entry);
+        if (!cardId) return false;
+
+        // 1. オブジェクトに明示的な isShine が設定されている場合
+        if (
+          typeof entry === 'object' &&
+          entry !== null &&
+          typeof entry.isShine === 'boolean'
+        ) {
+          return entry.isShine;
+        }
+
+        // 2. 所持シャインカードリストに含まれている場合
+        if (
+          Array.isArray(shineCardsList) &&
+          shineCardsList.includes(cardId)
+        ) {
+          return true;
+        }
+
+        return false;
+      }
+
+      /**
        * デッキのカード配列を CARD_MASTER の定義順（ID順）に正規化（ソート）する共通関数
-       * 同一カード内の通常版とプレミアム版の順序も整然と並び替える
+       * 同一カード内の通常版、プレミアム版、シャイン版の順序も整然と並び替える
        * @param {Array<string|Object>} cards - カード配列
        * @param {Array<string>} [premiumCardsList=[]] - プレミアムカードID配列
+       * @param {Array<string>} [shineCardsList=[]] - シャインカードID配列
        * @returns {Array<string|Object>} ソート済みのカード配列のシャローコピー
        */
-      function sortCardsByMasterOrder(cards, premiumCardsList = []) {
+      function sortCardsByMasterOrder(cards, premiumCardsList = [], shineCardsList = []) {
         if (!Array.isArray(cards)) return [];
         const cardOrderMap = new Map();
         (CARD_MASTER || []).forEach((c, i) => cardOrderMap.set(c.id, i));
@@ -1488,7 +1646,10 @@
           if (idxA !== idxB) return idxA - idxB;
           const premA = checkIsCardPremium(a, premiumCardsList) ? 1 : 0;
           const premB = checkIsCardPremium(b, premiumCardsList) ? 1 : 0;
-          return premA - premB;
+          if (premA !== premB) return premA - premB;
+          const shineA = checkIsCardShine(a, shineCardsList) ? 1 : 0;
+          const shineB = checkIsCardShine(b, shineCardsList) ? 1 : 0;
+          return shineA - shineB;
         });
       }
 
@@ -1568,6 +1729,7 @@
       // =============================
       let allPlayers = [];
       let recentBattles = [];
+      let recentQuickBattles = [];
       let filteredPlayers = [];
       let selectedPlayerId = null;
       let currentSort = { key: 'defense', dir: 'desc' };
@@ -1681,6 +1843,8 @@
       window.togglePlayerFilter = togglePlayerFilter;
       window.toggleAllPlayers = toggleAllPlayers;
       window.renderBattleLogsList = renderBattleLogsList;
+      window.renderQuickBattleLogsList = renderQuickBattleLogsList;
+      window.openQuickBattleDeckModal = openQuickBattleDeckModal;
       window.openPlayerDetailModal = openPlayerDetailModal;
       window.closePlayerDetailModal = closePlayerDetailModal;
       window.openBattleDeckModal = openBattleDeckModal;
@@ -1884,6 +2048,7 @@
 
           allPlayers = data.players || [];
           recentBattles = data.recent_battles || [];
+          recentQuickBattles = data.recent_quick_battles || [];
           filteredPlayers = [...allPlayers];
 
           // モックモードバッジの表示制御
@@ -2061,6 +2226,12 @@
             high_difficulty_total_points: 900 + idx * 100,
             fortune_points: 150 + idx * 25,
             fortune_total_points: 600 + idx * 50,
+            quick_rating: 1500 + idx * 45,
+            unlocked_battle_passes: idx % 2 === 0 ? ['battle_pass_vol1'] : [],
+            battle_pass_points: {
+              battle_pass_vol1:
+                idx % 2 === 0 ? (idx === 0 ? 150 : idx * 25) : 0,
+            },
             has_defense_deck: true,
             deck,
             inventory,
@@ -2100,15 +2271,42 @@
           });
         }
 
-        return { players, recent_battles };
+        // クイックマッチ対人戦履歴モック生成（20件）
+        const recent_quick_battles = [];
+        for (let q = 0; q < 20; q++) {
+          const winIdx = q % players.length;
+          const loseIdx = (q + 1) % players.length;
+          const winPlayer = players[winIdx];
+          const losePlayer = players[loseIdx];
+          recent_quick_battles.push({
+            match_id: `mock-quick-match-${q + 101}`,
+            timestamp: now - q * 2400,
+            result: 'win',
+            turns: (q % 5) + 3,
+            winnerUuid: winPlayer.uuid,
+            winnerName: winPlayer.name,
+            winnerCharacter: winPlayer.character,
+            winnerSkin: winPlayer.skin,
+            winnerRating: winPlayer.quick_rating,
+            winnerDeck: winPlayer.deck,
+            loserUuid: losePlayer.uuid,
+            loserName: losePlayer.name,
+            loserCharacter: losePlayer.character,
+            loserSkin: losePlayer.skin,
+            loserRating: Math.max(0, losePlayer.quick_rating - 15),
+            loserDeck: losePlayer.registered_decks[1]?.cards || losePlayer.deck,
+          });
+        }
+
+        return { players, recent_battles, recent_quick_battles };
       }
 
       // =============================
       // タブ切り替え
       // =============================
       /**
-       * プレイヤー一覧、リーダー一覧、全カード一覧、スキン一覧、アイコン一覧、プレイマット一覧、防衛戦結果のタブ表示を切り替える
-       * @param {string} tab - 'players' | 'leaders' | 'cards' | 'skins' | 'icons' | 'playmats' | 'battles'
+       * プレイヤー一覧、リーダー一覧、全カード一覧、スキン一覧、アイコン一覧、プレイマット一覧、クイックマッチ結果、防衛戦結果のタブ表示を切り替える
+       * @param {string} tab - 'players' | 'leaders' | 'cards' | 'skins' | 'icons' | 'playmats' | 'quick-battles' | 'battles'
        */
       function switchTab(tab) {
         currentTab = tab;
@@ -2118,6 +2316,7 @@
         const viewSkins = document.getElementById('view-skins');
         const viewIcons = document.getElementById('view-icons');
         const viewPlaymats = document.getElementById('view-playmats');
+        const viewQuickBattles = document.getElementById('view-quick-battles');
         const viewBattles = document.getElementById('view-battles');
         const tabPlayers = document.getElementById('tab-players');
         const tabLeaders = document.getElementById('tab-leaders');
@@ -2125,6 +2324,7 @@
         const tabSkins = document.getElementById('tab-skins');
         const tabIcons = document.getElementById('tab-icons');
         const tabPlaymats = document.getElementById('tab-playmats');
+        const tabQuickBattles = document.getElementById('tab-quick-battles');
         const tabBattles = document.getElementById('tab-battles');
 
         const activeClass =
@@ -2138,6 +2338,7 @@
         if (viewSkins) viewSkins.classList.add('hidden');
         if (viewIcons) viewIcons.classList.add('hidden');
         if (viewPlaymats) viewPlaymats.classList.add('hidden');
+        if (viewQuickBattles) viewQuickBattles.classList.add('hidden');
         if (viewBattles) viewBattles.classList.add('hidden');
 
         if (tabPlayers) tabPlayers.className = inactiveClass;
@@ -2146,6 +2347,7 @@
         if (tabSkins) tabSkins.className = inactiveClass;
         if (tabIcons) tabIcons.className = inactiveClass;
         if (tabPlaymats) tabPlaymats.className = inactiveClass;
+        if (tabQuickBattles) tabQuickBattles.className = inactiveClass;
         if (tabBattles) tabBattles.className = inactiveClass;
 
         if (tab === 'players') {
@@ -2181,6 +2383,10 @@
           if (document.getElementById('playmats-grid')?.children.length === 0) {
             renderPlaymatList();
           }
+        } else if (tab === 'quick-battles') {
+          if (viewQuickBattles) viewQuickBattles.classList.remove('hidden');
+          if (tabQuickBattles) tabQuickBattles.className = activeClass;
+          renderQuickBattleLogsList();
         } else if (tab === 'battles') {
           if (viewBattles) viewBattles.classList.remove('hidden');
           if (tabBattles) tabBattles.className = activeClass;
@@ -2338,8 +2544,27 @@
             ? p.unlocked_premium_cards.length
             : 0;
         }
+        if (key === 'owned_shine') {
+          return Array.isArray(p.unlocked_shine_cards)
+            ? p.unlocked_shine_cards.length
+            : 0;
+        }
         if (key === 'common') {
           return p.common_total_points ?? p.common_points ?? 0;
+        }
+        if (key === 'quick_rating') {
+          return p.quick_rating || 0;
+        }
+        if (key === 'battle_pass_s1') {
+          const isUnlocked =
+            Array.isArray(p.unlocked_battle_passes) &&
+            p.unlocked_battle_passes.includes('battle_pass_vol1');
+          if (!isUnlocked) return -1;
+          return (
+            p.battle_pass_points?.battle_pass_vol1 ??
+            p.battle_pass_points_battle_pass_vol1 ??
+            0
+          );
         }
         const SORT_KEY_MAP = {
           defense: 'total_points',
@@ -2385,6 +2610,9 @@
             const ownedPremiumCount = Array.isArray(p.unlocked_premium_cards)
               ? p.unlocked_premium_cards.length
               : 0;
+            const ownedShineCount = Array.isArray(p.unlocked_shine_cards)
+              ? p.unlocked_shine_cards.length
+              : 0;
 
             return `
             <tr class="hover:bg-indigo-50/30 transition-all border-b border-slate-100 last:border-0 group cursor-pointer ${
@@ -2420,6 +2648,9 @@
                   ${escapeHtml(charName)}
                 </span>
               </td>
+              <td class="p-2 md:p-3 text-center">
+                <div class="text-[11px] font-black ${(p.quick_rating || 0) > 0 ? 'text-sky-600' : 'text-slate-400'}">${formatNumber(p.quick_rating || 0)}</div>
+              </td>
               <td class="p-2 md:p-3 text-center" title="所持: ${formatNumber(p.common_points || 0)} Pt / 累計: ${formatNumber(p.common_total_points || p.common_points || 0)} Pt">
                 <div class="text-[11px] font-black text-yellow-600">${formatNumber(p.common_total_points || p.common_points || 0)}</div>
               </td>
@@ -2448,10 +2679,32 @@
                 <div class="text-[11px] font-black text-rose-500">${p.fortune_max_total_cost_valkyria !== undefined && p.fortune_max_total_cost_valkyria >= 0 ? p.fortune_max_total_cost_valkyria : '-'}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
+                ${(() => {
+                  const isUnlocked =
+                    Array.isArray(p.unlocked_battle_passes) &&
+                    p.unlocked_battle_passes.includes('battle_pass_vol1');
+                  if (!isUnlocked) {
+                    return '<span class="text-[9px] font-bold text-slate-300 italic">未解放</span>';
+                  }
+                  const bpPts =
+                    p.battle_pass_points?.battle_pass_vol1 ??
+                    p.battle_pass_points_battle_pass_vol1 ??
+                    0;
+                  const bpLevel = Math.min(15, Math.floor(bpPts / 10));
+                  if (bpPts >= 150) {
+                    return '<span class="text-[9px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-200">Lv.15 完走</span>';
+                  }
+                  return `<div class="text-[11px] font-black text-indigo-600">Lv.${bpLevel} <span class="text-[9px] font-normal text-slate-400">(${bpPts}Pt)</span></div>`;
+                })()}
+              </td>
+              <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black ${ownedCardTypes > 0 ? 'text-indigo-600' : 'text-slate-300'}">${ownedCardTypes > 0 ? `${ownedCardTypes}種` : '-'}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black ${ownedPremiumCount > 0 ? 'text-fuchsia-600' : 'text-slate-300'}">${ownedPremiumCount > 0 ? `${ownedPremiumCount}枚` : '-'}</div>
+              </td>
+              <td class="p-2 md:p-3 text-center">
+                <div class="text-[11px] font-black ${ownedShineCount > 0 ? 'text-cyan-600' : 'text-slate-300'}">${ownedShineCount > 0 ? `${ownedShineCount}枚` : '-'}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
                 ${
@@ -2505,6 +2758,8 @@
         renderUnlockedSkins(player);
         renderOwnedPlaymats(player);
         renderPremiumCards(player);
+        renderShineCards(player);
+        renderBattlePass(player);
         renderInventory(player);
         renderDeck(player);
 
@@ -2565,6 +2820,32 @@
           ? new Date(p.timestamp * 1000).toLocaleString('ja-JP')
           : '不明';
 
+        // お気に入りカードの解決とHTML生成
+        const favRaw = p.favorite_card || p.favoriteCard;
+        let favHtml = '';
+        if (favRaw) {
+          const favCardId =
+            typeof favRaw === 'object' ? favRaw.cardId || favRaw.id : favRaw;
+          const isFavPrem =
+            typeof favRaw === 'object' ? !!favRaw.isPremium : false;
+          const isFavShine =
+            typeof favRaw === 'object' ? !!favRaw.isShine : false;
+          const favCardObj = (CARD_MASTER || []).find((c) => c.id === favCardId);
+          if (favCardObj) {
+            favHtml = `
+              <div class="mt-3 flex flex-col items-center p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/60 max-w-xs w-full">
+                <span class="text-[9px] font-black text-amber-400 mb-1.5 uppercase tracking-widest">★ お気に入りカード</span>
+                <div class="relative w-16 h-24 rounded-lg overflow-hidden border ${isFavPrem ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-600'}">
+                  <img src="${escapeHtml(getCardThumbPath(favCardId, isFavPrem))}" class="w-full h-full object-cover" alt="${escapeHtml(favCardObj.name)}" />
+                  ${isFavShine ? '<div class="absolute inset-0 bg-gradient-to-tr from-cyan-400/30 to-blue-500/30 pointer-events-none border border-cyan-400/60 rounded-lg"></div>' : ''}
+                  ${isFavShine ? '<div class="absolute bottom-0 right-0 bg-cyan-500 text-slate-950 font-black text-[7px] px-1 rounded-tl">✨</div>' : ''}
+                </div>
+                <span class="text-[10px] font-black text-slate-200 mt-1 truncate max-w-full">${escapeHtml(favCardObj.name)}</span>
+              </div>
+            `;
+          }
+        }
+
         document.getElementById('section-profile').innerHTML = `
           <div class="flex flex-col items-center text-center mb-4">
             <img src="${iconSrc}" loading="lazy" alt="icon" class="player-icon-large mb-3"
@@ -2576,13 +2857,24 @@
                 🎮 ${escapeHtml(charName)}
               </span>
               ${
+                p.quick_rating !== undefined && p.quick_rating !== null
+                  ? `<span class="text-[10px] font-black px-3 py-1 rounded-full bg-sky-600/20 text-sky-300 border border-sky-500/30">⚡ レート: ${formatNumber(p.quick_rating)}</span>`
+                  : ''
+              }
+              ${
                 p.is_premium ||
                 (p.unlocked_premium_cards &&
                   p.unlocked_premium_cards.length > 0)
                   ? '<span class="text-[10px] font-black px-3 py-1 rounded-full bg-amber-600/20 text-amber-300 border border-amber-500/30">⭐ プレミアム</span>'
                   : ''
               }
+              ${
+                p.unlocked_shine_cards && p.unlocked_shine_cards.length > 0
+                  ? '<span class="text-[10px] font-black px-3 py-1 rounded-full bg-cyan-600/20 text-cyan-300 border border-cyan-500/30">🌟 シャイン</span>'
+                  : ''
+              }
             </div>
+            ${favHtml}
           </div>
           <div class="flex justify-between text-[9px] text-slate-600 mt-2">
             <span>最終アクセス: ${p.lastAccessAt ? new Date(p.lastAccessAt * 1000).toLocaleString('ja-JP') : '不明'}</span>
@@ -2597,6 +2889,7 @@
       function renderPoints(p) {
         // 各モードの最大ポイントを算出（バーの表示比率に使用）
         const maxPoints = Math.max(
+          p.quick_rating || 0,
           p.total_points || 0,
           p.common_total_points || 0,
           p.challenge_total_points || 0,
@@ -2607,6 +2900,14 @@
         );
 
         const modes = [
+          {
+            label: 'クイックマッチレート',
+            color: 'sky',
+            gradient: 'from-sky-500 to-blue-500',
+            current: p.quick_rating || 0,
+            total: p.quick_rating || 0,
+            extra: null,
+          },
           {
             label: '防衛戦ポイント',
             color: 'amber',
@@ -3042,6 +3343,162 @@
                   `;
                   })
                   .join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // =============================
+      // シャインカードセクション
+      // =============================
+      /**
+       * プレイヤーの所持シャインカード一覧を描画する
+       * @param {Object} p - プレイヤーデータ
+       * @returns {void}
+       */
+      function renderShineCards(p) {
+        const unlockedCards = Array.from(
+          new Set(
+            (Array.isArray(p.unlocked_shine_cards)
+              ? p.unlocked_shine_cards
+              : []
+            )
+              .map((entry) => resolveCardId(entry))
+              .filter(Boolean)
+          )
+        );
+
+        // CARD_MASTER の定義順（インデックス順）でソート
+        unlockedCards.sort((a, b) => {
+          const idxA = CARD_MASTER.findIndex((c) => c.id === a);
+          const idxB = CARD_MASTER.findIndex((c) => c.id === b);
+          const validA = idxA >= 0 ? idxA : Infinity;
+          const validB = idxB >= 0 ? idxB : Infinity;
+          if (validA !== validB) return validA - validB;
+          return a.localeCompare(b, 'ja');
+        });
+        const unlockedCount = unlockedCards.length;
+        const shineTickets =
+          typeof p.shine_tickets === 'number' ? p.shine_tickets : 0;
+
+        const sectionEl = document.getElementById('section-shine');
+        if (!sectionEl) return;
+
+        if (unlockedCount === 0) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">所持シャインカード (0枚)</span>
+                <span class="text-[9px] font-black text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/50">🎟️ チケット: ${shineTickets}枚</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                シャインカード未所持
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        const cards = unlockedCards.map((cardId) => {
+          const card = CARD_MASTER.find((c) => c.id === cardId);
+          return card || { id: cardId, name: cardId, power: '?', rarity: 0 };
+        });
+
+        sectionEl.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-black text-cyan-400 uppercase tracking-widest">🌟 所持シャインカード (${unlockedCount}枚)</span>
+              <span class="text-[9px] font-black text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/50">🎟️ チケット: ${shineTickets}枚</span>
+            </div>
+            <div class="bg-slate-800/50 rounded-xl p-3 border border-cyan-500/20">
+              <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 xl:grid-cols-4 gap-2">
+                ${cards
+                  .map((c) => {
+                    const rarityColor = RARITY_COLORS[c.rarity] || 'slate';
+                    const rarityLabel = RARITY_LABELS[c.rarity] || '?';
+                    return `
+                  <div class="bg-slate-900/80 rounded-lg p-2 border border-cyan-500/30 flex flex-col items-center text-center shadow-sm relative group overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-blue-500/10 pointer-events-none"></div>
+                    <img src="${escapeHtml(getCardThumbPath(c.id, false))}" loading="lazy" class="w-12 h-12 object-cover rounded-md border border-cyan-400/50 mb-1.5 shrink-0" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                    <div class="text-[10px] font-black text-slate-200 truncate w-full" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</div>
+                    <div class="flex items-center gap-1 mt-1">
+                      <span class="text-[8px] font-black text-${rarityColor}-400 bg-${rarityColor}-950/60 px-1 rounded border border-${rarityColor}-800/50">${rarityLabel}</span>
+                      <span class="text-[9px] font-black text-cyan-300">PWR ${c.power ?? '?'}</span>
+                    </div>
+                  </div>
+                  `;
+                  })
+                  .join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // =============================
+      // バトルパスS1セクション
+      // =============================
+      /**
+       * プレイヤーのバトルパスS1（天槍の進軍）の解放状況・蓄積ポイント・達成レベルを描画する
+       * @param {Object} p - プレイヤーデータ
+       * @returns {void}
+       */
+      function renderBattlePass(p) {
+        const sectionEl = document.getElementById('section-battle-pass');
+        if (!sectionEl) return;
+
+        // 解放判定（配列形式または真偽値に対応）
+        const isUnlocked =
+          Array.isArray(p.unlocked_battle_passes) &&
+          p.unlocked_battle_passes.includes('battle_pass_vol1');
+
+        if (!isUnlocked) {
+          sectionEl.innerHTML = `
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">🎫 バトルパス S1 (天槍の進軍)</span>
+                <span class="text-[9px] font-bold text-slate-400">未解放</span>
+              </div>
+              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
+                バトルパス未解放（ショップ・交換所にて解放可能です）
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // ポイントとレベル計算（最大150Pt / Lv.15完走）
+        const pts =
+          p.battle_pass_points?.battle_pass_vol1 ??
+          p.battle_pass_points_battle_pass_vol1 ??
+          0;
+        const maxPts = 150;
+        const currentLevel = Math.min(15, Math.floor(pts / 10));
+        const isCompleted = pts >= maxPts;
+        const percent = Math.min(100, Math.round((pts / maxPts) * 100));
+
+        sectionEl.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">🎫 バトルパス S1 (天槍の進軍)</span>
+              ${
+                isCompleted
+                  ? '<span class="text-[9px] font-black text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-600/60">Lv.15 完走</span>'
+                  : `<span class="text-[9px] font-black text-indigo-300">Lv.${currentLevel} / 15</span>`
+              }
+            </div>
+            <div class="bg-slate-800/50 rounded-xl p-3 border border-indigo-500/20">
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="text-[10px] font-bold text-slate-300">進捗ポイント</span>
+                <span class="text-xs font-black text-white">${formatNumber(pts)} <span class="text-[9px] text-slate-500 font-normal">/ ${maxPts} Pt (${percent}%)</span></span>
+              </div>
+              <div class="w-full bg-slate-700/50 rounded-full h-2 mb-2">
+                <div class="h-2 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-amber-400" style="width: ${percent}%"></div>
+              </div>
+              <div class="flex justify-between text-[9px] text-slate-400">
+                <span>達成レベル: <strong class="text-white">Lv.${currentLevel}</strong></span>
+                <span>${isCompleted ? '全報酬受取可能' : `次のLvまで: ${10 - (pts % 10)} Pt`}</span>
               </div>
             </div>
           </div>
@@ -4751,6 +5208,259 @@
       }
 
       // =============================
+      // クイックマッチ結果 (対人戦履歴) セクション
+      // =============================
+
+      /**
+       * クイックマッチ（対人戦）結果一覧テーブルを描画する
+       * 検索フィルター（対戦者名、キャラ名、UUID、match_id）および表示件数制限を適用する
+       */
+      function renderQuickBattleLogsList() {
+        const container = document.getElementById('quick-battles-table-body');
+        const countEl = document.getElementById('quick-battles-count');
+        if (!container) return;
+
+        const searchQuery = (
+          document.getElementById('quick-battle-search-input')?.value || ''
+        )
+          .trim()
+          .toLowerCase();
+        const limitVal =
+          document.getElementById('quick-battle-limit-filter')?.value || '100';
+        const limit = limitVal === 'all' ? Infinity : parseInt(limitVal, 10);
+
+        let logs = Array.isArray(recentQuickBattles)
+          ? [...recentQuickBattles]
+          : [];
+
+        // 検索フィルター (対戦者名・キャラ名・UUID・match_id)
+        if (searchQuery) {
+          logs = logs.filter((r) => {
+            const winner = r.winner || {};
+            const loser = r.loser || {};
+
+            const winnerName = (winner.name || '').toLowerCase();
+            const loserName = (loser.name || '').toLowerCase();
+            const winnerUuid = (winner.uuid || '').toLowerCase();
+            const loserUuid = (loser.uuid || '').toLowerCase();
+            const matchId = (r.match_id || '').toLowerCase();
+
+            const winnerCharId = winner.character || 'android';
+            const winnerCharName = (
+              CHARACTERS[winnerCharId]?.name || ''
+            ).toLowerCase();
+            const loserCharId = loser.character || 'android';
+            const loserCharName = (
+              CHARACTERS[loserCharId]?.name || ''
+            ).toLowerCase();
+
+            return (
+              winnerName.includes(searchQuery) ||
+              loserName.includes(searchQuery) ||
+              winnerUuid.includes(searchQuery) ||
+              loserUuid.includes(searchQuery) ||
+              matchId.includes(searchQuery) ||
+              winnerCharId.toLowerCase().includes(searchQuery) ||
+              winnerCharName.includes(searchQuery) ||
+              loserCharId.toLowerCase().includes(searchQuery) ||
+              loserCharName.includes(searchQuery)
+            );
+          });
+        }
+
+        // 表示件数制限
+        const displayLogs = limit === Infinity ? logs : logs.slice(0, limit);
+
+        // 件数更新
+        if (countEl) {
+          if (logs.length !== recentQuickBattles.length) {
+            countEl.textContent = `(表示: ${displayLogs.length}件 / 該当: ${logs.length}件 / 全 ${recentQuickBattles.length}件)`;
+          } else {
+            countEl.textContent = `(表示: ${displayLogs.length}件 / 全 ${recentQuickBattles.length}件)`;
+          }
+        }
+
+        if (displayLogs.length === 0) {
+          container.innerHTML = `
+            <tr>
+              <td colspan="7" class="p-12 text-center text-slate-400 font-bold text-sm">
+                該当するクイックマッチ対戦履歴データが見つかりませんでした。
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const rowsHtml = displayLogs
+          .map((rec, idx) => {
+            const realIdx = recentQuickBattles.indexOf(rec);
+            const formattedDate = rec.timestamp
+              ? new Date(rec.timestamp * 1000).toLocaleString('ja-JP', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '--';
+
+            const winner = rec.winner || {};
+            const loser = rec.loser || {};
+
+            // 勝者アイコン
+            const winnerCharId = winner.character || 'android';
+            const winnerCharObj = CHARACTERS[winnerCharId] || {};
+            const winnerSkinId = winner.skin || 'default';
+            const rawWinnerIconPath =
+              (typeof getSkinImage === 'function' &&
+                getSkinImage(winnerCharObj, winnerSkinId, 'icon')) ||
+              winnerCharObj.icon ||
+              getIconPath('player');
+            const winnerIconPath = fixAssetPath(rawWinnerIconPath);
+
+            // 敗者アイコン
+            const loserCharId = loser.character || 'android';
+            const loserCharObj = CHARACTERS[loserCharId] || {};
+            const loserSkinId = loser.skin || 'default';
+            const rawLoserIconPath =
+              (typeof getSkinImage === 'function' &&
+                getSkinImage(loserCharObj, loserSkinId, 'icon')) ||
+              loserCharObj.icon ||
+              getIconPath('player');
+            const loserIconPath = fixAssetPath(rawLoserIconPath);
+
+            // デッキ枚数
+            const winnerDeckCount = Array.isArray(winner.deck)
+              ? winner.deck.length
+              : 0;
+            const loserDeckCount = Array.isArray(loser.deck)
+              ? loser.deck.length
+              : 0;
+
+            const winnerRateBadge =
+              typeof winner.rating === 'number'
+                ? `<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Rate: ${winner.rating}</span>`
+                : '';
+            const loserRateBadge =
+              typeof loser.rating === 'number'
+                ? `<span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">Rate: ${loser.rating}</span>`
+                : '';
+
+            return `
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="p-3 text-center text-xs font-mono font-bold text-slate-400">${idx + 1}</td>
+              <td class="p-3 text-xs font-semibold text-slate-600">${escapeHtml(formattedDate)}</td>
+              <td class="p-3">
+                <div class="flex items-center gap-2.5">
+                  <img src="${escapeHtml(winnerIconPath)}" loading="lazy" class="w-8 h-8 rounded-full object-cover border border-amber-300 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                  <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="font-bold text-slate-800 text-sm truncate">${escapeHtml(winner.name || '不明')}</span>
+                      ${winnerRateBadge}
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(winnerCharObj.name || winnerCharId)}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="p-3">
+                <div class="flex items-center gap-2.5">
+                  <img src="${escapeHtml(loserIconPath)}" loading="lazy" class="w-8 h-8 rounded-full object-cover border border-slate-300 shadow-sm shrink-0" alt="" onerror="this.onerror=null; this.src='${getIconPath('player')}'" />
+                  <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="font-bold text-slate-700 text-sm truncate">${escapeHtml(loser.name || '不明')}</span>
+                      ${loserRateBadge}
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(loserCharObj.name || loserCharId)}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="p-3 text-center">
+                <div class="flex flex-col items-center gap-1">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300 shadow-sm inline-flex items-center gap-1">👑 決着</span>
+                  <span class="text-[11px] font-bold text-slate-500">${rec.turns ? `${rec.turns} ターン` : '--'}</span>
+                </div>
+              </td>
+              <td class="p-3 text-center">
+                ${
+                  winnerDeckCount > 0
+                    ? `
+                <button
+                  onclick="window.openQuickBattleDeckModal(${realIdx}, 'winner')"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 hover:bg-amber-600 hover:text-white border border-amber-200 transition-all shadow-sm flex items-center gap-1.5 mx-auto"
+                >
+                  <span>👑 勝者デッキ (${winnerDeckCount}枚)</span>
+                </button>`
+                    : '<span class="text-xs text-slate-400 italic">未登録</span>'
+                }
+              </td>
+              <td class="p-3 text-center">
+                ${
+                  loserDeckCount > 0
+                    ? `
+                <button
+                  onclick="window.openQuickBattleDeckModal(${realIdx}, 'loser')"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-600 hover:text-white border border-slate-300 transition-all shadow-sm flex items-center gap-1.5 mx-auto"
+                >
+                  <span>💀 敗者デッキ (${loserDeckCount}枚)</span>
+                </button>`
+                    : '<span class="text-xs text-slate-400 italic">未登録</span>'
+                }
+              </td>
+            </tr>
+          `;
+          })
+          .join('');
+
+        container.innerHTML = rowsHtml;
+      }
+
+      /**
+       * クイックマッチ対戦ログのデッキ詳細ポップアップモーダルを開く
+       * @param {number} recordIndex - recentQuickBattles のインデックス
+       * @param {'winner'|'loser'} [role='winner'] - 対象ロール（勝者または敗者）
+       */
+      function openQuickBattleDeckModal(recordIndex, role = 'winner') {
+        const rec = recentQuickBattles[recordIndex];
+        if (!rec) return;
+
+        const targetData = role === 'winner' ? rec.winner : rec.loser;
+        if (!targetData) return;
+
+        const deck = Array.isArray(targetData.deck) ? targetData.deck : [];
+        if (deck.length === 0) return;
+
+        const targetPlayer = allPlayers.find((p) => p.uuid === targetData.uuid);
+        const premiumCards = Array.isArray(targetPlayer?.unlocked_premium_cards)
+          ? targetPlayer.unlocked_premium_cards
+          : [];
+        const shineCards = Array.isArray(targetPlayer?.unlocked_shine_cards)
+          ? targetPlayer.unlocked_shine_cards
+          : [];
+
+        const charId = targetData.character || 'android';
+        const charObj = CHARACTERS[charId] || {};
+        const charName = charObj.name || charId;
+        const playerName = targetData.name || '不明';
+        const roleLabel = role === 'winner' ? '👑 勝者' : '💀 敗者';
+        const formattedDate = rec.timestamp
+          ? new Date(rec.timestamp * 1000).toLocaleString('ja-JP')
+          : '--';
+        const turnsText = rec.turns ? `${rec.turns}ターン` : '';
+        const rateText =
+          typeof targetData.rating === 'number'
+            ? `Rate: ${targetData.rating}`
+            : '';
+
+        showGenericDeckModal({
+          title: `${roleLabel}: ${playerName} の使用デッキ`,
+          subtitle: `モード: クイックマッチ(対人戦) | プレイヤー: ${playerName} (${charName}${rateText ? ` / ${rateText}` : ''}) | 日時: ${formattedDate}${turnsText ? ` | 決着: ${turnsText}` : ''}`,
+          cards: deck,
+          premiumCards,
+          shineCards,
+        });
+      }
+
+      // =============================
       // 防衛戦結果 (対戦履歴) セクション
       // =============================
 
@@ -4951,17 +5661,27 @@
 
       /**
        * 汎用デッキ詳細モーダルを表示する共通関数
-       * @param {Object} options - { title, subtitle, cards, premiumCards }
+       * @param {Object} options - { title, subtitle, cards, premiumCards, shineCards }
+       * @param {string} options.title - モーダルタイトル
+       * @param {string} options.subtitle - モーダルサブタイトル
+       * @param {Array} options.cards - デッキカード配列
+       * @param {Array<string>} [options.premiumCards=[]] - プレミアムカードID配列
+       * @param {Array<string>} [options.shineCards=[]] - シャインカードID配列
        */
       function showGenericDeckModal({
         title,
         subtitle,
         cards,
         premiumCards = [],
+        shineCards = [],
       }) {
         if (!Array.isArray(cards) || cards.length === 0) return;
 
-        const sortedCards = sortCardsByMasterOrder(cards, premiumCards);
+        const sortedCards = sortCardsByMasterOrder(
+          cards,
+          premiumCards,
+          shineCards
+        );
 
         const modal = document.getElementById('battle-deck-modal');
         const titleEl = document.getElementById('modal-deck-title');
@@ -4981,6 +5701,7 @@
               Array.isArray(PREMIUM_CARD_IDS) &&
               (PREMIUM_CARD_IDS.length === 0 ||
                 PREMIUM_CARD_IDS.includes(cardId));
+            const isShine = checkIsCardShine(entry, shineCards);
 
             const cardObj = (CARD_MASTER || []).find((c) => c.id === cardId);
 
@@ -4993,14 +5714,28 @@
             const rarityColor = RARITY_COLORS[rarity] || 'slate';
             const rarityLabel = RARITY_LABELS[rarity] || '?';
 
+            let borderClass = 'border-slate-700';
+            if (isShine && isActualPremium) {
+              borderClass =
+                'border-cyan-400 ring-1 ring-amber-400/80 shadow-cyan-500/25';
+            } else if (isShine) {
+              borderClass = 'border-cyan-400 shadow-cyan-500/20';
+            } else if (isActualPremium) {
+              borderClass = 'border-amber-400 shadow-amber-500/20';
+            }
+
             return `
             <div
-              class="relative bg-slate-800 border ${isActualPremium ? 'border-amber-400 shadow-amber-500/20' : 'border-slate-700'} rounded-2xl p-2.5 flex flex-col shadow-md hover:border-indigo-400 transition-all overflow-hidden group cursor-pointer"
+              class="relative bg-slate-800 border ${borderClass} rounded-2xl p-2.5 flex flex-col shadow-md hover:border-indigo-400 transition-all overflow-hidden group cursor-pointer"
               onclick="if(window.openCardDetailModal) window.openCardDetailModal('${escapeHtml(cardId)}')"
               title="${escapeHtml(cardName)} の詳細を表示"
             >
-              ${isActualPremium ? '<div class="absolute top-0 right-0 bg-gradient-to-l from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-bl-lg shadow-sm z-10">★ プレミアム</div>' : ''}
+              <div class="absolute top-0 right-0 flex items-center gap-0.5 z-10">
+                ${isActualPremium ? '<div class="bg-gradient-to-l from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-lg shadow-sm">★ プレミアム</div>' : ''}
+                ${isShine ? '<div class="bg-gradient-to-l from-cyan-400 to-blue-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-lg shadow-sm">✨ シャイン</div>' : ''}
+              </div>
               <div class="relative mb-2 overflow-hidden rounded-xl bg-slate-900 border border-slate-700/50 aspect-square">
+                ${isShine ? '<div class="absolute inset-0 bg-gradient-to-tr from-cyan-500/15 via-blue-500/10 to-transparent pointer-events-none z-[1]"></div>' : ''}
                 <img
                   src="${escapeHtml(thumbUrl)}"
                   loading="lazy"
@@ -5067,11 +5802,17 @@
           )
             ? targetPlayer.unlocked_premium_cards
             : [];
+          const defShineCards = Array.isArray(
+            targetPlayer?.unlocked_shine_cards
+          )
+            ? targetPlayer.unlocked_shine_cards
+            : [];
           showGenericDeckModal({
             title: `🛡️ ${rec.targetName || '不明'} の防衛デッキ`,
             subtitle: `${hasHistoricalDefDeck ? '対戦時デッキ' : '⚠️ 対戦時履歴なし（現在の防衛デッキを代替表示）'} | 防衛プレイヤー: ${rec.targetName || '不明'} (${defCharName}) | 対戦相手: ${rec.attackerName || '不明'} | 日時: ${formattedDate} | 結果: ${resultLabel}`,
             cards: deck,
             premiumCards: defPremiumCards,
+            shineCards: defShineCards,
           });
         } else {
           const atkCharId = rec.attackerCharacter || 'android';
@@ -5082,11 +5823,17 @@
           )
             ? atkPlayer.unlocked_premium_cards
             : [];
+          const atkShineCards = Array.isArray(
+            atkPlayer?.unlocked_shine_cards
+          )
+            ? atkPlayer.unlocked_shine_cards
+            : [];
           showGenericDeckModal({
             title: `🎴 ${rec.attackerName || '不明'} の攻撃デッキ`,
             subtitle: `攻撃プレイヤー: ${rec.attackerName || '不明'} (${atkCharName}) | 対戦相手: ${rec.targetName || '不明'} | 日時: ${formattedDate} | 結果: ${resultLabel}`,
             cards: deck,
             premiumCards: atkPremiumCards,
+            shineCards: atkShineCards,
           });
         }
       }
@@ -5111,11 +5858,20 @@
               : []),
           ])
         );
+        const shineList = Array.from(
+          new Set([
+            ...(Array.isArray(deck.shineCards) ? deck.shineCards : []),
+            ...(Array.isArray(player.unlocked_shine_cards)
+              ? player.unlocked_shine_cards
+              : []),
+          ])
+        );
         showGenericDeckModal({
           title: `📋 ${player.name || 'プレイヤー'} の登録デッキ: ${deck.name || `デッキ${deckIndex + 1}`}`,
           subtitle: `リーダー: ${leaderName} | 登録枚数: ${deck.cards.length}枚`,
           cards: deck.cards,
           premiumCards: premiumList,
+          shineCards: shineList,
         });
       }
 
@@ -5132,11 +5888,15 @@
         const premiumList = Array.isArray(player.unlocked_premium_cards)
           ? player.unlocked_premium_cards
           : [];
+        const shineList = Array.isArray(player.unlocked_shine_cards)
+          ? player.unlocked_shine_cards
+          : [];
         showGenericDeckModal({
           title: `🛡️ ${player.name || 'プレイヤー'} の防衛デッキ`,
           subtitle: `リーダー: ${leaderName} | ステージ: ${STAGE_NAME_MAP[player.stage] || player.stage || 'デフォルト'} | 防衛Pt: ${player.points || 0}pt | 枚数: ${player.deck.length}枚`,
           cards: player.deck,
           premiumCards: premiumList,
+          shineCards: shineList,
         });
       }
 

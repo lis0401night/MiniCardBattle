@@ -8,26 +8,26 @@
 import { useEffect, useState } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { useEasterEgg } from '../hooks/useEasterEgg.js';
+import {
+  showCommonPointsAcquisitionModal,
+  showIconAcquisitionModal,
+  showItemAcquisitionModal,
+  showPlaymatAcquisitionModal,
+  showPremiumAcquisitionModal,
+  showSkinAcquisitionModal,
+} from '../services/uiGallery.js';
+import { showBattlePassMenu } from '../services/uiMainCore.js';
+import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
   BATTLE_PASS_MASTER,
-  getBattlePassById,
-  getBattlePassPoints,
-  getBattlePassClaimedLevels,
-  setBattlePassLevelClaimed,
   claimLevelReward,
+  getBattlePassById,
+  getBattlePassClaimedLevels,
+  getBattlePassPoints,
+  setBattlePassLevelClaimed,
   unlockAllBattlePass,
 } from '../utils/constants/battlePass.js';
-import { showBattlePassMenu } from '../services/uiMainCore.js';
-import {
-  showSkinAcquisitionModal,
-  showPlaymatAcquisitionModal,
-  showIconAcquisitionModal,
-  showItemAcquisitionModal,
-  showPremiumAcquisitionModal,
-  showCommonPointsAcquisitionModal,
-} from '../services/uiGallery.js';
-import { showAlertModal } from '../services/uiModals.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -132,8 +132,7 @@ export default function BattlePassProgressScreen() {
         threshold.count || 1,
         {
           title: 'バトルパス報酬獲得！',
-          description:
-            'カード一覧画面からお好きなカードをシャイン化（ホログラム加工）できます。',
+          description: 'カード一覧画面からカードをシャイン化できます。',
           iconEmoji: '🎟️',
         }
       );

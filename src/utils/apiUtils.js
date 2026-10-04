@@ -20,10 +20,12 @@ import {
   OWNED_PLAYMATS_KEY,
   POINT_CONVERSION_MODES,
   PROFILE_ICON_KEY,
+  SHINE_TICKETS_KEY,
   TOURNAMENT_POINTS_KEY,
   TOURNAMENT_TOTAL_POINTS_KEY,
   UNLOCKED_ICONS_KEY,
   UNLOCKED_PREMIUM_KEY,
+  UNLOCKED_SHINE_CARDS_KEY,
   UNLOCKED_SKINS_KEY,
 } from './constants/config.js';
 import {
@@ -944,6 +946,68 @@ export async function recordDefenseBattleToServer(targetUuid, data) {
 }
 
 /**
+ * クイックマッチの対人戦（PvP）結果をサーバーの対戦履歴（recent_quick_battles.json）へ送信します。
+ *
+ * 【二重記録防止の徹底】
+ * クライアント側では勝者のみがこの関数を呼び出す設計とし、
+ * 万が一両者が送信した場合やネットワーク再送時でもサーバー側で同一 match_id の重複を自動排除します。
+ *
+ * @param {Object} data - クイックマッチ対戦結果データ
+ * @param {string} data.matchId - 対戦一意ID
+ * @param {string} data.winnerUuid - 勝者UUID
+ * @param {string} data.winnerName - 勝者名
+ * @param {string} data.winnerCharacter - 勝者キャラクターID
+ * @param {string} data.winnerSkin - 勝者スキンID
+ * @param {number} data.winnerRating - 勝者レート
+ * @param {Array} data.winnerDeck - 勝者デッキ
+ * @param {string} data.loserUuid - 敗者UUID
+ * @param {string} data.loserName - 敗者名
+ * @param {string} data.loserCharacter - 敗者キャラクターID
+ * @param {string} data.loserSkin - 敗者スキンID
+ * @param {number} data.loserRating - 敗者レート
+ * @param {Array} data.loserDeck - 敗者デッキ
+ * @param {number} [data.turns] - 経過ターン数
+ * @param {string} [data.result='win'] - 結果
+ * @returns {Promise<boolean>} 成功したかどうか
+ */
+export async function recordQuickBattleToServer(data) {
+  if (!data || !data.matchId) return false;
+
+  try {
+    const resData = await asyncPost(
+      'record_quick_battle.php',
+      {
+        match_id: data.matchId,
+        winner_uuid: data.winnerUuid,
+        winner_name: data.winnerName,
+        winner_character: data.winnerCharacter,
+        winner_skin: data.winnerSkin || 'default',
+        winner_rating: data.winnerRating,
+        winner_deck: data.winnerDeck,
+        loser_uuid: data.loserUuid,
+        loser_name: data.loserName,
+        loser_character: data.loserCharacter,
+        loser_skin: data.loserSkin || 'default',
+        loser_rating: data.loserRating,
+        loser_deck: data.loserDeck,
+        turns: data.turns,
+        result: data.result || 'win',
+        timestamp: Math.floor(Date.now() / 1000),
+      },
+      {
+        timeout: DEFENSE_RECORD_TIMEOUT_MS,
+        keepalive: true,
+      }
+    );
+
+    return !!resData?.success;
+  } catch (err) {
+    console.error('Failed to record quick battle to server:', err);
+    return false;
+  }
+}
+
+/**
  * 現在の実行環境がクローラー、bot、またはヘッドレス自動操作環境であるかを判定します。
  * サーバへの不要なデータ作成や負荷を防ぐために使用します。
  *
@@ -1090,17 +1154,85 @@ export async function sendHeartbeat() {
       registeredDecks = Array.isArray(GameState.decks) ? GameState.decks : [];
     }
 
+    // クイックマッチレートをLocalStorageから取得
+    let quickRating = 0;
+    try {
+      const ratingSaved = localStorage.getItem('mini_card_battle_quick_rating');
+      if (ratingSaved) {
+        quickRating = Math.max(0, parseInt(ratingSaved, 10) || 0);
+      }
+    } catch {
+      quickRating = 0;
+    }
+
+    // 解放済みバトルパスおよび各ポイントをLocalStorageから取得
+    let unlockedBattlePasses = [];
+    const battlePassPoints = {};
+    try {
+      const passSaved = localStorage.getItem(
+        'mini_card_battle_unlocked_battle_passes'
+      );
+      if (passSaved) {
+        unlockedBattlePasses = JSON.parse(passSaved);
+      }
+      if (Array.isArray(unlockedBattlePasses)) {
+        unlockedBattlePasses.forEach((pId) => {
+          if (pId) {
+            const rawPts = localStorage.getItem(
+              `mini_card_battle_battle_pass_points_${pId}`
+            );
+            if (rawPts !== null) {
+              battlePassPoints[pId] = Math.max(0, parseInt(rawPts, 10) || 0);
+            }
+          }
+        });
+      }
+    } catch {
+      unlockedBattlePasses = [];
+    }
+
+    // 解放済みシャインカードをLocalStorage/GameStateから取得
+    let unlockedShineCards = [];
+    try {
+      const shineSaved = localStorage.getItem(UNLOCKED_SHINE_CARDS_KEY);
+      if (shineSaved) {
+        unlockedShineCards = JSON.parse(shineSaved);
+      } else if (GameState.unlockedShineCards) {
+        unlockedShineCards = GameState.unlockedShineCards;
+      }
+    } catch {
+      unlockedShineCards = GameState.unlockedShineCards || [];
+    }
+
+    // 所持シャインチケット数を取得
+    let shineTickets = 0;
+    try {
+      const ticketsSaved = localStorage.getItem(SHINE_TICKETS_KEY);
+      if (ticketsSaved !== null) {
+        shineTickets = Math.max(0, parseInt(ticketsSaved, 10) || 0);
+      } else if (typeof GameState.shineTickets === 'number') {
+        shineTickets = Math.max(0, GameState.shineTickets);
+      }
+    } catch {
+      shineTickets = 0;
+    }
+
     const result = await asyncPost(
       'heartbeat.php',
       {
         uuid,
         name,
         icon,
+        quick_rating: quickRating,
         inventory,
         unlocked_premium_cards: unlockedPremiumCards,
+        unlocked_shine_cards: unlockedShineCards,
+        shine_tickets: shineTickets,
         unlocked_icons: unlockedIcons,
         unlocked_skins: unlockedSkins,
         owned_playmats: ownedPlaymats,
+        unlocked_battle_passes: unlockedBattlePasses,
+        battle_pass_points: battlePassPoints,
         registered_decks: registeredDecks,
       },
       {

@@ -134,16 +134,20 @@ export function generateDeck(owner, config, sessionId) {
           : t.name && t.power !== undefined
             ? t
             : CARD_MASTER.find((m) => m.id === t.id) || t;
-      const isPremium =
-        cardObj.isPremium ||
-        (owner === 'blue' &&
-          (GameState.premiumCards || []).includes(cardObj.id)) ||
-        false;
-      const isShine =
-        cardObj.isShine ||
-        (owner === 'blue' &&
-          (GameState.shineCards || []).includes(cardObj.id)) ||
-        false;
+      const isMyDeck =
+        owner === 'blue' || config === GameState.playerConfig;
+      const isPremium = Boolean(
+        (typeof t === 'object' && typeof t.isPremium === 'boolean'
+          ? t.isPremium
+          : cardObj.isPremium) ||
+          (isMyDeck && (GameState.premiumCards || []).includes(cardObj.id))
+      );
+      const isShine = Boolean(
+        (typeof t === 'object' && typeof t.isShine === 'boolean'
+          ? t.isShine
+          : cardObj.isShine) ||
+          (isMyDeck && (GameState.shineCards || []).includes(cardObj.id))
+      );
       const tempObj = { ...cardObj, isPremium: isPremium, isShine: isShine };
       const imgUrl = getCardImgUrl(tempObj);
       return {
@@ -1500,13 +1504,18 @@ export async function submitDefenseDeck(providedName = null) {
     icon: resolveValidIconId(GameState.userProfile?.icon),
     character: GameState.playerConfig.id,
     stage: GameState.selectedStageId || 'plain',
-    deck: sortedSelection.map((c) => ({
-      id: typeof c === 'string' ? c : c.id,
-      isPremium: Boolean(
-        GameState.premiumCards &&
-        GameState.premiumCards.includes(typeof c === 'string' ? c : c.id)
-      ),
-    })),
+    deck: sortedSelection.map((c) => {
+      const cardId = typeof c === 'string' ? c : c.id;
+      return {
+        id: cardId,
+        isPremium: Boolean(
+          GameState.premiumCards && GameState.premiumCards.includes(cardId)
+        ),
+        isShine: Boolean(
+          GameState.shineCards && GameState.shineCards.includes(cardId)
+        ),
+      };
+    }),
     playmat: GameState.selectedPlaymatId,
     skin: GameState.playerSkins
       ? GameState.playerSkins[GameState.playerConfig.id]

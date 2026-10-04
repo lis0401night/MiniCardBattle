@@ -3,8 +3,8 @@ import { GameState } from '../../state/gameState.js';
 import { appendVersionQuery } from '../../utils/constants/config.js';
 import { getObtainMethodsText } from '../../utils/constants/obtainMethods.js';
 import {
-  PACK_DEFAULT_RARITY_WEIGHTS,
   DEFAULT_PACK_COVER_CARD_ID,
+  PACK_DEFAULT_RARITY_WEIGHTS,
 } from '../../utils/constants/packs.js';
 import { SKILLS } from '../../utils/constants/skills.js';
 import { STATUSES } from '../../utils/constants/statuses.js';
@@ -948,7 +948,7 @@ function CardPreviewContent({
                   {styleProps.flavorOverride ||
                     card?.flavor ||
                     card?.description ||
-                    'カード一覧画面またはデッキ編集画面から、お好きなカードをシャイン化（ホログラム加工）できる専用チケット。'}
+                    'カード一覧画面またはデッキ編集画面から、カードをシャイン化できる専用チケット。'}
                 </div>
 
                 {/* アイテム情報 */}

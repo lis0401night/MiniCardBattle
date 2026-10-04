@@ -61,6 +61,7 @@ import {
   calculateFortuneTotalPointsFromCleared,
   reconcilePointsWithPurchases,
   recordDefenseBattleToServer,
+  recordQuickBattleToServer,
   savePointsToServer,
 } from '../../utils/apiUtils.js';
 import {
@@ -871,6 +872,89 @@ export function endBattle() {
       recordQuickMatchWin(isCpu);
     } catch (e) {
       console.warn('[BattleResult] recordQuickMatchWin failed:', e);
+    }
+
+    // クイックマッチ対人戦（PvP）の全体結果記録
+    // ※ 二重送信防止の徹底: 対人戦の勝者（win）のみがサーバーへ結果を送信する（敗者は送信しない）
+    const isQuickPvP =
+      GameState.gameMode !== 'online_quick_cpu' &&
+      (GameState.gameMode === 'online_quick' ||
+        GameState.onlineSubMode === 'quick');
+
+    if (isQuickPvP) {
+      try {
+        const qInfo = GameState.quickMatchInfo || {};
+        const myUuid = qInfo.myUuid || getOrCreateUUID();
+        const myName = qInfo.myName || resolvePlayerName();
+        const myRating =
+          parseInt(localStorage.getItem('mini_card_battle_quick_rating'), 10) ||
+          0;
+        const myDeckObjects =
+          Array.isArray(GameState.battleStartPlayerDeckObjects) &&
+          GameState.battleStartPlayerDeckObjects.length > 0
+            ? GameState.battleStartPlayerDeckObjects
+            : toDeckObjects(
+                GameState.playerDeckSelection || GameState.playerDeck || [],
+                GameState.playerConfig?.premiumCards || []
+              );
+
+        const enemyUuid = qInfo.opponentUuid || '';
+        const enemyName =
+          qInfo.opponentName || GameState.enemyConfig?.name || '対戦相手';
+        const enemyRating = qInfo.opponentRating || 0;
+        const enemyDeckObjects =
+          Array.isArray(GameState.battleStartEnemyDeckObjects) &&
+          GameState.battleStartEnemyDeckObjects.length > 0
+            ? GameState.battleStartEnemyDeckObjects
+            : toDeckObjects(
+                GameState.enemyDeckSelection || GameState.enemyDeck || [],
+                GameState.enemyConfig?.premiumCards || []
+              );
+
+        const winnerCharacter =
+          GameState.playerConfig?.character ||
+          GameState.playerConfig?.id ||
+          'android';
+        const winnerSkin =
+          GameState.playerConfig?.skin ||
+          GameState.playerSkins?.[winnerCharacter] ||
+          'default';
+
+        const loserCharacter =
+          GameState.enemyConfig?.character ||
+          GameState.enemyConfig?.id ||
+          'android';
+        const loserSkin =
+          GameState.enemyConfig?.skin ||
+          GameState.enemySkins?.[loserCharacter] ||
+          'default';
+
+        const matchId =
+          qInfo.matchId ||
+          `quick_${GameState.battleSeed || Date.now()}_${myUuid}_${enemyUuid}`;
+
+        recordQuickBattleToServer({
+          matchId,
+          winnerUuid: myUuid,
+          winnerName: myName,
+          winnerCharacter,
+          winnerSkin,
+          winnerRating: myRating,
+          winnerDeck: myDeckObjects,
+          loserUuid: enemyUuid,
+          loserName: enemyName,
+          loserCharacter,
+          loserSkin,
+          loserRating: enemyRating,
+          loserDeck: enemyDeckObjects,
+          turns: GameState.turnCount || 1,
+          result: 'win',
+        }).catch((err) => {
+          console.warn('[BattleResult] recordQuickBattleToServer failed:', err);
+        });
+      } catch (err) {
+        console.warn('[BattleResult] Quick battle record prep failed:', err);
+      }
     }
   }
 

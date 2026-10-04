@@ -418,7 +418,11 @@ export function prepareBattle() {
 
     GameState.battleStartPlayerDeckObjects =
       Array.isArray(snapshotSource) && snapshotSource.length > 0
-        ? toDeckObjects(snapshotSource, GameState.premiumCards)
+        ? toDeckObjects(
+            snapshotSource,
+            GameState.premiumCards,
+            GameState.shineCards
+          )
         : null;
 
     const enemySnapshotSource =
@@ -432,7 +436,8 @@ export function prepareBattle() {
       Array.isArray(enemySnapshotSource) && enemySnapshotSource.length > 0
         ? toDeckObjects(
             enemySnapshotSource,
-            GameState.enemyConfig?.premiumCards || []
+            GameState.enemyConfig?.premiumCards || [],
+            GameState.enemyConfig?.shineCards || []
           )
         : null;
 

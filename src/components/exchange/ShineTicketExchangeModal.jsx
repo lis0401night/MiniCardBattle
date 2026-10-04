@@ -148,7 +148,7 @@ export default function ShineTicketExchangeModal({
             whiteSpace: 'pre-wrap',
           }}
         >
-          カード一覧画面またはデッキ編集画面から、お好きなカードをシャイン化（ホログラム加工）できる専用チケットです。
+          カード一覧画面またはデッキ編集画面から、カードをシャイン化できる専用チケットです。
           <br />
           シャイン化後はいつでも🌟ボタンでON/OFFを自由に切り替えることができます。
         </div>
