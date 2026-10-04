@@ -36,3 +36,6 @@ backup/
 
 # Large Assets
 *.psd
+
+# AI assistant project instructions (local only)
+CLAUDE.md
