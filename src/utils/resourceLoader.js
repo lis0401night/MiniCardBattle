@@ -10,7 +10,12 @@ import {
 import { appendVersionQuery } from './constants/config.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import { VFX_DATA } from './constants/vfx.js';
-import { UI_IMAGES } from './constants/uiImages.js';
+import {
+  UI_IMAGES,
+  MAX_TITLE_BGS,
+  TITLE_BG_FIRST_INDEX,
+  getTitleBgUrl,
+} from './constants/uiImages.js';
 import { getAllVoicePaths } from './constants/voices.js';
 import { STAGES, getStageImgUrl } from './constants/stages.js';
 import { PLAYMAT_MASTER, getPlaymatImgUrl } from './constants/playmats.js';
@@ -105,13 +110,8 @@ export async function preloadAllGameResources(onProgress) {
 
   // 1. タイトルなど起動直後に必要な画像・ロゴ
   urlsToLoad.add(appendVersionQuery('assets/ui/title_logo.png'));
-  const MAX_TITLE_BGS = 3;
-  for (let i = 1; i <= MAX_TITLE_BGS; i++) {
-    urlsToLoad.add(
-      appendVersionQuery(
-        `assets/ui/title_img_${String(i).padStart(3, '0')}.png`
-      )
-    );
+  for (let i = TITLE_BG_FIRST_INDEX; i <= MAX_TITLE_BGS; i++) {
+    urlsToLoad.add(getTitleBgUrl(i));
   }
 
   // 2. メインメニュー表示用UIボタン画像全種およびメイン選択背景

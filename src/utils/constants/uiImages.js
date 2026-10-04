@@ -1,5 +1,32 @@
 import { appendVersionQuery } from './config.js';
 
+/** タイトル画面の背景画像の総数（title_img_001.png 〜 の連番。画像を追加したらこの値を増やす） */
+export const MAX_TITLE_BGS = 4;
+
+/** タイトル背景画像の連番の最小値 */
+export const TITLE_BG_FIRST_INDEX = 1;
+
+/** タイトル背景画像ファイル名の連番桁数（例: 3桁 → 001） */
+const TITLE_BG_INDEX_DIGITS = 3;
+
+/**
+ * タイトル画面の背景画像URLを取得する
+ * @param {number} index - 背景画像の連番（TITLE_BG_FIRST_INDEX 〜 MAX_TITLE_BGS）
+ * @return {string} バージョンクエリ付きの背景画像URL
+ */
+export function getTitleBgUrl(index) {
+  const paddedIndex = String(index).padStart(TITLE_BG_INDEX_DIGITS, '0');
+  return appendVersionQuery(`assets/ui/title_img_${paddedIndex}.png`);
+}
+
+/**
+ * タイトル画面の背景画像の連番をランダムに1つ選ぶ
+ * @return {number} 背景画像の連番（TITLE_BG_FIRST_INDEX 〜 MAX_TITLE_BGS）
+ */
+export function pickRandomTitleBgIndex() {
+  return Math.floor(Math.random() * MAX_TITLE_BGS) + TITLE_BG_FIRST_INDEX;
+}
+
 export const UI_IMAGES = {
   MENU_SOLO: appendVersionQuery('assets/ui/ui_solobutton01.png'),
   MENU_STORY: appendVersionQuery('assets/ui/ui_storybutton01.png'),

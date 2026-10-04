@@ -4,6 +4,11 @@ import TitleParticles from '../components/common/TitleParticles.jsx';
 import { goToModeSelect } from '../services/uiMainCore.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { appendVersionQuery } from '../utils/constants/config.js';
+import {
+  TITLE_BG_FIRST_INDEX,
+  getTitleBgUrl,
+  pickRandomTitleBgIndex,
+} from '../utils/constants/uiImages.js';
 import { getCardImgUrl } from '../utils/gameUtils.js';
 import { preloadAllGameResources } from '../utils/resourceLoader.js';
 import { unlockAudio } from '../utils/sounds.js';
@@ -23,12 +28,11 @@ export default function TitleScreen() {
   const [imgError, setImgError] = useState(false);
   const [currentCard, setCurrentCard] = useState(null);
   const [isFading, setIsFading] = useState(false);
-  const [bgIndex, setBgIndex] = useState(1);
+  const [bgIndex, setBgIndex] = useState(TITLE_BG_FIRST_INDEX);
 
   useEffect(() => {
-    // 1〜3のランダムな背景画像をセット（今後増える場合はこのMAX値を変更）
-    const MAX_TITLE_BGS = 3;
-    setBgIndex(Math.floor(Math.random() * MAX_TITLE_BGS) + 1);
+    // ランダムな背景画像をセット（枚数は uiImages.js の MAX_TITLE_BGS で管理）
+    setBgIndex(pickRandomTitleBgIndex());
 
     // 【タイトル画面カード表示】プレイヤーの所持カードからランダムに選んで10秒ごとに切り替える
     let candidateIds = [];
@@ -156,9 +160,7 @@ export default function TitleScreen() {
           src={
             isLoading
               ? appendVersionQuery('assets/ui/title_loading.png')
-              : appendVersionQuery(
-                  `assets/ui/title_img_${String(bgIndex).padStart(3, '0')}.png`
-                )
+              : getTitleBgUrl(bgIndex)
           }
           alt="Key Visual"
           className="title-visual"
