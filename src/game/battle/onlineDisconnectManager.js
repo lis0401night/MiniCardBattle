@@ -18,7 +18,7 @@ import {
 import { ONLINE_DISCONNECT_WAIT_SEC } from '../../utils/constants/onlineTimer.js';
 import { pauseOnlineTimer, resumeOnlineTimer } from './onlineTimer.js';
 import { sendSyncStateNow } from './battleQueue.js';
-import { endBattle } from './battleResult.js';
+import { endBattle, cleanupBattleState } from './battleResult.js';
 import { triggerFinishVisuals } from '../../services/uiBattle.js';
 import { showAlertModal } from '../../services/uiModals.js';
 import { stopAllBGM, switchScreen } from '../../utils/gameUtils.js';
@@ -76,6 +76,7 @@ export function subscribeDisconnectState(callback) {
 
 /**
  * 購読者全員に最新の状態を通知する
+ * @returns {void}
  */
 function notifySubscribers() {
   const snapshot = getDisconnectState();
@@ -90,8 +91,8 @@ function notifySubscribers() {
 
 /**
  * 相手プレイヤーの最新情報を取得する
- * @param {Object} roomData
- * @returns {Object|null}
+ * @param {Object|null} roomData - ルームデータオブジェクト
+ * @returns {Object|null} 相手プレイヤー情報オブジェクト（取得できない場合は null）
  */
 function getOpponentData(roomData) {
   if (!roomData) return null;
@@ -100,6 +101,7 @@ function getOpponentData(roomData) {
 
 /**
  * 切断カウントダウンを開始する
+ * @returns {void}
  */
 function startCountdown() {
   if (countdownIntervalId !== null) return;
@@ -139,6 +141,7 @@ function startCountdown() {
 
 /**
  * 切断カウントダウンを停止する
+ * @returns {void}
  */
 function stopCountdown() {
   if (countdownIntervalId !== null) {
@@ -149,6 +152,7 @@ function stopCountdown() {
 
 /**
  * 通信復帰時の処理を実行する
+ * @returns {void}
  */
 function handleReconnected() {
   stopCountdown();
@@ -191,6 +195,7 @@ function handleReconnected() {
 
 /**
  * 60秒切断待機がタイムアウトした時の勝敗・終了判定
+ * @returns {void}
  */
 function handleDisconnectTimeout() {
   if (GameState.isBattleEnded) return;
@@ -203,9 +208,21 @@ function handleDisconnectTimeout() {
 
     showAlertModal(
       'インターネット通信が回復しなかったため、対戦を終了します。',
-      () => {
-        leaveRoom().catch(() => {});
-        switchScreen('screen-online-lobby');
+      async () => {
+        // 対戦状態とモードフラグを完全に破棄
+        const subMode = GameState.onlineSubMode;
+        cleanupBattleState();
+        GameState.onlineSubMode = null;
+
+        // ルームからの完全退室を待機
+        await leaveRoom().catch(() => {});
+
+        // クイックマッチかルームマッチかに応じて適切な待機・メニュー画面へ遷移
+        switchScreen(
+          subMode === 'quick'
+            ? 'screen-online-quick-match'
+            : 'screen-online-room-match'
+        );
       }
     );
     return;
@@ -239,6 +256,7 @@ function handleDisconnectTimeout() {
 /**
  * 内部タイマーや接続監視ハンドラのリソースのみを解放する
  * ※ ロビー用削除予約（restoreLobbyDisconnectHandlers）は呼ばない
+ * @returns {void}
  */
 function resetDisconnectInternalState() {
   stopCountdown();
@@ -266,6 +284,7 @@ function resetDisconnectInternalState() {
 
 /**
  * 対戦開始時に切断監視リスナーを初期化する
+ * @returns {void}
  */
 export function initOnlineDisconnectManager() {
   if (GameState.gameMode !== 'online') return;
@@ -331,6 +350,7 @@ export function initOnlineDisconnectManager() {
 
 /**
  * 対戦終了時に切断監視リソースを解放し、ロビー待機用切断ポリシーへ復元する
+ * @returns {void}
  */
 export function cleanupOnlineDisconnectManager() {
   resetDisconnectInternalState();

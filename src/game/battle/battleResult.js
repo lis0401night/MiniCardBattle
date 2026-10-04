@@ -14,6 +14,7 @@ import {
 } from './battleQueue.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import {
+  checkIsBattleRewardEligible,
   checkIsCardDropEligible,
   checkIsFortuneMode,
   checkIsMissionEligible,
@@ -895,10 +896,7 @@ export function endBattle() {
 
     if (
       GameState.lastBattleResult === 'win' &&
-      GameState.gameMode !== 'online' &&
-      GameState.gameMode !== 'online_quick' &&
-      GameState.gameMode !== 'practice' &&
-      GameState.gameMode !== 'tournament'
+      checkIsBattleRewardEligible(GameState.gameMode)
     ) {
       if (
         GameState.gameMode === 'story' &&

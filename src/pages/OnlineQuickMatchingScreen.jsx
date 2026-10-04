@@ -74,6 +74,7 @@ export default function OnlineQuickMatchingScreen() {
   const timeoutTimerRef = useRef(null);
   const cancelTimeoutRef = useRef(null);
   const hasMatchedRef = useRef(false);
+  const isCancelledRef = useRef(false);
   const isMatchingStartedRef = useRef(false);
   const activeMatchPromiseRef = useRef(null);
 
@@ -420,10 +421,21 @@ export default function OnlineQuickMatchingScreen() {
       playerName,
       myLeaderConfig,
       (matchedRoomData) => {
+        // キャンセル済み・アンマウント済みであれば、マッチング成立を破棄して即座に退室
+        if (isCancelledRef.current || !isMountedRef.current) {
+          safeLeaveRoom('キャンセル後のマッチング破棄').catch(() => {});
+          return;
+        }
         stopSessionHeartbeat();
         handleMatchSuccessRef.current?.(matchedRoomData);
       },
       (roomId) => {
+        // キャンセル済み・アンマウント済みであれば、作成直後の待機エントリを即座に破棄して終了（孤児エントリ・ゾンビハートビート防止）
+        if (isCancelledRef.current || !isMountedRef.current) {
+          cancelQuickMatch().catch(() => {});
+          return;
+        }
+
         // 待機開始時: 統一ハートビート管理によりホスト生存信号の送信を開始
         if (roomId) {
           startSessionHeartbeat(roomId, QUICK_MATCH_REF);
@@ -432,7 +444,11 @@ export default function OnlineQuickMatchingScreen() {
         // 待機開始時: タイムアウトタイマーを設定（1分経過でCPU戦に自動移行）
         if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
         timeoutTimerRef.current = setTimeout(() => {
-          if (!hasMatchedRef.current && isMountedRef.current) {
+          if (
+            !hasMatchedRef.current &&
+            isMountedRef.current &&
+            !isCancelledRef.current
+          ) {
             handleTimeoutTransitionToCpuRef.current?.();
           }
         }, MATCHING_TIMEOUT_MS);
@@ -495,16 +511,14 @@ export default function OnlineQuickMatchingScreen() {
       // 対戦開始に至らなかった場合のアンマウントキャンセル
       // React.StrictMode での即時アンマウント/再マウントで部屋が一瞬で削除されてしまうのを防止するため、
       // 300ms の猶予を設け、再マウントされず画面を完全に離脱した場合のみキャンセルを実行する
-      if (!hasMatchedRef.current) {
+      if (!hasMatchedRef.current || isCancelledRef.current) {
         cancelTimeoutRef.current = setTimeout(() => {
-          if (!hasMatchedRef.current) {
+          if (!hasMatchedRef.current || isCancelledRef.current) {
             cancelQuickMatch().catch(() => {});
             if (activeMatchPromiseRef.current) {
               activeMatchPromiseRef.current
                 .then(() => {
-                  if (!hasMatchedRef.current) {
-                    cancelQuickMatch().catch(() => {});
-                  }
+                  cancelQuickMatch().catch(() => {});
                 })
                 .catch(() => {});
             }
@@ -515,10 +529,13 @@ export default function OnlineQuickMatchingScreen() {
   }, [beginMatching]);
 
   /**
-   * キャンセルボタンクリック時のハンドラ
+   * キャンセルボタンクリック時のハンドラ。
+   * 待機キャンセル、ハートビート停止、および進行中の非同期待機登録完了後の追従破棄を行う。
+   * @returns {Promise<void>}
    */
   const handleCancel = async () => {
     playSound?.(SOUNDS?.seClick);
+    isCancelledRef.current = true;
     hasMatchedRef.current = true;
     if (cancelTimeoutRef.current) {
       clearTimeout(cancelTimeoutRef.current);
@@ -534,6 +551,10 @@ export default function OnlineQuickMatchingScreen() {
       timeoutTimerRef.current = null;
     }
     await cancelQuickMatch();
+    // 待機登録処理が非同期進行中で未完了の場合、完了後に確実に再度破棄する（孤児エントリ防止）
+    activeMatchPromiseRef.current
+      ?.then(() => cancelQuickMatch())
+      .catch(() => {});
     showOnlineQuickMatch?.();
   };
   handleCancelRef.current = handleCancel;

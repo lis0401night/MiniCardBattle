@@ -320,20 +320,30 @@ export function stopSessionHeartbeat() {
 
 /**
  * ホストが現在アプリを開いて待機中であることを示す生存信号（ハートビート）を更新する。
+ * ルームが削除済みの場合にゾンビノードを新設しないよう、runTransaction で存在確認と更新をアトミックに行う。
+ *
  * @param {string} roomId - 対象のルームIDまたはマッチID
  * @param {string} [basePath=currentBasePath] - ベースパス
  * @returns {Promise<boolean>} 更新が成功したかどうか
  */
 export async function updateRoomHeartbeat(roomId, basePath = currentBasePath) {
   if (!roomId || !database) return false;
-  // 既にローカルで退室・キャンセル済みの場合は送信を抑止
-  if (currentRoomId && currentRoomId !== roomId) return false;
+  // ローカルで退室・キャンセル済み（null 含む）の場合は送信を抑止
+  if (currentRoomId !== roomId) return false;
   try {
-    const hostRef = ref(database, `${basePath}/${roomId}/host`);
-    await update(hostRef, {
-      lastActiveAt: serverTimestamp(),
+    const roomRef = ref(database, `${basePath}/${roomId}`);
+    const result = await runTransaction(roomRef, (room) => {
+      // ルームが存在しない、またはホスト情報が存在しない場合はアボート（削除済みノードの再生成を防止）
+      if (!room || !room.host) return undefined;
+      return {
+        ...room,
+        host: {
+          ...room.host,
+          lastActiveAt: serverTimestamp(),
+        },
+      };
     });
-    return true;
+    return !!result.committed;
   } catch (e) {
     console.warn(`updateRoomHeartbeat failed for ${basePath}/${roomId}:`, e);
     return false;
@@ -912,7 +922,7 @@ let onlineActionUnsubscribe = null;
 
 /**
  * バトル中のアクションを監視する。
- * @param {Function} onActionReceived - アクション受信時コールバック ({ action, actor, timestamp }) => void
+ * @param {Function} onActionReceived - アクション受信時コールバック ({ action, actor, timestamp }, actionKey: string) => void
  * @param {Set<string>|null} [ignoredActionKeys=null] - 復帰（リジョイン）時にスキップする既存アクションIDのSet。過去ログの多重再実行を防止する。
  */
 export function listenToRoomActions(
@@ -939,7 +949,7 @@ export function listenToRoomActions(
 
     const val = snapshot.val();
     if (onActionReceived && val) {
-      onActionReceived(val);
+      onActionReceived(val, snapshot.key);
     }
   });
 }
@@ -977,9 +987,10 @@ export async function sendOnlineAction(action) {
  * アプリ落ち復帰時の高速リストアに使用する。
  * undefinedによるFirebase例外を防ぐためサニタイズして保存する。
  * @param {Object} state - 同期用ステートオブジェクト
+ * @param {string|null} [lastActionKey=null] - 反映済みの最新アクションキー（Firebase Push ID）
  * @returns {Promise<void>}
  */
-export async function saveLastSyncStateToRoom(state) {
+export async function saveLastSyncStateToRoom(state, lastActionKey = null) {
   if (!database || !currentRoomId || !isHost || !state) return;
   try {
     const syncRef = ref(
@@ -989,6 +1000,7 @@ export async function saveLastSyncStateToRoom(state) {
     const sanitizedState = JSON.parse(JSON.stringify(state));
     await set(syncRef, {
       ...sanitizedState,
+      lastActionKey: lastActionKey ?? state.lastActionKey ?? null,
       savedAt: getServerNow(),
     });
   } catch (e) {
@@ -1295,11 +1307,25 @@ export async function leaveRoom() {
         roomCode,
       });
     } else {
-      // 1. ゲストの場合：ステータスを waiting に戻し、client を null にクリア
-      await update(sessionRef, {
-        status: 'waiting',
-        client: null,
-      });
+      // 1. ゲストの場合の退室処理
+      if (leavingBasePath === ROOMS_REF) {
+        // ルームマッチ: ロビーで再募集するためステータスを waiting に戻し、client を null にクリア
+        await update(sessionRef, {
+          status: 'waiting',
+          client: null,
+        });
+      } else {
+        // クイックマッチ: 1戦完結型のため、セッションが存在する場合のみ ended 状態を維持して client を外す
+        // （削除済みの場合に waiting ノードが再生成されたり、第三者が誤マッチングする事故を防止）
+        await runTransaction(sessionRef, (s) => {
+          if (!s) return undefined;
+          return {
+            ...s,
+            status: 'ended',
+            client: null,
+          };
+        });
+      }
     }
 
     // 2. 明示的な退室・解散が完了した後、不要になった切断時自動削除/更新の予約を解除する
@@ -1488,14 +1514,13 @@ export async function startQuickMatch(
         };
 
         const result = await runTransaction(targetMatchRef, (match) => {
-          // Firebase RTDB の runTransaction は初回ローカル未キャッシュ時に match === null で呼ばれる。
-          // ここで undefined を返すとアボートされるため、candidate の既知データを元に更新値を返す。
-          const current = match || candidate;
-          if (!current || current.status !== 'waiting' || current.client) {
+          // ノードが存在しない（削除・キャンセル済み）または待機中でない場合は安全にアボート
+          // ※ candidate でフォールバックすると削除済みマッチを誤って再生成してしまうため、match の実在を厳格に要求する
+          if (!match || match.status !== 'waiting' || match.client) {
             return undefined;
           }
           return {
-            ...current,
+            ...match,
             status: 'battle',
             battleStartedAt: getServerNow(),
             battleSeed: Date.now(),

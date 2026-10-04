@@ -47,8 +47,15 @@ export function calculateCombatPhase(state, attackerSide, events = []) {
 }
 
 /**
- * 指定した1レーンのみの戦闘計算（Quick等のシミュレーション用）
- * @returns {Array} events
+ * 指定した1レーンの戦闘を計算する（速攻・奇襲・鉄の行進・シミュレーション等で使用）
+ * ※ 防御側リーダーHPはローカル変数 defHP で計算し関数の末尾で state に一括書き戻すため、
+ *    処理途中で state.playerHP / state.enemyHP を直接変更しないこと。
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} attackerSide - 攻撃側陣営 ('blue'|'red')
+ * @param {number} l - 攻撃レーンインデックス (0〜2)
+ * @param {Array<Object>} [events=[]] - イベントログ配列
+ * @returns {Array<Object>} 発生したイベントログ配列
  */
 export function applySingleCombat(state, attackerSide, l, events = []) {
   const atkBoard =
@@ -306,6 +313,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
         }
 
         if (effectiveDmg > 0) {
+          let cardDamageApplied = false;
           const blockType = getDamageBlockType(
             targetCard,
             effectiveDmg,
@@ -343,6 +351,7 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
               }
             } else {
               targetCard.currentPower -= effectiveDmg;
+              cardDamageApplied = true;
               events.push({
                 type: 'damage_card',
                 side: defSide,
@@ -370,7 +379,8 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
             effectiveDmg = 0;
           }
 
-          if (hasSkill(aC, 'deadly')) {
+          // 必殺：カードに戦闘ダメージが実際に入った場合のみ発動（回避・憑依・加護時は不発）
+          if (cardDamageApplied && hasSkill(aC, 'deadly')) {
             if (canCardBeDestroyed(state, targetCard, defSide)) {
               targetCard.currentPower = 0;
               events.push({ type: 'deadly', side: defSide, lane: targetLane });
@@ -1111,11 +1121,16 @@ export function applySingleCombat(state, attackerSide, l, events = []) {
   return events;
 }
 
-
-
-
 /**
  * 簒奪スキルの適用 (指定した相手プレイヤーの手札をランダムに虚空に変換)
+ *
+ * @param {Object} aC - 簒奪スキルを持つ攻撃側カードオブジェクト
+ * @param {'blue'|'red'} oppSide - 対象となる相手側陣営 ('blue'|'red')
+ * @param {'blue'|'red'} attackerSide - 攻撃側陣営 ('blue'|'red')
+ * @param {number} aLane - 攻撃側カードのレーンインデックス (0〜2)
+ * @param {Array<Object>} events - イベントログ配列
+ * @param {Object} state - バトル状態オブジェクト
+ * @returns {void}
  */
 function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
   if (!hasSkill(aC, 'extort')) return;
@@ -1130,18 +1145,11 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
     const newTokens = [];
 
     // 【システム解説】
-    // 簒奪（extort）スキルは相手の手札から「最大パワー」のカードを優先的に選択して処理します。
-    // 手札内の有効なカードをインデックス情報付きで抽出し、
-    // パワーの降順（同値の場合は左側＝手札のインデックスが小さい方を優先）でソートします。
+    // 簒奪（extort）スキル: 相手の手札のカードを左（インデックス0から昇順）から優先して捨て、虚空を加える
     const validTargets = oppHand
       .map((card, idx) => ({ card, idx }))
       .filter((item) => item.card !== null)
-      .sort((a, b) => {
-        const pA = a.card.currentPower ?? a.card.power ?? 0;
-        const pB = b.card.currentPower ?? b.card.power ?? 0;
-        if (pB !== pA) return pB - pA;
-        return a.idx - b.idx; // 同値の場合は左優先
-      });
+      .sort((a, b) => a.idx - b.idx); // 左優先（手札インデックス順）
 
     const actualCount = Math.min(val, validTargets.length);
 
@@ -1226,4 +1234,3 @@ function applyExtort(aC, oppSide, attackerSide, aLane, events, state) {
     newTokens.forEach((t) => oppHand.push(t));
   }
 }
-

@@ -18,6 +18,12 @@
  *   {deckSize} - 所持カード枚数
  */
 import { CARD_MASTER } from './cards.js';
+import {
+  CHARACTERS,
+  getLeaderDisplayNameInfo,
+  getSkinImage,
+  getStoredPlayerSkinId,
+} from './characters.js';
 import { GameState } from '../../state/gameState.js';
 
 // HP閾値の定数
@@ -1264,8 +1270,8 @@ export function buildDungeonLeaderTalkDialogue(context, playerConfig) {
     ];
   }
 
-  const leaderName = playerConfig.name || 'リーダー';
-  const leaderImage = playerConfig.image || playerConfig.icon;
+  let leaderName = playerConfig.name || 'リーダー';
+  let leaderImage = playerConfig.image || playerConfig.icon;
 
   // コンテキスト判定
   const contextKey = resolveContextKey(context);
@@ -1277,15 +1283,24 @@ export function buildDungeonLeaderTalkDialogue(context, playerConfig) {
     (typeof GameState !== 'undefined'
       ? GameState.playerSkins?.[charId]
       : null) ||
-    (() => {
-      try {
-        return JSON.parse(
-          localStorage.getItem('mini_card_battle_player_skins') || '{}'
-        )[charId];
-      } catch {
-        return null;
-      }
-    })();
+    getStoredPlayerSkinId(charId);
+
+  // キャラクターリーダーでスキンが適用されている場合は表示名および画像をスキン情報で補正（カードリーダーの場合は変更しない）
+  if (skinId && CHARACTERS[charId]) {
+    const charObj = CHARACTERS[charId];
+    const displayInfo = getLeaderDisplayNameInfo(charObj, skinId);
+    if (displayInfo?.fullName) {
+      leaderName = displayInfo.fullName;
+    }
+    const skinImg =
+      typeof getSkinImage === 'function'
+        ? getSkinImage(charObj, skinId, 'image')
+        : null;
+    if (skinImg) {
+      leaderImage = skinImg;
+    }
+  }
+
   const skinKey = skinId ? `${charId}_${skinId}` : null;
   const effectiveKey =
     skinKey && DUNGEON_CHARACTER_TALK_LINES.normal[skinKey] ? skinKey : charId;

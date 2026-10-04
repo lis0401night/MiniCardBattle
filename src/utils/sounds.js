@@ -704,6 +704,8 @@ const SCREEN_BGM_KEY_MAP = Object.freeze({
   'screen-online-quick-match': 'bgmOnline',
   'screen-online-quick-matching': 'bgmOnline',
   'screen-online-room-match': 'bgmOnline',
+  'screen-online-quick-rules': 'bgmOnline',
+  'screen-online-rules': 'bgmOnline',
   'screen-common-exchange': 'bgmShop',
   'screen-shop-menu': 'bgmShop',
   'screen-exchange': 'bgmShop',

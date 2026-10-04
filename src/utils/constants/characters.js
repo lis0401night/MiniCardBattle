@@ -1636,3 +1636,22 @@ export function getLeaderDisplayNameInfo(charObj, skinId = 'default') {
 
   return { subtitle, name, fullName };
 }
+
+/**
+ * ローカルストレージ（mini_card_battle_player_skins）に保存されているプレイヤーのキャラクター別スキンIDを取得する。
+ * 会話ダイアログやバトル初期化において、GameState.playerSkins に未ロードの場合のフォールバックとして使用される。
+ *
+ * @param {string} charId - 対象のキャラクターID（例: 'knight', 'android'）
+ * @returns {string|null} 保存されているスキンID（未保存またはパース失敗時は null）
+ */
+export function getStoredPlayerSkinId(charId) {
+  if (!charId) return null;
+  try {
+    const raw = localStorage.getItem('mini_card_battle_player_skins');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.[charId] || null;
+  } catch {
+    return null;
+  }
+}

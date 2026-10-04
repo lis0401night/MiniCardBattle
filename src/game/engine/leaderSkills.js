@@ -39,10 +39,6 @@ import { applyActiveSkillLogic } from './activeSkills.js';
 import { applySingleCombat } from './combat.js';
 
 /**
- * リーダースキルの効果を適用する (純粋関数)
- * @returns {Array} events
- */
-/**
  * 盤面への装備（武装）を試み、成功した場合はtrueを返すヘルパー。
  * 「配置（Place）」経路でのトークン装備では原則として召喚時スキルを発動させないため、
  * triggerEquipSkills はデフォルトで false となっています。
@@ -132,6 +128,20 @@ function executeFlameHealLeaderSkill(
   healLeader(state, owner, damageAmount, action, events);
 }
 
+/**
+ * リーダースキルの効果をシミュレーション状態へ適用する（純粋関数）
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} owner - リーダースキル発動者 ('blue'|'red')
+ * @param {string} action - 発動するリーダースキルID (CHARACTERS[key].leaderSkill.action)
+ * @param {Array<number>|{my?:number[],enemy?:number[],allied?:number[]}|number|null} [tokenLanes=null] - 指定レーン/手札インデックス等の選択データ
+ * @param {Array<Object>} [events=[]] - 発生したイベントログを格納する配列
+ * @param {number|null} [forcedTargetIdx=null] - 自分墓地などの強制対象インデックス
+ * @param {string|null} [forcedTargetUid=null] - 強制対象カードのUID
+ * @param {number|null} [simulatedResurrectLane=null] - 召喚リーダー等の復活先レーン
+ * @param {number|null} [forcedOppTargetIdx=null] - 相手墓地の強制対象インデックス
+ * @returns {Array<Object>} 発生したイベントログ配列 (events)
+ */
 export function applyLeaderSkillLogic(
   state,
   owner,
@@ -1730,7 +1740,10 @@ export function applyLeaderSkillLogic(
     events.push({ type: 'leader_skill', skill: action, side: owner });
     let count = 0;
     const addKnight = (lane) => {
-      const tK = CARD_MASTER.find((m) => m.id === 'token_knight');
+      const tK = CARD_MASTER.find((m) => m.id === 'token_knight') || {
+        name: '騎士',
+        power: 2,
+      };
       const tk = {
         ...JSON.parse(JSON.stringify(tK)),
         id: `tk_k_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
@@ -1738,16 +1751,24 @@ export function applyLeaderSkillLogic(
         currentPower: tK.power,
         rarity: tK.rarity || 1,
         imgUrl: 'assets/cards/card_token_knight.webp',
+        isToken: true,
       };
-      board[lane] = tk;
-      // 後続のループで tk自身が +2 されるため、イベントに積むcardは追加時点のものをディープコピーしておく
-      events.push({
-        type: 'summon_token',
-        side: owner,
-        lane,
-        card: JSON.parse(JSON.stringify(tk)),
-        source: 'holy_march',
-      });
+
+      // 「配置」：装備可能なら装備、それ以外は既存カードを墓地へ送ってから配置（オンプレイ能力は発動しない）
+      if (!tryEquipToken(state, board, lane, tk, owner, events)) {
+        if (board[lane] !== null) {
+          quietDiscardFromBoard(state, owner, lane);
+        }
+        board[lane] = tk;
+        // 後続のループで tk自身が +2 されるため、イベントに積むcardは追加時点のものをディープコピーしておく
+        events.push({
+          type: 'summon_token',
+          side: owner,
+          lane,
+          card: JSON.parse(JSON.stringify(tk)),
+          source: 'holy_march',
+        });
+      }
       count++;
     };
 
@@ -1755,31 +1776,7 @@ export function applyLeaderSkillLogic(
       // 多重防御: UI側の連打バグ等で3レーン以上が渡されても最大2体に制限
       for (let l of tokenLanes) {
         if (count >= 2) break;
-        const tK = CARD_MASTER.find((m) => m.id === 'token_knight');
-        const tk = {
-          ...JSON.parse(JSON.stringify(tK)),
-          id: `tk_k_${Math.floor(getSeededRandom() * 1000000000)}_${l}`,
-          owner,
-          currentPower: tK.power,
-          rarity: tK.rarity || 1,
-          imgUrl: 'assets/cards/card_token_knight.webp',
-          isToken: true,
-        };
-
-        if (!tryEquipToken(state, board, l, tk, owner, events)) {
-          if (board[l] !== null) {
-            quietDiscardFromBoard(state, owner, l);
-          }
-          board[l] = tk;
-          events.push({
-            type: 'summon_token',
-            side: owner,
-            lane: l,
-            card: JSON.parse(JSON.stringify(tk)),
-            source: 'holy_march',
-          });
-        }
-        count++;
+        addKnight(l);
       }
     } else {
       const tK = CARD_MASTER.find((m) => m.id === 'token_knight') || {
@@ -1920,4 +1917,3 @@ export function applyLeaderSkillLogic(
   processDestructionTriggers(state, events);
   return events;
 }
-

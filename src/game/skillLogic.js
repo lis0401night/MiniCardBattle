@@ -4414,17 +4414,11 @@ async function triggerExtortInAction(c, o) {
     let discardedAmount = 0;
 
     // 【システム解説】
-    // UI側での簒奪（extort）処理においても、相手の手札から「最大パワー」のカードを優先的に処理します。
-    // 手札のカードをパワー降順（同値の場合は手札インデックスの小さい左側優先）でソートします。
+    // UI側での簒奪（extort）処理: 相手の手札のカードを左（インデックス0から昇順）から優先して捨て、虚空を加える
     const validTargets = eHandRef
       .map((card, idx) => ({ card, idx }))
       .filter((item) => item.card !== null)
-      .sort((a, b) => {
-        const pA = a.card.currentPower ?? a.card.power ?? 0;
-        const pB = b.card.currentPower ?? b.card.power ?? 0;
-        if (pB !== pA) return pB - pA;
-        return a.idx - b.idx; // 同値の場合は左優先
-      });
+      .sort((a, b) => a.idx - b.idx); // 左優先（手札インデックス順）
 
     const actualCount = Math.min(val, validTargets.length);
 

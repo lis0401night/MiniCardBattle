@@ -113,10 +113,10 @@ export const SKILLS = {
     desc: (val) => [
       {
         type: 'text',
-        value: `召喚時、相手の手札の最大パワーのカード${val}枚を捨て、同数`,
+        value: `召喚時、相手の手札のカード${val}枚を捨て、同数`,
       },
       { type: 'link', value: `「虚空（パワー0）」`, targetId: 'token_void' },
-      { type: 'text', value: 'を加える。（同値の場合は左優先）' },
+      { type: 'text', value: 'を加える。（左優先）' },
     ],
   },
   double_strike: {
@@ -696,10 +696,10 @@ export const SKILLS = {
     desc: (val) => [
       {
         type: 'text',
-        value: `相手リーダーに戦闘ダメージを与えた時、相手の手札の最大パワーのカード${val || 1}枚を捨て、同数`,
+        value: `相手リーダーに戦闘ダメージを与えた時、相手の手札のカード${val || 1}枚を捨て、同数`,
       },
       { type: 'link', value: `「虚空（パワー0）」`, targetId: 'token_void' },
-      { type: 'text', value: 'を加える。（同値の場合は左優先）' },
+      { type: 'text', value: 'を加える。（左優先）' },
     ],
   },
   toxic: {

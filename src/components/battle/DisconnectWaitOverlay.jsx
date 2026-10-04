@@ -12,6 +12,13 @@ import {
 } from '../../game/battle/onlineDisconnectManager.js';
 import { ONLINE_DISCONNECT_WAIT_SEC } from '../../utils/constants/onlineTimer.js';
 
+/**
+ * オンライン対戦の切断待機オーバーレイコンポーネント
+ * 切断監視マネージャー（onlineDisconnectManager）の状態を購読し、
+ * 相手または自身の切断待機カウントダウン（60秒）および復帰通知を表示する。
+ *
+ * @returns {import('react').ReactElement|null} 待機中または復帰通知中はオーバーレイ要素、それ以外は null
+ */
 export default function DisconnectWaitOverlay() {
   const [state, setState] = useState(getDisconnectState);
 

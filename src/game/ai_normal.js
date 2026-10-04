@@ -29,6 +29,7 @@ import {
   applySingleCombat,
   calculateCombatPhase,
   canCardBeDestroyed,
+  clearValkyriaGuard,
   isGraveKeeperActive,
   isMiasmaActive,
   isValkyriaGuardActive,
@@ -3997,9 +3998,10 @@ export function evaluateSimState(state) {
 }
 
 /**
- * 指定陣営の戦闘フェーズ（ターン開始時パッシブ・状態異常減衰・戦闘ダメージ計算・破壊処理）をシミュレートする共通関数。
- * 実戦の startTurn シーケンスと同一の順序で、ターンプレイヤー（攻撃側陣営）の盤面カードの状態
- * （スタン・攻撃不能・無敵ターン）をターン開始時に減衰・同期させ、客観的な戦闘計算を行います。
+ * 指定陣営の戦闘フェーズ（ターン開始時パッシブ・加護解除・状態異常減衰・戦闘ダメージ計算・破壊処理）をシミュレートする共通関数。
+ * 実戦の startTurn シーケンス（battleTurn.js の VALKYRIA_CLEAR 等）と同一の順序で、ターンプレイヤー（攻撃側陣営）の
+ * 加護（戦乙女の加護、保護等）を解除し、盤面カードの状態（スタン・攻撃不能・無敵ターン）をターン開始時に減衰・同期させ、
+ * 客観的かつ正確な戦闘計算を行います。
  *
  * @param {object} simState - シミュレーション盤面状態
  * @param {'red' | 'blue'} attackerSide - 攻撃側陣営 ('blue' = プレイヤー, 'red' = 敵AI)
@@ -4010,8 +4012,12 @@ export function simulateCombatStep(simState, attackerSide) {
   const board = isRed ? simState.enemyBoard : simState.playerBoard;
   const hpBeforeCombat = isRed ? simState.playerHP : simState.enemyHP;
 
-  // 1. パッシブスキルの適用（ターン開始時スキル・毒ダメージ・契約・加護解除等）
+  // 1. パッシブスキルの適用（ターン開始時スキル・毒ダメージ・契約等）
   applyPassiveSkillLogic(simState, attackerSide);
+
+  // 【重要】ターン開始時の加護解除：実戦（battleTurn.js の VALKYRIA_CLEAR フェーズ）と同様に、
+  // ターンプレイヤー（攻撃側陣営）の加護（戦乙女の加護、保護等）を戦闘計算前に解除する
+  clearValkyriaGuard(simState, attackerSide);
 
   // 2. 状態異常の持続ターン減衰（ターン開始時にターンプレイヤー側の盤面状態を減衰）
   // 共通API（decayCardStatus）を用いて直接プロパティとスキル枠スロットの同期・減衰・解除を一元処理する

@@ -12,6 +12,7 @@ import {
   updateHPBar,
   updateSPOrbs,
 } from '../../services/uiBattle.js';
+import { getIsHost } from '../../services/multiplayer.js';
 import { GameState } from '../../state/gameState.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
 import {
@@ -458,8 +459,13 @@ function transitionAfterTurnStart(owner) {
         durationSec: ONLINE_TIMER_MAIN_PHASE_SEC,
         owner: 'red',
         onFailsafeTimeout: () => {
-          // 相手が制限時間＋通信猶予を超過しても無応答の場合、フェイルセーフで相手ターンを強制終了
-          dispatchBattleAction({ type: 'endTurn', owner: 'red' }, true);
+          // 【ホスト権威モデル】
+          // 相手が制限時間＋通信猶予を超過しても無応答の場合、ホスト端末のみが相手手番の終了を確定し自手番へ移行する。
+          // クライアント側がローカルのみで強制終了するとスプリットブレイン（同期乖離）が発生するため抑止する。
+          // （ホスト側でendTurnが処理された後、battleQueueによって最新盤面syncStateがクライアントへ自動同期される）
+          if (getIsHost()) {
+            dispatchBattleAction({ type: 'endTurn', owner: 'red' }, true);
+          }
         },
       });
     }

@@ -95,6 +95,9 @@ export function setPendingChoiceResolver(resolver) {
 /** オンライン対戦時の非同期競合を防ぐためのキューエンジン処理中フラグ */
 let isQueueProcessing = false;
 
+/** 直近で処理した最新のアクションキー（Firebase Push ID）。復帰時の差分アクション再生に使用する */
+let lastProcessedActionKey = null;
+
 /**
  * キューエンジンが処理中かどうかを返す。
  * @returns {boolean} 処理中ならtrue
@@ -104,10 +107,29 @@ export function getIsQueueProcessing() {
 }
 
 /**
- * キュー処理中フラグをリセットする。バトル初期化時に呼び出される。
+ * 直近で処理した最新のアクションキーを取得する。
+ * @returns {string|null} 最新のアクションキー
+ */
+export function getLastProcessedActionKey() {
+  return lastProcessedActionKey;
+}
+
+/**
+ * 直近で処理した最新のアクションキーを設定する。
+ * @param {string|null} key - アクションキー
+ * @returns {void}
+ */
+export function setLastProcessedActionKey(key) {
+  lastProcessedActionKey = key;
+}
+
+/**
+ * キュー処理中フラグおよび処理済みアクションキーをリセットする。バトル初期化時に呼び出される。
+ * @returns {void}
  */
 export function resetQueueProcessing() {
   isQueueProcessing = false;
+  lastProcessedActionKey = null;
 }
 
 // ==========================================
@@ -198,6 +220,11 @@ export async function processActionQueue() {
     while (GameState.actionQueue.length > 0) {
       const action = GameState.actionQueue.shift();
 
+      // 受信したアクションにFirebaseキーが付与されていれば最新処理キーとして記録
+      if (action._actionKey) {
+        lastProcessedActionKey = action._actionKey;
+      }
+
       if (action.type === 'playCard') {
         const played = await requireDependency(_playCard, 'playCard')(
           action.owner,
@@ -258,8 +285,8 @@ export async function processActionQueue() {
             action.type === 'playCard' ||
             action.type === 'leaderSkill'
           ) {
-            saveLastSyncStateToRoom(syncState).catch((e) =>
-              console.warn('lastSyncState save failed:', e)
+            saveLastSyncStateToRoom(syncState, lastProcessedActionKey).catch(
+              (e) => console.warn('lastSyncState save failed:', e)
             );
           }
         } catch (syncErr) {
@@ -296,7 +323,7 @@ export async function sendSyncStateNow() {
         state: syncState,
       });
       // DBルーム直下にも保存
-      await saveLastSyncStateToRoom(syncState);
+      await saveLastSyncStateToRoom(syncState, lastProcessedActionKey);
     } catch (syncErr) {
       console.error('即時状態同期の送信に失敗しました:', syncErr);
     }

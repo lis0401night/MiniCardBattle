@@ -2365,6 +2365,25 @@ export function checkIsFreeMode(
 }
 
 /**
+ * 対戦勝利時の報酬（ストーリー・フリー・高難易度・運命の邂逅）の付与対象ゲームモードかを判定する（ホワイトリスト方式）
+ * ※ オンライン、クイックマッチ（CPU戦含む）、練習戦、トーナメント、試練の宮殿、防衛戦等はすべて自動的に除外（false）されます。
+ *
+ * @param {string} [gameMode] - ゲームモード名（省略時は GameState.gameMode）
+ * @returns {boolean} 報酬処理対象モードであるか
+ */
+export function checkIsBattleRewardEligible(
+  gameMode = typeof GameState !== 'undefined' ? GameState?.gameMode : undefined
+) {
+  if (!gameMode) return false;
+  return (
+    checkIsStoryMode(gameMode) ||
+    checkIsFreeMode(gameMode) ||
+    checkIsHighDiffMode(gameMode) ||
+    checkIsFortuneMode(gameMode)
+  );
+}
+
+/**
  * 指定されたゲームモードがバトル勝利時にカードドロップ抽選の対象であるかどうかを判定します（ホワイトリスト方式）。
  * 対象モード: ストーリーモード、フリー対戦、高難易度イベント（超級）
  * ※ 運命の邂逅、トーナメント、防衛戦、試練の宮殿、オンライン、練習戦、チュートリアル等の他モードはすべて自動的に除外（false）されます。

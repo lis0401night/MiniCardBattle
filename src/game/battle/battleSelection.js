@@ -168,14 +168,11 @@ export async function waitPlayerLaneSelection(
     // 送信値が合法手か検証
     let resultLanes = parsedLanes.filter((i) => validLanes.includes(i));
 
-    if (resultLanes.length === 0 && !canCancel) {
-      if (validLanes.length > 0) {
-        resultLanes = [validLanes[0]];
-      } else {
-        throw new Error(
-          'Invalid online action: Empty lane selection not allowed when cancel is disabled.'
-        );
-      }
+    // 補正は送信側（blue の cleanUp 前）で確定済み。受信側で独自補正すると盤面が分岐するため行わない
+    if (resultLanes.length === 0 && !canCancel && validLanes.length > 0) {
+      console.warn(
+        '[online] 空のレーン選択を受信しました。送信側の確定値をそのまま適用します。'
+      );
     }
 
     return resultLanes.slice(0, count);
@@ -268,6 +265,9 @@ export async function waitPlayerLaneSelection(
 
     // カード制約の適用 (ランダムフォールバック発生時に備えて安全弁として適用)
     if (checkConstraints && tokenCard) {
+      if (GameState.turnCount === 1 && GameState.firstPlayer === owner) {
+        selectedLanes = selectedLanes.filter((i) => i === 1);
+      }
       const hasLegendary = hasSkill(tokenCard, 'legendary');
       const hasTakeover = hasSkill(tokenCard, 'takeover');
       const hasApex = hasSkill(tokenCard, 'apex');
@@ -304,6 +304,10 @@ export async function waitPlayerLaneSelection(
       );
 
       if (checkConstraints && tokenCard) {
+        if (GameState.turnCount === 1 && GameState.firstPlayer === owner) {
+          validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
+          validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
+        }
         const hasLegendary = hasSkill(tokenCard, 'legendary');
         const hasTakeover = hasSkill(tokenCard, 'takeover');
         const hasApex = hasSkill(tokenCard, 'apex');
@@ -381,6 +385,76 @@ export async function waitPlayerLaneSelection(
       if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
         stopOnlineTimer();
       }
+
+      // キャンセル不可（!canCancel）で未選択枠が残っている場合、有効レーンから補完する
+      if (!canCancel && GameState.placementSelectedLanes.length < count) {
+        let validEmptyLanes = board
+          .map((c, i) => (c === null && sealedLanes[i] === 0 ? i : -1))
+          .filter((i) => i !== -1);
+        let validOccupiedLanes = [0, 1, 2].filter(
+          (i) =>
+            !validEmptyLanes.includes(i) &&
+            !GameState.placementSelectedLanes.includes(i) &&
+            sealedLanes[i] === 0
+        );
+        if (tokenLanes !== null && Array.isArray(tokenLanes)) {
+          validEmptyLanes = validEmptyLanes.filter((i) =>
+            tokenLanes.includes(i)
+          );
+          validOccupiedLanes = validOccupiedLanes.filter((i) =>
+            tokenLanes.includes(i)
+          );
+        }
+        if (checkConstraints && tokenCard) {
+          if (GameState.turnCount === 1 && GameState.firstPlayer === owner) {
+            validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
+            validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
+          }
+          const hasLegendary = hasSkill(tokenCard, 'legendary');
+          const hasTakeover = hasSkill(tokenCard, 'takeover');
+          const hasApex = hasSkill(tokenCard, 'apex');
+          const hasChallenge = hasSkill(tokenCard, 'challenge');
+
+          if (hasLegendary) {
+            validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
+            validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
+          }
+          if (hasTakeover) {
+            validEmptyLanes = [];
+          }
+          if (hasApex) {
+            validEmptyLanes = validEmptyLanes.filter(
+              (i) => board[i] && hasSkill(board[i], 'legendary')
+            );
+            validOccupiedLanes = validOccupiedLanes.filter(
+              (i) => board[i] && hasSkill(board[i], 'legendary')
+            );
+          }
+          if (hasChallenge) {
+            const oppBoard =
+              owner === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
+            validEmptyLanes = validEmptyLanes.filter(
+              (i) => oppBoard[i] !== null
+            );
+            validOccupiedLanes = validOccupiedLanes.filter(
+              (i) => oppBoard[i] !== null
+            );
+          }
+        }
+        while (
+          GameState.placementSelectedLanes.length < count &&
+          validEmptyLanes.length > 0
+        ) {
+          GameState.placementSelectedLanes.push(validEmptyLanes.shift());
+        }
+        while (
+          GameState.placementSelectedLanes.length < count &&
+          validOccupiedLanes.length > 0
+        ) {
+          GameState.placementSelectedLanes.push(validOccupiedLanes.shift());
+        }
+      }
+
       GameState.isPlacementMode = false;
       GameState.placementCount = 0;
       GameState.placementToken = null;
@@ -433,6 +507,10 @@ export async function waitPlayerLaneSelection(
             );
           }
           if (checkConstraints && tokenCard) {
+            if (GameState.turnCount === 1 && GameState.firstPlayer === owner) {
+              validEmptyLanes = validEmptyLanes.filter((i) => i === 1);
+              validOccupiedLanes = validOccupiedLanes.filter((i) => i === 1);
+            }
             const hasLegendary = hasSkill(tokenCard, 'legendary');
             const hasTakeover = hasSkill(tokenCard, 'takeover');
             const hasApex = hasSkill(tokenCard, 'apex');
@@ -779,14 +857,11 @@ export async function waitPlayerEnemyLaneSelection(
     parsedLanes = Array.from(new Set(parsedLanes));
     let resultLanes = parsedLanes.filter((i) => validLanes.includes(i));
 
-    if (resultLanes.length === 0 && !canCancel) {
-      if (validLanes.length > 0) {
-        resultLanes = [validLanes[0]];
-      } else {
-        throw new Error(
-          'Invalid online action: Empty enemy lane selection not allowed when cancel is disabled.'
-        );
-      }
+    // 補正は送信側（blue の確定時）で確定済み。受信側で独自補正すると盤面が分岐するため行わない
+    if (resultLanes.length === 0 && !canCancel && validLanes.length > 0) {
+      console.warn(
+        '[online] 空の敵レーン選択を受信しました。送信側の確定値をそのまま適用します。'
+      );
     }
 
     return resultLanes.slice(0, count);
@@ -908,6 +983,19 @@ export async function waitPlayerEnemyLaneSelection(
     const onFinishEnemyTargetSelection = async () => {
       if (isCleanedUp) return;
       playSound(SOUNDS.seClick);
+
+      // キャンセル不可かつ未選択の場合、有効レーンから補完
+      if (
+        !canCancel &&
+        GameState.targetSelectedLanes.length === 0 &&
+        validLanes.length > 0
+      ) {
+        for (const lane of validLanes) {
+          if (GameState.targetSelectedLanes.length >= count) break;
+          GameState.targetSelectedLanes.push(lane);
+        }
+      }
+
       const result = [...GameState.targetSelectedLanes];
       cleanUp();
 
@@ -1009,15 +1097,11 @@ export async function waitPlayerAlliedLaneSelection(
     // 実際にカードが存在するレーンのみを抽出
     let resultLanes = parsedLanes.filter((i) => occupiedLanes.includes(i));
 
-    // キャンセル不可の設定なのにデータが空だった場合はエラーとする
-    if (resultLanes.length === 0 && !canCancel) {
-      if (occupiedLanes.length > 0) {
-        resultLanes = [occupiedLanes[0]];
-      } else {
-        throw new Error(
-          'Invalid online action: Empty allied lane selection not allowed when cancel is disabled.'
-        );
-      }
+    // 補正は送信側（blue の確定時）で確定済み。受信側で独自補正すると盤面が分岐するため行わない
+    if (resultLanes.length === 0 && !canCancel && occupiedLanes.length > 0) {
+      console.warn(
+        '[online] 空の味方レーン選択を受信しました。送信側の確定値をそのまま適用します。'
+      );
     }
 
     return resultLanes.slice(0, count);
@@ -1115,6 +1199,19 @@ export async function waitPlayerAlliedLaneSelection(
     const onFinishAlliedSelection = async () => {
       if (isCleanedUp) return;
       playSound(SOUNDS.seClick);
+
+      // キャンセル不可かつ未選択の場合、有効レーンから補完
+      if (
+        !canCancel &&
+        GameState.targetSelectedLanes.length === 0 &&
+        occupiedLanes.length > 0
+      ) {
+        for (const lane of occupiedLanes) {
+          if (GameState.targetSelectedLanes.length >= count) break;
+          GameState.targetSelectedLanes.push(lane);
+        }
+      }
+
       const result = [...GameState.targetSelectedLanes];
       cleanUp();
 
@@ -1441,21 +1538,18 @@ export async function waitPlayerDiscardSelection(
     }
 
     if (maxChoices > 1) {
-      if (selected.length === 0 && !canCancel) {
-        if (validCards.length > 0) {
-          selected = [validCards[0]];
-        } else {
-          throw new Error(
-            'Invalid online action: Discard selection cannot be empty and cancel is disabled.'
-          );
-        }
+      // 補正は送信側で確定済み。受信側で独自補正すると盤面が分岐するため行わない
+      if (selected.length === 0 && !canCancel && validCards.length > 0) {
+        console.warn(
+          '[online] 空の手札選択を受信しました。送信側の確定値をそのまま適用します。'
+        );
       }
       return selected.slice(0, maxChoices);
     } else {
-      const matchingCard = selected[0] || (canCancel ? null : validCards[0]);
-      if (!matchingCard && !canCancel) {
-        throw new Error(
-          'Invalid online action: Discard selection card not found and cancel is disabled.'
+      const matchingCard = selected[0] || null;
+      if (!matchingCard && !canCancel && validCards.length > 0) {
+        console.warn(
+          '[online] 手札選択なしを受信しました。送信側の確定値をそのまま適用します。'
         );
       }
       return matchingCard;
@@ -1561,10 +1655,18 @@ export async function waitPlayerDiscardSelection(
         stopOnlineTimer();
       }
 
+      // キャンセル不可かつ未選択の場合、有効カードから補完
+      const effectiveCards =
+        !canCancel &&
+        (!selectedCards || selectedCards.length === 0) &&
+        validCards.length > 0
+          ? validCards.slice(0, maxChoices)
+          : selectedCards;
+
       if (GameState.gameMode === 'online') {
         const choiceStr =
-          selectedCards && selectedCards.length > 0
-            ? selectedCards.map((c) => c.uid || c.id).join(',')
+          effectiveCards && effectiveCards.length > 0
+            ? effectiveCards.map((c) => c.uid || c.id).join(',')
             : null;
         await sendOnlineAction({
           type: 'submitChoice',
@@ -1572,7 +1674,7 @@ export async function waitPlayerDiscardSelection(
           choiceData: choiceStr,
         });
       }
-      return selectedCards || [];
+      return effectiveCards || [];
     } else {
       let isDone = false;
       let modalResolve = null;
@@ -1611,15 +1713,21 @@ export async function waitPlayerDiscardSelection(
         stopOnlineTimer();
       }
 
+      // キャンセル不可かつ未選択の場合、有効カードから補完
+      const effectiveCard =
+        !canCancel && !card && validCards.length > 0 ? validCards[0] : card;
+
       if (GameState.gameMode === 'online') {
-        const choiceStr = card ? card.uid || card.id : null;
+        const choiceStr = effectiveCard
+          ? effectiveCard.uid || effectiveCard.id
+          : null;
         await sendOnlineAction({
           type: 'submitChoice',
           owner: 'blue',
           choiceData: choiceStr,
         });
       }
-      return card;
+      return effectiveCard;
     }
   } else {
     return maxChoices > 1 ? [] : validCards[0];
@@ -1711,14 +1819,11 @@ export async function waitPlayerDualDiscardSelection(
       }
     });
 
-    if (uniqueSelected.length === 0 && !canCancel) {
-      if (allCards.length > 0) {
-        uniqueSelected.push(allCards[0]);
-      } else {
-        throw new Error(
-          'Invalid online action: Dual discard selection cannot be empty and cancel is disabled.'
-        );
-      }
+    // 補正は送信側で確定済み。受信側で独自補正すると盤面が分岐するため行わない
+    if (uniqueSelected.length === 0 && !canCancel && allCards.length > 0) {
+      console.warn(
+        '[online] 空のデュアル選択を受信しました。送信側の確定値をそのまま適用します。'
+      );
     }
 
     return uniqueSelected.slice(0, maxChoices);
@@ -1783,10 +1888,19 @@ export async function waitPlayerDualDiscardSelection(
       stopOnlineTimer();
     }
 
+    // キャンセル不可かつ未選択の場合、全対象カードから補完
+    const allCards = [...blueCards, ...redCards];
+    const effectiveCards =
+      !canCancel &&
+      (!selectedCards || selectedCards.length === 0) &&
+      allCards.length > 0
+        ? allCards.slice(0, maxChoices)
+        : selectedCards;
+
     if (GameState.gameMode === 'online') {
       const choiceStr =
-        selectedCards && selectedCards.length > 0
-          ? selectedCards.map((c) => c.uid || c.id).join(',')
+        effectiveCards && effectiveCards.length > 0
+          ? effectiveCards.map((c) => c.uid || c.id).join(',')
           : null;
       await sendOnlineAction({
         type: 'submitChoice',
@@ -1794,7 +1908,7 @@ export async function waitPlayerDualDiscardSelection(
         choiceData: choiceStr,
       });
     }
-    return selectedCards || [];
+    return effectiveCards || [];
   } else {
     return [];
   }

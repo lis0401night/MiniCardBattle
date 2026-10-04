@@ -10,6 +10,13 @@ import { subscribeOnlineTimer } from '../../game/battle/onlineTimer.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
+/**
+ * オンライン対戦タイマーの警告火花演出コンポーネント
+ * 制限時間残り5秒以下（isWarning）かつプレイヤー自身のターン時に画面中央に出現し、
+ * 左右から火花を散らしながら収束していくアニメーションおよび警告チクタク音を再生する。
+ *
+ * @returns {import('react').ReactElement|null} 警告演出中は火花ライン要素、それ以外は null
+ */
 export default function SparkTimerLine() {
   const [timerState, setTimerState] = useState({
     isActive: false,

@@ -37,6 +37,8 @@ export {
   setPendingChoiceResolver,
   getIsQueueProcessing,
   resetQueueProcessing,
+  getLastProcessedActionKey,
+  setLastProcessedActionKey,
   registerQueueDependencies,
 } from './battleQueue.js';
 

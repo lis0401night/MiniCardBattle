@@ -398,7 +398,13 @@ export function handleInterceptPassive(state, c, skVal, side, lane, events) {
  * @param {Array<object>} events - イベント配列
  * @returns {void}
  */
-export function handleContractPassive(state, skVal, side, skipContract, events) {
+export function handleContractPassive(
+  state,
+  skVal,
+  side,
+  skipContract,
+  events
+) {
   if (skipContract) return;
   const v = skVal || 3;
   damageLeader(state, side, v, 'contract', events);
@@ -451,7 +457,16 @@ export function handleSamsaraPassive(state, side, lane, events) {
  * @param {Array<object>} events - イベント配列
  * @returns {boolean} カードが置換された場合（発動成功時）は true、封印等で発動しなかった場合は false
  */
-export function handleAwakePassive(state, c, sk, skId, skVal, side, lane, events) {
+export function handleAwakePassive(
+  state,
+  c,
+  sk,
+  skId,
+  skVal,
+  side,
+  lane,
+  events
+) {
   if (isLaneSealed(state, side, lane)) {
     // 封印されたレーンでは覚醒は不発（保留）となり、元のカードのまま場に留まる
     return false;

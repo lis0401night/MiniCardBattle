@@ -8,6 +8,7 @@ import {
   getIsHost,
   getCurrentRoomId,
   getCurrentBasePath,
+  getServerNow,
   ROOMS_REF,
   QUICK_MATCH_REF,
   listenToRoom,
@@ -99,6 +100,7 @@ import {
   resetQueueProcessing,
   sendSyncStateNow,
   setPendingChoiceResolver,
+  setLastProcessedActionKey,
 } from './battleQueue.js';
 import { checkWinCondition } from './battleResult.js';
 import { waitPlayerHandSelection } from './battleSelection.js';
@@ -377,12 +379,15 @@ export function prepareBattle() {
         GameState.enemyDeck = isHost ? clientDeck : hostDeck;
 
         // アクション受信リスナー起動
-        listenToRoomActions((snapshotVal) => {
+        listenToRoomActions((snapshotVal, actionKey) => {
           const { action, actor } = snapshotVal;
           // 自分自身が出したアクションか判定
           const isMe = actor === (getIsHost() ? 'host' : 'client');
           // 送信者は常に自己視点の 'blue' として出しているので、それを変換する
           action.owner = isMe ? 'blue' : 'red';
+          if (actionKey) {
+            action._actionKey = actionKey;
+          }
 
           dispatchBattleAction(action, true);
         });
@@ -1503,7 +1508,7 @@ export async function startMulliganPhase() {
   if (checkIsOnlineMode(GameState.gameMode) && getIsHost()) {
     try {
       const initialSyncState = generateSyncState();
-      await saveLastSyncStateToRoom(initialSyncState);
+      await saveLastSyncStateToRoom(initialSyncState, null);
     } catch (syncErr) {
       console.warn('初期盤面状態のルーム保存に失敗しました:', syncErr);
     }
@@ -1513,7 +1518,7 @@ export async function startMulliganPhase() {
 /**
  * アプリ落ち（クラッシュ・タスクキル・リロード）したプレイヤーが進行中のオンライン対戦へ直接復帰する。
  * 最新のルームデータおよび lastSyncState から盤面・手札・SP・山札などを完全復元し、対戦を再開する。
- * lastSyncState が未保存（対戦開始直後）の場合は、battleSeed から決定論的に初期盤面を再構築する。
+ * lastSyncState が未保存（対戦開始直後）の場合は、決定論的な再現が不可能なため復帰を拒否しセッションを消去する。
  *
  * @param {Object} session - { roomId, isHost, savedAt, basePath }
  * @param {Object} roomData - Firebaseから取得した最新のルームデータ
@@ -1522,9 +1527,11 @@ export async function startMulliganPhase() {
 export async function executeRejoinBattle(session, roomData) {
   if (!session || !roomData) return false;
 
-  // H-4対応: セッション保存から10分以上経過している場合は古いセッションとみなし復帰しない
+  // H-4対応: セッション有効期限判定
+  // 対戦開始時刻ではなく、最新の盤面同期時刻（なければ保存時刻）から経過時間を判定する
   const SESSION_MAX_AGE_MS = 10 * 60 * 1000;
-  if (session.savedAt && Date.now() - session.savedAt > SESSION_MAX_AGE_MS) {
+  const lastAliveAt = roomData.lastSyncState?.savedAt || session.savedAt;
+  if (lastAliveAt && getServerNow() - lastAliveAt > SESSION_MAX_AGE_MS) {
     clearActiveBattleSession();
     return false;
   }
@@ -1631,60 +1638,12 @@ export async function executeRejoinBattle(session, roomData) {
     if (roomData.lastSyncState) {
       applySyncState(roomData.lastSyncState, !isMeHost);
     } else {
-      // 対戦開始直後等で lastSyncState が未保存の場合のフォールバック初期化
-      const sessionId = Number(bSeed) || Date.now();
-      setRNGSeed(sessionId);
-
-      const hostDeck = generateDeck(
-        'host',
-        isMeHost ? GameState.playerConfig : GameState.enemyConfig,
-        sessionId
+      // 初期盤面保存（第1ターン開始直後）以前のクラッシュは、マリガンや初期手札を決定論的に再現できないため復帰を拒否しセッションを消去
+      console.warn(
+        'executeRejoinBattle: lastSyncState が未保存のため復帰を中断します。'
       );
-      const clientDeck = generateDeck(
-        'client',
-        isMeHost ? GameState.enemyConfig : GameState.playerConfig,
-        sessionId
-      );
-
-      hostDeck.forEach((c) => {
-        c.owner = isMeHost ? 'blue' : 'red';
-      });
-      clientDeck.forEach((c) => {
-        c.owner = isMeHost ? 'red' : 'blue';
-      });
-
-      GameState.playerDeck = isMeHost ? hostDeck : clientDeck;
-      GameState.enemyDeck = isMeHost ? clientDeck : hostDeck;
-      GameState.playerHand = [];
-      GameState.enemyHand = [];
-      for (let i = 0; i < INITIAL_DRAW_COUNT; i++) {
-        drawCard('blue');
-        drawCard('red');
-      }
-
-      const hostGoesFirst = getSeededRandom() < 0.5;
-      const isFirst =
-        (hostGoesFirst && isMeHost) || (!hostGoesFirst && !isMeHost);
-      GameState.firstPlayer = isFirst ? 'blue' : 'red';
-      GameState.currentTurn = isFirst ? 'player' : 'enemy';
-      GameState.turnCount = 1;
-
-      GameState.playerHP = GameState.playerConfig?.hp || 30;
-      GameState.enemyHP = GameState.enemyConfig?.hp || 30;
-      GameState.playerMaxHP = GameState.playerHP;
-      GameState.enemyMaxHP = GameState.enemyHP;
-      GameState.playerSP = 0;
-      GameState.enemySP = 0;
-      GameState.playerBoard = [null, null, null];
-      GameState.enemyBoard = [null, null, null];
-      GameState.playerDiscard = [];
-      GameState.enemyDiscard = [];
-      GameState.playerSealedLanes = [0, 0, 0];
-      GameState.enemySealedLanes = [0, 0, 0];
-      GameState.extraTurnCount = 0;
-      GameState.attackSkipCount = 0;
-      GameState.valkyriaGuardBlue = 0;
-      GameState.valkyriaGuardRed = 0;
+      clearActiveBattleSession();
+      return false;
     }
 
     // 4. バトルフェーズとターン状態を復元
@@ -1695,14 +1654,31 @@ export async function executeRejoinBattle(session, roomData) {
     // 5. ルーム変更監視を再開（相手の切断検知に必要）
     listenToRoom(session.roomId);
 
-    // 復帰時に既に存在する過去アクションのキー一覧を収集（onChildAdded による過去ログ再実行を遮断）
-    const existingActionKeys = new Set(Object.keys(roomData.actions || {}));
+    // 復帰時に既に存在する過去アクションのキー一覧を収集
+    // 【重要】ホスト復帰時は、lastSyncState に反映済みのアクションのみ除外し、
+    // ホスト離脱中にクライアントが送信した未反映アクションは受信・再生して盤面に追いつく。
+    // クライアント復帰時は、ホストが既に処理済みであるため、全既存アクションを除外し、
+    // ホストから送信される最新の syncState（完全盤面）を待つ。
+    let existingActionKeys;
+    if (isMeHost) {
+      const lastAppliedKey = roomData.lastSyncState?.lastActionKey || null;
+      setLastProcessedActionKey(lastAppliedKey);
+      const allActionKeys = Object.keys(roomData.actions || {});
+      existingActionKeys = new Set(
+        allActionKeys.filter((k) => lastAppliedKey && k <= lastAppliedKey)
+      );
+    } else {
+      existingActionKeys = new Set(Object.keys(roomData.actions || {}));
+    }
 
-    // 6. アクション受信リスナー起動（過去アクションを除外し、復帰以降の新規アクションのみ受信）
-    listenToRoomActions((snapshotVal) => {
+    // 6. アクション受信リスナー起動（過去アクションを除外し、未反映アクションおよび新規アクションのみ受信）
+    listenToRoomActions((snapshotVal, actionKey) => {
       const { action, actor } = snapshotVal;
       const isMe = actor === (getIsHost() ? 'host' : 'client');
       action.owner = isMe ? 'blue' : 'red';
+      if (actionKey) {
+        action._actionKey = actionKey;
+      }
       dispatchBattleAction(action, true);
     }, existingActionKeys);
 
@@ -1759,8 +1735,12 @@ export async function executeRejoinBattle(session, roomData) {
           durationSec: ONLINE_TIMER_MAIN_PHASE_SEC,
           owner: 'red',
           onFailsafeTimeout: () => {
-            // 相手が制限時間＋通信猶予を超過しても無応答の場合、フェイルセーフで相手ターンを強制終了
-            dispatchBattleAction({ type: 'endTurn', owner: 'red' }, true);
+            // 【ホスト権威モデル】
+            // 相手が制限時間＋通信猶予を超過しても無応答の場合、ホスト端末のみが相手手番の終了を確定し自手番へ移行する。
+            // クライアント側がローカルのみで強制終了するとスプリットブレイン（同期乖離）が発生するため抑止する。
+            if (getIsHost()) {
+              dispatchBattleAction({ type: 'endTurn', owner: 'red' }, true);
+            }
           },
         });
       }

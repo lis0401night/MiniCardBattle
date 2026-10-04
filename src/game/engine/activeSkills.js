@@ -31,7 +31,6 @@ import {
   unmergeCardSkills,
 } from '../../utils/gameUtils.js';
 import {
-  canTakeDamage,
   damageCard,
   damageLeader,
   getBestSimulatedPlacementLane,
@@ -769,16 +768,12 @@ export function applyActiveSkillLogic(
       if (eHandRef && eHandRef.length > 0) {
         const count = Number(val) || 1;
 
-        // 対象となるカードを抽出し、パワーの降順（同値なら左＝インデックス小が優先）でソート
+        // 【システム解説】
+        // 変化（morph）スキル: 相手の手札のカードを左（インデックス0から昇順）から優先して捨て、虚空を加える
         const validTargets = eHandRef
           .map((card, idx) => ({ card, idx }))
           .filter((item) => item.card !== null)
-          .sort((a, b) => {
-            const pA = a.card.currentPower ?? a.card.power ?? 0;
-            const pB = b.card.currentPower ?? b.card.power ?? 0;
-            if (pB !== pA) return pB - pA;
-            return a.idx - b.idx; // インデックスが小さい方を優先
-          });
+          .sort((a, b) => a.idx - b.idx); // 左優先（手札インデックス順）
 
         const actualCount = Math.min(count, validTargets.length);
         const newTokens = [];
@@ -1998,28 +1993,12 @@ export function applyActiveSkillLogic(
               quietDiscardFromBoard(state, owner, execLane);
             }
 
-            // 誘爆(explode): 隣接カードにダメージを与える
+            // 誘爆(explode): 隣接カードにダメージを与える（加護・回避・無効は damageCard で自動判定）
             if (hasSkill(execCard, 'explode')) {
               const dmg = getSkillValue(execCard, 'explode') || 3;
               [execLane - 1, execLane + 1].forEach((adj) => {
                 if (adj >= 0 && adj < 3 && b[adj]) {
-                  if (canTakeDamage(b[adj], dmg, true, state, owner)) {
-                    b[adj].currentPower -= dmg;
-                    events.push({
-                      type: 'damage_card',
-                      side: owner,
-                      lane: adj,
-                      amount: dmg,
-                      source: 'explode',
-                    });
-                  } else {
-                    events.push({
-                      type: 'immune_block',
-                      side: owner,
-                      lane: adj,
-                      source: 'explode',
-                    });
-                  }
+                  damageCard(state, owner, adj, dmg, 'explode', events, true);
                 }
               });
             }
@@ -2241,4 +2220,3 @@ export function applyActiveSkillLogic(
   processDestructionTriggers(state, events);
   return events;
 }
-

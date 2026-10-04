@@ -149,7 +149,15 @@ export function canTakeDamage(
 }
 
 /**
- * リーダーにダメージを与える
+ * リーダーにダメージを与える（戦乙女の加護が有効な場合は無効化イベントを発行する）。
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} side - ダメージを受ける陣営 ('blue' | 'red')
+ * @param {number} amount - ダメージ量
+ * @param {string} source - 発生元スキルIDまたは効果識別子
+ * @param {Array<Object>} events - イベントログ配列
+ * @param {number|null} [lane=null] - 演出用レーン番号
+ * @returns {void}
  */
 export function damageLeader(state, side, amount, source, events, lane = null) {
   if (amount <= 0) return;
@@ -272,21 +280,19 @@ export function healDefenderLeaderHP(
   return Math.min(maxHP || 20, defHP + amount);
 }
 
-
 /**
- * 盤面上のカードにダメージを適用し、各種ブロック（戦乙女の加護・無効/回避）およびダメージイベントを記録する共通関数
+ * 盤面上のカードにダメージを適用し、各種ブロック（戦乙女の加護・無効・回避）およびダメージイベントを記録する共通関数
  *
  * 判定順序（加護優先）:
- * 1. 戦乙女の加護 (isValkyriaGuardActive) ➔ 'valkyria_guard_block' イベントを発行し終了
- * 2. ダメージ無効・回避 (canTakeDamage) ➔ 'immune_block' イベントを発行し終了
- * 3. 実際のダメージ適用 (currentPower 減算) ➔ 'damage_card' イベントを発行
+ * 1. 戦乙女の加護 / スキル無効 / 回避（pushDamageBlockEvent）➔ 種別に応じたイベントを発行し終了
+ * 2. 実際のダメージ適用 (currentPower 減算) ➔ 'damage_card' イベントを発行
  *
  * @param {Object} state - バトル状態オブジェクト
- * @param {string} side - 対象カードの所属陣営 ('blue' | 'red')
+ * @param {'blue'|'red'} side - 対象カードの所属陣営 ('blue' | 'red')
  * @param {number} lane - 対象カードのレーンインデックス (0 | 1 | 2)
  * @param {number} amount - 与えるダメージ量
  * @param {string} source - ダメージ発生源 (スキル名や効果識別子)
- * @param {Array} events - イベントログの追加先配列
+ * @param {Array<Object>} events - イベントログの追加先配列
  * @param {boolean} [isSkill=true] - スキルによるダメージかどうか (無効/回避判定で使用)
  * @returns {boolean} ダメージが実際にカードのPowerに適用された場合は true、ブロックまたは対象なしの場合は false
  */
@@ -307,34 +313,23 @@ export function damageCard(
   const card = board[lane];
   if (!card) return false;
 
-  // 1. 戦乙女の加護: 全ダメージを無効化
+  // 1. 戦乙女の加護 > 無効 > 回避 の優先順でブロック判定し、種別に応じたイベント（valkyria_guard_block, immune_block, dodge_block）を発行
   if (
-    card.valkyriaGuard ||
-    (card.valkyriaGuardTurns || 0) > 0 ||
-    isValkyriaGuardActive(state, side)
-  ) {
-    events.push({
-      type: 'valkyria_guard_block',
-      side,
-      lane,
+    pushDamageBlockEvent(
+      state,
+      card,
       amount,
-      source,
-    });
-    return false;
-  }
-
-  // 2. ダメージ無効/回避チェック
-  if (!canTakeDamage(card, amount, isSkill, state, side)) {
-    events.push({
-      type: 'immune_block',
+      isSkill,
       side,
       lane,
       source,
-    });
+      events
+    )
+  ) {
     return false;
   }
 
-  // 3. 実際のダメージ適用
+  // 2. 実際のダメージ適用
   card.currentPower -= amount;
   card.hasTakenDamage = true;
   events.push({
@@ -561,6 +556,19 @@ export function getBestSimulatedPlacementLane(
   return bestLane;
 }
 
+/**
+ * 「配置（Place）」専用：カードを指定レーンに置く。起動消滅・装備・上書き配置の3分岐を解決する共通処理。
+ * ※【絶対厳守ルール】本関数は「配置（Place）」専用であり、召喚時スキル（オンプレイ能力）は発動しません。
+ * 召喚（Summon）として扱う場合は、呼び出し側でオンプレイ能力を解決してください。
+ *
+ * @param {Object} state - バトル状態オブジェクト
+ * @param {'blue'|'red'} owner - 配置する陣営 ('blue' | 'red')
+ * @param {number} lane - 配置先レーン (0〜2)
+ * @param {Object} newCard - 配置するカードオブジェクト
+ * @param {string} sourceAction - イベントログの source に記録するスキルID
+ * @param {Array<Object>} events - イベントログ配列
+ * @returns {void}
+ */
 export function processPlacementOrEquip(
   state,
   owner,
@@ -581,6 +589,7 @@ export function processPlacementOrEquip(
     hasSkill(newCard, 'possession') ||
     hasSkill(newCard, 'reflect');
 
+  // 分岐1: 配置先に「起動（startup）」カードが存在する場合、両者消滅（新カードは墓地へ送り、既存カードは消滅）
   if (existingCard && hasSkill(existingCard, 'startup')) {
     const discardPile =
       owner === 'blue' ? state.playerDiscard : state.enemyDiscard;
@@ -588,6 +597,7 @@ export function processPlacementOrEquip(
       discardPile.push(newCard);
     }
     resolveStartupFade(owner, existingCard, lane, newCard, events);
+    // 分岐2: 「装備」能力または配置先が「身代（arm_self）」を持つ場合、既存カードに装備合体
   } else if (isEquip && existingCard && !targetBlocksEquip) {
     applyEquipment(existingCard, newCard);
 
@@ -599,6 +609,7 @@ export function processPlacementOrEquip(
       source: 'equip',
       card: newCard,
     });
+    // 分岐3: 通常の配置（既存カードがあれば墓地へ上書き破棄し、新しいカードを場に置く）
   } else {
     if (existingCard) quietDiscardFromBoard(state, owner, lane);
     b[lane] = newCard;
@@ -611,8 +622,6 @@ export function processPlacementOrEquip(
     });
   }
 }
-
-
 
 /**
  * 手札から破棄されたカード群のシミュレーション処理を行う共通関数。
@@ -662,6 +671,11 @@ export function simulateDiscardCardsFromHand(state, side, cards, events = []) {
     );
 
     if (targetLane !== -1) {
+      const targetBoard =
+        side === 'blue' ? state.playerBoard : state.enemyBoard;
+      const isStartupFade =
+        targetBoard[targetLane] && hasSkill(targetBoard[targetLane], 'startup');
+
       madnessCard.uid =
         madnessCard.uid ||
         `${side}_sim_madness_${Math.floor(getSeededRandom() * 1000000000)}`;
@@ -678,6 +692,9 @@ export function simulateDiscardCardsFromHand(state, side, cards, events = []) {
         'madness',
         events
       );
+
+      // 起動により消滅した場合は召喚が成立しないため、オンプレイ能力を発動しない（実戦 executeDiscardTriggeredSummon と同一挙動）
+      if (isStartupFade) continue;
 
       // 召喚時スキル（オンプレイ能力）の解決
       const cardSkills = Array.isArray(madnessCard.skills)
@@ -702,5 +719,3 @@ export function simulateDiscardCardsFromHand(state, side, cards, events = []) {
     }
   }
 }
-
-

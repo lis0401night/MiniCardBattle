@@ -314,12 +314,15 @@ export function startOnlineTimer({
   }
 
   // 3. サブ選択タイマー（オンプレイ、誘発、命令、選別等: type === 'choice'）
-  // 相手ターン中の割り込みなど、操作主（owner）が直前のアクティブタイマーと異なる場合
-  if (currentTimerState.isActive && currentTimerState.owner !== owner) {
-    // 現在の手番タイマー（相手側など）を一時停止し、スタックへ退避
+  // 直前のアクティブタイマーがメインフェイズタイマーであるか、または操作主（owner）が直前のアクティブタイマーと異なる場合
+  if (
+    currentTimerState.isActive &&
+    (currentTimerState.type === 'main' || currentTimerState.owner !== owner)
+  ) {
+    // 現在の手番タイマー（または割り込みされた相手側タイマー）を一時停止し、スタックへ退避
     _saveAndPauseActiveTimerToStack();
   } else if (intervalId !== null) {
-    // 同一プレイヤーの連続（メインフェイズから自身のオンプレイ選択へ移行など）
+    // 同一プレイヤーの連続更新など
     clearInterval(intervalId);
     intervalId = null;
   }
@@ -480,5 +483,6 @@ export function cleanupOnlineTimer() {
   pausedTimerStack = [];
   turnRemainingMs.blue = ONLINE_TIMER_MAIN_PHASE_SEC * 1000;
   turnRemainingMs.red = ONLINE_TIMER_MAIN_PHASE_SEC * 1000;
-  subscribers.clear();
+  // Note: subscribers はコンポーネント側の useEffect クリーンアップで個別に解除されるため、
+  // ここで subscribers.clear() するとマウント中の SparkTimerLine 等の購読まで消滅してしまうためクリアしない
 }

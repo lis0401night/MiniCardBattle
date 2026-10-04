@@ -10,6 +10,7 @@ import {
   CHARACTERS,
   getLeaderDisplayNameInfo,
   getSkinImage,
+  getStoredPlayerSkinId,
 } from './characters.js';
 import { GameState } from '../../state/gameState.js';
 
@@ -323,15 +324,7 @@ export function buildDungeonIntroDialogue(deckData) {
       (typeof GameState !== 'undefined'
         ? GameState.playerSkins?.[charId]
         : null) ||
-      (() => {
-        try {
-          return JSON.parse(
-            localStorage.getItem('mini_card_battle_player_skins') || '{}'
-          )[charId];
-        } catch {
-          return null;
-        }
-      })();
+      getStoredPlayerSkinId(charId);
 
     const skinKey = skinId ? `${charId}_${skinId}` : null;
     const lines =

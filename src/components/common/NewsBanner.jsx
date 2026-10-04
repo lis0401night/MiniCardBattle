@@ -60,6 +60,7 @@ const ALLOWED_SHORTCUTS = [
   'screen-online-quick-match',
   'screen-online-quick-matching',
   'screen-online-room-match',
+  'screen-online-quick-rules',
   'screen-online-rules',
   'screen-online-search',
   'screen-online-lobby',
