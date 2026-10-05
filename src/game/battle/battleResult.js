@@ -34,6 +34,7 @@ import {
   clearActiveBattleSession,
   getIsHost,
   markQuickMatchEnded,
+  multiplayerCallbacks,
   resetRoomStatusToWaiting,
 } from '../../services/multiplayer.js';
 import {
@@ -809,6 +810,9 @@ function resolveCardDrop() {
  * バトル終了時の後処理（勝敗画面モーダル表示、報酬計算、解放フラグ更新、BGM切り替え等）を実行する。
  */
 export function endBattle() {
+  // バトルが正常に決着したため、対戦中の切断コールバックを解除（会話中の相手退室による誤爆切断表示を防止）
+  multiplayerCallbacks.onRoomClosed = null;
+
   if (typeof window.setSlowMotionReact === 'function') {
     window.setSlowMotionReact(false);
   }
@@ -1139,6 +1143,7 @@ export function cleanupBattleState() {
   cleanupOnlineTimer();
   cleanupOnlineDisconnectManager();
   clearActiveBattleSession();
+  multiplayerCallbacks.onRoomClosed = null;
 
   // ※ BGMバッファは sounds.js の LRUキャッシュ（MAX_CACHED_BGMS = 2）によって
   //    自動管理・維持されるため、ここでの明示的パージは行わない（再戦時の再デコード負荷を防止）。

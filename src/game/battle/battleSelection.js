@@ -18,6 +18,7 @@ import { isTutorialMode, filterPlacementLaneClick } from '../tutorialEngine.js';
 import { GameState } from '../../state/gameState.js';
 import {
   checkIsEasyAI,
+  checkIsOnlineMode,
   hasSkill,
   getSeededRandom,
   shuffleArray,
@@ -46,6 +47,49 @@ import { battleEvents } from './events/battleEventEmitter.js';
 import { startOnlineTimer, stopOnlineTimer } from './onlineTimer.js';
 import { checkIsOnlineTimerEnabled } from '../../utils/constants/onlineTimer.js';
 import { BATTLE_PHASE } from './phases/phaseTypes.js';
+
+/**
+ * オンライン対戦でリモートから受信した選択データ（配列、プレーンオブジェクト、カンマ区切り文字列、単一値）を
+ * 安全に数値インデックスの配列（number[]）に正規化する。
+ * Firebase RTDB のオブジェクト化（{ "0": 1, "1": 2 }）やカンマ区切り文字列（"1,2"）にも完全対応。
+ * @param {*} rawVal - リモートから受信した未加工の選択データ
+ * @returns {number[]} 重複を除外した数値インデックス配列
+ */
+export function normalizeRemoteChoiceIndices(rawVal) {
+  if (
+    rawVal === null ||
+    rawVal === undefined ||
+    rawVal === '' ||
+    rawVal === -1
+  ) {
+    return [];
+  }
+  let result = [];
+  if (Array.isArray(rawVal)) {
+    result = rawVal;
+  } else if (typeof rawVal === 'object') {
+    result = Object.values(rawVal);
+  } else if (typeof rawVal === 'string') {
+    if (rawVal.includes(',')) {
+      result = rawVal
+        .split(',')
+        .map((x) => x.trim())
+        .filter((x) => x !== '');
+    } else {
+      result = [rawVal];
+    }
+  } else if (typeof rawVal === 'number') {
+    result = [rawVal];
+  }
+
+  return Array.from(
+    new Set(
+      result
+        .map((x) => (typeof x === 'string' ? parseInt(x, 10) : Number(x)))
+        .filter((x) => Number.isInteger(x) && !isNaN(x))
+    )
+  );
+}
 
 /**
  * 配置または召喚において、特定レーンが盤面状況および制約条件に合致しているかを判定するヘルパー関数。
@@ -184,7 +228,7 @@ export async function waitPlayerLaneSelection(
       ? GameState.playerSealedLanes || [0, 0, 0]
       : GameState.enemySealedLanes || [0, 0, 0];
   // Check for Remote Choice Wait
-  if (GameState.gameMode === 'online' && owner === 'red') {
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
     const placementCtx = {
       board,
       sealedLanes,
@@ -219,28 +263,8 @@ export async function waitPlayerLaneSelection(
 
     stopOnlineTimer();
 
-    // number[] に正規化
-    let parsedLanes = [];
-    if (
-      rawVal !== null &&
-      rawVal !== undefined &&
-      rawVal !== '' &&
-      rawVal !== -1
-    ) {
-      if (Array.isArray(rawVal)) {
-        parsedLanes = rawVal
-          .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
-          .filter((x) => !isNaN(x));
-      } else if (typeof rawVal === 'number') {
-        parsedLanes = [rawVal];
-      } else if (typeof rawVal === 'string') {
-        const parsed = parseInt(rawVal, 10);
-        if (!isNaN(parsed)) parsedLanes = [parsed];
-      }
-    }
-
-    // 重複の除去
-    parsedLanes = Array.from(new Set(parsedLanes));
+    // Firebase RTDB のオブジェクト化やカンマ区切りを含む受信データを安全に number[] に正規化
+    let parsedLanes = normalizeRemoteChoiceIndices(rawVal);
 
     // 合法なレーン (validLanes) の算出
     let validLanes = [0, 1, 2].filter((i) => sealedLanes[i] === 0);
@@ -538,7 +562,7 @@ export async function waitPlayerLaneSelection(
       battleEvents.off('PLACEMENT_LANE_CLICK', onPlacementLaneClick);
       updateCardDetail(null);
 
-      if (GameState.gameMode === 'online') {
+      if (checkIsOnlineMode(GameState.gameMode)) {
         // 送信先を同期
         await sendOnlineAction({
           type: 'submitChoice',
@@ -816,7 +840,7 @@ export async function waitPlayerEnemyLaneSelection(
   if (validLanes.length === 0) return [];
 
   // Check for Remote Choice Wait
-  if (GameState.gameMode === 'online' && owner === 'red') {
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
     startOnlineTimer({
       type: 'choice',
       owner: 'red',
@@ -842,27 +866,8 @@ export async function waitPlayerEnemyLaneSelection(
 
     stopOnlineTimer();
 
-    // number[] に正規化
-    let parsedLanes = [];
-    if (
-      rawVal !== null &&
-      rawVal !== undefined &&
-      rawVal !== '' &&
-      rawVal !== -1
-    ) {
-      if (Array.isArray(rawVal)) {
-        parsedLanes = rawVal
-          .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
-          .filter((x) => !isNaN(x));
-      } else if (typeof rawVal === 'number') {
-        parsedLanes = [rawVal];
-      } else if (typeof rawVal === 'string') {
-        const parsed = parseInt(rawVal, 10);
-        if (!isNaN(parsed)) parsedLanes = [parsed];
-      }
-    }
-
-    parsedLanes = Array.from(new Set(parsedLanes));
+    // Firebase RTDB のオブジェクト化やカンマ区切りを含む受信データを安全に number[] に正規化
+    let parsedLanes = normalizeRemoteChoiceIndices(rawVal);
     let resultLanes = parsedLanes.filter((i) => validLanes.includes(i));
 
     // 補正は送信側（blue の確定時）で確定済み。受信側で独自補正すると盤面が分岐するため行わない
@@ -1009,7 +1014,7 @@ export async function waitPlayerEnemyLaneSelection(
       const result = [...GameState.targetSelectedLanes];
       cleanUp();
 
-      if (GameState.gameMode === 'online') {
+      if (checkIsOnlineMode(GameState.gameMode)) {
         await sendOnlineAction({
           type: 'submitChoice',
           owner: 'blue',
@@ -1062,7 +1067,7 @@ export async function waitPlayerAlliedLaneSelection(
   if (occupiedLanes.length === 0) return [];
 
   // 【フェーズ 1】オンライン対戦かつ相手プレイヤーの選択待ちの場合
-  if (GameState.gameMode === 'online' && owner === 'red') {
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
     startOnlineTimer({
       type: 'choice',
       owner: 'red',
@@ -1088,26 +1093,9 @@ export async function waitPlayerAlliedLaneSelection(
     stopOnlineTimer();
 
     // 受信データを数値配列 [laneIndex] に正規化する
-    let parsedLanes = [];
-    if (
-      rawVal !== null &&
-      rawVal !== undefined &&
-      rawVal !== '' &&
-      rawVal !== -1
-    ) {
-      if (Array.isArray(rawVal)) {
-        parsedLanes = rawVal
-          .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
-          .filter((x) => !isNaN(x) && x >= 0 && x < 3);
-      } else if (typeof rawVal === 'number') {
-        if (rawVal >= 0 && rawVal < 3) parsedLanes = [rawVal];
-      } else if (typeof rawVal === 'string') {
-        const parsed = parseInt(rawVal, 10);
-        if (!isNaN(parsed) && parsed >= 0 && parsed < 3) parsedLanes = [parsed];
-      }
-    }
-
-    parsedLanes = Array.from(new Set(parsedLanes));
+    let parsedLanes = normalizeRemoteChoiceIndices(rawVal).filter(
+      (x) => x >= 0 && x < 3
+    );
     // 実際にカードが存在するレーンのみを抽出
     let resultLanes = parsedLanes.filter((i) => occupiedLanes.includes(i));
 
@@ -1232,7 +1220,7 @@ export async function waitPlayerAlliedLaneSelection(
       cleanUp();
 
       // オンライン対戦の場合は、選択決定データを同期送信する
-      if (GameState.gameMode === 'online') {
+      if (checkIsOnlineMode(GameState.gameMode)) {
         await sendOnlineAction({
           type: 'submitChoice',
           owner: 'blue',
@@ -1266,7 +1254,7 @@ export async function waitPlayerHandSelection(
   const isMulligan = GameState.battlePhase === BATTLE_PHASE.MULLIGAN;
 
   // Check for Remote Choice Wait
-  if (GameState.gameMode === 'online' && owner === 'red') {
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
     if (!isMulligan) {
       startOnlineTimer({
         type: 'choice',
@@ -1298,26 +1286,7 @@ export async function waitPlayerHandSelection(
     }
 
     // number[] に正規化
-    let parsedIndices = [];
-    if (
-      rawVal !== null &&
-      rawVal !== undefined &&
-      rawVal !== '' &&
-      rawVal !== -1
-    ) {
-      if (Array.isArray(rawVal)) {
-        parsedIndices = rawVal
-          .map((x) => (typeof x === 'string' ? parseInt(x, 10) : x))
-          .filter((x) => !isNaN(x));
-      } else if (typeof rawVal === 'number') {
-        parsedIndices = [rawVal];
-      } else if (typeof rawVal === 'string') {
-        const parsed = parseInt(rawVal, 10);
-        if (!isNaN(parsed)) parsedIndices = [parsed];
-      }
-    }
-
-    parsedIndices = Array.from(new Set(parsedIndices));
+    let parsedIndices = normalizeRemoteChoiceIndices(rawVal);
     let resultIndices = parsedIndices.filter((i) => i >= 0 && i < hand.length);
 
     if (forceExact && resultIndices.length < count) {
@@ -1457,7 +1426,7 @@ export async function waitPlayerHandSelection(
       playSound(SOUNDS.seClick);
       const indices = cleanUp();
 
-      if (GameState.gameMode === 'online') {
+      if (checkIsOnlineMode(GameState.gameMode)) {
         await sendOnlineAction({
           type: 'submitChoice',
           owner: 'blue',
@@ -1494,7 +1463,7 @@ export async function waitPlayerDiscardSelection(
   if (!validCards || validCards.length === 0) return maxChoices > 1 ? [] : null;
 
   // Check for Remote Choice Wait
-  if (GameState.gameMode === 'online' && owner === 'red') {
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
     startOnlineTimer({
       type: 'choice',
       owner: 'red',
@@ -1685,7 +1654,7 @@ export async function waitPlayerDiscardSelection(
           ? validCards.slice(0, maxChoices)
           : selectedCards;
 
-      if (GameState.gameMode === 'online') {
+      if (checkIsOnlineMode(GameState.gameMode)) {
         const choiceStr =
           effectiveCards && effectiveCards.length > 0
             ? effectiveCards.map((c) => c.uid || c.id).join(',')
@@ -1739,7 +1708,7 @@ export async function waitPlayerDiscardSelection(
       const effectiveCard =
         !canCancel && !card && validCards.length > 0 ? validCards[0] : card;
 
-      if (GameState.gameMode === 'online') {
+      if (checkIsOnlineMode(GameState.gameMode)) {
         const choiceStr = effectiveCard
           ? effectiveCard.uid || effectiveCard.id
           : null;
@@ -1775,7 +1744,7 @@ export async function waitPlayerDualDiscardSelection(
   }
 
   // Check for Remote Choice Wait
-  if (GameState.gameMode === 'online' && owner === 'red') {
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
     startOnlineTimer({
       type: 'choice',
       owner: 'red',
@@ -1921,7 +1890,7 @@ export async function waitPlayerDualDiscardSelection(
         ? allCards.slice(0, maxChoices)
         : selectedCards;
 
-    if (GameState.gameMode === 'online') {
+    if (checkIsOnlineMode(GameState.gameMode)) {
       const choiceStr =
         effectiveCards && effectiveCards.length > 0
           ? effectiveCards.map((c) => c.uid || c.id).join(',')
@@ -1959,7 +1928,7 @@ export async function waitSkillChoice(
   if (!choices || choices.length === 0) return null;
 
   // Check for Remote Choice Wait
-  if (GameState.gameMode === 'online' && owner === 'red') {
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
     startOnlineTimer({
       type: 'choice',
       owner: 'red',
@@ -2022,11 +1991,22 @@ export async function waitSkillChoice(
       }
     };
 
+    let itemsToProcess = [];
     if (Array.isArray(rawVal)) {
-      rawVal.forEach(parseItem);
+      itemsToProcess = rawVal;
+    } else if (rawVal && typeof rawVal === 'object') {
+      const keys = Object.keys(rawVal);
+      if (keys.length > 0 && keys.every((k) => !isNaN(Number(k)))) {
+        itemsToProcess = keys
+          .sort((a, b) => Number(a) - Number(b))
+          .map((k) => rawVal[k]);
+      } else {
+        itemsToProcess = [rawVal];
+      }
     } else {
-      parseItem(rawVal);
+      itemsToProcess = [rawVal];
     }
+    itemsToProcess.forEach(parseItem);
 
     // 意図的な重複選択（拡散と拡散など）を許容するため、SeenKeyによる一律の重複除去を廃止
     const validResults = results.filter(Boolean);
@@ -2171,7 +2151,7 @@ export async function waitSkillChoice(
       if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
         stopOnlineTimer();
       }
-      if (GameState.gameMode === 'online') {
+      if (checkIsOnlineMode(GameState.gameMode)) {
         await sendOnlineAction({
           type: 'submitChoice',
           owner: 'blue',

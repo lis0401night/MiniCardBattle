@@ -50,6 +50,7 @@ import {
   matchesPuppetTarget,
   checkHasAllFormsOnBoard,
   collectPresentBoardTargets,
+  checkIsOnlineMode,
 } from '../utils/gameUtils.js';
 import { SOUNDS, playSkillSound } from '../utils/sounds.js';
 import {
@@ -2136,7 +2137,7 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'bless') {
     const hand = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
     let targetIndices = [];
-    if (o === 'blue' || GameState.gameMode === 'online') {
+    if (o === 'blue' || checkIsOnlineMode(GameState.gameMode)) {
       targetIndices = await waitPlayerHandSelection(
         1,
         o,
@@ -3073,8 +3074,8 @@ export async function resolveActiveSkillEffect(
 
     const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
 
-    // AIは強制と同じロジック（最大枚数を破棄）、プレイヤーは任意選択のUIを待機（0〜count枚まで手動選択）
-    const forceExact = o === 'red';
+    // AIは強制と同じロジック（最大枚数を破棄）、プレイヤー（オンライン対戦の相手を含む）は任意選択のUIを待機（0〜count枚まで手動選択）
+    const forceExact = !checkIsOnlineMode(GameState.gameMode) && o === 'red';
     const selectedHandIndices = await waitPlayerHandSelection(
       count,
       o,

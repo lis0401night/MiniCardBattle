@@ -639,7 +639,7 @@ export async function endTurnLogic(o) {
         await discardCardsFromHand('blue', droppedCards);
       } else {
         let indices;
-        if (GameState.gameMode === 'online') {
+        if (checkIsOnlineMode(GameState.gameMode)) {
           indices = await waitPlayerHandSelection(discardCount, 'red', true);
         } else {
           // AIの破棄選択は共通ロジックへ統一する（手札オーバー破棄はピッタリ枚数が必要なため true）

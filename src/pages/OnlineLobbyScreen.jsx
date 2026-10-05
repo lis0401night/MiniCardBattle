@@ -249,6 +249,10 @@ export default function OnlineLobbyScreen() {
 
       // 対戦中の切断時コールバックをセット（クリーンアップを確実に行う）
       multiplayerCallbacks.onRoomClosed = async () => {
+        // 対戦終了後（会話中やリザルト処理中）の相手退室による誤爆切断表示を防止
+        if (GameState.isBattleEnded || GameState.appState === 'post_dialogue') {
+          return;
+        }
         GameState.isBattleEnded = true;
         GameState.onlineSubMode = null;
         if (typeof window.setSlowMotionReact === 'function') {
