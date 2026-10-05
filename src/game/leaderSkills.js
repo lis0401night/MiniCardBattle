@@ -52,6 +52,7 @@ import {
   applySingleCombat,
   isValkyriaGuardActive,
   processDestructionTriggers,
+  shouldPlaceAssassinToken,
 } from './engine.js';
 import { playEvents } from './eventRenderer.js';
 import { resolveActiveSkillEffect } from './skillLogic.js';
@@ -437,12 +438,11 @@ export async function executeLeaderSkillAction(
     action === 'evil_march' ||
     action === 'death_target'
   ) {
-    const isDeathTarget =
-      action === 'death_target' ||
-      config?.currentSkin === 'assassin' ||
-      (owner === 'blue'
-        ? GameState.playerSkins?.knight === 'assassin'
-        : GameState.enemySkins?.knight === 'assassin');
+    const isDeathTarget = shouldPlaceAssassinToken(
+      action,
+      config,
+      owner === 'blue' ? GameState.playerSkins : GameState.enemySkins
+    );
     const tokenCardId = isDeathTarget ? 'token_assassin' : 'token_knight';
     const tK =
       CARD_MASTER.find((m) => m.id === tokenCardId) ||
@@ -1884,14 +1884,13 @@ export async function executeLeaderSkillAction(
       tokenLanes.length > 0
     ) {
       await sleep(200);
-      const isDeathTarget =
-        action === 'death_target' ||
-        config?.currentSkin === 'assassin' ||
-        (owner === 'blue'
-          ? GameState.playerSkins?.knight === 'assassin'
-          : GameState.enemySkins?.knight === 'assassin');
+      const isDeathTarget = shouldPlaceAssassinToken(
+        action,
+        config,
+        owner === 'blue' ? GameState.playerSkins : GameState.enemySkins
+      );
       const vfxName = isDeathTarget
-        ? 'vfx_summon_assassin'
+        ? 'anm_summon_assassin'
         : 'anm_summon_celestia';
       // 2箇所同時に再生
       await Promise.all(

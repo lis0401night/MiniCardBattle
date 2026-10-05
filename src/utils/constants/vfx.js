@@ -134,7 +134,7 @@ export const VFX_DATA = {
   },
 
   // レダ（暗殺者）召喚用VFX
-  vfx_summon_assassin: {
+  anm_summon_assassin: {
     type: 'sprite',
     src: 'assets/vfx/vfx_summon_assassin.png',
     columns: 7,
@@ -147,20 +147,6 @@ export const VFX_DATA = {
     scale: 0.5,
     shake: false,
     targetSide: 'self', // 自陣に召喚
-  },
-  anm_summon_assassin: {
-    type: 'sprite',
-    src: 'assets/vfx/vfx_summon_assassin.png',
-    columns: 7,
-    rows: 6,
-    frameCount: 42,
-    duration: 1000,
-    se: 'seMetalBlast',
-    position: 'lane',
-    offsetY: 0,
-    scale: 0.5,
-    shake: false,
-    targetSide: 'self',
   },
 
   // マリア召喚用VFX

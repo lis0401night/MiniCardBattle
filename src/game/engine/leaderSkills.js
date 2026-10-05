@@ -39,6 +39,26 @@ import { applyActiveSkillLogic } from './activeSkills.js';
 import { applySingleCombat } from './combat.js';
 
 /**
+ * 騎士系リーダースキル（聖なる進軍・死の標的）において暗殺者トークンを配置すべきかを判定する共通ヘルパー関数。
+ * アクション名、設定オブジェクト（config）、スキンマップ（skinMap）を包括的に検証し、
+ * UI側のレーン選択待機・VFX演出・エンジン側シミュレーション間でのトークン種別の完全な整合性を保証する。
+ *
+ * @param {string} action - リーダースキルのアクション名（例: 'death_target', 'holy_march'）
+ * @param {Object} [config] - リーダーキャラクターの設定オブジェクト
+ * @param {Object} [skinMap] - スキンマッピングオブジェクト（例: GameState.playerSkins）
+ * @returns {boolean} 暗殺者トークン（token_assassin）を配置すべき場合 true
+ */
+export function shouldPlaceAssassinToken(action, config, skinMap) {
+  if (action === 'death_target') return true;
+  if (config?.leaderSkill?.action === 'death_target') return true;
+  if (config?.leaderSkill?.name === '死の標的') return true;
+  if (config?.id === 'knight' && config?.currentSkin === 'assassin')
+    return true;
+  if (skinMap?.knight === 'assassin') return true;
+  return false;
+}
+
+/**
  * 盤面への装備（武装）を試み、成功した場合はtrueを返すヘルパー。
  * 「配置（Place）」経路でのトークン装備では原則として召喚時スキルを発動させないため、
  * triggerEquipSkills はデフォルトで false となっています。
@@ -1739,23 +1759,27 @@ export function applyLeaderSkillLogic(
     // 騎士/アサシン配置（最大2体）
     events.push({ type: 'leader_skill', skill: action, side: owner });
     const config = isBlue ? state.playerConfig : state.enemyConfig;
-    const isDeathTarget =
-      action === 'death_target' ||
-      config?.currentSkin === 'assassin' ||
-      config?.leaderSkill?.action === 'death_target' ||
-      config?.leaderSkill?.name === '死の標的';
+    const isDeathTarget = shouldPlaceAssassinToken(action, config);
     const tokenCardId = isDeathTarget ? 'token_assassin' : 'token_knight';
     const tokenDefaultImg = isDeathTarget
       ? 'assets/cards/card_token_assassin.webp'
       : 'assets/cards/card_token_knight.webp';
 
+    const tK = CARD_MASTER.find((m) => m.id === tokenCardId) ||
+      CARD_MASTER.find((m) => m.id === 'token_knight') || {
+        name: isDeathTarget ? 'アサシン' : '騎士',
+        power: 2,
+      };
+
     let count = 0;
+    /**
+     * 指定レーンにトークンを「配置」する内部ヘルパー（オンプレイ能力は発動しない）。
+     * 武装（装備）可能なカードが存在する場合は装備し、それ以外は上書き配置を行う。
+     *
+     * @param {number} lane - 配置対象のレーン番号 (0-2)
+     * @returns {void}
+     */
     const addToken = (lane) => {
-      const tK = CARD_MASTER.find((m) => m.id === tokenCardId) ||
-        CARD_MASTER.find((m) => m.id === 'token_knight') || {
-          name: isDeathTarget ? 'アサシン' : '騎士',
-          power: 2,
-        };
       const tk = {
         ...JSON.parse(JSON.stringify(tK)),
         id: `tk_${isDeathTarget ? 'a' : 'k'}_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
@@ -1791,11 +1815,6 @@ export function applyLeaderSkillLogic(
         addToken(l);
       }
     } else {
-      const tK = CARD_MASTER.find((m) => m.id === tokenCardId) ||
-        CARD_MASTER.find((m) => m.id === 'token_knight') || {
-          name: isDeathTarget ? 'アサシン' : '騎士',
-          power: 2,
-        };
       const candidateLanes = [0, 1, 2];
       while (count < 2 && candidateLanes.length > 0) {
         // 盤面シミュレーション評価に基づき客観的最適レーンを順次決定

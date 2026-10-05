@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 
 /**
  * 全カード共通で完全に同一タイミングで同期して輝くシャインオーバーレイコンポーネント。
@@ -8,8 +8,8 @@ import React, { useLayoutEffect, useRef } from 'react';
  * が光の通過に合わせて上品に走る洗練されたエフェクトを提供。
  *
  * DOMマウント直後の `useLayoutEffect` 内で `performance.now()` から4秒周期に対する
- * 負の遅延時間（animationDelay）を算出してCSSカスタムプロパティ（--shine-delay）としてDOM要素に直接適用する。
- * レンダー純粋性（react-hooks/purity）を保ちつつ、どのタイミングでカードが描画されても
+ * 負の遅延時間（animationDelay）を算出して React の State（--shine-delay）としてインラインスタイルに適用する。
+ * DOM直接操作を排除して React の状態管理に統合しつつ、どのタイミングでカードが描画されても
  * 画面上のすべてのカードが同一のタイムライン・位相で完全に同期して美しく輝く。
  *
  * レイヤー構造（2層）:
@@ -22,24 +22,19 @@ import React, { useLayoutEffect, useRef } from 'react';
  * @returns {React.ReactElement} 洗練されたシャイン加工オーバーレイ要素
  */
 export default function CardShineOverlay({ className = '', style = {} }) {
-  const overlayRef = useRef(null);
+  const [shineDelay, setShineDelay] = useState('0s');
 
   useLayoutEffect(() => {
-    if (!overlayRef.current) return;
     const now =
       typeof performance !== 'undefined' ? performance.now() : Date.now();
     const offset = (now / 1000) % 4;
-    overlayRef.current.style.setProperty(
-      '--shine-delay',
-      `-${offset.toFixed(3)}s`
-    );
+    setShineDelay(`-${offset.toFixed(3)}s`);
   }, []);
 
   return (
     <div
-      ref={overlayRef}
       className={`card-shine-overlay ${className}`.trim()}
-      style={style}
+      style={{ ...style, '--shine-delay': shineDelay }}
     >
       {/* レイヤー1: 繊細なステンドグラス・幾何学プリズムファセット（光線通過時のみ上品に浮き彫り） */}
       <div className="card-shine-glass-facets" />

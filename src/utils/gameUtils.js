@@ -3,6 +3,7 @@ import { GameState } from '../state/gameState.js';
 import { CARD_MASTER, PREMIUM_CARD_IDS } from './constants/cards.js';
 import { CHARACTERS, getSkinImage } from './constants/characters.js';
 import {
+  AI_LEVEL,
   appendVersionQuery,
   DAMAGE_TYPE,
   DEFAULT_PLAYER_NAME,
@@ -14,10 +15,9 @@ import {
   LOW_TIER_PICK_COUNT,
   MID_TIER_PICK_COUNT,
   PROFILE_NAME_KEY,
-  AI_LEVEL,
+  SHINE_CARDS_KEY,
   SHINE_TICKETS_KEY,
   UNLOCKED_SHINE_CARDS_KEY,
-  SHINE_CARDS_KEY,
 } from './constants/config.js';
 import {
   ACTIVE_SKILLS,
@@ -1342,12 +1342,7 @@ export function getCardImgUrl(card, useThumb = false) {
     // 特定のトークンの例外処理（旧imgUrl設定の復元）
     if (card.id === 'token_knight')
       return 'assets/cards/card_token_knight.webp';
-    if (
-      card.id === 'token_assassin' ||
-      card.baseId === 'token_assassin' ||
-      card.id === 'token_assasin' ||
-      card.baseId === 'token_assasin'
-    )
+    if (card.id === 'token_assassin' || card.baseId === 'token_assassin')
       return 'assets/cards/card_token_assassin.webp';
     if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
       // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す

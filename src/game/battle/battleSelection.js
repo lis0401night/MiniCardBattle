@@ -85,8 +85,15 @@ export function normalizeRemoteChoiceIndices(rawVal) {
   return Array.from(
     new Set(
       result
-        .map((x) => (typeof x === 'string' ? parseInt(x, 10) : Number(x)))
-        .filter((x) => Number.isInteger(x) && !isNaN(x))
+        .map((x) => {
+          if (typeof x === 'number') return x;
+          // 部分一致の数値化（parseInt("1abc") -> 1）やカードUID誤変換を防ぐため、完全一致の整数文字列のみを数値化
+          if (typeof x === 'string' && /^-?\d+$/.test(x.trim())) {
+            return Number(x.trim());
+          }
+          return NaN;
+        })
+        .filter((x) => Number.isInteger(x))
     )
   );
 }
