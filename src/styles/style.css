@@ -1663,11 +1663,18 @@ h2 {
 }
 
 /* ==========================================================================
-   カードのシャイン加工（明度に合わせて光る特殊オーロラ・フォイルオーバーレイ）
-   mix-blend-mode: color-dodge を採用し、下地カード画像の明るい部分（ハイライトや明度が高い領域）
-   に沿って、角度の異なるクリスタルハイライト光線とオーロラ偏光光彩が重なり合いながら
-   ゆったりと滑らかに走るリッチなホログラム・シャイン加工。
-   四角い矩形エッジが出ないよう、境界を完全透過させたマルチレイヤーグラデーションを採用。
+   カードのシャイン加工（洗練されたステンドグラス・プリズムシャイン加工）
+   枠の改造は行わず、カード本来のフレームデザインを保持。
+   mix-blend-mode: color-dodge を採用し、下地イラストの高級感を一切損なわずに
+   1. 60度等角幾何学（アイソメトリック・ダイヤモンド）による繊細なガラスファセット
+   2. 澄んだ純白のハイライト芯と淡いステンドグラス偏光を持つクリスタル光線スイープ
+   の2層が、光の通過に合わせて上品かつ鮮烈に走る洗練されたエフェクト。
+   光線連動マスクにより、光が当たった瞬間のみダイヤモンドプリズムが上品に浮き上がり、
+   通過後はイラストが100%鮮明・クリアに表示される（常時グリッド表示を完全防止）。
+   すべてのサイズ・位置・パターンをパーセンテージで指定しているため、
+   通常カード、バトル時カード、拡大モーダルの全解像度で完全に同一の比率を維持。
+   --shine-delay CSS変数により、画面上の全カードが同一位相で完全に同期して輝く。
+   ※ぼかし（blur）は端末負荷軽減とエッジ鮮明化のため完全不使用。
    ========================================================================== */
 .card-shine-overlay {
   position: absolute;
@@ -1676,83 +1683,152 @@ h2 {
   border-radius: inherit;
   overflow: hidden;
   z-index: 2;
+  --shine-delay: 0s;
+}
+
+/* レイヤー1: 繊細なステンドグラス・幾何学プリズムファセット（光線通過時のみ上品に浮き彫り） */
+.card-shine-glass-facets {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   mix-blend-mode: color-dodge;
-  opacity: 0.9;
+  /*
+    60度等角幾何学（アイソメトリック・ダイヤモンド）。
+    極細のシルバーホワイトライン（0.35px）と、淡いプリズムの透過色。
+  */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='51.962' viewBox='0 0 60 51.962'%3E%3Cdefs%3E%3Cstyle%3Epolygon%7Bstroke:%23ffffff;stroke-width:0.35;stroke-opacity:0.75;stroke-linejoin:round;%7D%3C/style%3E%3C/defs%3E%3Cpolygon points='0,0 30,0 15,25.981' fill='rgba(255,235,170,0.12)'/%3E%3Cpolygon points='30,0 60,0 45,25.981' fill='rgba(186,230,253,0.14)'/%3E%3Cpolygon points='30,0 45,25.981 15,25.981' fill='rgba(244,114,182,0.12)'/%3E%3Cpolygon points='0,0 15,25.981 0,51.962' fill='rgba(52,211,153,0.1)'/%3E%3Cpolygon points='15,25.981 45,25.981 30,51.962' fill='rgba(192,132,252,0.14)'/%3E%3Cpolygon points='60,0 60,51.962 45,25.981' fill='rgba(251,146,60,0.12)'/%3E%3Cpolygon points='15,25.981 30,51.962 0,51.962' fill='rgba(56,189,248,0.12)'/%3E%3Cpolygon points='45,25.981 60,51.962 30,51.962' fill='rgba(244,114,182,0.12)'/%3E%3C/svg%3E");
+  background-size: 12% calc(12% * 1.5 * 51.962 / 60);
+  background-repeat: repeat;
+
+  /* 光線のハイライト領域（約16%幅）に完全に連動するマスク */
+  -webkit-mask-image: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(0, 0, 0, 0.4) 43%,
+    black 48%,
+    black 52%,
+    rgba(0, 0, 0, 0.4) 57%,
+    transparent 62%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(0, 0, 0, 0.4) 43%,
+    black 48%,
+    black 52%,
+    rgba(0, 0, 0, 0.4) 57%,
+    transparent 62%,
+    transparent 100%
+  );
+  -webkit-mask-size: 350% 350%;
+  mask-size: 350% 350%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: card-refined-glass-run 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: var(--shine-delay);
+}
+
+@keyframes card-refined-glass-run {
+  0% {
+    -webkit-mask-position: -90% -90%;
+    mask-position: -90% -90%;
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  25% {
+    -webkit-mask-position: 70% 70%;
+    mask-position: 70% 70%;
+    opacity: 0.95;
+  }
+  45% {
+    opacity: 0.95;
+  }
+  50% {
+    -webkit-mask-position: 230% 230%;
+    mask-position: 230% 230%;
+    opacity: 0;
+  }
+  100% {
+    -webkit-mask-position: 230% 230%;
+    mask-position: 230% 230%;
+    opacity: 0;
+  }
+}
+
+/* レイヤー2: 上品で鮮烈なクリスタル光線＋オーロラ偏光スイープ */
+.card-shine-prism-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  mix-blend-mode: color-dodge;
+  opacity: 0.88;
   background-image:
-    /* レイヤー1: 角度115度のクリスタルハイライト光線（主光＋副光線） */
+    /* 主光線: 澄んだ純白のハイライト芯＋ペールゴールド＆スカイブルー */
     linear-gradient(
       115deg,
       transparent 0%,
-      transparent 38%,
-      rgba(255, 235, 170, 0.35) 42%,
-      rgba(255, 255, 255, 0.95) 46%,
-      rgba(186, 230, 253, 0.45) 49%,
-      transparent 53%,
-      rgba(255, 255, 255, 0.15) 55%,
-      rgba(255, 255, 255, 0.8) 57%,
-      rgba(254, 240, 138, 0.25) 59%,
-      transparent 64%,
+      transparent 40%,
+      rgba(255, 235, 170, 0.3) 44%,
+      rgba(255, 255, 255, 0.95) 49%,
+      rgba(186, 230, 253, 0.4) 52%,
+      transparent 56%,
       transparent 100%
     ),
-    /* レイヤー2: 角度135度のオーロラ・ホログラム偏光光彩（豊かな色彩変化） */
+    /* オーロラ光彩: 淡く上品なステンドグラス偏光（派手すぎず自然な色彩） */
     linear-gradient(
         135deg,
         transparent 0%,
-        transparent 25%,
-        rgba(232, 121, 249, 0.25) 34%,
-        rgba(56, 189, 248, 0.3) 42%,
-        rgba(250, 204, 21, 0.35) 50%,
-        rgba(52, 211, 153, 0.3) 58%,
-        rgba(244, 114, 182, 0.25) 66%,
-        transparent 76%,
+        transparent 32%,
+        rgba(232, 121, 249, 0.2) 39%,
+        rgba(56, 189, 248, 0.25) 45%,
+        rgba(250, 204, 21, 0.25) 50%,
+        rgba(52, 211, 153, 0.22) 55%,
+        rgba(244, 114, 182, 0.2) 61%,
+        transparent 68%,
         transparent 100%
       );
   background-size:
     350% 350%,
     300% 300%;
   background-repeat: no-repeat, no-repeat;
-  background-position:
-    -250% -250%,
-    -200% -200%;
-  animation-name: card-shine-complex;
-  animation-duration: 6s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  animation-iteration-count: infinite;
-  animation-delay: 0s;
+  animation: card-refined-sweep-run 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: var(--shine-delay);
 }
 
-@keyframes card-shine-complex {
+@keyframes card-refined-sweep-run {
   0% {
     background-position:
-      -250% -250%,
-      -200% -200%;
-    opacity: 0.2;
+      -90% -90%,
+      -90% -90%;
+    opacity: 0;
   }
-  12% {
-    opacity: 0.9;
+  5% {
+    opacity: 0.88;
   }
-  28% {
+  25% {
     background-position:
-      -30% -30%,
-      -20% -20%;
-    opacity: 1;
+      70% 70%,
+      70% 70%;
+    opacity: 0.88;
   }
-  55% {
-    background-position:
-      250% 250%,
-      180% 180%;
-    opacity: 0.7;
+  45% {
+    opacity: 0.88;
   }
-  65% {
+  50% {
     background-position:
-      250% 250%,
-      200% 200%;
+      230% 230%,
+      230% 230%;
     opacity: 0;
   }
   100% {
     background-position:
-      250% 250%,
-      200% 200%;
+      230% 230%,
+      230% 230%;
     opacity: 0;
   }
 }

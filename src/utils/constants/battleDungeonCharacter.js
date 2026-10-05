@@ -278,6 +278,20 @@ export const DUNGEON_CHARACTER_DIALOGUE = {
       ending: [],
     },
   },
+  human_female_fighter: {
+    preBattleLine: '手加減はいらないわ。全力でかかってきなさい！',
+    dialogue: {
+      intro: { default: 'さあ、真っ向勝負といこうじゃない！' },
+      win: { default: '一本！ 私の気迫、通じたようね！' },
+      lose: { default: 'くっ……見事な一撃だったわ……。' },
+      damage: {
+        [DAMAGE_TYPE.SMALL]: ['効かないわ！', '浅いわね！'],
+        [DAMAGE_TYPE.BIG]: ['ぐあっ……！', 'くっ、やるわね……！'],
+      },
+      skill: 'これで決めるっ！',
+      ending: [],
+    },
+  },
   human_female_assassin: {
     preBattleLine: '……。',
     dialogue: {

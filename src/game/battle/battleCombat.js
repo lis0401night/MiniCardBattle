@@ -752,6 +752,8 @@ export async function discardCardsFromDeck(owner, cards) {
  * 墓地送りの前に、カードへ付与された一時状態（無敵・加護・スタン・腐食・攻撃不能等）をすべて解除し、
  * 付属物（装備品・合体素材）の個別返却および変身・変相の解除・初期化を安全に行う。
  * 手札からの破棄時かつ「狂気」スキルを所持している場合は、レーンへの召喚処理を実行する。
+ * 破壊による破棄時は「分裂」および「誘爆」スキルを解決する。
+ * ※トークンカードであっても破壊時は通常カードと同様に分裂・誘爆スキルが発動する（墓地へは送られない）。
  *
  * @param {'blue'|'red'} owner - カードの所有者 ('blue' | 'red')
  * @param {object} card - 破棄対象のカードオブジェクト
@@ -854,23 +856,26 @@ export async function discardCard(
     updateDeckDisplay(rvOwner);
   }
 
-  if (card.isToken) return false;
   let skillsToResolve = Array.isArray(card.skills) ? [...card.skills] : [];
   let isReplacedOnBoard = false;
 
   // TODO(リファクタリング): 処刑等の旧直接破棄ロジック（discardCard）と Engine/Renderer（新エンジン）の間で
   // 破棄・墓地送り処理が二重化しています。将来的にはすべて Engine / Renderer 構造へ一元化・統一すべきです。
   if (isDestroyed && lane !== undefined && lane !== null) {
-    // 分裂(split): トークンを生成しつつ、元のカード本体も下部の墓地追加処理へ進める
+    // 分裂(split): トークンを生成
     if (skillsToResolve.some((sk) => sk.id === 'split')) {
       await triggerSplitSkill(owner, lane, card);
       isReplacedOnBoard = true;
     }
-    // 誘爆(explode) — 隣接カードにダメージを与える（カード自体は通常通り墓地へ）
+    // 誘爆(explode) — 隣接カードにダメージを与える
     if (skillsToResolve.some((sk) => sk.id === 'explode')) {
       await triggerExplodeSkill(owner, lane, card);
     }
   }
+
+  // トークンカードは墓地へ送られないため、破壊時スキル（分裂・誘爆等）を解決した後に終了する。
+  // （分裂等により盤面が既に置換された場合は true を返し、呼び出し元による盤面の null 上書きを防ぐ）
+  if (card.isToken) return isReplacedOnBoard;
 
   // スキル発動フラグをリセット
   card.skillTriggered = false;

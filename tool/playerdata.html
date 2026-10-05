@@ -629,6 +629,7 @@
                 <option value="owned_players">👥 所持プレイヤー数順</option>
                 <option value="owned_total">📦 総所持枚数順</option>
                 <option value="premium_unlocked">✨ プレミアム解放者順</option>
+                <option value="shine_unlocked">🌟 シャイン解放者順</option>
                 <option value="rarity">⭐ レアリティ順</option>
                 <option value="id">📇 ID順</option>
               </select>
@@ -4309,13 +4310,14 @@
           }
         });
 
-        // 2. 登録デッキ、防衛デッキ、所持数・プレミアム解放の集計
+        // 2. 登録デッキ、防衛デッキ、所持数・プレミアム解放・シャイン解放の集計
         const registeredUsageCounts = {};
         const defenseUsageCounts = {};
         const attackUsageCounts = {};
         const ownedPlayerCounts = {};
         const ownedTotalCopies = {};
         const premiumUnlockedCounts = {};
+        const shineUnlockedCounts = {};
 
         players.forEach((p) => {
           if (excludedUuids.has(p.uuid)) return;
@@ -4381,6 +4383,17 @@
                 (premiumUnlockedCounts[cId] || 0) + 1;
             });
           }
+
+          // シャイン解放
+          const unlockedShine = p.unlocked_shine_cards || [];
+          if (Array.isArray(unlockedShine)) {
+            const uniqueShine = new Set(
+              unlockedShine.map((entry) => resolveCardId(entry)).filter(Boolean)
+            );
+            uniqueShine.forEach((cId) => {
+              shineUnlockedCounts[cId] = (shineUnlockedCounts[cId] || 0) + 1;
+            });
+          }
         });
 
         // 攻撃デッキ使用枚数（対戦ログの最大値）
@@ -4427,6 +4440,7 @@
           ownedPlayerCounts,
           ownedTotalCopies,
           premiumUnlockedCounts,
+          shineUnlockedCounts,
         };
       }
 
@@ -4454,6 +4468,7 @@
           ownedPlayerCounts,
           ownedTotalCopies,
           premiumUnlockedCounts,
+          shineUnlockedCounts,
         } = stats;
 
         // トークンを除外した全カード
@@ -4526,6 +4541,8 @@
           const totB = ownedTotalCopies[b.id] || 0;
           const premA = premiumUnlockedCounts[a.id] || 0;
           const premB = premiumUnlockedCounts[b.id] || 0;
+          const shineA = shineUnlockedCounts[a.id] || 0;
+          const shineB = shineUnlockedCounts[b.id] || 0;
 
           if (currentCardSort === 'attack_winrate') {
             const mA = statA.atkMatches;
@@ -4571,6 +4588,11 @@
             if (ownA !== ownB) return ownB - ownA;
           } else if (currentCardSort === 'premium_unlocked') {
             if (premA !== premB) return premB - premA;
+            if (shineA !== shineB) return shineB - shineA;
+            if (ownA !== ownB) return ownB - ownA;
+          } else if (currentCardSort === 'shine_unlocked') {
+            if (shineA !== shineB) return shineB - shineA;
+            if (premA !== premB) return premB - premA;
             if (ownA !== ownB) return ownB - ownA;
           } else if (currentCardSort === 'rarity') {
             if (a.rarity !== b.rarity) return b.rarity - a.rarity;
@@ -4611,6 +4633,7 @@
             const ownCount = ownedPlayerCounts[c.id] || 0;
             const ownTotal = ownedTotalCopies[c.id] || 0;
             const premCount = premiumUnlockedCounts[c.id] || 0;
+            const shineCount = shineUnlockedCounts[c.id] || 0;
             const isPremiumTarget = (PREMIUM_CARD_IDS || []).includes(c.id);
 
             const ownRate =
@@ -4718,7 +4741,7 @@
                 </div>
               </div>
 
-              <!-- 採用数・所持数 メトリクス -->
+              <!-- 採用数・所持数・特殊加工解放 メトリクス -->
               <div class="bg-slate-50/80 rounded-xl p-2 mb-2 text-[10px] font-bold grid grid-cols-2 gap-x-2 gap-y-1 border border-slate-100 text-slate-600">
                 <div class="flex justify-between items-center">
                   <span>📋 登録:</span>
@@ -4735,6 +4758,14 @@
                 <div class="flex justify-between items-center">
                   <span>📦 流通:</span>
                   <span class="font-black text-slate-800">${ownTotal}枚</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-amber-700">✨ プレミアム:</span>
+                  <span class="font-black ${premCount > 0 ? 'text-amber-600' : 'text-slate-400'}">${premCount}人</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-cyan-700">🌟 シャイン:</span>
+                  <span class="font-black ${shineCount > 0 ? 'text-cyan-600' : 'text-slate-400'}">${shineCount}人</span>
                 </div>
               </div>
 
@@ -6030,9 +6061,42 @@
         const rarityColor = RARITY_COLORS[card.rarity] || 'slate';
         const rarityLabel = RARITY_LABELS[card.rarity] || '?';
 
+        // 0. 所持人数・プレミアム解放人数・シャイン解放人数の集計
+        let ownedPlayersCount = 0;
+        let ownedCopiesCount = 0;
+        let premUnlockedCount = 0;
+        let shineUnlockedCount = 0;
+
+        allPlayers.forEach((p) => {
+          if (excludedPlayerIds.has(p.uuid)) return;
+
+          // インベントリ所持
+          const invCount = parseInt(p.inventory?.[card.id], 10) || 0;
+          if (invCount > 0) {
+            ownedPlayersCount++;
+            ownedCopiesCount += invCount;
+          }
+
+          // プレミアム解放
+          if (Array.isArray(p.unlocked_premium_cards)) {
+            const hasPrem = p.unlocked_premium_cards.some(
+              (entry) => resolveCardId(entry) === card.id
+            );
+            if (hasPrem) premUnlockedCount++;
+          }
+
+          // シャイン解放
+          if (Array.isArray(p.unlocked_shine_cards)) {
+            const hasShine = p.unlocked_shine_cards.some(
+              (entry) => resolveCardId(entry) === card.id
+            );
+            if (hasShine) shineUnlockedCount++;
+          }
+        });
+
         if (titleEl) titleEl.textContent = card.name || card.id;
         if (subtitleEl) {
-          subtitleEl.textContent = `ID: ${card.id} | PWR: ${card.power ?? '?'}${isPremiumTarget ? ' | ✨ プレミアム対象' : ''}`;
+          subtitleEl.textContent = `ID: ${card.id} | PWR: ${card.power ?? '?'}${isPremiumTarget ? ' | ✨ プレミアム対象' : ''} | ✨ プレミアム解放: ${premUnlockedCount}人 | 🌟 シャイン解放: ${shineUnlockedCount}人`;
         }
         if (badgeEl) {
           badgeEl.className = `text-[10px] font-black text-${rarityColor}-400 bg-${rarityColor}-950/80 px-2 py-0.5 rounded border border-${rarityColor}-800 shrink-0`;
@@ -6574,13 +6638,28 @@
                   <span class="text-[11px] font-black text-slate-400">⚡ 基本性能</span>
                   <span class="text-[10px] font-bold text-${rarityColor}-400 bg-${rarityColor}-950 px-2 py-0.5 rounded border border-${rarityColor}-800">${rarityLabel}</span>
                 </div>
-                <div class="text-2xl font-black text-white mt-1">
-                  PWR ${card.power ?? '?'}
+                <div class="flex items-baseline justify-between mt-1">
+                  <div class="text-2xl font-black text-white">
+                    PWR ${card.power ?? '?'}
+                  </div>
+                  <div class="text-xs text-slate-400 font-bold">
+                    スキル <span class="text-indigo-400 font-black">${(card.skills || []).length}</span> 種
+                  </div>
                 </div>
               </div>
-              <div class="text-xs text-slate-300 font-bold border-t border-slate-700/60 pt-1.5 mt-2 flex items-center justify-between">
-                <span>所持スキル:</span>
-                <span class="text-indigo-400 font-black">${(card.skills || []).length} 種</span>
+              <div class="space-y-1 text-xs text-slate-300 font-bold border-t border-slate-700/60 pt-2 mt-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-amber-400">✨ プレミアム解放:</span>
+                  <span class="text-white font-black">${formatNumber(premUnlockedCount)}人</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-cyan-400">🌟 シャイン解放:</span>
+                  <span class="text-white font-black">${formatNumber(shineUnlockedCount)}人</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-400">👥 所持:</span>
+                  <span class="text-slate-200 font-bold">${formatNumber(ownedPlayersCount)}人 (${formatNumber(ownedCopiesCount)}枚)</span>
+                </div>
               </div>
             </div>
           </div>
