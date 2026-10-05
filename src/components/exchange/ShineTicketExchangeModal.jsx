@@ -64,6 +64,15 @@ export default function ShineTicketExchangeModal({
     onConfirm?.(count);
   };
 
+  /**
+   * モーダルを閉じるハンドラ（SEクリック音を再生）
+   * @returns {void}
+   */
+  const handleClose = () => {
+    playSound(SOUNDS?.seClick);
+    onClose?.();
+  };
+
   return (
     <div
       className="modal-overlay"
@@ -79,7 +88,7 @@ export default function ShineTicketExchangeModal({
         alignItems: 'center',
         justifyContent: 'center',
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="skill-modal-box modal-pop-animation"
@@ -424,7 +433,7 @@ export default function ShineTicketExchangeModal({
               margin: 0,
               fontSize: '0.9rem',
             }}
-            onClick={onClose}
+            onClick={handleClose}
           >
             キャンセル
           </button>

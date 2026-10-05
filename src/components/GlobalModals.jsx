@@ -1557,6 +1557,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
         onExchangeConfirm={(exchangeData) => {
           // 交換済み・ポイント不足はボタン自体が非活性のため到達しないが、安全のためガード
           if (exchangeData.isMaxed || !exchangeData.canExchange) return;
+          playSound?.(SOUNDS?.seClick);
           if (exchangeData.onConfirm) {
             exchangeData.onConfirm();
           }
@@ -4280,6 +4281,7 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   background: '#475569',
                 }}
                 onClick={() => {
+                  playSound?.(SOUNDS?.seClick);
                   setDiscardSelectionData(null);
                 }}
               >
