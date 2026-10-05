@@ -27,7 +27,7 @@ export const ONLINE_DISCONNECT_WAIT_SEC = 60;
 
 /**
  * 指定されたゲームモードで時間制限タイマーを有効化するかどうかを判定する（ホワイトリスト方式）
- * オンライン対戦（online）および挙動確認用のプラクティス（practice）で有効。
+ * オンライン対戦（online, online_quick, online_quick_cpu）で有効。
  * @param {string} gameMode - 対象のゲームモード
  * @returns {boolean} 有効化対象ならtrue
  */
@@ -35,7 +35,6 @@ export function checkIsOnlineTimerEnabled(gameMode) {
   return (
     gameMode === 'online' ||
     gameMode === 'online_quick' ||
-    gameMode === 'online_quick_cpu' ||
-    gameMode === 'practice'
+    gameMode === 'online_quick_cpu'
   );
 }

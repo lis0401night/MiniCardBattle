@@ -1,11 +1,13 @@
 import { loadDeck } from '../services/deck.js';
-import { safeLeaveRoom } from '../services/multiplayer.js';
+import { getCurrentRoomId, safeLeaveRoom } from '../services/multiplayer.js';
 import {
   initSelectScreen,
   performFadeTransition,
   showDefenseBattleList,
   showOnlineLobby,
+  showOnlineMenu,
   showOnlineQuickMatch,
+  showOnlineRoomMatch,
 } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
 import { switchScreen } from '../utils/gameUtils.js';
@@ -35,6 +37,28 @@ export function startPreparedBattle() {
   loadDeck();
   GameState.appState = 'battle';
   prepareBattle();
+}
+
+/**
+ * クイックマッチ（対人戦・CPU戦共通）終了後に、セッションから退室してクイックマッチ画面へ復帰する共通処理。
+ *
+ * ※ 会話画面の連打による重複呼び出しは、呼び出し元の showNextDialogue（uiDialogue.js）で
+ *    「1つの会話につき進行は1回」に制限して遮断している。
+ * onlineSubMode のリセットは退室完了後（画面遷移直前）に行い、
+ * 退室待機中に subMode が消失して誤った分岐へ進む事故を防ぐ。
+ *
+ * @returns {void}
+ */
+function leaveQuickMatchAndReturn() {
+  safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(() => {
+    // 退室完了後にモードフラグをリセットし、クイックマッチ画面へ遷移
+    GameState.onlineSubMode = null;
+    if (typeof showOnlineQuickMatch === 'function') {
+      showOnlineQuickMatch();
+    } else {
+      switchScreen('screen-online-quick-match');
+    }
+  });
 }
 
 /**
@@ -103,47 +127,39 @@ export function handleProgressionNextStep() {
     }
   } else if (GameState.gameMode === 'online') {
     const subMode = GameState.onlineSubMode;
-    GameState.onlineSubMode = null; // リセット
 
     // クイックマッチの場合はセッションを完全に破棄・退室してクイックマッチ画面へ復帰
     if (subMode === 'quick') {
-      safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(
-        () => {
-          if (typeof showOnlineQuickMatch === 'function') {
-            showOnlineQuickMatch();
-          } else {
-            switchScreen('screen-online-quick-match');
-          }
-        }
-      );
+      leaveQuickMatchAndReturn();
       return;
-    } else if (subMode === 'room') {
-      // ルームマッチの場合はルーム内ロビー画面へ復帰（再戦用）
+    }
+
+    // 【許可制】ルームマッチ（subMode === 'room'）かつ参加中のルームが存在する場合のみロビーへ復帰（再戦用）
+    // ルームマッチでもルームが消失している場合はルームマッチメニューへ、
+    // モード不明の場合はルームを決め打ちせずオンラインメニューへ安全に戻す
+    GameState.onlineSubMode = null; // リセット
+    if (subMode === 'room' && getCurrentRoomId()) {
       if (typeof showOnlineLobby === 'function') {
         showOnlineLobby();
       } else {
         switchScreen('screen-online-lobby');
       }
-    } else if (typeof showOnlineLobby === 'function') {
-      // フォールバック（未指定時は従来のルームロビー）
-      showOnlineLobby();
+    } else if (subMode === 'room') {
+      if (typeof showOnlineRoomMatch === 'function') {
+        showOnlineRoomMatch();
+      } else {
+        switchScreen('screen-online-room-match');
+      }
+    } else if (typeof showOnlineMenu === 'function') {
+      showOnlineMenu();
     } else {
-      switchScreen('screen-online-lobby');
+      switchScreen('screen-online-menu');
     }
   } else if (
     GameState.gameMode === 'online_quick' ||
     GameState.gameMode === 'online_quick_cpu'
   ) {
-    GameState.onlineSubMode = null;
-    safeLeaveRoom('クイックマッチ終了時の退室処理に失敗しました:').finally(
-      () => {
-        if (typeof showOnlineQuickMatch === 'function') {
-          showOnlineQuickMatch();
-        } else {
-          switchScreen('screen-online-quick-match');
-        }
-      }
-    );
+    leaveQuickMatchAndReturn();
     return;
   } else if (GameState.gameMode === 'tournament') {
     if (GameState.appState === 'pre_battle_dialogue') {

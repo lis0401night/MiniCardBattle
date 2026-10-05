@@ -791,8 +791,13 @@ export default function DeckListScreen({ switchScreen }) {
                               if (window.showEnemyDeckModal) {
                                 const deckTitle =
                                   deck.name || `デッキ${idx + 1}`;
+                                const chosenSkin =
+                                  deck.playerSkins?.[char?.id] || 'default';
+                                const skinDef = char?.skins?.[chosenSkin];
                                 const deckLeaderSkill =
-                                  char?.leaderSkill || null;
+                                  skinDef?.leaderSkill ||
+                                  char?.leaderSkill ||
+                                  null;
                                 window.showEnemyDeckModal(
                                   deck.cards || [],
                                   deckTitle,

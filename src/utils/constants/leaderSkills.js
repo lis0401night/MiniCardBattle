@@ -26,6 +26,12 @@ export const LEADER_SKILLS = {
     cost: 5,
     action: 'holy_march',
   },
+  death_target: {
+    name: '死の標的',
+    desc: '(SP:5) 自分のレーンに「アサシン(P:2)」を最大2体配置し、自分の場のすべてのカードのパワーを+2する。',
+    cost: 5,
+    action: 'death_target',
+  },
   abyss_ritual: {
     name: '深淵の儀式',
     desc: '(SP:3) 手札からカードを最大2枚捨てて同数引き、手札すべてのパワーを+1する。',

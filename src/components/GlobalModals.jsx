@@ -2463,6 +2463,12 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 skinIdToUse
               ).fullName;
 
+              const skinDef =
+                charDetailData.skins?.[skinIdToUse] ||
+                CHARACTERS[charDetailData.id]?.skins?.[skinIdToUse];
+              const effectiveLeaderSkill =
+                skinDef?.leaderSkill || charDetailData.leaderSkill;
+
               return (
                 <>
                   <img
@@ -2494,94 +2500,94 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   >
                     {displayTitle}
                   </h2>
+
+                  {charDetailData.easeOfUse && (
+                    <div
+                      style={{
+                        color: '#fbd38d',
+                        fontSize: '0.95rem',
+                        marginBottom: '5px',
+                        textShadow: '1px 1px 2px #000',
+                        flexShrink: 0,
+                      }}
+                    >
+                      使いやすさ: {'★'.repeat(charDetailData.easeOfUse)}
+                      {'☆'.repeat(3 - charDetailData.easeOfUse)}
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      flex: 1,
+                      overflowY: 'auto',
+                      width: '100%',
+                      padding: '0 5px',
+                      marginBottom: '10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: '0.9rem',
+                        color: '#cbd5e1',
+                        textAlign: 'center',
+                        margin: 0,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {skinDef?.description || charDetailData.desc}
+                    </p>
+
+                    {effectiveLeaderSkill && (
+                      <div
+                        style={{
+                          background: 'rgba(0,0,0,0.5)',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          border: '1px solid #475569',
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: '#facc15',
+                            fontWeight: 'bold',
+                            fontSize: '0.8rem',
+                            marginBottom: '5px',
+                          }}
+                        >
+                          【リーダースキル】
+                        </div>
+                        <div
+                          style={{
+                            fontWeight: 'bold',
+                            marginBottom: '3px',
+                            color: '#fff',
+                          }}
+                        >
+                          {effectiveLeaderSkill.name}{' '}
+                          {effectiveLeaderSkill.cost
+                            ? `(必要SP: ${effectiveLeaderSkill.cost})`
+                            : ''}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {effectiveLeaderSkill.desc}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               );
             })()}
-
-            {charDetailData.easeOfUse && (
-              <div
-                style={{
-                  color: '#fbd38d',
-                  fontSize: '0.95rem',
-                  marginBottom: '5px',
-                  textShadow: '1px 1px 2px #000',
-                  flexShrink: 0,
-                }}
-              >
-                使いやすさ: {'★'.repeat(charDetailData.easeOfUse)}
-                {'☆'.repeat(3 - charDetailData.easeOfUse)}
-              </div>
-            )}
-
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                width: '100%',
-                padding: '0 5px',
-                marginBottom: '10px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}
-            >
-              <p
-                style={{
-                  fontSize: '0.9rem',
-                  color: '#cbd5e1',
-                  textAlign: 'center',
-                  margin: 0,
-                  lineHeight: 1.4,
-                }}
-              >
-                {charDetailData.desc}
-              </p>
-
-              {charDetailData.leaderSkill && (
-                <div
-                  style={{
-                    background: 'rgba(0,0,0,0.5)',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    border: '1px solid #475569',
-                  }}
-                >
-                  <div
-                    style={{
-                      color: '#facc15',
-                      fontWeight: 'bold',
-                      fontSize: '0.8rem',
-                      marginBottom: '5px',
-                    }}
-                  >
-                    【リーダースキル】
-                  </div>
-                  <div
-                    style={{
-                      fontWeight: 'bold',
-                      marginBottom: '3px',
-                      color: '#fff',
-                    }}
-                  >
-                    {charDetailData.leaderSkill.name}{' '}
-                    {charDetailData.leaderSkill.cost
-                      ? `(必要SP: ${charDetailData.leaderSkill.cost})`
-                      : ''}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '0.8rem',
-                      color: '#94a3b8',
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {charDetailData.leaderSkill.desc}
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* リーダー変更ボタン（デッキ編成画面経由かつ変更許可モードの場合のみ表示） */}
             {charDetailData.allowLeaderChange && (

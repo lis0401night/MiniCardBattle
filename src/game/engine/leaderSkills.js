@@ -1735,22 +1735,34 @@ export function applyLeaderSkillLogic(
         }
       }
     }
-  } else if (action === 'holy_march') {
-    // 騎士召喚（最大2体）
+  } else if (action === 'holy_march' || action === 'death_target') {
+    // 騎士/アサシン配置（最大2体）
     events.push({ type: 'leader_skill', skill: action, side: owner });
+    const config = isBlue ? state.playerConfig : state.enemyConfig;
+    const isDeathTarget =
+      action === 'death_target' ||
+      config?.currentSkin === 'assassin' ||
+      config?.leaderSkill?.action === 'death_target' ||
+      config?.leaderSkill?.name === '死の標的';
+    const tokenCardId = isDeathTarget ? 'token_assassin' : 'token_knight';
+    const tokenDefaultImg = isDeathTarget
+      ? 'assets/cards/card_token_assassin.webp'
+      : 'assets/cards/card_token_knight.webp';
+
     let count = 0;
-    const addKnight = (lane) => {
-      const tK = CARD_MASTER.find((m) => m.id === 'token_knight') || {
-        name: '騎士',
-        power: 2,
-      };
+    const addToken = (lane) => {
+      const tK = CARD_MASTER.find((m) => m.id === tokenCardId) ||
+        CARD_MASTER.find((m) => m.id === 'token_knight') || {
+          name: isDeathTarget ? 'アサシン' : '騎士',
+          power: 2,
+        };
       const tk = {
         ...JSON.parse(JSON.stringify(tK)),
-        id: `tk_k_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
+        id: `tk_${isDeathTarget ? 'a' : 'k'}_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
         owner,
         currentPower: tK.power,
         rarity: tK.rarity || 1,
-        imgUrl: 'assets/cards/card_token_knight.webp',
+        imgUrl: tokenDefaultImg,
         isToken: true,
       };
 
@@ -1766,7 +1778,7 @@ export function applyLeaderSkillLogic(
           side: owner,
           lane,
           card: JSON.parse(JSON.stringify(tk)),
-          source: 'holy_march',
+          source: action,
         });
       }
       count++;
@@ -1776,13 +1788,14 @@ export function applyLeaderSkillLogic(
       // 多重防御: UI側の連打バグ等で3レーン以上が渡されても最大2体に制限
       for (let l of tokenLanes) {
         if (count >= 2) break;
-        addKnight(l);
+        addToken(l);
       }
     } else {
-      const tK = CARD_MASTER.find((m) => m.id === 'token_knight') || {
-        name: '騎士',
-        power: 2,
-      };
+      const tK = CARD_MASTER.find((m) => m.id === tokenCardId) ||
+        CARD_MASTER.find((m) => m.id === 'token_knight') || {
+          name: isDeathTarget ? 'アサシン' : '騎士',
+          power: 2,
+        };
       const candidateLanes = [0, 1, 2];
       while (count < 2 && candidateLanes.length > 0) {
         // 盤面シミュレーション評価に基づき客観的最適レーンを順次決定
@@ -1794,7 +1807,7 @@ export function applyLeaderSkillLogic(
           false
         );
         if (bestL !== -1) {
-          addKnight(bestL);
+          addToken(bestL);
           const remIdx = candidateLanes.indexOf(bestL);
           if (remIdx !== -1) candidateLanes.splice(remIdx, 1);
         } else {
@@ -1814,7 +1827,7 @@ export function applyLeaderSkillLogic(
           side: owner,
           lane: i,
           amount: marchBuff,
-          source: 'holy_march',
+          source: action,
           isReversed: isReversedMarch,
         });
       }

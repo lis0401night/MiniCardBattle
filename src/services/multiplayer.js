@@ -318,6 +318,12 @@ export function getServerNow() {
 /** ホスト生存信号（ハートビート）の有効期限（45秒） */
 export const ROOM_HEARTBEAT_TIMEOUT_MS = 45000;
 
+/** クイックマッチ終了（ended）セッションの有効期限（15分） */
+export const QUICK_MATCH_ENDED_EXPIRE_MS = 15 * 60 * 1000;
+
+/** クイックマッチ対戦中（battle）で双方オフライン時の有効期限（15分） */
+export const QUICK_MATCH_DISCONNECT_EXPIRE_MS = 15 * 60 * 1000;
+
 /** アクティブなセッションハートビートのタイマーID */
 let sessionHeartbeatTimerId = null;
 
@@ -399,6 +405,75 @@ export function isHostAlive(room, now = getServerNow()) {
   // 端末とサーバーの時刻差で未来時刻になっている場合は生存中
   if (diff < 0) return true;
   return diff <= ROOM_HEARTBEAT_TIMEOUT_MS;
+}
+
+/**
+ * クイックマッチセッションが破棄対象（期限切れ、放置、または抜け殻ゾンビノード）であるかを判定する。
+ *
+ * 【判定基準】
+ * 1. 抜け殻（不完全ノード）:
+ *    正常な部屋なら必ず存在する status または host.id が欠落している場合（親部屋削除後の子パス再生成）。
+ * 2. 待機タイムアウト:
+ *    status === 'waiting' かつホスト生存信号（ハートビート）が途絶えている（ROOM_HEARTBEAT_TIMEOUT_MS 超過）。
+ * 3. 終了後放置:
+ *    status === 'ended' かつ、終了時刻（battleEndedAt または createdAt）から QUICK_MATCH_ENDED_EXPIRE_MS（15分）以上経過。
+ * 4. 双方切断放置:
+ *    status === 'battle' かつ双方が offline（isOnline === false）であり、
+ *    双方の disconnectedAt から QUICK_MATCH_DISCONNECT_EXPIRE_MS（15分）以上経過。
+ *
+ * @param {Object} data - セッションデータ
+ * @param {number} [now=getServerNow()] - 判定基準時刻（ミリ秒）
+ * @returns {boolean} 削除対象であれば true
+ */
+export function isQuickMatchExpired(data, now = getServerNow()) {
+  if (!data || typeof data !== 'object') return true;
+
+  // 1. 抜け殻・不完全ノードの判定（正常なセッションには必ず status と host.id が存在する）
+  if (!data.status || !data.host?.id) {
+    return true;
+  }
+
+  // 2. 待機中（waiting）セッションの判定
+  if (data.status === 'waiting') {
+    return !isHostAlive(data, now);
+  }
+
+  // 3. 終了済み（ended）セッションの判定
+  if (data.status === 'ended') {
+    const rawEndedAt = data.battleEndedAt ?? data.createdAt;
+    if (!rawEndedAt) return true;
+    const endedAt = Number(rawEndedAt);
+    if (isNaN(endedAt)) return true;
+    return now - endedAt >= QUICK_MATCH_ENDED_EXPIRE_MS;
+  }
+
+  // 4. 対戦中（battle）セッションの双方切断判定
+  if (data.status === 'battle') {
+    // 片方でもオンライン、または接続状態が未確定の場合は進行中とみなし絶対に削除しない
+    if (data.host?.isOnline !== false || data.client?.isOnline !== false) {
+      return false;
+    }
+    const hostDisconnectedAt = Number(data.host?.disconnectedAt);
+    const clientDisconnectedAt = Number(data.client?.disconnectedAt);
+    // 切断時刻が両者とも記録されていない場合は安全のため削除しない
+    if (
+      !hostDisconnectedAt ||
+      !clientDisconnectedAt ||
+      isNaN(hostDisconnectedAt) ||
+      isNaN(clientDisconnectedAt)
+    ) {
+      return false;
+    }
+    const hostElapsed = now - hostDisconnectedAt;
+    const clientElapsed = now - clientDisconnectedAt;
+    return (
+      hostElapsed >= QUICK_MATCH_DISCONNECT_EXPIRE_MS &&
+      clientElapsed >= QUICK_MATCH_DISCONNECT_EXPIRE_MS
+    );
+  }
+
+  // 上記以外の状態（未定義ステータス等）は安全のため削除対象外とする
+  return false;
 }
 
 /**
@@ -522,7 +597,7 @@ export async function cleanupUserSessions(
 }
 
 /**
- * 指定したベースパスにおいて、ホスト生存信号（ハートビート）が途絶えた放置部屋を一括検出し、安全に削除する共通処理。
+ * 指定したベースパスにおいて、ホスト生存信号（ハートビート）が途絶えた放置部屋や抜け殻ゾンビノードを一括検出し、安全に削除する共通処理。
  * @param {string} [basePath=currentBasePath] - ベースパス
  * @returns {Promise<void>}
  */
@@ -538,11 +613,16 @@ export async function cleanupExpiredSessions(basePath = currentBasePath) {
 
     snapshot.forEach((child) => {
       const data = child.val();
-      if (data && data.status === 'waiting' && !isHostAlive(data, now)) {
+      const shouldDelete =
+        basePath === QUICK_MATCH_REF
+          ? isQuickMatchExpired(data, now)
+          : data && data.status === 'waiting' && !isHostAlive(data, now);
+
+      if (shouldDelete) {
         cleanupPromises.push(
           removeSessionNode(child.key, {
             basePath,
-            roomCode: data.roomCode || null,
+            roomCode: data?.roomCode || null,
           })
         );
       }
@@ -1236,6 +1316,31 @@ export async function restoreLobbyDisconnectHandlers() {
 }
 
 /**
+ * 対戦用に設定された切断時ハンドラー（onDisconnect(myRef)）を安全に解除する。
+ * 対戦終了時、リタイア時、または退室時に呼び出され、親部屋ノード削除後にブラウザを閉じた際、
+ * 子ノード（host または client）が自動再生成されてゾンビ化する現象を完全に防止する。
+ *
+ * @param {string} [roomId=currentRoomId] - 対象のルームID
+ * @param {string} [basePath=currentBasePath] - ベースパス
+ * @param {boolean} [asHost=isHost] - ホストかどうか
+ * @returns {Promise<void>}
+ */
+export async function cancelBattleDisconnectHandlers(
+  roomId = currentRoomId,
+  basePath = currentBasePath,
+  asHost = isHost
+) {
+  if (!database || !roomId) return;
+  const role = asHost ? 'host' : 'client';
+  const myRef = ref(database, `${basePath}/${roomId}/${role}`);
+  try {
+    await onDisconnect(myRef).cancel();
+  } catch (e) {
+    console.warn('cancelBattleDisconnectHandlers failed:', e);
+  }
+}
+
+/**
  * 対戦開始時にルームのステータスを 'battle' に更新する（ホスト専用）
  * 両プレイヤーが準備完了した際、DB上に対戦開始フラグを書き込み確実な追いつき同期を実現します。
  * トランザクションにより、ステータス変更と isReady フラグの消費（false 化）を原子的に実行し、
@@ -1343,6 +1448,9 @@ export async function markQuickMatchEnded() {
         battleEndedAt: serverTimestamp(),
       });
     }
+    // 対戦終了後は復帰待機が不要となるため、対戦中の切断時予約（isOnline: false 等）を安全に解除
+    // （対戦後会話中やリザルト表示中にブラウザを閉じた際の子ノード自動再生成を防止）
+    await cancelBattleDisconnectHandlers();
   } catch (e) {
     console.warn('markQuickMatchEnded failed:', e);
   }
@@ -1439,10 +1547,16 @@ export async function leaveRoom() {
 
     // 2. 明示的な退室・解散が完了した後、不要になった切断時自動削除/更新の予約を解除する
     try {
-      await onDisconnect(sessionRef).cancel();
+      await onDisconnect(sessionRef)
+        .cancel()
+        .catch(() => {});
       if (codeRef) {
-        await onDisconnect(codeRef).cancel();
+        await onDisconnect(codeRef)
+          .cancel()
+          .catch(() => {});
       }
+      // 対戦中に設定された自身の子ノード（host/client）の切断予約を確実に解除（親ノード削除後のゾンビ復活防止）
+      await cancelBattleDisconnectHandlers(roomId, leavingBasePath, wasHost);
     } catch (disconnectError) {
       console.warn('切断時予約の解除に失敗しました:', disconnectError);
     }
@@ -1451,11 +1565,17 @@ export async function leaveRoom() {
     // 正常退室処理に失敗した場合は、ホストの場合のみ切断時自動削除の予約を再設定します
     try {
       if (wasHost) {
-        await onDisconnect(sessionRef).remove();
+        await onDisconnect(sessionRef)
+          .remove()
+          .catch(() => {});
         if (codeRef) {
-          await onDisconnect(codeRef).remove();
+          await onDisconnect(codeRef)
+            .remove()
+            .catch(() => {});
         }
       }
+      // 自身の子ノードの対戦中予約は安全のため確実に解除
+      await cancelBattleDisconnectHandlers(roomId, leavingBasePath, wasHost);
     } catch (disconnectError) {
       console.warn('Failed to re-register onDisconnect:', disconnectError);
     }

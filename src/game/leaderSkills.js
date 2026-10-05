@@ -432,8 +432,21 @@ export async function executeLeaderSkillAction(
       if (selectedLanes.length === 0) return;
       tokenLanes = selectedLanes;
     }
-  } else if (action === 'holy_march' || action === 'evil_march') {
-    const tK = CARD_MASTER.find((m) => m.id === 'token_knight');
+  } else if (
+    action === 'holy_march' ||
+    action === 'evil_march' ||
+    action === 'death_target'
+  ) {
+    const isDeathTarget =
+      action === 'death_target' ||
+      config?.currentSkin === 'assassin' ||
+      (owner === 'blue'
+        ? GameState.playerSkins?.knight === 'assassin'
+        : GameState.enemySkins?.knight === 'assassin');
+    const tokenCardId = isDeathTarget ? 'token_assassin' : 'token_knight';
+    const tK =
+      CARD_MASTER.find((m) => m.id === tokenCardId) ||
+      CARD_MASTER.find((m) => m.id === 'token_knight');
     const selectedLanes = await waitPlayerLaneSelection(
       2,
       owner,
@@ -1864,16 +1877,25 @@ export async function executeLeaderSkillAction(
       await sleep(200);
       // 召喚エフェクト
     } else if (
-      (action === 'holy_march' || action === 'evil_march') &&
+      (action === 'holy_march' ||
+        action === 'evil_march' ||
+        action === 'death_target') &&
       tokenLanes &&
       tokenLanes.length > 0
     ) {
       await sleep(200);
+      const isDeathTarget =
+        action === 'death_target' ||
+        config?.currentSkin === 'assassin' ||
+        (owner === 'blue'
+          ? GameState.playerSkins?.knight === 'assassin'
+          : GameState.enemySkins?.knight === 'assassin');
+      const vfxName = isDeathTarget
+        ? 'vfx_summon_assassin'
+        : 'anm_summon_celestia';
       // 2箇所同時に再生
       await Promise.all(
-        tokenLanes.map((lane) =>
-          window.triggerVfx('anm_summon_celestia', owner, lane)
-        )
+        tokenLanes.map((lane) => window.triggerVfx(vfxName, owner, lane))
       );
     } else if (action === 'god_flame' || action === 'condemnation') {
       await sleep(200);

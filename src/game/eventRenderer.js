@@ -238,7 +238,7 @@ export async function playEvents(events) {
           if (ev.source !== 'equip') {
             board[ev.lane].currentPower += ev.amount; // 増減そのまま
           }
-          if (ev.source === 'holy_march') {
+          if (ev.source === 'holy_march' || ev.source === 'death_target') {
             board[ev.lane].power += ev.amount; // 永続バフとして記録
             board[ev.lane].basePower = board[ev.lane].power;
           }

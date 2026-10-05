@@ -1342,6 +1342,13 @@ export function getCardImgUrl(card, useThumb = false) {
     // 特定のトークンの例外処理（旧imgUrl設定の復元）
     if (card.id === 'token_knight')
       return 'assets/cards/card_token_knight.webp';
+    if (
+      card.id === 'token_assassin' ||
+      card.baseId === 'token_assassin' ||
+      card.id === 'token_assasin' ||
+      card.baseId === 'token_assasin'
+    )
+      return 'assets/cards/card_token_assassin.webp';
     if (card.id === 'token_ignis' || card.baseId === 'token_ignis') {
       // オーナーのドラゴンスキン設定に応じたキャラクター画像を返す
       // enemy（red）はGameState.enemySkins、player（blue）はGameState.playerSkinsを参照

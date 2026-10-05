@@ -1367,6 +1367,7 @@ Object.values(CHARACTERS).forEach((char) => {
         unlockCondition: skinData.unlockCondition,
       }),
       ...(skinData.description && { description: skinData.description }),
+      ...(skinData.leaderSkill && { leaderSkill: skinData.leaderSkill }),
     };
   }
 });
@@ -1709,4 +1710,14 @@ export function applySkinToConfig(config, skinMapOrSkinId) {
   // 同キャラ対戦用口上（未定義時は汎用セリフへフォールバックし undefined の混入を防止）
   const baseMirrorIntro = charObj.mirrorIntro || 'なっ、自分自身だと……！？';
   config.mirrorIntro = skinDef?.mirrorIntro || baseMirrorIntro;
+
+  // スキン固有のリーダースキルの適用（例: レダスキンの「死の標的」）
+  if (skinDef?.leaderSkill) {
+    config.leaderSkill = skinDef.leaderSkill;
+  } else if (
+    config.leaderSkill?.action === 'death_target' &&
+    !skinDef?.leaderSkill
+  ) {
+    config.leaderSkill = charObj.leaderSkill;
+  }
 }

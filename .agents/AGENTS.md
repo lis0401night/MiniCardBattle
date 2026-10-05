@@ -66,6 +66,7 @@
      - **リーダースキル「魔王の化身」:** `satan_avatar`
      - **リーダースキル「聖なる進軍」:** `holy_march`
      - **リーダースキル「暗黒の軍勢」:** `evil_march`
+     - **リーダースキル「死の標的」:** `death_target`
      - **リーダースキル「棺の解放」:** `devilhunter_resurrect`
      - **リーダースキル「オーバードライブ」:** `overdrive`
      - **リーダースキル「魔宴の儀」:** `warlock_place_demons`

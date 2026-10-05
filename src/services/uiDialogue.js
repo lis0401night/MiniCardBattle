@@ -42,6 +42,19 @@ import {
 // スチルスクロール演出の待機時間（ミリ秒）
 const STILL_SCROLL_DURATION = 8000;
 
+/**
+ * 現在の会話で「次ステップ進行（handleProgressionNextStep）」を発火済みかどうか。
+ * 会話の最後まで到達した後、画面が切り替わるまでの間に会話ボックスが連打されると
+ * 進行処理が何度も実行され、二重退室・誤った画面遷移・loadDeck の二重実行等を招くため、
+ * 1つの会話につき進行は1回だけに制限する。
+ *
+ * 新しい会話の開始はすべて showNextDialogue(true)（setupDialogueScreen / startEndingSequence 等）
+ * を経由するため、force=true の呼び出し時にこのフラグを解除する。
+ * ユーザーのタップ（DialogueScreen）は force=false で呼ばれるためフラグは解除されない。
+ * @type {boolean}
+ */
+let hasDialogueProgressed = false;
+
 export function handleDialogueChoice(choiceIndex) {
   playSound(SOUNDS.seClick);
   const cur = GameState.dialogueQueue[GameState.currentDialogueIndex];
@@ -349,9 +362,21 @@ export function setupDialogueScreen() {
   showNextDialogue(true);
 }
 
+/**
+ * 会話キューの次の台詞を表示する。会話の最後まで到達している場合は次ステップ進行を実行する。
+ *
+ * @param {boolean} [force=false] - true の場合は処理中ロックを無視して実行する（プログラムからの会話開始・継続用）。
+ *   ユーザーのタップは false で呼ばれる。
+ * @returns {Promise<void>}
+ */
 export async function showNextDialogue(force = false) {
+  // プログラムからの会話開始・継続（force=true）は新しい会話の開始とみなし、進行済みフラグを解除する
+  if (force) hasDialogueProgressed = false;
   if (GameState.isProcessing && !force) return;
   if (GameState.currentDialogueIndex >= GameState.dialogueQueue.length) {
+    // 同一会話からの2回目以降の進行要求（画面切替前の連打）は無視する
+    if (hasDialogueProgressed) return;
+    hasDialogueProgressed = true;
     // 次の画面への遷移（performFadeTransition等）が isProcessing 判定を要求するため、false に戻す
     GameState.isProcessing = false;
     handleProgressionNextStep();

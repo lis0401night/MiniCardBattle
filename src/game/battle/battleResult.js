@@ -30,6 +30,7 @@ import {
   switchScreen,
 } from '../../utils/gameUtils.js';
 import {
+  cancelBattleDisconnectHandlers,
   clearActionQueueAndRegenerateSeed,
   clearActiveBattleSession,
   getIsHost,
@@ -1139,11 +1140,12 @@ export function cleanupBattleState() {
   }
   GameState.battleImageCache = null;
 
-  // 7. オンライン対戦タイマーおよび切断監視マネージャーの完全解放、対戦セッション消去
+  // 7. オンライン対戦タイマーおよび切断監視マネージャーの完全解放、対戦セッション消去、切断ハンドラー解除
   cleanupOnlineTimer();
   cleanupOnlineDisconnectManager();
   clearActiveBattleSession();
   multiplayerCallbacks.onRoomClosed = null;
+  cancelBattleDisconnectHandlers().catch(() => {});
 
   // ※ BGMバッファは sounds.js の LRUキャッシュ（MAX_CACHED_BGMS = 2）によって
   //    自動管理・維持されるため、ここでの明示的パージは行わない（再戦時の再デコード負荷を防止）。

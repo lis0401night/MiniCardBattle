@@ -1157,7 +1157,7 @@ export const CARD_MASTER = [
       { id: 'servant', value: 2, summonId: 'token_knight' },
       { id: 'support', value: 4 },
     ],
-    voiceCategory: 'human_female_assassin',
+    voiceCategory: 'human_female_fighter',
     flavor:
       '彼女の前で甘えは許されない。過酷な試練を与えることで、兵士たちを真の戦士へと鍛え上げているのだ。',
   },
@@ -1389,7 +1389,7 @@ export const CARD_MASTER = [
     rarity: 2,
     power: 5,
     skills: [{ id: 'legendary' }, { id: 'heal', value: 4 }],
-    voiceCategory: 'human_female_cool',
+    voiceCategory: 'human_female_fighter',
     flavor:
       '闇夜を切り裂く一条の光。神の教えを胸に刻み、冒涜者を容赦なく浄化する、悪魔に恐れられし裁きの代行者。',
   },
@@ -3210,7 +3210,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 6,
     skills: [{ id: 'legendary' }, { id: 'dodge', value: 5 }],
-    voiceCategory: 'human_female_assassin',
+    voiceCategory: 'human_female_fighter',
     flavor:
       '鮮やかな金髪をなびかせる、孤高の武闘家。彼女は己の魂を震わせる『丁度いい強さ』の相手を求め、各地を放浪している。',
   },
@@ -4187,6 +4187,15 @@ export const CARD_MASTER = [
       '逆さに見れば、世界は案外正しく見える。さて、間違っているのは世界かな、それとも君かな？',
   },
   // トークンカード
+  {
+    id: 'token_assassin',
+    obtain: ['token'],
+    name: 'アサシン',
+    power: 2,
+    isToken: true,
+    voiceCategory: 'sword',
+    flavor: '影より現れ、標的を屠る暗殺者。',
+  },
   {
     id: 'token_knight',
     obtain: ['token'],

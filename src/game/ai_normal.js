@@ -272,6 +272,7 @@ function isLaneOccupiedByLeaderSkill(lane, context) {
     [
       'holy_march',
       'evil_march',
+      'death_target',
       'satan_avatar',
       'dragon_summon',
       'dragon_high_ritual',
@@ -2806,7 +2807,11 @@ export function getBestSimulatedMove() {
   if (canUseSkill) {
     let tokenLanePatterns = [null];
     const action = skill.action;
-    if (action === 'holy_march' || action === 'evil_march') {
+    if (
+      action === 'holy_march' ||
+      action === 'evil_march' ||
+      action === 'death_target'
+    ) {
       const avail = [0, 1, 2].filter((l) => mySealedLanes[l] === 0);
       let combs = [];
       combs.push([]); // 0体パターン（騎士を出さずバフのみ）
@@ -3085,6 +3090,7 @@ export function getBestSimulatedMove() {
         [
           'holy_march',
           'evil_march',
+          'death_target',
           'satan_avatar',
           'dragon_summon',
           'dragon_high_ritual',
