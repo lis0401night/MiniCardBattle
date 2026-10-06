@@ -5,6 +5,31 @@
  * 24時間（0時〜23時）のマッチング分布を算出します。
  */
 
+/** 1日の時間帯数（24時間） */
+export const HOURS_PER_DAY = 24;
+
+/**
+ * 空のマッチング時間帯集計結果オブジェクトを生成します。
+ * @returns {{
+ *   percentages: number[],
+ *   dailyAvgCounts: number[],
+ *   totalBattles: number,
+ *   validDaysCount: number,
+ *   peakHour: number,
+ *   peakPercentage: number
+ * }} 空の集計結果オブジェクト
+ */
+export function createEmptyHourlyResult() {
+  return {
+    percentages: Array(HOURS_PER_DAY).fill(0),
+    dailyAvgCounts: Array(HOURS_PER_DAY).fill(0),
+    totalBattles: 0,
+    validDaysCount: 0,
+    peakHour: 0,
+    peakPercentage: 0,
+  };
+}
+
 /**
  * 対戦履歴ログから日ごとの時間帯別平均割合を算出する計算関数
  *
@@ -26,14 +51,7 @@
  */
 export function calculateHourlyAverages(battles) {
   if (!Array.isArray(battles) || battles.length === 0) {
-    return {
-      percentages: Array(24).fill(0),
-      dailyAvgCounts: Array(24).fill(0),
-      totalBattles: 0,
-      validDaysCount: 0,
-      peakHour: 0,
-      peakPercentage: 0,
-    };
+    return createEmptyHourlyResult();
   }
 
   // 1. 日付ごとに各時間帯の試合数を集計
@@ -52,12 +70,12 @@ export function calculateHourlyAverages(battles) {
     const dateKey = `${year}-${month}-${day}`;
     const hour = date.getHours();
 
-    if (hour < 0 || hour > 23) continue;
+    if (hour < 0 || hour >= HOURS_PER_DAY) continue;
 
     if (!dailyData[dateKey]) {
       dailyData[dateKey] = {
         total: 0,
-        hours: Array(24).fill(0),
+        hours: Array(HOURS_PER_DAY).fill(0),
       };
     }
 
@@ -70,21 +88,14 @@ export function calculateHourlyAverages(battles) {
   const validDaysCount = daysList.length;
 
   if (validDaysCount === 0) {
-    return {
-      percentages: Array(24).fill(0),
-      dailyAvgCounts: Array(24).fill(0),
-      totalBattles: 0,
-      validDaysCount: 0,
-      peakHour: 0,
-      peakPercentage: 0,
-    };
+    return createEmptyHourlyResult();
   }
 
   // 2. 全ての日で時間帯ごとの比率（割合）を算出し、全日数で平均化
-  const percentages = Array(24).fill(0);
-  const dailyAvgCounts = Array(24).fill(0);
+  const percentages = Array(HOURS_PER_DAY).fill(0);
+  const dailyAvgCounts = Array(HOURS_PER_DAY).fill(0);
 
-  for (let h = 0; h < 24; h++) {
+  for (let h = 0; h < HOURS_PER_DAY; h++) {
     let sumRatio = 0;
     let sumCount = 0;
     for (const d of daysList) {
@@ -98,7 +109,7 @@ export function calculateHourlyAverages(battles) {
   // 3. 最も集中しているピーク時間帯の特定
   let peakHour = 0;
   let maxPct = -1;
-  for (let h = 0; h < 24; h++) {
+  for (let h = 0; h < HOURS_PER_DAY; h++) {
     if (percentages[h] > maxPct) {
       maxPct = percentages[h];
       peakHour = h;

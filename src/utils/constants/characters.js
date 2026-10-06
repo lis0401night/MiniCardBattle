@@ -1771,13 +1771,10 @@ export function applySkinToConfig(config, skinMapOrSkinId) {
   const baseMirrorIntro = charObj.mirrorIntro || 'なっ、自分自身だと……！？';
   config.mirrorIntro = skinDef?.mirrorIntro || baseMirrorIntro;
 
-  // スキン固有のリーダースキルの適用（例: レダスキンの「死の標的」）
+  // スキン固有のリーダースキルの適用（例: レダスキンの「死の標的」）、ない場合はベースのリーダースキルへ復元
   if (skinDef?.leaderSkill) {
     config.leaderSkill = skinDef.leaderSkill;
-  } else if (
-    config.leaderSkill?.action === 'death_target' &&
-    !skinDef?.leaderSkill
-  ) {
+  } else if (charObj.leaderSkill) {
     config.leaderSkill = charObj.leaderSkill;
   }
 }

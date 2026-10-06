@@ -1,8 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ScreenLayout from '../components/common/ScreenLayout.jsx';
 import { showOnlineQuickMatch } from '../services/uiMainCore.js';
 import { fetchQuickBattleHistory } from '../utils/apiUtils.js';
-import { calculateHourlyAverages } from '../utils/timeSlotUtils.js';
+import {
+  calculateHourlyAverages,
+  HOURS_PER_DAY,
+} from '../utils/timeSlotUtils.js';
+
+/**
+ * 時間帯傾向グラフの描画寸法および余白設定定数
+ */
+const CHART_DIMENSIONS = Object.freeze({
+  svgWidth: 700,
+  svgHeight: 340,
+  paddingLeft: 55,
+  paddingRight: 25,
+  paddingTop: 30,
+  paddingBottom: 45,
+  chartWidth: 700 - 55 - 25, // 620
+  chartHeight: 340 - 30 - 45, // 265
+  ySteps: 5, // 縦軸目盛り分割数
+});
 
 /**
  * オンライン対戦 - クイックマッチ時間帯傾向画面コンポーネント
@@ -13,27 +31,42 @@ export default function OnlineQuickTimeSlotScreen() {
   const [battles, setBattles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const requestIdRef = useRef(0);
 
   /**
    * サーバーから対人履歴を取得する非同期ハンドラ
+   * 最新のリクエストのみを反映し、古いレスポンスによる上書きやアンマウント後の状態更新を防ぎます。
    * @returns {Promise<void>}
    */
   const loadData = useCallback(async () => {
+    const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
       const data = await fetchQuickBattleHistory();
+      if (requestIdRef.current !== currentRequestId) {
+        return;
+      }
       setBattles(data);
     } catch (err) {
+      if (requestIdRef.current !== currentRequestId) {
+        return;
+      }
       console.error('Failed to load quick battle history:', err);
       setError('データの読み込みに失敗しました。');
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === currentRequestId) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     loadData();
+    return () => {
+      // アンマウント時にリクエストIDを進めて、進行中のレスポンス反映を破棄
+      requestIdRef.current += 1;
+    };
   }, [loadData]);
 
   // 集計データの計算
@@ -41,20 +74,8 @@ export default function OnlineQuickTimeSlotScreen() {
     return calculateHourlyAverages(battles);
   }, [battles]);
 
-  // SVG グラフ寸法パラメータ
-  const svgWidth = 700;
-  const svgHeight = 340;
-  const paddingLeft = 55;
-  const paddingRight = 25;
-  const paddingTop = 30;
-  const paddingBottom = 45;
-
-  const chartWidth = svgWidth - paddingLeft - paddingRight;
-  const chartHeight = svgHeight - paddingTop - paddingBottom;
-
   // 縦軸の最大値（%）の決定（最低5%、5%刻みで切り上げ）
   const yMax = Math.max(5, Math.ceil((stats.peakPercentage || 5) / 5) * 5);
-  const ySteps = 5; // 縦軸目盛り分割数
 
   /**
    * 指定した時間帯のSVG内X座標を算出します。
@@ -62,7 +83,10 @@ export default function OnlineQuickTimeSlotScreen() {
    * @returns {number} SVG内X座標
    */
   const getX = (hour) => {
-    return paddingLeft + (hour / 23) * chartWidth;
+    return (
+      CHART_DIMENSIONS.paddingLeft +
+      (hour / (HOURS_PER_DAY - 1)) * CHART_DIMENSIONS.chartWidth
+    );
   };
 
   /**
@@ -72,13 +96,19 @@ export default function OnlineQuickTimeSlotScreen() {
    */
   const getY = (percentage) => {
     const clamped = Math.max(0, Math.min(percentage, yMax));
-    return paddingTop + chartHeight - (clamped / yMax) * chartHeight;
+    return (
+      CHART_DIMENSIONS.paddingTop +
+      CHART_DIMENSIONS.chartHeight -
+      (clamped / yMax) * CHART_DIMENSIONS.chartHeight
+    );
   };
 
   // 折れ線パスおよびエリア（塗りつぶし）パスの構築
   const points = stats.percentages.map((pct, h) => `${getX(h)},${getY(pct)}`);
   const linePointsString = points.join(' ');
-  const areaPointsString = `${getX(0)},${paddingTop + chartHeight} ${linePointsString} ${getX(23)},${paddingTop + chartHeight}`;
+  const areaBottomY =
+    CHART_DIMENSIONS.paddingTop + CHART_DIMENSIONS.chartHeight;
+  const areaPointsString = `${getX(0)},${areaBottomY} ${linePointsString} ${getX(HOURS_PER_DAY - 1)},${areaBottomY}`;
 
   return (
     <ScreenLayout
@@ -220,7 +250,7 @@ export default function OnlineQuickTimeSlotScreen() {
             </div>
           ) : (
             <svg
-              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+              viewBox={`0 0 ${CHART_DIMENSIONS.svgWidth} ${CHART_DIMENSIONS.svgHeight}`}
               style={{
                 width: '100%',
                 height: 'auto',
@@ -243,64 +273,85 @@ export default function OnlineQuickTimeSlotScreen() {
               </defs>
 
               {/* 水平グリッド線 & 縦軸ラベル */}
-              {Array.from({ length: ySteps + 1 }).map((_, i) => {
-                const val = (yMax / ySteps) * i;
-                const y = getY(val);
-                return (
-                  <g key={`grid-y-${i}`}>
-                    <line
-                      x1={paddingLeft}
-                      y1={y}
-                      x2={paddingLeft + chartWidth}
-                      y2={y}
-                      stroke="#1e293b"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={paddingLeft - 8}
-                      y={y + 4}
-                      fill="#94a3b8"
-                      fontSize="12"
-                      textAnchor="end"
-                      fontFamily="sans-serif"
-                    >
-                      {val.toFixed(0)}%
-                    </text>
-                  </g>
-                );
-              })}
+              {Array.from({ length: CHART_DIMENSIONS.ySteps + 1 }).map(
+                (_, i) => {
+                  const val = (yMax / CHART_DIMENSIONS.ySteps) * i;
+                  const y = getY(val);
+                  return (
+                    <g key={`grid-y-${i}`}>
+                      <line
+                        x1={CHART_DIMENSIONS.paddingLeft}
+                        y1={y}
+                        x2={
+                          CHART_DIMENSIONS.paddingLeft +
+                          CHART_DIMENSIONS.chartWidth
+                        }
+                        y2={y}
+                        stroke="#1e293b"
+                        strokeWidth="1"
+                      />
+                      <text
+                        x={CHART_DIMENSIONS.paddingLeft - 8}
+                        y={y + 4}
+                        fill="#94a3b8"
+                        fontSize="12"
+                        textAnchor="end"
+                        fontFamily="sans-serif"
+                      >
+                        {val.toFixed(0)}%
+                      </text>
+                    </g>
+                  );
+                }
+              )}
 
               {/* 垂直グリッド線 & 横軸ラベル（24時間） */}
-              {Array.from({ length: 24 }).map((_, h) => {
+              {Array.from({ length: HOURS_PER_DAY }).map((_, h) => {
                 const x = getX(h);
                 // ラベルは 0時, 3時, 6時, 9時, 12時, 15時, 18時, 21時, 23時
-                const showLabel = h % 3 === 0 || h === 23;
+                const showLabel = h % 3 === 0 || h === HOURS_PER_DAY - 1;
                 return (
                   <g key={`grid-x-${h}`}>
                     {showLabel && (
                       <line
                         x1={x}
-                        y1={paddingTop}
+                        y1={CHART_DIMENSIONS.paddingTop}
                         x2={x}
-                        y2={paddingTop + chartHeight}
+                        y2={
+                          CHART_DIMENSIONS.paddingTop +
+                          CHART_DIMENSIONS.chartHeight
+                        }
                         stroke="#1e293b"
                         strokeWidth="1"
-                        strokeDasharray={h === 0 || h === 23 ? 'none' : '2 2'}
+                        strokeDasharray={
+                          h === 0 || h === HOURS_PER_DAY - 1 ? 'none' : '2 2'
+                        }
                       />
                     )}
                     {/* 横軸下部の目盛り線（ティック） */}
                     <line
                       x1={x}
-                      y1={paddingTop + chartHeight}
+                      y1={
+                        CHART_DIMENSIONS.paddingTop +
+                        CHART_DIMENSIONS.chartHeight
+                      }
                       x2={x}
-                      y2={paddingTop + chartHeight + (showLabel ? 5 : 3)}
+                      y2={
+                        CHART_DIMENSIONS.paddingTop +
+                        CHART_DIMENSIONS.chartHeight +
+                        (showLabel ? 5 : 3)
+                      }
                       stroke="#475569"
                       strokeWidth="1"
                     />
                     {showLabel && (
                       <text
                         x={x}
-                        y={paddingTop + chartHeight + 20}
+                        y={
+                          CHART_DIMENSIONS.paddingTop +
+                          CHART_DIMENSIONS.chartHeight +
+                          20
+                        }
                         fill="#94a3b8"
                         fontSize="12"
                         textAnchor="middle"

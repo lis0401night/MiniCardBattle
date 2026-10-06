@@ -28,11 +28,13 @@ export default function SparkTimerLine() {
     progress: 1.0,
   });
   const [isDisconnectWaiting, setIsDisconnectWaiting] = useState(false);
+  const isDisconnectWaitingRef = useRef(false);
 
   const lastSecondRef = useRef(null);
 
   useEffect(() => {
     const unsubDisconnect = subscribeDisconnectState((dState) => {
+      isDisconnectWaitingRef.current = dState.isWaiting;
       setIsDisconnectWaiting(dState.isWaiting);
     });
 
@@ -45,7 +47,7 @@ export default function SparkTimerLine() {
         state.owner === 'blue' &&
         state.isWarning &&
         state.remainingMs > 0 &&
-        !isDisconnectWaiting
+        !isDisconnectWaitingRef.current
       ) {
         const sec = Math.ceil(state.remainingMs / 1000);
         if (lastSecondRef.current !== sec) {
@@ -67,7 +69,7 @@ export default function SparkTimerLine() {
       unsubDisconnect();
       unsubTimer();
     };
-  }, [isDisconnectWaiting]);
+  }, []);
 
   // 自分のタイマー（owner === 'blue'）かつ警告演出中、かつ切断待機中でない場合のみ火花ラインを表示
   if (

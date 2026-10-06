@@ -1448,11 +1448,12 @@ export async function markQuickMatchEnded() {
         battleEndedAt: serverTimestamp(),
       });
     }
-    // 対戦終了後は復帰待機が不要となるため、対戦中の切断時予約（isOnline: false 等）を安全に解除
-    // （対戦後会話中やリザルト表示中にブラウザを閉じた際の子ノード自動再生成を防止）
-    await cancelBattleDisconnectHandlers();
   } catch (e) {
     console.warn('markQuickMatchEnded failed:', e);
+  } finally {
+    // 対戦終了後は復帰待機が不要となるため、通信の成否に関わらず対戦中の切断時予約（isOnline: false 等）を確実に解除
+    // （対戦後会話中やリザルト表示中にブラウザを閉じた際の子ノード自動再生成・ゾンビ化を防止）
+    await cancelBattleDisconnectHandlers();
   }
 }
 

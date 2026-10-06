@@ -238,6 +238,13 @@ export async function executeLeaderSkillAction(
 
   let events = [];
 
+  // 暗殺者スキン/死の標的判定（聖なる進軍・暗黒の軍勢・死の標的のトークンプレビューおよびVFX共通）
+  const isDeathTarget = shouldPlaceAssassinToken(
+    action,
+    config,
+    owner === 'blue' ? GameState.playerSkins : GameState.enemySkins
+  );
+
   // UIの介入（対象の選択等）が必要なスキルは事前に処理
   if (
     action === 'satan_avatar' ||
@@ -438,15 +445,16 @@ export async function executeLeaderSkillAction(
     action === 'evil_march' ||
     action === 'death_target'
   ) {
-    const isDeathTarget = shouldPlaceAssassinToken(
-      action,
-      config,
-      owner === 'blue' ? GameState.playerSkins : GameState.enemySkins
-    );
     const tokenCardId = isDeathTarget ? 'token_assassin' : 'token_knight';
-    const tK =
-      CARD_MASTER.find((m) => m.id === tokenCardId) ||
-      CARD_MASTER.find((m) => m.id === 'token_knight');
+    const tK = CARD_MASTER.find((m) => m.id === tokenCardId) ||
+      CARD_MASTER.find((m) => m.id === 'token_knight') || {
+        id: tokenCardId,
+        baseId: tokenCardId,
+        name: isDeathTarget ? 'アサシン' : '騎士',
+        power: 2,
+        basePower: 2,
+        skills: [],
+      };
     const selectedLanes = await waitPlayerLaneSelection(
       2,
       owner,
@@ -1884,11 +1892,6 @@ export async function executeLeaderSkillAction(
       tokenLanes.length > 0
     ) {
       await sleep(200);
-      const isDeathTarget = shouldPlaceAssassinToken(
-        action,
-        config,
-        owner === 'blue' ? GameState.playerSkins : GameState.enemySkins
-      );
       const vfxName = isDeathTarget
         ? 'anm_summon_assassin'
         : 'anm_summon_celestia';

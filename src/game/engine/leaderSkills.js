@@ -1769,6 +1769,8 @@ export function applyLeaderSkillLogic(
       CARD_MASTER.find((m) => m.id === 'token_knight') || {
         name: isDeathTarget ? 'アサシン' : '騎士',
         power: 2,
+        basePower: 2,
+        skills: [],
       };
 
     let count = 0;
@@ -1783,11 +1785,14 @@ export function applyLeaderSkillLogic(
       const tk = {
         ...JSON.parse(JSON.stringify(tK)),
         id: `tk_${isDeathTarget ? 'a' : 'k'}_${Math.floor(getSeededRandom() * 1000000000)}_${lane}`,
+        baseId: tokenCardId,
         owner,
         currentPower: tK.power,
+        basePower: tK.basePower ?? tK.power,
         rarity: tK.rarity || 1,
         imgUrl: tokenDefaultImg,
         isToken: true,
+        skills: tK.skills || [],
       };
 
       // 「配置」：装備可能なら装備、それ以外は既存カードを墓地へ送ってから配置（オンプレイ能力は発動しない）

@@ -1011,9 +1011,11 @@ export async function recordQuickBattleToServer(data) {
  * サーバーからクイックマッチの対戦履歴ログを取得します。
  * 時間帯傾向グラフの集計・可視化等に使用します。
  *
- * @returns {Promise<Array<Object>>} クイックマッチ対戦履歴の配列（取得失敗または未記録時は空配列）
+ * @returns {Promise<Array<Object>>} クイックマッチ対戦履歴の配列
+ * @throws {Error} 取得失敗またはレスポンス形式が不正な場合
  */
 export async function fetchQuickBattleHistory() {
+  let primaryError = null;
   try {
     const res = await asyncGet(
       'get_quick_battles.php',
@@ -1025,14 +1027,21 @@ export async function fetchQuickBattleHistory() {
     if (res && res.success && Array.isArray(res.recent_quick_battles)) {
       return res.recent_quick_battles;
     }
+    throw new Error('クイックマッチ対戦履歴の形式が不正です');
   } catch (err) {
+    primaryError = err;
+    // 本番環境ではローカルJSON直接取得は行わず、失敗を呼び出し側へ通知
+    if (!import.meta.env.DEV) {
+      console.error('get_quick_battles.php からの取得に失敗しました:', err);
+      throw err;
+    }
     console.warn(
-      'get_quick_battles.php からの取得に失敗。ローカルJSONを試行します:',
+      'get_quick_battles.php からの取得に失敗（ローカル開発環境）。ローカルJSONを試行します:',
       err
     );
   }
 
-  // ローカル開発環境（Vite等）向けフォールバック: api/decks/recent_quick_battles.json を直接フェッチ
+  // ローカル開発環境（Vite等、PHP非稼働環境）向けフォールバック: api/decks/recent_quick_battles.json を直接フェッチ
   try {
     const fallbackRes = await asyncGet(
       'decks/recent_quick_battles.json',
@@ -1047,11 +1056,11 @@ export async function fetchQuickBattleHistory() {
     if (fallbackRes && Array.isArray(fallbackRes.recent_quick_battles)) {
       return fallbackRes.recent_quick_battles;
     }
+    throw new Error('ローカル対戦履歴JSONの形式が不正です');
   } catch (fallbackErr) {
     console.error('クイックマッチ対戦履歴の取得に失敗しました:', fallbackErr);
+    throw primaryError || fallbackErr;
   }
-
-  return [];
 }
 
 /**
