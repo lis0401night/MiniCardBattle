@@ -2064,6 +2064,15 @@ export function showOnlineQuickRanking() {
 }
 
 /**
+ * クイックマッチの時間帯傾向画面を表示し、BGMを再生します。
+ */
+export function showOnlineQuickTimeSlot() {
+  playSound(SOUNDS.seClick);
+  playSound(AUDIO_INSTANCES.bgmOnline);
+  switchScreen('screen-online-quick-timeslot');
+}
+
+/**
  * 解放済みバトルパス一覧メニュー画面を表示し、BGMを再生します。
  */
 export function showBattlePassMenu() {

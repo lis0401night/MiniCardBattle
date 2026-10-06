@@ -17,7 +17,7 @@ import {
   showSkinAcquisitionModal,
 } from '../services/uiGallery.js';
 import { showBattlePassMenu } from '../services/uiMainCore.js';
-import { showAlertModal } from '../services/uiModals.js';
+import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
   BATTLE_PASS_MASTER,
@@ -84,19 +84,29 @@ export default function BattlePassProgressScreen() {
   /**
    * デバッグ・イースターエッグによるバトルパス全レベル達成処理
    * （開発環境限定: import.meta.env.DEV のみ動作）
-   * タイトルやヘッダーを10回クリックすることで、ポイントを最大化して全レベルの受取ボタンを押せる状態にします。
+   * タイトルやヘッダーを10回クリックすることで確認ダイアログを表示し、
+   * 確定後にポイントを最大化して全レベルの受取ボタンを押せる状態にします。
+   *
+   * @returns {void}
    */
   const handleDebugUnlockAll = () => {
     // 本番環境では絶対に実行されないよう環境ガード
     if (!import.meta.env.DEV) return;
 
-    const res = unlockAllBattlePass(passId);
-    setCurrentPoints(res.currentPoints);
-    setClaimedLevels(res.claimedLevels);
-    playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seClick);
-    showAlertModal?.(
-      '【全レベル達成】\nバトルパスの全レベルを達成しました！\n各レベルの「受取」ボタンを押して報酬をお受け取りください。'
-    );
+    if (showConfirmModal) {
+      showConfirmModal(
+        'デバッグモードを起動してバトルパスの全レベルを達成状態にしますか？',
+        () => {
+          const res = unlockAllBattlePass(passId);
+          setCurrentPoints(res.currentPoints);
+          setClaimedLevels(res.claimedLevels);
+          playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seClick);
+          showAlertModal?.(
+            '【全レベル達成】\nバトルパスの全レベルを達成しました！\n各レベルの「受取」ボタンを押して報酬をお受け取りください。'
+          );
+        }
+      );
+    }
   };
 
   // 10回クリックで全解放（開発環境のみ発動。本番環境では Infinity となり発動不可）

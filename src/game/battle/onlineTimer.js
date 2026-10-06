@@ -398,6 +398,12 @@ export function pauseOnlineTimer() {
     if (currentTimerState.owner) {
       turnRemainingMs[currentTimerState.owner] = currentTimerState.remainingMs;
     }
+    // 一時停止中は火花警告演出（5秒バー）を非表示にしてUIに通知
+    currentTimerState = {
+      ...currentTimerState,
+      isWarning: false,
+    };
+    notifySubscribers();
   }
 }
 

@@ -4,12 +4,13 @@ import {
   showOnlineMenu,
   showOnlineQuickRanking,
   showOnlineQuickRules,
+  showOnlineQuickTimeSlot,
   startQuickMatchChallenge,
 } from '../services/uiMainCore.js';
 
 /**
  * オンライン対戦 - クイックマッチ画面コンポーネント
- * ルール、ランキング、挑戦（デッキ一覧への遷移）を提供する。
+ * ルール、ランキング、挑戦（デッキ一覧への遷移）、時間帯傾向を提供する。
  * @returns {import('react').ReactElement} クイックマッチ画面
  */
 export default function OnlineQuickMatchScreen() {
@@ -40,6 +41,15 @@ export default function OnlineQuickMatchScreen() {
     startQuickMatchChallenge?.();
   };
 
+  /**
+   * 時間帯ボタンクリック時のハンドラ
+   * クイックマッチの時間帯傾向画面へ遷移する
+   * @returns {void}
+   */
+  const handleTimeSlotClick = () => {
+    showOnlineQuickTimeSlot?.();
+  };
+
   return (
     <ScreenLayout
       id="screen-online-quick-match"
@@ -63,6 +73,11 @@ export default function OnlineQuickMatchScreen() {
           onClick={handleRankingClick}
         />
         <MenuButton label="挑戦" variant="red" onClick={handleChallengeClick} />
+        <MenuButton
+          label="時間帯"
+          variant="emerald"
+          onClick={handleTimeSlotClick}
+        />
       </div>
     </ScreenLayout>
   );

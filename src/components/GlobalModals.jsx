@@ -1459,6 +1459,103 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
     setCardPreviewData((prev) => ({ ...prev }));
   };
 
+  // プロフィール設定モーダル内のお気に入りカード情報
+  const normFavCard = normalizeFavoriteCard(favoriteCardState);
+  const favCardId = normFavCard?.cardId;
+  const isFavShine = !!normFavCard?.isShine;
+  const isFavPremium = !!normFavCard?.isPremium;
+  const isFavPremiumUnlocked = favCardId
+    ? (GameState.unlockedPremiumCards || []).includes(favCardId)
+    : false;
+  const isFavShineUnlocked = favCardId
+    ? checkIsShineUnlocked(favCardId)
+    : false;
+
+  /**
+   * プロフィール設定モーダル内でお気に入りカードのシャイン設定（ON/OFF）を切り替えるハンドラー。
+   * カード詳細モーダルと統一し、未解放時はシャインチケット消費確認モーダルを提示します。
+   *
+   * @param {import('react').MouseEvent} e - クリックイベントオブジェクト
+   * @returns {void}
+   */
+  const handleToggleFavCardShine = (e) => {
+    e.stopPropagation();
+    if (!favCardId) return;
+
+    if (!isFavShineUnlocked) {
+      const ticketCount = getShineTicketsCount();
+      const cardMaster = CARD_MASTER.find((c) => c.id === favCardId);
+      const cardName = cardMaster?.name || 'カード';
+
+      if (ticketCount <= 0) {
+        playSound?.(SOUNDS?.seClick);
+        showAlertModal?.(
+          'シャインチケットが不足しています。\n共通交換所またはバトルパス報酬で獲得できます。'
+        );
+        return;
+      }
+
+      playSound?.(SOUNDS?.seClick);
+      showConfirmModal?.(
+        `シャインチケットを1枚消費して【${cardName}】をシャイン化しますか？\n（所持チケット: ${ticketCount}枚）`,
+        () => {
+          const success = consumeShineTicket(favCardId);
+          if (success) {
+            playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seSkill);
+            setFavoriteCardState((prev) => {
+              const current = normalizeFavoriteCard(prev) || {
+                cardId: favCardId,
+              };
+              return {
+                ...current,
+                cardId: favCardId,
+                isShine: true,
+              };
+            });
+            showAlertModal?.(
+              `【${cardName}】をシャイン化しました！\n以後、🌟ボタンで自由にON/OFFを切り替えられます。`
+            );
+          } else {
+            showAlertModal?.('シャイン化の処理に失敗しました。');
+          }
+        }
+      );
+      return;
+    }
+
+    playSound?.(SOUNDS?.seClick);
+    setFavoriteCardState((prev) => {
+      const current = normalizeFavoriteCard(prev) || { cardId: favCardId };
+      return {
+        ...current,
+        cardId: favCardId,
+        isShine: !current.isShine,
+      };
+    });
+  };
+
+  /**
+   * プロフィール設定モーダル内でお気に入りカードのプレミアム設定（ON/OFF）を切り替えるハンドラー。
+   * カード詳細モーダルと統一し、プレミアム解放済みカードの表示状態をトグルします。
+   *
+   * @param {import('react').MouseEvent} e - クリックイベントオブジェクト
+   * @returns {void}
+   */
+  const handleToggleFavCardPremium = (e) => {
+    e.stopPropagation();
+    if (!favCardId) return;
+    playSound?.(SOUNDS?.seClick);
+
+    setFavoriteCardState((prev) => {
+      const current = normalizeFavoriteCard(prev) || { cardId: favCardId };
+      return {
+        ...current,
+        cardId: favCardId,
+        isPremium: !current.isPremium,
+      };
+    });
+  };
+
   const renderSkillTagReact = (card) => {
     if (!window.renderSkillTag) return null;
     return (
@@ -4614,6 +4711,58 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                   placeholderText="タップしてカードを選択"
                 />
               </div>
+
+              {/* お気に入りカードのシャイン・プレミアムON/OFF切替ボタン (カード詳細モーダル準拠) */}
+              {favCardId && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    width: '100%',
+                    maxWidth: '140px',
+                    marginTop: '4px',
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      width: '100%',
+                      margin: 0,
+                      flexShrink: 0,
+                      background: isFavShine
+                        ? 'linear-gradient(45deg, #eab308, #ca8a04)'
+                        : '#475569',
+                      fontSize: '0.85rem',
+                      padding: '8px 5px',
+                    }}
+                    onClick={handleToggleFavCardShine}
+                  >
+                    {isFavShine ? '🌟 シャインON' : '🌟 シャインOFF'}
+                  </button>
+
+                  {isFavPremiumUnlocked && (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{
+                        width: '100%',
+                        margin: 0,
+                        flexShrink: 0,
+                        background: isFavPremium
+                          ? 'linear-gradient(45deg, #d946ef, #9333ea)'
+                          : '#475569',
+                        fontSize: '0.85rem',
+                        padding: '8px 5px',
+                      }}
+                      onClick={handleToggleFavCardPremium}
+                    >
+                      {isFavPremium ? '✨ プレミアムON' : '✨ プレミアムOFF'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* アクションボタン（キャンセル / 保存して閉じる） */}

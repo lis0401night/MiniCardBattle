@@ -259,22 +259,25 @@ async function executeDiscardTriggeredSummon(owner, card, targetLane, source) {
     await checkAndTriggerCounter(owner, targetCard, targetLane);
 
     // 装備されたカードのアクティブスキル即時発動
-    for (const sk of equipSkills) {
-      if (ACTIVE_SKILLS.includes(sk.id)) {
-        await sleep(50);
-        const enhancedSk = {
-          ...sk,
-          _sourceChoices: card.choices,
-          _sourceChoices2: card.choices2,
-        };
-        await resolveActiveSkillEffect(
-          owner,
-          targetLane,
-          targetCard,
-          sk.id,
-          sk.value,
-          enhancedSk
-        );
+    // ※ 忘却（silence）や沈黙（oblivion）等で対象カードの能力が消去された場合、または盤面からカードが除去された場合は不発
+    if (board[targetLane] === targetCard) {
+      for (const sk of equipSkills) {
+        if (ACTIVE_SKILLS.includes(sk.id) && hasSkill(targetCard, sk.id)) {
+          await sleep(50);
+          const enhancedSk = {
+            ...sk,
+            _sourceChoices: card.choices,
+            _sourceChoices2: card.choices2,
+          };
+          await resolveActiveSkillEffect(
+            owner,
+            targetLane,
+            targetCard,
+            sk.id,
+            sk.value,
+            enhancedSk
+          );
+        }
       }
     }
     await cleanupDestroyedCards();
@@ -1465,31 +1468,34 @@ export async function playCard(o, hI, l, depth = 0) {
       await checkAndTriggerCounter(o, targetCard, l, depth);
 
       // 装備カードが持っていたアクティブスキルを即時発動させる
-      for (const sk of equipSkills) {
-        if (ACTIVE_SKILLS.includes(sk.id)) {
-          await sleep(50);
-          const enhancedSk = {
-            ...sk,
-            _sourceChoices: playingCard.choices,
-            _sourceChoices2: playingCard.choices2,
-          };
-          await resolveActiveSkillEffect(
-            o,
-            l,
-            targetCard,
-            sk.id,
-            sk.value,
-            enhancedSk
-          );
-          // 装備由来のアクティブスキルを解決済みとしてフラグを立て、即座にバッジを消去・集約更新
-          const targetSk = targetCard.skills?.find(
-            (s) => s.id === sk.id && !s.triggered
-          );
-          if (targetSk) {
-            targetSk.triggered = true;
+      // ※ 忘却（silence）や沈黙（oblivion）等で対象カードの能力が消去された場合、または盤面からカードが除去された場合は不発
+      if (b[l] === targetCard) {
+        for (const sk of equipSkills) {
+          if (ACTIVE_SKILLS.includes(sk.id) && hasSkill(targetCard, sk.id)) {
+            await sleep(50);
+            const enhancedSk = {
+              ...sk,
+              _sourceChoices: playingCard.choices,
+              _sourceChoices2: playingCard.choices2,
+            };
+            await resolveActiveSkillEffect(
+              o,
+              l,
+              targetCard,
+              sk.id,
+              sk.value,
+              enhancedSk
+            );
+            // 装備由来のアクティブスキルを解決済みとしてフラグを立て、即座にバッジを消去・集約更新
+            const targetSk = targetCard.skills?.find(
+              (s) => s.id === sk.id && !s.triggered
+            );
+            if (targetSk) {
+              targetSk.triggered = true;
+            }
+            await sleep(50);
+            renderBoard();
           }
-          await sleep(50);
-          renderBoard();
         }
       }
 

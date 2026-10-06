@@ -1599,7 +1599,7 @@ export const SKILL_CATEGORIES = [
         skills: ['sturdy', 'double_strike', 'deadly', 'pierce', 'cleave'],
       },
       {
-        name: '戦闘時・破壊時',
+        name: '戦闘時・撃破時',
         skills: ['soul_bind', 'absorb', 'extort'],
       },
       {

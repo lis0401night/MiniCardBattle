@@ -1008,6 +1008,53 @@ export async function recordQuickBattleToServer(data) {
 }
 
 /**
+ * サーバーからクイックマッチの対戦履歴ログを取得します。
+ * 時間帯傾向グラフの集計・可視化等に使用します。
+ *
+ * @returns {Promise<Array<Object>>} クイックマッチ対戦履歴の配列（取得失敗または未記録時は空配列）
+ */
+export async function fetchQuickBattleHistory() {
+  try {
+    const res = await asyncGet(
+      'get_quick_battles.php',
+      {},
+      {
+        timeout: DEFAULT_API_TIMEOUT_MS,
+      }
+    );
+    if (res && res.success && Array.isArray(res.recent_quick_battles)) {
+      return res.recent_quick_battles;
+    }
+  } catch (err) {
+    console.warn(
+      'get_quick_battles.php からの取得に失敗。ローカルJSONを試行します:',
+      err
+    );
+  }
+
+  // ローカル開発環境（Vite等）向けフォールバック: api/decks/recent_quick_battles.json を直接フェッチ
+  try {
+    const fallbackRes = await asyncGet(
+      'decks/recent_quick_battles.json',
+      {},
+      {
+        timeout: DEFAULT_API_TIMEOUT_MS,
+      }
+    );
+    if (Array.isArray(fallbackRes)) {
+      return fallbackRes;
+    }
+    if (fallbackRes && Array.isArray(fallbackRes.recent_quick_battles)) {
+      return fallbackRes.recent_quick_battles;
+    }
+  } catch (fallbackErr) {
+    console.error('クイックマッチ対戦履歴の取得に失敗しました:', fallbackErr);
+  }
+
+  return [];
+}
+
+/**
  * 現在の実行環境がクローラー、bot、またはヘッドレス自動操作環境であるかを判定します。
  * サーバへの不要なデータ作成や負荷を防ぐために使用します。
  *

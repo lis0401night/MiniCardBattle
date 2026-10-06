@@ -2990,22 +2990,28 @@ export async function resolveActiveSkillEffect(
             await checkAndTriggerCounter(o, targetCard, targetLane);
 
             // 装備されたカードが持っていたアクティブスキルを即時発動させる
-            for (const sk of equipSkills) {
-              if (ACTIVE_SKILLS.includes(sk.id)) {
-                await sleep(50);
-                const enhancedSk = {
-                  ...sk,
-                  _sourceChoices: restoredCard.choices,
-                  _sourceChoices2: restoredCard.choices2,
-                };
-                await resolveActiveSkillEffect(
-                  o,
-                  targetLane,
-                  targetCard,
-                  sk.id,
-                  sk.value,
-                  enhancedSk
-                );
+            // ※ 忘却（silence）や沈黙（oblivion）等で対象カードの能力が消去された場合、または盤面からカードが除去された場合は不発
+            if (board[targetLane] === targetCard) {
+              for (const sk of equipSkills) {
+                if (
+                  ACTIVE_SKILLS.includes(sk.id) &&
+                  hasSkill(targetCard, sk.id)
+                ) {
+                  await sleep(50);
+                  const enhancedSk = {
+                    ...sk,
+                    _sourceChoices: restoredCard.choices,
+                    _sourceChoices2: restoredCard.choices2,
+                  };
+                  await resolveActiveSkillEffect(
+                    o,
+                    targetLane,
+                    targetCard,
+                    sk.id,
+                    sk.value,
+                    enhancedSk
+                  );
+                }
               }
             }
             await cleanupDestroyedCards(c);
@@ -3311,23 +3317,29 @@ export async function resolveActiveSkillEffect(
             await checkAndTriggerCounter(o, targetCard, targetLane);
 
             // 装備されたカードが持っていたアクティブスキルを即時発動させる
-            for (const sk of equipSkills) {
-              if (ACTIVE_SKILLS.includes(sk.id)) {
-                await sleep(50);
-                // 【バグ修正】選択スキルに装備元の選択肢情報を渡すため、enhancedSk オブジェクトを構築して渡す
-                const enhancedSk = {
-                  ...sk,
-                  _sourceChoices: topCard.choices,
-                  _sourceChoices2: topCard.choices2,
-                };
-                await resolveActiveSkillEffect(
-                  o,
-                  targetLane,
-                  targetCard,
-                  sk.id,
-                  sk.value,
-                  enhancedSk
-                );
+            // ※ 忘却（silence）や沈黙（oblivion）等で対象カードの能力が消去された場合、または盤面からカードが除去された場合は不発
+            if (board[targetLane] === targetCard) {
+              for (const sk of equipSkills) {
+                if (
+                  ACTIVE_SKILLS.includes(sk.id) &&
+                  hasSkill(targetCard, sk.id)
+                ) {
+                  await sleep(50);
+                  // 【バグ修正】選択スキルに装備元の選択肢情報を渡すため、enhancedSk オブジェクトを構築して渡す
+                  const enhancedSk = {
+                    ...sk,
+                    _sourceChoices: topCard.choices,
+                    _sourceChoices2: topCard.choices2,
+                  };
+                  await resolveActiveSkillEffect(
+                    o,
+                    targetLane,
+                    targetCard,
+                    sk.id,
+                    sk.value,
+                    enhancedSk
+                  );
+                }
               }
             }
             await cleanupDestroyedCards(c);

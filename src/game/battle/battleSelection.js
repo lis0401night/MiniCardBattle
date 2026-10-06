@@ -45,7 +45,11 @@ import {
 } from './battleQueue.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import { startOnlineTimer, stopOnlineTimer } from './onlineTimer.js';
-import { checkIsOnlineTimerEnabled } from '../../utils/constants/onlineTimer.js';
+import {
+  checkIsOnlineTimerEnabled,
+  ONLINE_TIMER_MULLIGAN_SEC,
+  ONLINE_TIMER_FAILSAFE_MARGIN_MS,
+} from '../../utils/constants/onlineTimer.js';
 import { BATTLE_PHASE } from './phases/phaseTypes.js';
 
 /**
@@ -1262,7 +1266,19 @@ export async function waitPlayerHandSelection(
 
   // Check for Remote Choice Wait
   if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
-    if (!isMulligan) {
+    let mulliganFailsafeId = null;
+    if (isMulligan) {
+      // マリガン時は並行選択のため、相手が無応答（切断・放置）でも最大時間（30秒＋通信猶予4秒）で自動的に引き直しなし([])として解決
+      const failsafeMs =
+        ONLINE_TIMER_MULLIGAN_SEC * 1000 + ONLINE_TIMER_FAILSAFE_MARGIN_MS;
+      mulliganFailsafeId = setTimeout(() => {
+        if (pendingChoiceResolver) {
+          const resolver = pendingChoiceResolver;
+          setPendingChoiceResolver(null);
+          resolver([]);
+        }
+      }, failsafeMs);
+    } else {
       startOnlineTimer({
         type: 'choice',
         owner: 'red',
@@ -1287,6 +1303,11 @@ export async function waitPlayerHandSelection(
         resolve(GameState.pendingChoices.shift());
       else setPendingChoiceResolver(resolve);
     });
+
+    if (mulliganFailsafeId) {
+      clearTimeout(mulliganFailsafeId);
+      mulliganFailsafeId = null;
+    }
 
     if (!isMulligan) {
       stopOnlineTimer();
@@ -1388,7 +1409,8 @@ export async function waitPlayerHandSelection(
     const cleanUp = () => {
       GameState.isDiscardingMode = false;
       GameState.isDiscardingExact = false;
-      if (checkIsOnlineTimerEnabled(GameState.gameMode) && !isMulligan) {
+      // マリガン選択完了時も含め、手札選択を決定したら即座にタイマー（および火花警告演出）を停止する
+      if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
         stopOnlineTimer();
       }
       const result = [...GameState.discardSelectedIndices];

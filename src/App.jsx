@@ -71,6 +71,7 @@ import OnlineQuickMatchScreen from './pages/OnlineQuickMatchScreen.jsx';
 import OnlineQuickMatchingScreen from './pages/OnlineQuickMatchingScreen.jsx';
 import OnlineQuickRankingScreen from './pages/OnlineQuickRankingScreen.jsx';
 import OnlineQuickRulesScreen from './pages/OnlineQuickRulesScreen.jsx';
+import OnlineQuickTimeSlotScreen from './pages/OnlineQuickTimeSlotScreen.jsx';
 import OnlineRoomMatchScreen from './pages/OnlineRoomMatchScreen.jsx';
 import OnlineRoomSearchScreen from './pages/OnlineRoomSearchScreen.jsx';
 import OnlineRulesScreen from './pages/OnlineRulesScreen.jsx';
@@ -204,6 +205,7 @@ const SCREEN_COMPONENTS = {
   'screen-online-quick-match': OnlineQuickMatchScreen,
   'screen-online-quick-matching': OnlineQuickMatchingScreen,
   'screen-online-quick-rules': OnlineQuickRulesScreen,
+  'screen-online-quick-timeslot': OnlineQuickTimeSlotScreen,
   'screen-online-room-match': OnlineRoomMatchScreen,
   'screen-online-rules': OnlineRulesScreen,
   'screen-online-search': OnlineRoomSearchScreen,

@@ -7,6 +7,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { subscribeOnlineTimer } from '../../game/battle/onlineTimer.js';
+import { subscribeDisconnectState } from '../../game/battle/onlineDisconnectManager.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
 
@@ -14,6 +15,7 @@ import { SOUNDS } from '../../utils/sounds.js';
  * オンライン対戦タイマーの警告火花演出コンポーネント
  * 制限時間残り5秒以下（isWarning）かつプレイヤー自身のターン時に画面中央に出現し、
  * 左右から火花を散らしながら収束していくアニメーションおよび警告チクタク音を再生する。
+ * 切断待機中（isDisconnectWaiting）は演出を自動で抑制する。
  *
  * @returns {import('react').ReactElement|null} 警告演出中は火花ライン要素、それ以外は null
  */
@@ -25,19 +27,25 @@ export default function SparkTimerLine() {
     remainingMs: 0,
     progress: 1.0,
   });
+  const [isDisconnectWaiting, setIsDisconnectWaiting] = useState(false);
 
   const lastSecondRef = useRef(null);
 
   useEffect(() => {
-    return subscribeOnlineTimer((state) => {
+    const unsubDisconnect = subscribeDisconnectState((dState) => {
+      setIsDisconnectWaiting(dState.isWaiting);
+    });
+
+    const unsubTimer = subscribeOnlineTimer((state) => {
       setTimerState(state);
 
-      // 自分自身の操作タイマー（owner === 'blue'）のみ警告チクタク音を再生
+      // 自分自身の操作タイマー（owner === 'blue'）のみ警告チクタク音を再生（切断待機中を除く）
       if (
         state.isActive &&
         state.owner === 'blue' &&
         state.isWarning &&
-        state.remainingMs > 0
+        state.remainingMs > 0 &&
+        !isDisconnectWaiting
       ) {
         const sec = Math.ceil(state.remainingMs / 1000);
         if (lastSecondRef.current !== sec) {
@@ -54,13 +62,19 @@ export default function SparkTimerLine() {
         lastSecondRef.current = null;
       }
     });
-  }, []);
 
-  // 自分のタイマー（owner === 'blue'）かつ警告演出中のみ火花ラインを表示
+    return () => {
+      unsubDisconnect();
+      unsubTimer();
+    };
+  }, [isDisconnectWaiting]);
+
+  // 自分のタイマー（owner === 'blue'）かつ警告演出中、かつ切断待機中でない場合のみ火花ラインを表示
   if (
     !timerState.isActive ||
     timerState.owner !== 'blue' ||
-    !timerState.isWarning
+    !timerState.isWarning ||
+    isDisconnectWaiting
   ) {
     return null;
   }
@@ -83,7 +97,7 @@ export default function SparkTimerLine() {
           justify-content: center;
           align-items: center;
           pointer-events: none;
-          z-index: 100000;
+          z-index: 99990;
         }
 
         .spark-timer-line {
