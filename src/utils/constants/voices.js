@@ -316,7 +316,7 @@ export const PREMIUM_VOICE_MAP = {
   cavalry: 'human_male_ikemen',
   royalguard: 'human_female_fighter',
   gorilla: 'human_male_warrior',
-  warriormonk: 'human_male_normal',
+  warriormonk: 'human_female_normal',
   ghoul: 'human_male_ikemen',
 };
 
