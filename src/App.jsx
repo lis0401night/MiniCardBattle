@@ -245,7 +245,6 @@ export default function App() {
     };
   }, []);
 
-  const [rulesVisible, setRulesVisible] = useState(false);
   const [matchingState, setMatchingState] = useState({
     show: false,
     onComplete: null,
@@ -323,13 +322,9 @@ export default function App() {
     <>
       <FinalScreenComponent
         switchScreen={switchScreen}
-        showRulesModal={() => setRulesVisible(true)}
         loadingText={loadingText}
       />
-      <GlobalModals
-        rulesVisible={rulesVisible}
-        setRulesVisible={setRulesVisible}
-      />
+      <GlobalModals />
       {isBattleActive && (
         <>
           <DamageOverlay />

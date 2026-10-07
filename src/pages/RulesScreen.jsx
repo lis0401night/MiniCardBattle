@@ -70,6 +70,20 @@ export default function RulesScreen() {
             </li>
           </ul>
         </div>
+        <div className="rule-section">
+          <div className="rule-category">【その他】</div>
+          <ul>
+            <li>
+              効果ターン数（スタン・無敵・潜伏など）は、そのカードの持ち主のターン開始時に1ターン減少します。
+            </li>
+            <li>
+              「持ち主以外の手番中」に付与された場合は、直後の持ち主のターン開始時の減衰を1回だけスキップします。
+            </li>
+            <li>
+              トークン（スキル等で生成されたカード）は、墓地へ送られる場合や、デッキへ戻される場合、墓地やデッキには入らず消滅します。
+            </li>
+          </ul>
+        </div>
       </div>
     </ScreenLayout>
   );

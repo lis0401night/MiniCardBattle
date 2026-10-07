@@ -24,7 +24,7 @@ import {
   BOARD_NEVER_SHOW_SKILL_IDS,
   SKILLS,
 } from './constants/skills.js';
-import { STATUSES } from './constants/statuses.js';
+import { DECAYING_STATUS_IDS, STATUSES } from './constants/statuses.js';
 import { setCurrentScreen } from './errorReporter.js';
 import {
   audioCtx,
@@ -1032,6 +1032,13 @@ function applyStatusProperties(card, statusId, value) {
  * 直接プロパティ（card.corrosion, card.stunTurns 等）とも完全に同期します。
  * ※非正値（0以下）が指定された場合は、状態スロットの追加を行わず解除（removeCardStatus）として統一処理し、0を返します。
  *
+ * 【ターン開始時に減衰する状態（DECAYING_STATUS_IDS）の初回減衰スキップ】
+ * 付与時にスロットへ skipNextDecay: true を立てます。このフラグは
+ * - 持ち主のターン終了時（clearStatusDecaySkips）に解除される → 持ち主の手番中の付与は次のターン開始時から通常どおり減衰
+ * - 解除されないまま持ち主のターン開始を迎えた場合（＝持ち主以外の手番中に付与された場合）は、その1回の減衰をスキップ
+ * という仕組みで「付与直後の半ターンで即座に減衰してしまう」問題を防ぎます。
+ * 新しい値が既存値以上の重ね掛けは「新規付与」とみなし、フラグを立て直します（期間のリフレッシュ）。
+ *
  * @param {object|null} card - 対象カード
  * @param {string} statusId - 状態ID ('corrosion' | 'stun' | 'invincible' | 'valkyria_guard' | 'cant_attack')
  * @param {number} [value=1] - 付与する値（腐食の減少値、または持続ターン数）。0以下の場合は解除
@@ -1067,17 +1074,28 @@ export function grantCardStatus(card, statusId, value = 1) {
   // Bの仕様（高い方を優先、Math.max）
   const finalValue = Math.max(currentVal, normalizedValue);
 
+  // ターン開始時に減衰する状態で、既存値以上の付与であれば初回減衰スキップを立てる
+  const shouldSkipNextDecay =
+    DECAYING_STATUS_IDS.includes(statusId) && normalizedValue >= currentVal;
+
   if (existingIdx !== -1) {
     // 既存スロットの値を更新（スロット順序・位置は維持）
     card.skills[existingIdx].value = finalValue;
     card.skills[existingIdx].isStatus = true;
+    if (shouldSkipNextDecay) {
+      card.skills[existingIdx].skipNextDecay = true;
+    }
   } else {
     // 新たに下のスロット（末尾）に追加
-    card.skills.push({
+    const newSlot = {
       id: statusId,
       value: finalValue,
       isStatus: true,
-    });
+    };
+    if (shouldSkipNextDecay) {
+      newSlot.skipNextDecay = true;
+    }
+    card.skills.push(newSlot);
   }
 
   // 直接プロパティの同期（後方互換性および判定ロジック用）
@@ -1146,9 +1164,13 @@ export function clearAllCardStatuses(card) {
  * 直接プロパティ（card.invincibleTurns, card.stunTurns 等）と
  * スキル枠（card.skills 内の状態スロット）の双方を同期して一元的に減衰処理を行います。
  *
+ * 【初回減衰スキップ】
+ * 状態スロットに skipNextDecay が残っている場合（＝持ち主以外の手番中に付与され、まだ持ち主のターン終了を迎えていない）は、
+ * フラグを外すだけで減衰しません。詳細は grantCardStatus / clearStatusDecaySkips を参照。
+ *
  * @param {object|null} card - 対象カード
  * @param {string} statusId - 減衰させる状態ID ('invincible' | 'stun' | 'cant_attack' | 'valkyria_guard' 等)
- * @returns {boolean} 状態が存在し、減衰によって持続時間が終了して解除された場合は true、継続中または未付与時は false
+ * @returns {boolean} 状態が存在し、減衰によって持続時間が終了して解除された場合は true、継続中・スキップ時・未付与時は false
  */
 export function decayCardStatus(card, statusId) {
   if (!card) return false;
@@ -1168,6 +1190,12 @@ export function decayCardStatus(card, statusId) {
   // 既にターン数が0または未付与の場合は何もしない
   if (currentVal <= 0) return false;
 
+  // 持ち主以外の手番中に付与された直後のターン開始時は、減衰せずスキップフラグのみ解除する
+  if (slot && slot.skipNextDecay) {
+    delete slot.skipNextDecay;
+    return false;
+  }
+
   const nextVal = currentVal - 1;
 
   if (nextVal <= 0) {
@@ -1180,6 +1208,34 @@ export function decayCardStatus(card, statusId) {
     syncCardStatuses(card);
     return false;
   }
+}
+
+/**
+ * 指定盤面の全カードについて、ターン開始時に減衰する状態（DECAYING_STATUS_IDS）の初回減衰スキップフラグを解除します。
+ *
+ * 盤面の持ち主のターン終了時に呼び出します。これにより、
+ * - 持ち主の手番中に付与された状態（待機・通常召喚時の潜伏等）は、次の持ち主のターン開始時から通常どおり減衰する
+ * - 持ち主以外の手番中に付与された状態（拘束・凍結・誘発時の潜伏等）は、フラグが残ったまま持ち主のターン開始を迎え、1回だけ減衰をスキップする
+ * という挙動になります。実戦（endTurnLogic）と AI シミュレーション（simulateCombatStep）の双方から共通で使用します。
+ *
+ * @param {Array<object|null>|null|undefined} board - ターンを終えたプレイヤーの盤面
+ * @returns {void}
+ */
+export function clearStatusDecaySkips(board) {
+  if (!Array.isArray(board)) return;
+  board.forEach((card) => {
+    if (!card || !Array.isArray(card.skills)) return;
+    card.skills.forEach((s) => {
+      if (
+        s &&
+        s.isStatus &&
+        s.skipNextDecay &&
+        DECAYING_STATUS_IDS.includes(s.id)
+      ) {
+        delete s.skipNextDecay;
+      }
+    });
+  });
 }
 
 /**

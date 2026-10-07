@@ -890,9 +890,11 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'bind':
+      // カードの値どおりのターン数でスタンを付与する（旧仕様の +1 補正は撤廃。実戦の skillLogic.js と同一）。
+      // 直後の相手ターン開始時の減衰は grantCardStatus の初回減衰スキップにより発生しない。
       // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
       if (eB[l]) {
-        grantCardStatus(eB[l], 'stun', (val || 1) + 1);
+        grantCardStatus(eB[l], 'stun', val || 1);
       }
       break;
     case 'standby':
@@ -900,10 +902,11 @@ export function applyActiveSkillLogic(
       grantCardStatus(c, 'stun', val || 1);
       break;
     case 'freeze':
+      // カードの値どおりのターン数でスタンを付与する（旧仕様の +1 補正は撤廃。実戦の skillLogic.js と同一）。
       // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
       [l - 1, l, l + 1].forEach((j) => {
         if (j >= 0 && j < 3 && eB[j]) {
-          grantCardStatus(eB[j], 'stun', (val || 1) + 1);
+          grantCardStatus(eB[j], 'stun', val || 1);
         }
       });
       break;
@@ -2083,7 +2086,7 @@ export function applyActiveSkillLogic(
     }
     case 'shuffle': {
       // 【攪乱(shuffle)スキル処理】
-      // 召喚時、お互いの手札を全て捨て、墓地をリセットし、お互いにカードを3枚引く
+      // 召喚時、お互いの手札と墓地を全てデッキに戻し、お互いにカードを3枚引く（トークンは消滅）
       events.push({ type: 'shuffle', side: owner, source: 'shuffle' });
       break;
     }

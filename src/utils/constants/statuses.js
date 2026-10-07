@@ -46,6 +46,7 @@ export const STATUSES = {
     icon: '🌟',
     type: 'buff',
     hasTurns: true,
+    decaysOnTurnStart: true,
     property: 'invincibleTurns',
     turnsProperty: 'invincibleTurns',
     badgeClass: 'badge-invincible',
@@ -67,6 +68,7 @@ export const STATUSES = {
     icon: '💫',
     type: 'debuff',
     hasTurns: true,
+    decaysOnTurnStart: true,
     property: 'stunTurns',
     turnsProperty: 'stunTurns',
     badgeClass: 'badge-stun',
@@ -89,6 +91,7 @@ export const STATUSES = {
     icon: '',
     type: 'debuff',
     hasTurns: true,
+    decaysOnTurnStart: true,
     property: 'cantAttackTurns',
     turnsProperty: 'cantAttackTurns',
     badgeClass: 'badge-cant-attack',
@@ -133,6 +136,19 @@ export const STATUS_IDS = Object.keys(STATUSES);
 /** 持続ターンを持つ状態IDのリスト */
 export const TURN_BASED_STATUS_IDS = Object.values(STATUSES)
   .filter((s) => s.hasTurns)
+  .map((s) => s.id);
+
+/**
+ * カードの持ち主のターン開始時に持続ターンが1減衰する状態IDのリスト（stun / cant_attack / invincible）。
+ *
+ * 【減衰ルール】
+ * - 持ち主のターン開始時に1減衰し、0になったら解除する。
+ * - ただし「持ち主以外の手番中」に付与された場合は、直後の持ち主のターン開始時の減衰を1回だけスキップする。
+ *   （付与時にスロットへ skipNextDecay を立て、持ち主のターン終了時に解除することで判定する）
+ * ※加護（valkyria_guard）は減衰せず、持ち主のターン開始時に一括解除されるため含まない。
+ */
+export const DECAYING_STATUS_IDS = Object.values(STATUSES)
+  .filter((s) => s.decaysOnTurnStart)
   .map((s) => s.id);
 
 /** バフ系状態IDのリスト */

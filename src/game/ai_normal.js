@@ -12,6 +12,7 @@ import {
   matchesResurrectTarget,
   matchesSummonTarget,
   consumeStartupSkill,
+  clearStatusDecaySkips,
   decayCardStatus,
   matchesUnionMaterial,
   setCurrentRNG,
@@ -4009,6 +4010,9 @@ export function evaluateSimState(state) {
  * 加護（戦乙女の加護、保護等）を解除し、盤面カードの状態（スタン・攻撃不能・無敵ターン）をターン開始時に減衰・同期させ、
  * 客観的かつ正確な戦闘計算を行います。
  *
+ * ※本関数の呼び出し元（advanceCombatPhase / simulateMove）は、いずれも「相手陣営（防御側）の手番が終了した直後」に
+ *   本関数を呼び出す前提です。そのため冒頭で、実戦の endTurnLogic と同様に防御側盤面の状態の初回減衰スキップを解除します。
+ *
  * @param {object} simState - シミュレーション盤面状態
  * @param {'red' | 'blue'} attackerSide - 攻撃側陣営 ('blue' = プレイヤー, 'red' = 敵AI)
  * @returns {void}
@@ -4017,6 +4021,9 @@ export function simulateCombatStep(simState, attackerSide) {
   const isRed = attackerSide === 'red';
   const board = isRed ? simState.enemyBoard : simState.playerBoard;
   const hpBeforeCombat = isRed ? simState.playerHP : simState.enemyHP;
+
+  // 0. 直前の手番（防御側陣営）のターン終了処理：状態の初回減衰スキップを解除する（実戦の endTurnLogic と同一）
+  clearStatusDecaySkips(isRed ? simState.playerBoard : simState.enemyBoard);
 
   // 1. パッシブスキルの適用（ターン開始時スキル・毒ダメージ・契約等）
   applyPassiveSkillLogic(simState, attackerSide);

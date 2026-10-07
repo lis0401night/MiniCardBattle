@@ -21,6 +21,7 @@ import {
 } from '../../utils/constants/config.js';
 import {
   checkIsOnlineMode,
+  clearStatusDecaySkips,
   consumeStartupSkill,
   createDamagePopup,
   decayCardStatus,
@@ -661,6 +662,15 @@ export async function endTurnLogic(o) {
       GameState.placementMessage = null;
       renderHand();
     }
+
+    // 【状態の初回減衰スキップ解除】
+    // ターンを終えたプレイヤーの盤面について、状態スロットの skipNextDecay を解除する。
+    // これにより、自分の手番中に付与された状態（待機・通常召喚時の潜伏等）は次の自分のターン開始時から通常どおり減衰し、
+    // 相手の手番中に付与された状態（拘束・凍結・誘発時の潜伏等）だけが直後の1回の減衰をスキップする。
+    // ※手札上限破棄による「狂気」等の召喚も自分の手番中の付与として扱うため、破棄処理の後に実行する。
+    clearStatusDecaySkips(
+      o === 'blue' ? GameState.playerBoard : GameState.enemyBoard
+    );
 
     renderBoard();
     let nextOwner = o === 'blue' ? 'red' : 'blue';

@@ -3342,7 +3342,7 @@ export const CARD_MASTER = [
       { id: 'trigger' },
       { id: 'legendary' },
       { id: 'challenge' },
-      { id: 'stealth', value: 2 },
+      { id: 'stealth', value: 1 },
     ],
     voiceCategory: 'human_female_cool',
     flavor:

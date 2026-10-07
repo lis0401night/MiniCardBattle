@@ -1083,32 +1083,34 @@ export async function resolveActiveSkillEffect(
       processOrder = getIsHost() ? ['blue', 'red'] : ['red', 'blue'];
     }
 
-    // オンライン対戦時、乱数シードの消費順序や効果の発動順序をホスト・ゲスト間で完全に一致させるため、ホストから順に処理
-    for (const p of processOrder) {
-      const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
-      const hCards = [...h]; // 手札のコピーを保持
-      h.length = 0; // 手札の配列を先に空にする
-
-      // 手札の全カードを一括で破棄・狂気解決
-      await discardCardsFromHand(p, hCards);
-    }
-
+    // お互いの手札と墓地をデッキに戻す（捨てずに直接戻す。トークンはデッキに紛れないよう除外・消滅）
     processOrder.forEach((p) => {
+      const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
       const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
       const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
 
-      // 墓地に送られた（リセット済みの）カードをデッキに全て戻す（トークンは除外）
+      // 手札の全カードをデッキに戻す（トークンは除外）
+      while (h.length > 0) {
+        const card = h.pop();
+        if (!card.isToken && !card.id?.startsWith('token_')) {
+          d.push(card);
+        }
+      }
+
+      // 墓地の全カードをデッキに戻す（トークンは除外）
       while (g.length > 0) {
         const card = g.pop();
-        if (!card.isToken) d.push(card);
+        if (!card.isToken && !card.id?.startsWith('token_')) {
+          d.push(card);
+        }
       }
     });
 
-    // 捨てた状態で一度待機する
+    // 手札と墓地がデッキに戻った状態で一度待機し、UIを更新
     updateDeckDisplay('blue');
     updateDeckDisplay('red');
     renderHand();
-    await sleep(1200);
+    await sleep(800);
 
     processOrder.forEach((p) => {
       const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
@@ -1927,10 +1929,11 @@ export async function resolveActiveSkillEffect(
     createDamagePopup(cEl, '拘束', '#facc15');
     const eB = o === 'blue' ? GameState.enemyBoard : GameState.playerBoard;
     if (eB[l]) {
-      // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正。
-      // val=1 で「このターンは動けない」→ターン終了時に1減って stunTurns=1 → 次ターン防御 → 終了時に0、で計1ターン拘束。
+      // 【仕様】カードの値どおりのターン数でスタンを付与する（旧仕様の +1 補正は撤廃）。
+      // 自分の手番中に相手カードへ付与するため、grantCardStatus が立てる初回減衰スキップにより
+      // 直後の相手ターン開始時は減衰しない。val=1 の場合：相手ターン（攻撃不可）→ 自ターン（反撃不可）→ 次の相手ターン開始時に解除。
       // 既存の拘束・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
-      const turns = (skillValue || 1) + 1;
+      const turns = skillValue || 1;
       grantCardStatus(eB[l], 'stun', turns);
 
       const tgtSide = o === 'blue' ? 'enemy' : 'player';
@@ -1989,9 +1992,10 @@ export async function resolveActiveSkillEffect(
     }
 
     if (targets.length > 0) {
-      // 【仕様通り】+1 はターン終了時の stunTurns-- を見越した補正（bindと同じロジック）。
+      // 【仕様】カードの値どおりのターン数でスタンを付与する（旧仕様の +1 補正は撤廃。bindと同じロジック）。
+      // 直後の相手ターン開始時の減衰は、grantCardStatus が立てる初回減衰スキップにより発生しない。
       // 既存の防御・待機ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
-      const turns = (skillValue || 1) + 1;
+      const turns = skillValue || 1;
       for (const tL of targets) {
         grantCardStatus(eB[tL], 'stun', turns);
       }
@@ -2175,9 +2179,9 @@ export async function resolveActiveSkillEffect(
       await sleep(300);
     }
   } else if (skillId === 'standby') {
-    // 【仕様】自分のカードに適用するため、+1 補正は不要。
-    // bind/freeze は相手カードに適用し、「発動したターンも防御状態にする」ため +1 しているが、
-    // standby は自分が召喚したこのターンから待機するため、val そのままで正しい挙動になる。
+    // 【仕様】カードの値どおりのターン数で自身にスタンを付与する。
+    // 自分の手番中の付与であれば、ターン終了時に初回減衰スキップが解除されるため、次の自分のターン開始時から通常どおり減衰する。
+    // （相手の手番中に召喚された場合は、bind/freeze と同様に直後の自ターン開始時の減衰が1回スキップされる）
     // 既存の防御・拘束ターン数と比較し、大きい方の値を維持・適用する（スロット順管理）
     const turns = skillValue || 1;
     grantCardStatus(c, 'stun', turns);

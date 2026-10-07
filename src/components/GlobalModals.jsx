@@ -813,7 +813,12 @@ const syncPlayerConfigImages = (charDetailData, skinId) => {
   }
 };
 
-export default function GlobalModals({ rulesVisible, setRulesVisible }) {
+/**
+ * グローバルモーダルコンポーネント
+ * アプリケーション全体で使用される各種モーダル（確認ダイアログ、詳細情報、プレビュー等）を一括描画します。
+ * @returns {import('react').ReactElement} グローバルモーダル群
+ */
+export default function GlobalModals() {
   const discardLongPressTimerRef = useRef(null);
   const discardHasLongPressedRef = useRef(false);
 
@@ -4391,93 +4396,6 @@ export default function GlobalModals({ rulesVisible, setRulesVisible }) {
                 閉じる
               </button>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Rules Modal */}
-      {rulesVisible && (
-        <div
-          id="modal-rules"
-          className="rules-modal-overlay"
-          style={{
-            display: 'flex',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            background: 'rgba(0,0,0,0.85)',
-            zIndex: 5000,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          onClick={() => {
-            playSound?.(SOUNDS?.seClick);
-            setRulesVisible(false);
-          }}
-        >
-          <div
-            className="skill-modal-box modal-pop-animation"
-            style={{ width: '90%', maxWidth: '400px', padding: '25px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ color: '#facc15', marginBottom: '20px' }}>ルール</h2>
-            <div className="rule-box" style={{ maxHeight: '350px' }}>
-              <div className="rule-section">
-                <div className="rule-category">【デッキ編成】</div>
-                <ul>
-                  <li>デッキに同じカードは4枚まで入れられます。</li>
-                </ul>
-              </div>
-              <div className="rule-section">
-                <div className="rule-category">【バトル】</div>
-                <ul>
-                  <li>
-                    毎ターン、手札から1枚を自分のレーンに召喚します。
-                    <span style={{ color: '#94a3b8' }}>
-                      （先攻1ターン目は中央のみ）
-                    </span>
-                  </li>
-                  <li>置き直しの場合、下のカードは破棄されます。</li>
-                  <li>
-                    <b>ターン開始時</b>に、場のカードが一斉に正面へ<b>攻撃</b>
-                    します。
-                  </li>
-                  <li>
-                    正面に敵がいれば戦闘となり、お互いにパワー分ダメージを与えます。
-                  </li>
-                  <li>正面が空いていれば相手リーダーに直接ダメージ！</li>
-                  <li>相手リーダーのHPを0にすれば勝利です。</li>
-                  <li>
-                    山札が0枚になると墓地から補充されますが、ペナルティとして
-                    <b>体力が半分（切り上げ）になるダメージ</b>を受けます。
-                  </li>
-                </ul>
-              </div>
-              <div className="rule-section">
-                <div className="rule-category">【リーダースキル】</div>
-                <ul>
-                  <li>
-                    毎ターン「SP」が溜まります。
-                    <span style={{ color: '#94a3b8' }}>
-                      （先攻1ターン目は溜まりません）
-                    </span>
-                  </li>
-                  <li>SPがMAXで「リーダースキル」を発動可能！</li>
-                </ul>
-              </div>
-            </div>
-            <button
-              className="btn"
-              style={{ marginTop: '20px', width: '100%' }}
-              onClick={() => {
-                playSound?.(SOUNDS?.seClick);
-                setRulesVisible(false);
-              }}
-            >
-              閉じる
-            </button>
           </div>
         </div>
       )}
