@@ -2,6 +2,7 @@ import { GameState } from '../../state/gameState.js';
 import {
   getSkinImage,
   getIconFramePath,
+  getLeaderNameStyle,
 } from '../../utils/constants/characters.js';
 import {
   MAX_DISCARD_PREVIEW_COUNT,
@@ -139,13 +140,20 @@ export default function EnemyArea({
           くっ…！
         </div>
         <div className="player-status">
-          <div
-            className="status-name"
-            id="enemy-name"
-            style={{ color: 'var(--color-red)' }}
-          >
-            {enemyConfig.displayName || enemyConfig.name}
-          </div>
+          {(() => {
+            const enemyNameText =
+              enemyConfig.displayName || enemyConfig.name || '';
+            const enemyNameStyle = getLeaderNameStyle(enemyNameText);
+            return (
+              <div
+                className="status-name"
+                id="enemy-name"
+                style={{ color: 'var(--color-red)', ...enemyNameStyle }}
+              >
+                {enemyNameText}
+              </div>
+            );
+          })()}
           <div className="hp-bar-bg">
             <div
               className="hp-bar-fill red"

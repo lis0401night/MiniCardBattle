@@ -60,6 +60,7 @@ import { getStageImgUrl, STAGES } from '../utils/constants/stages.js';
 import { saveDungeonProgress } from '../game/battleDungeon.js';
 import { getLatestOwnership, syncUserProfile } from '../utils/apiUtils.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
+import { resolveLeaderSkill } from '../utils/leaderSkillUtils.js';
 import {
   applySkinToConfig,
   BOSS_CHARACTER_IDS,
@@ -805,12 +806,29 @@ function AcquisitionModal({
   );
 }
 
+/**
+ * スキン一覧モーダルでスキンが変更された際に、GameState.playerConfig の外見およびリーダースキルを同期する。
+ *
+ * @param {Object} charDetailData - キャラクター詳細データ（idを含む）
+ * @param {string} skinId - 変更先のスキンID
+ * @returns {void}
+ */
 const syncPlayerConfigImages = (charDetailData, skinId) => {
   if (
     GameState.playerConfig &&
     GameState.playerConfig.id === charDetailData.id
   ) {
     applySkinToConfig(GameState.playerConfig, skinId);
+    GameState.playerConfig = {
+      ...GameState.playerConfig,
+      leaderSkill: resolveLeaderSkill({
+        charId: charDetailData.id,
+        skinId: skinId,
+        isEnemy: false,
+        gameMode: GameState.gameMode,
+        fortuneHandicaps: GameState.fortuneHandicaps,
+      }),
+    };
   }
 };
 

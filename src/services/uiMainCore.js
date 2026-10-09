@@ -24,7 +24,7 @@ import {
   DIFFICULTY,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { LEADER_SKILLS } from '../utils/constants/leaderSkills.js';
+import { resolveLeaderSkill } from '../utils/leaderSkillUtils.js';
 import { STAGES } from '../utils/constants/stages.js';
 import {
   clearCachesAndServiceWorkers,
@@ -1380,6 +1380,13 @@ export function applyPlayerConfigWithSkin(leaderId, skinId = 'default') {
 
   GameState.playerConfig = { ...templateChar };
   applySkinToConfig(GameState.playerConfig, skinId);
+  GameState.playerConfig.leaderSkill = resolveLeaderSkill({
+    charId: leaderId,
+    skinId: skinId,
+    isEnemy: false,
+    gameMode: GameState.gameMode,
+    fortuneHandicaps: GameState.fortuneHandicaps,
+  });
 }
 
 /**
@@ -1887,7 +1894,12 @@ export function openEnemyDeckPreview(level) {
     const eventName = charConfig?.event_high?.name || enemyCharId;
     const titleText = `${eventName} [超級]`;
     // 高難易度専用リーダースキルをモーダルに渡す
-    const leaderSkill = charConfig?.event_high?.leaderSkill || null;
+    const leaderSkill = resolveLeaderSkill({
+      charId: enemyCharId,
+      skinId: `${enemyCharId}_high`,
+      isEnemy: true,
+      gameMode: GameState.gameMode,
+    });
     if (window.showEnemyDeckModal) {
       window.showEnemyDeckModal(deckIds, titleText, leaderSkill);
     }
@@ -1910,21 +1922,13 @@ export function openEnemyDeckPreview(level) {
     const eventName = charConfig?.event_fortune?.name || enemyCharId;
     const titleText = `${eventName} [特級]`;
 
-    // 運命の邂逅のリーダースキルをモーダルに渡す
-    let leaderSkill =
-      charConfig?.event_fortune?.leaderSkill || charConfig?.leaderSkill || null;
-
-    // 特級目標「相手のリーダースキル変更」が有効な場合、変更後のスキルを表示
-    const isLeaderSkillChanged =
-      GameState.fortuneHandicaps &&
-      GameState.fortuneHandicaps.enemy_leader_skill_change;
-    if (isLeaderSkillChanged) {
-      if (enemyCharId === 'automata') {
-        leaderSkill = LEADER_SKILLS.last_battalion;
-      } else if (enemyCharId === 'valkyria') {
-        leaderSkill = LEADER_SKILLS.ragnarok;
-      }
-    }
+    // 運命の邂逅のリーダースキル（スキル変更およびSP補正適用済み）をモーダルに渡す
+    const leaderSkill = resolveLeaderSkill({
+      charId: enemyCharId,
+      isEnemy: true,
+      gameMode: GameState.gameMode,
+      fortuneHandicaps: GameState.fortuneHandicaps,
+    });
 
     if (window.showEnemyDeckModal) {
       window.showEnemyDeckModal(deckIds, titleText, leaderSkill);

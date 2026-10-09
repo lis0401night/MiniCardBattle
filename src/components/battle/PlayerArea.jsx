@@ -2,6 +2,7 @@ import { GameState } from '../../state/gameState.js';
 import {
   getSkinImage,
   getIconFramePath,
+  getLeaderNameStyle,
 } from '../../utils/constants/characters.js';
 import {
   MAX_DISCARD_PREVIEW_COUNT,
@@ -87,13 +88,20 @@ export default function PlayerArea({
           痛い！
         </div>
         <div className="player-status">
-          <div
-            className="status-name"
-            id="player-name"
-            style={{ color: 'var(--color-blue)' }}
-          >
-            {playerConfig.displayName || playerConfig.name}
-          </div>
+          {(() => {
+            const playerNameText =
+              playerConfig.displayName || playerConfig.name || '';
+            const playerNameStyle = getLeaderNameStyle(playerNameText);
+            return (
+              <div
+                className="status-name"
+                id="player-name"
+                style={{ color: 'var(--color-blue)', ...playerNameStyle }}
+              >
+                {playerNameText}
+              </div>
+            );
+          })()}
           <div className="hp-bar-bg">
             <div
               className="hp-bar-fill blue"

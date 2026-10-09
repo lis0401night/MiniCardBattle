@@ -186,6 +186,29 @@ function CardPreviewContent({
     }
   }
 
+  // シャイン・プレミアムのカスタマイズ切替ボタン（🌟/✨）は、
+  // デッキ編成画面およびカード一覧画面でのみ表示を許可する（対戦中・盤面確認・手札確認等では非表示）
+  const isDeckEditContext =
+    Boolean(styleProps.fromDeckEdit) ||
+    (typeof document !== 'undefined' &&
+      !!document.getElementById('screen-deck-edit')?.classList.contains('active'));
+  const isCardListContext =
+    Boolean(styleProps.fromCardList) ||
+    (typeof document !== 'undefined' &&
+      !!document.getElementById('screen-card-list')?.classList.contains('active'));
+  const isBattleContext =
+    GameState.isInBattle ||
+    styleProps.isBoard !== undefined ||
+    card.owner === 'blue' ||
+    card.owner === 'red' ||
+    (typeof document !== 'undefined' &&
+      !!document.getElementById('screen-battle')?.classList.contains('active'));
+
+  const canToggleCustomization =
+    (isDeckEditContext || isCardListContext) &&
+    !isBattleContext &&
+    !card.owner;
+
   /**
    * カードのスキルタグ要素を安全にレンダリングする。
    *
@@ -1253,6 +1276,7 @@ function CardPreviewContent({
           {styleProps.showPreviewActions &&
             isRevealed &&
             isStandardCard &&
+            canToggleCustomization &&
             card.owner !== 'red' && (
               <button
                 className="btn"
@@ -1277,6 +1301,7 @@ function CardPreviewContent({
           {styleProps.showPreviewActions &&
             isRevealed &&
             isPremiumUnlocked &&
+            canToggleCustomization &&
             card.owner !== 'red' && (
               <button
                 className="btn"

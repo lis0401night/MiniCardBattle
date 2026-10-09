@@ -1642,10 +1642,14 @@ export function getLeaderDisplayNameInfo(charObj, skinId = 'default') {
     return { subtitle: '不明', name: 'Unknown', fullName: '不明 Unknown' };
   }
 
-  // 1. ベースキャラクター定義の取得
-  const baseChar =
-    charObj.id && CHARACTERS[charObj.id] ? CHARACTERS[charObj.id] : charObj;
-  const rawBaseName = baseChar.name || charObj.name || '';
+  // 1. ベースキャラクター定義の取得（動的ID dungeon_boss_* に対応するため charId / leaderCardId も参照）
+  const masterId =
+    charObj.charId || charObj.leaderCardId || charObj.id || null;
+  const masterChar = masterId && CHARACTERS[masterId] ? CHARACTERS[masterId] : null;
+  const baseChar = masterChar || charObj;
+
+  // 正式なベース名称（CHARACTERSマスタを最優先し、汚染された二つ名単体の混入を防ぐ）
+  const rawBaseName = masterChar?.name || charObj.name || baseChar.name || '';
   const baseParts = rawBaseName.split(' ');
   const defaultSubtitle = baseParts.length >= 2 ? baseParts[0] : '';
   const defaultCharName =
@@ -1666,7 +1670,9 @@ export function getLeaderDisplayNameInfo(charObj, skinId = 'default') {
     charObj.skins?.[skinId] ||
     // 高難易度スキン等のキー揺らぎ（例: skinId が 'high' の場合に 'knight_high' を参照）
     baseChar.skins?.[`${baseChar.id}_${skinId}`] ||
-    charObj.skins?.[`${charObj.id}_${skinId}`];
+    charObj.skins?.[`${charObj.id}_${skinId}`] ||
+    (masterId && baseChar.skins?.[`${masterId}_${skinId}`]) ||
+    (masterId && charObj.skins?.[`${masterId}_${skinId}`]);
 
   if (!skinDef) {
     // スキン定義が見つからない場合は通常スキン表示にフォールバック
@@ -1700,6 +1706,41 @@ export function getLeaderDisplayNameInfo(charObj, skinId = 'default') {
 }
 
 /**
+ * 名前の表示文字幅（全角=1、半角=0.55）に基づいて、1行に綺麗に収まり盤面エリアを圧迫しないフォントサイズスタイルを算出する。
+ * 文字の省略（text-overflow: ellipsis）を行わず、文字数が多い場合に相対単位（em）で滑らかにフォントサイズを縮小してフルネームを表示する。
+ *
+ * @param {string} [name=''] - 表示対象のキャラクター名またはプレイヤー名
+ * @returns {Object} React用のインラインスタイルオブジェクト（例: { fontSize: '0.82em' }）
+ */
+export function getLeaderNameStyle(name = '') {
+  if (!name || typeof name !== 'string') return {};
+
+  let visualLength = 0;
+  for (let i = 0; i < name.length; i++) {
+    const code = name.charCodeAt(i);
+    // 半角ASCIIおよび半角カタカナは幅0.55、その他（全角）は幅1.0として視覚的幅を算出
+    if (code <= 0x007f || (code >= 0xff61 && code <= 0xff9f)) {
+      visualLength += 0.55;
+    } else {
+      visualLength += 1.0;
+    }
+  }
+
+  // 視覚的文字幅が 13.5 以下（「ウェイブライダー マキナ」「水陸両用装備 アイギス」など通常の二つ名キャラクター）は
+  // 基本サイズ（1em）のままで十分な表示余白があるため縮小を行わない
+  if (visualLength <= 13.5) {
+    return {};
+  }
+
+  // 14文字以上の非常に長いプレイヤー名等の場合のみ、過度に小さくならないよう緩やかに微調整（下限 0.80em 保証）
+  // スマホ画面でも文字が豆粒にならず、クッキリと視認できる可読性を維持する
+  const scale = Math.max(0.8, 1 - (visualLength - 13.5) * 0.03);
+  return {
+    fontSize: `${Math.round(scale * 100) / 100}em`,
+  };
+}
+
+/**
  * ローカルストレージ（mini_card_battle_player_skins）に保存されているプレイヤーのキャラクター別スキンIDを取得する。
  * 会話ダイアログやバトル初期化において、GameState.playerSkins に未ロードの場合のフォールバックとして使用される。
  *
@@ -1721,6 +1762,7 @@ export function getStoredPlayerSkinId(charId) {
 /**
  * 指定した対戦者のConfigへ、選択中スキンの画像・敗北画像・アイコン・名前・台詞等を包括的に適用する。
  * スキンの二つ名・名前・フルネーム（例: 'ギルドの暗殺者 レダ'）および専用台詞・前口上・ミラー口上を注入する。
+ * ※リーダースキルは resolveLeaderSkill ユーティリティにより一元決定・管理されるため、本関数内での上書きは行わない。
  *
  * @param {Object} config - GameState.playerConfig または GameState.enemyConfig
  * @param {Object|string} [skinMapOrSkinId] - GameState.playerSkins / GameState.enemySkins オブジェクト、または単一のスキンID文字列
@@ -1770,11 +1812,4 @@ export function applySkinToConfig(config, skinMapOrSkinId) {
   // 同キャラ対戦用口上（未定義時は汎用セリフへフォールバックし undefined の混入を防止）
   const baseMirrorIntro = charObj.mirrorIntro || 'なっ、自分自身だと……！？';
   config.mirrorIntro = skinDef?.mirrorIntro || baseMirrorIntro;
-
-  // スキン固有のリーダースキルの適用（例: レダスキンの「死の標的」）、ない場合はベースのリーダースキルへ復元
-  if (skinDef?.leaderSkill) {
-    config.leaderSkill = skinDef.leaderSkill;
-  } else if (charObj.leaderSkill) {
-    config.leaderSkill = charObj.leaderSkill;
-  }
 }

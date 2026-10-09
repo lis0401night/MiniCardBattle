@@ -124,10 +124,16 @@ export default function MatchingScreen({
   };
 
   // リーダースキン設定時はスキンの二つ名 + スキン対応名（例: ギルドの暗殺者 レダ、暗黒騎士 セレスティア等）を取得
-  const playerSkinId = GameState.playerSkins?.[player.id] || 'default';
+  const playerSkinId =
+    GameState.playerSkins?.[player.id] ||
+    (player.charId && GameState.playerSkins?.[player.charId]) ||
+    player.currentSkin ||
+    'default';
   const enemySkinId =
     testEnemySkinId ||
     GameState.enemySkins?.[enemy.id] ||
+    (enemy.charId && GameState.enemySkins?.[enemy.charId]) ||
+    enemy.currentSkin ||
     enemy.skin ||
     'default';
 

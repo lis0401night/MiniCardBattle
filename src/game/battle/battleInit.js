@@ -55,7 +55,7 @@ import {
   CHAR_FORTUNE_HANDICAPS,
   HANDICAP_TYPES,
 } from '../../utils/constants/fortuneHandicaps.js';
-import { LEADER_SKILLS } from '../../utils/constants/leaderSkills.js';
+import { resolveLeaderSkill } from '../../utils/leaderSkillUtils.js';
 import {
   STAGES,
   resolveBattleStageId,
@@ -791,6 +791,39 @@ export function initBattleState() {
       applySkinToConfig(GameState.enemyConfig, GameState.enemySkins);
     }
 
+    // --- リーダースキルの決定・解決（5大原則の一元管理） ---
+    // 実際に画面適用されたスキン（currentSkin）を基準にスキルを決定（チュートリアル・ストーリー等のデフォルト強制と完全同期）
+    // マスタ直接参照（GameState.playerConfig === CHARACTERS[...]）時のマスタ汚染を防ぐためシャローコピーで代入
+    const playerSkinId = GameState.playerConfig?.currentSkin || 'default';
+    GameState.playerConfig = {
+      ...GameState.playerConfig,
+      leaderSkill: resolveLeaderSkill({
+        charId: GameState.playerConfig,
+        skinId: playerSkinId,
+        isEnemy: false,
+        gameMode: GameState.gameMode,
+        fortuneHandicaps: GameState.fortuneHandicaps,
+        cardMaster: null,
+        customLeaderSkill: GameState.playerConfig?.leaderSkill,
+      }),
+    };
+
+    // 敵側リーダースキル（実際に適用されたスキン基準・マスタ汚染防止）
+    const enemySkinId = GameState.enemyConfig?.currentSkin || 'default';
+    GameState.enemyConfig = {
+      ...GameState.enemyConfig,
+      leaderSkill: resolveLeaderSkill({
+        charId: GameState.enemyConfig,
+        skinId: enemySkinId,
+        isEnemy: true,
+        gameMode: GameState.gameMode,
+        isHighBoss: Boolean(GameState.enemyConfig?.isHighBoss),
+        fortuneHandicaps: GameState.fortuneHandicaps,
+        cardMaster: null,
+        customLeaderSkill: GameState.enemyConfig?.leaderSkill,
+      }),
+    };
+
     let fortuneHPPlayerMod = 0;
     let fortuneHPEnemyMod = 0;
 
@@ -804,50 +837,7 @@ export function initBattleState() {
         .replace('_fortune', '');
       const handicapsList = CHAR_FORTUNE_HANDICAPS[enemyCharId] || [];
 
-      // 【コンティニュー時等のSP累積加減算バグ対策】
-      // savedPlayerProps/savedEnemyPropsの復元により、過去に特級目標で補正された状態のleaderSkillが退避・復元されている場合がある。
-      // 二重計算（累積減算・加算）を防ぐため、ハンディキャップ計算直前にマスターデータから未補正のベース定義をクリーンに復元する。
-      if (
-        GameState.playerConfig &&
-        GameState.playerConfig.id &&
-        CHARACTERS[GameState.playerConfig.id]?.leaderSkill
-      ) {
-        GameState.playerConfig.leaderSkill = JSON.parse(
-          JSON.stringify(CHARACTERS[GameState.playerConfig.id].leaderSkill)
-        );
-      }
-      if (
-        GameState.enemyConfig &&
-        GameState.enemyConfig.id &&
-        CHARACTERS[GameState.enemyConfig.id]?.leaderSkill
-      ) {
-        GameState.enemyConfig.leaderSkill = JSON.parse(
-          JSON.stringify(CHARACTERS[GameState.enemyConfig.id].leaderSkill)
-        );
-      }
-
-      // 1. 最優先でリーダースキル変更を適用
-      handicapsList.forEach((h) => {
-        if (!GameState.fortuneHandicaps[h.id]) return;
-
-        if (h.type === HANDICAP_TYPES.ENEMY_LEADER_SKILL_CHANGE) {
-          if (GameState.enemyConfig.id === 'automata') {
-            GameState.enemyConfig = {
-              ...GameState.enemyConfig,
-              // マスターデータを単一の情報源とし、定義の二重管理を避ける
-              leaderSkill: { ...LEADER_SKILLS.last_battalion },
-            };
-          } else if (GameState.enemyConfig.id === 'valkyria') {
-            GameState.enemyConfig = {
-              ...GameState.enemyConfig,
-              // マスターデータを単一の情報源とし、定義の二重管理を避ける
-              leaderSkill: { ...LEADER_SKILLS.ragnarok },
-            };
-          }
-        }
-      });
-
-      // 2. その他の変更（SP・HP等）を適用
+      // HP補正のみを適用（リーダースキル変更・SP補正は resolveLeaderSkill にて解決済み）
       handicapsList.forEach((h) => {
         if (!GameState.fortuneHandicaps[h.id]) return;
 
@@ -855,39 +845,6 @@ export function initBattleState() {
           fortuneHPPlayerMod += h.value;
         } else if (h.type === HANDICAP_TYPES.ENEMY_HP) {
           fortuneHPEnemyMod += h.value;
-        } else if (h.type === HANDICAP_TYPES.PLAYER_SP) {
-          if (GameState.playerConfig.leaderSkill) {
-            const nextCost = GameState.playerConfig.leaderSkill.cost + h.value;
-            GameState.playerConfig = {
-              ...GameState.playerConfig,
-              leaderSkill: {
-                ...GameState.playerConfig.leaderSkill,
-                cost: nextCost,
-                desc: GameState.playerConfig.leaderSkill.desc?.replace(
-                  /\(SP:\d+\)/,
-                  `(SP:${nextCost})`
-                ),
-              },
-            };
-          }
-        } else if (h.type === HANDICAP_TYPES.ENEMY_SP) {
-          if (GameState.enemyConfig.leaderSkill) {
-            const nextCost = Math.max(
-              1,
-              GameState.enemyConfig.leaderSkill.cost + h.value
-            );
-            GameState.enemyConfig = {
-              ...GameState.enemyConfig,
-              leaderSkill: {
-                ...GameState.enemyConfig.leaderSkill,
-                cost: nextCost,
-                desc: GameState.enemyConfig.leaderSkill.desc?.replace(
-                  /\(SP:\d+\)/,
-                  `(SP:${nextCost})`
-                ),
-              },
-            };
-          }
         }
       });
     }
@@ -919,44 +876,6 @@ export function initBattleState() {
         GameState.enemyMaxHP = eRarity === 1 ? 10 : eRarity === 2 ? 15 : 20;
       } else {
         GameState.enemyMaxHP = GameState.enemyConfig.hp || 20;
-      }
-
-      // リーダースキルのSP要件も、汎用モンスターのみレアリティで決定（一律4ターン＝SP:4に固定）
-      if (
-        GameState.playerConfig &&
-        GameState.playerConfig.leaderSkill &&
-        GameState.playerConfig.leaderSkill.action === 'dungeon_summon_leader'
-      ) {
-        GameState.playerConfig = {
-          ...GameState.playerConfig,
-          leaderSkill: { ...GameState.playerConfig.leaderSkill },
-        };
-        GameState.playerConfig.leaderSkill.cost = 4;
-        if (GameState.playerConfig.leaderSkill.desc) {
-          GameState.playerConfig.leaderSkill.desc =
-            GameState.playerConfig.leaderSkill.desc.replace(
-              /\(SP:\d+\)/,
-              '(SP:4)'
-            );
-        }
-      }
-      if (
-        GameState.enemyConfig &&
-        GameState.enemyConfig.leaderSkill &&
-        GameState.enemyConfig.leaderSkill.action === 'dungeon_summon_leader'
-      ) {
-        GameState.enemyConfig = {
-          ...GameState.enemyConfig,
-          leaderSkill: { ...GameState.enemyConfig.leaderSkill },
-        };
-        GameState.enemyConfig.leaderSkill.cost = 4;
-        if (GameState.enemyConfig.leaderSkill.desc) {
-          GameState.enemyConfig.leaderSkill.desc =
-            GameState.enemyConfig.leaderSkill.desc.replace(
-              /\(SP:\d+\)/,
-              '(SP:4)'
-            );
-        }
       }
 
       GameState.playerHP =

@@ -10,6 +10,7 @@ import {
 } from './characters.js';
 import { AI_LEVEL } from './config.js';
 import { ENEMY_DECKS } from './enemy_decks.js';
+import { resolveLeaderSkill } from '../leaderSkillUtils.js';
 
 // 試練の宮殿の敵・レンタル候補から除外するリーダーID
 const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
@@ -334,8 +335,11 @@ export const generateCharacterBossEnemy = (floorNum) => {
     // 通常ボス: 水着スキンがあれば適用する
     if (char.skins && char.skins.summer) {
       const skin = char.skins.summer;
+      const displayInfo = getLeaderDisplayNameInfo(char, 'summer');
       bossData = {
         ...bossData,
+        name: displayInfo.fullName,
+        displayName: displayInfo.fullName,
         image: skin.image || bossData.image,
         imageLose: skin.imageLose || bossData.imageLose,
         icon: skin.icon || bossData.icon,
@@ -450,17 +454,26 @@ export const hydrateDungeonOpponent = (opp) => {
     const isHighBossFlag = Boolean(opp.isHighBoss);
     const highConfig =
       isHighBossFlag && charMaster.event_high ? charMaster.event_high : null;
+    const displayInfo = getLeaderDisplayNameInfo(charMaster, skinId);
 
     return {
       ...charMaster,
       ...opp,
       name:
-        opp.name ||
         (highConfig && highConfig.name) ||
-        (skinObj && skinObj.name) ||
+        (opp.name && opp.name !== skinObj?.name ? opp.name : null) ||
+        displayInfo.fullName ||
         charMaster.name,
-      leaderSkill:
-        (highConfig && highConfig.leaderSkill) || charMaster.leaderSkill,
+      displayName:
+        (highConfig && highConfig.name) || displayInfo.fullName || charMaster.name,
+      leaderSkill: resolveLeaderSkill({
+        charId: opp.charId || leaderId,
+        skinId: skinId,
+        isEnemy: true,
+        gameMode: 'dungeon',
+        isHighBoss: isHighBossFlag,
+        customLeaderSkill: opp.leaderSkill,
+      }),
       rarity: opp.rarity || charMaster.rarity || 4,
       image: skinImg,
       icon: skinIcon,
@@ -490,12 +503,14 @@ export const hydrateDungeonOpponent = (opp) => {
         `assets/cards/card_${cardMaster.id}.webp`,
       desc: cardMaster.desc || '',
       color: opp.color || '#dc2626',
-      leaderSkill: opp.leaderSkill || {
-        name: `${cardMaster.name}の召喚`,
-        desc: `(SP:4) 自分のレーンに「${cardMaster.name}(P:${cardMaster.power})」を1体召喚する。`,
-        cost: 4,
-        action: 'dungeon_summon_leader',
-      },
+      leaderSkill: resolveLeaderSkill({
+        charId: leaderId || opp.leaderCardId,
+        isEnemy: true,
+        gameMode: 'dungeon',
+        isMobLeader: true,
+        cardMaster: cardMaster,
+        customLeaderSkill: opp.leaderSkill,
+      }),
       preBattleLine:
         opp.preBattleLine ||
         dialogueData?.preBattleLine ||
@@ -526,14 +541,8 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
         getSkinImage(templateChar, skinId, 'image')) ||
       templateChar.image;
 
-    // スキン変更時のスキル差分および対戦中セリフ (dialogue) のマージ処理
-    let activeLeaderSkill = templateChar.leaderSkill;
     const skinObj =
       skinId && templateChar.skins ? templateChar.skins[skinId] : null;
-    if (skinObj?.leaderSkill) {
-      activeLeaderSkill = { ...activeLeaderSkill, ...skinObj.leaderSkill };
-    }
-
     const dialogueData = getDungeonCharacterDialogue(id, savedConfig);
     const mergedDialogue = skinObj?.dialogue
       ? { ...templateChar.dialogue, ...skinObj.dialogue }
@@ -547,7 +556,13 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       id: id,
       name: displayInfo.fullName,
       displayName: displayInfo.fullName,
-      leaderSkill: activeLeaderSkill ? { ...activeLeaderSkill } : null,
+      leaderSkill: resolveLeaderSkill({
+        charId: id,
+        skinId: skinId,
+        isEnemy: false,
+        gameMode: 'dungeon',
+        customLeaderSkill: savedConfig?.leaderSkill,
+      }),
       icon: skinIcon ? skinIcon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp') : '',
       image: skinImg
         ? skinImg.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp')
@@ -577,13 +592,6 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       cardMaster.image ||
       `assets/cards/card_${cardMaster.id}.webp`;
 
-    const defaultLeaderSkill = {
-      name: `${cardMaster.name}の召喚`,
-      desc: `(SP:4) 自分のレーンに「${cardMaster.name}(P:${cardMaster.power})」を1体召喚する。`,
-      cost: 4,
-      action: 'dungeon_summon_leader',
-    };
-
     const dialogueData = getDungeonCharacterDialogue(
       cardMaster.id,
       savedConfig
@@ -597,7 +605,14 @@ export const hydratePlayerConfig = (charId, savedConfig, playerSkins) => {
       rarity: savedConfig?.rarity || cardMaster.rarity || 1,
       icon: icon.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
       image: image.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp'),
-      leaderSkill: savedConfig?.leaderSkill || defaultLeaderSkill,
+      leaderSkill: resolveLeaderSkill({
+        charId: cardMaster.id,
+        isEnemy: false,
+        gameMode: 'dungeon',
+        isMobLeader: true,
+        cardMaster: cardMaster,
+        customLeaderSkill: savedConfig?.leaderSkill,
+      }),
       // モブカードリーダー用の対戦中セリフを解決
       dialogue: savedConfig?.dialogue || dialogueData?.dialogue || {},
     };

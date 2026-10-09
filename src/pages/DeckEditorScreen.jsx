@@ -453,7 +453,7 @@ export default function DeckEditorScreen({ switchScreen }) {
     holdTimerRef.current = setTimeout(() => {
       hasLongPressedRef.current = true;
       playSound?.(SOUNDS?.seClick);
-      openCardPreview?.(card);
+      openCardPreview?.(card, { fromDeckEdit: true });
       holdTimerRef.current = null;
     }, 500);
   };
