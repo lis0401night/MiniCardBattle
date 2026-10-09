@@ -359,8 +359,15 @@ export default function BattleScreen() {
       }
 
       // 既存カードがあるレーンへの召喚時の確認モーダル（起動・合体・装備・破棄を共通関数で一元管理）
+      // ※ 手札プレイの確認は playCard アクション送信前に自端末だけで完結し、相手端末は確認を待たないため、
+      //    オンライン同期（syncRemote）は無効にする（送信すると相手側で不要な選択データとして残るため）
       if (GameState.playerBoard[lane] !== null) {
-        const confirmed = await confirmOverwrittenLane('blue', newCard, lane);
+        const confirmed = await confirmOverwrittenLane(
+          'blue',
+          newCard,
+          lane,
+          false
+        );
         if (!confirmed) return;
       }
 

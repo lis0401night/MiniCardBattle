@@ -232,35 +232,26 @@ export function checkIsBattlePassUnlocked(passId) {
 }
 
 /**
- * バトルパスを解放してLocalStorageに保存する
- * @param {string} passId - 解放するバトルパスID
- * @returns {boolean} 新規に解放された場合はtrue、既に解放済みの場合はfalse
+ * 現在のクイックマッチレートを取得する
+ * @returns {number} 現在のレート数値
  */
-export function unlockBattlePass(passId) {
-  if (!passId) return false;
-  const current = getUnlockedBattlePasses();
-  if (current.includes(passId)) return false;
-
-  const next = [...current, passId];
-  localStorage.setItem(UNLOCKED_BATTLE_PASSES_KEY, JSON.stringify(next));
-  return true;
-}
-
-/**
- * 指定したバトルパスの現在蓄積ポイントを取得する
- * @param {string} passId - バトルパスID
- * @returns {number} 現在のバトルパスポイント
- */
-export function getBattlePassPoints(passId) {
-  if (!passId) return 0;
+export function getQuickRating() {
   try {
-    const raw = localStorage.getItem(
-      `${BATTLE_PASS_POINTS_KEY_PREFIX}${passId}`
-    );
+    const raw = localStorage.getItem(QUICK_RATING_KEY);
     return raw !== null ? parseInt(raw, 10) || 0 : 0;
   } catch {
     return 0;
   }
+}
+
+/**
+ * クイックマッチレートを設定・保存する
+ * @param {number} rating - 設定するレート数値
+ * @returns {void}
+ */
+export function setQuickRating(rating) {
+  const safeRating = Math.max(0, Math.floor(Number(rating) || 0));
+  localStorage.setItem(QUICK_RATING_KEY, String(safeRating));
 }
 
 /**
@@ -284,26 +275,86 @@ export function setBattlePassPoints(passId, points) {
 }
 
 /**
- * 現在のクイックマッチレートを取得する
- * @returns {number} 現在のレート数値
+ * 指定したバトルパスのポイントを現在のクイックマッチレートと比較し、
+ * レートの値がバトルパスのポイントを上回っている場合のみ、バトルパスの値をレートに合わせて引き上げて保存します。
+ * 【絶対厳守】現在のレートがバトルパスポイントを下回っている場合、バトルパスの値を減らす処理は一切行いません。
+ *
+ * 【注意：新シーズン（S2等）追加時】
+ * レートは対戦開始以来の累計値であり、本同期は解放済みの全バトルパスに一律で適用される。
+ * そのまま新シーズンのバトルパスを追加すると、解放した瞬間に累計レート分（maxPoints上限）が付与されてしまうため、
+ * 新シーズン追加と同時に「解放時点のレートを基準値として保存し、差分をポイントとする」等のリセット方式を実装すること。
+ *
+ * @param {string} passId - 対象のバトルパスID
+ * @returns {number} 同期後のバトルパスポイント
  */
-export function getQuickRating() {
+export function syncBattlePassPointsWithRating(passId) {
+  if (!passId) return 0;
   try {
-    const raw = localStorage.getItem(QUICK_RATING_KEY);
-    return raw !== null ? parseInt(raw, 10) || 0 : 0;
+    const raw = localStorage.getItem(
+      `${BATTLE_PASS_POINTS_KEY_PREFIX}${passId}`
+    );
+    const curPts = raw !== null ? parseInt(raw, 10) || 0 : 0;
+    const rating = getQuickRating();
+
+    // レートがバトルパスの値を上回っている場合のみ引き上げる（下回っていても減算しない）
+    if (rating > curPts) {
+      const pass = getBattlePassById(passId);
+      const maxPts = pass?.maxPoints ?? Infinity;
+      const syncedPts = Math.min(maxPts, rating);
+      localStorage.setItem(
+        `${BATTLE_PASS_POINTS_KEY_PREFIX}${passId}`,
+        String(syncedPts)
+      );
+      return syncedPts;
+    }
+    return curPts;
   } catch {
     return 0;
   }
 }
 
 /**
- * クイックマッチレートを設定・保存する
- * @param {number} rating - 設定するレート数値
- * @returns {void}
+ * 解放済みのすべてのバトルパスについて、現在のレート値と比較してポイントを引き上げ・同期します。
+ * レートが下回っているバトルパスのポイントを減らす処理は行いません。
+ *
+ * @returns {Array<{ id: string, points: number }>} 同期後の各バトルパスIDとポイント配列
  */
-export function setQuickRating(rating) {
-  const safeRating = Math.max(0, Math.floor(Number(rating) || 0));
-  localStorage.setItem(QUICK_RATING_KEY, String(safeRating));
+export function syncAllBattlePassesWithRating() {
+  const unlockedPassIds = getUnlockedBattlePasses();
+  return unlockedPassIds.map((passId) => ({
+    id: passId,
+    points: syncBattlePassPointsWithRating(passId),
+  }));
+}
+
+/**
+ * バトルパスを解放してLocalStorageに保存する。
+ * 解放と同時に、蓄積済みのクイックマッチレートが存在する場合はバトルパスポイントへ即座に反映・底上げします。
+ * @param {string} passId - 解放するバトルパスID
+ * @returns {boolean} 新規に解放された場合はtrue、既に解放済みの場合はfalse
+ */
+export function unlockBattlePass(passId) {
+  if (!passId) return false;
+  const current = getUnlockedBattlePasses();
+  if (current.includes(passId)) return false;
+
+  const next = [...current, passId];
+  localStorage.setItem(UNLOCKED_BATTLE_PASSES_KEY, JSON.stringify(next));
+
+  // 解放時に現在のレートがバトルパスを上回っていれば自動的に引き上げ・同期
+  syncBattlePassPointsWithRating(passId);
+  return true;
+}
+
+/**
+ * 指定したバトルパスの現在蓄積ポイントを取得する。
+ * 現在のレートがバトルパスポイントを上回っている場合は、自動的にレートの値まで引き上げて同期します。
+ * （レートが下回っている場合でも減算処理は行われません）
+ * @param {string} passId - バトルパスID
+ * @returns {number} 現在のバトルパスポイント（レート底上げ同期済み）
+ */
+export function getBattlePassPoints(passId) {
+  return syncBattlePassPointsWithRating(passId);
 }
 
 /**

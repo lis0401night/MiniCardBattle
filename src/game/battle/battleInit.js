@@ -100,10 +100,10 @@ import {
   generateSyncState,
   resetQueueProcessing,
   sendSyncStateNow,
-  setPendingChoiceResolver,
   setLastProcessedActionKey,
   getLastProcessedActionKey,
 } from './battleQueue.js';
+import { resetOnlineChoiceSync } from './onlineChoiceSync.js';
 import { checkWinCondition } from './battleResult.js';
 import { waitPlayerHandSelection } from './battleSelection.js';
 import { endTurnLogic, startTurn } from './battleTurn.js';
@@ -1054,7 +1054,8 @@ export function initBattleState() {
     GameState.isDiscardingExact = false;
 
     // --- グローバルコールバック・リゾルバの確実なリセット ---
-    setPendingChoiceResolver(null);
+    // オンライン選択同期（受信キュー・待機中の選択・選択の順番カウンタ）を初期化
+    resetOnlineChoiceSync();
     // 前回バトルの残留リスナー（リタイア・切断・例外で cleanUp に到達しなかった分）を一括解除する
     battleEvents.clearAll();
     window.finishHandSelection = null;

@@ -20,7 +20,10 @@ import {
   resolveFortuneMaxCostAutomata,
   savePointsToServer,
 } from '../../utils/apiUtils.js';
-import { QUICK_RATING_KEY } from '../../utils/constants/battlePass.js';
+import {
+  QUICK_RATING_KEY,
+  syncAllBattlePassesWithRating,
+} from '../../utils/constants/battlePass.js';
 import { SOUNDS } from '../../utils/sounds.js';
 import {
   CHALLENGE_POINTS_KEY,
@@ -174,6 +177,7 @@ export default function RankingScreen({
               myData.quick_rating = mergedRating;
               if (localQuickRating < mergedRating) {
                 localStorage.setItem(QUICK_RATING_KEY, String(mergedRating));
+                syncAllBattlePassesWithRating();
               } else if (localQuickRating > serverQuickRating) {
                 savePointsToServer(
                   'update_quick_rating.php',

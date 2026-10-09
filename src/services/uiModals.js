@@ -67,6 +67,24 @@ export function showConfirmModal(
   }
 }
 
+export let closeConfirmModalHook = null;
+/**
+ * 確認ダイアログを閉じるフックを登録する（GlobalModals.jsx から登録される）
+ * @param {Function|null} h - 確認ダイアログを閉じる関数
+ * @returns {void}
+ */
+export function setCloseConfirmModalHook(h) {
+  closeConfirmModalHook = h;
+}
+/**
+ * 表示中の確認ダイアログをコールバックを呼ばずに閉じる。
+ * オンライン対戦の制限時間切れで、呼び出し側が既定の回答で処理を進める場合に使用する。
+ * @returns {void}
+ */
+export function closeConfirmModal() {
+  if (closeConfirmModalHook) closeConfirmModalHook();
+}
+
 /**
  * GlobalModals 未マウント時の window.alert フォールバック共通処理
  * window.alert はメインスレッドを同期ブロックするため、事前にBGMを停止する

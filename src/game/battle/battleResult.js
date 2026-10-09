@@ -8,10 +8,8 @@ import {
   triggerFinishVisuals,
   updateBattleUIHook,
 } from '../../services/uiBattle.js';
-import {
-  dispatchBattleAction,
-  setPendingChoiceResolver,
-} from './battleQueue.js';
+import { dispatchBattleAction } from './battleQueue.js';
+import { resetOnlineChoiceSync } from './onlineChoiceSync.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import {
   checkIsBattleRewardEligible,
@@ -1111,7 +1109,8 @@ export function cleanupBattleState() {
   GameState.isDiscardingExact = false;
 
   // 3. グローバルコールバック・リゾルバ・イベントリスナーの解除
-  setPendingChoiceResolver(null);
+  // オンライン選択同期（受信キュー・待機中の選択・選択の順番カウンタ）を初期化
+  resetOnlineChoiceSync();
   battleEvents.clearAll();
   window.finishHandSelection = null;
   window.handlePlacementLaneClick = null;

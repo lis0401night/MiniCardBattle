@@ -32,23 +32,29 @@ import {
   renderHand,
   updateCardDetail,
 } from '../../services/uiBattle.js';
-import { sendOnlineAction } from '../../services/multiplayer.js';
 import {
   AI_THINKING_DURATION,
   PLACEMENT_CONFIRM_DELAY_MS,
 } from '../../utils/constants/config.js';
-import { showAlertModal, showConfirmModal } from '../../services/uiModals.js';
+import {
+  closeConfirmModal,
+  showAlertModal,
+  showConfirmModal,
+} from '../../services/uiModals.js';
 import { consumeAIAction } from './battleCombat.js';
 import {
-  pendingChoiceResolver,
-  setPendingChoiceResolver,
-} from './battleQueue.js';
+  CHOICE_KIND,
+  resolveRemoteChoiceWait,
+  submitLocalChoice,
+  waitRemoteChoice,
+} from './onlineChoiceSync.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import { startOnlineTimer, stopOnlineTimer } from './onlineTimer.js';
 import {
   checkIsOnlineTimerEnabled,
   ONLINE_TIMER_MULLIGAN_SEC,
   ONLINE_TIMER_FAILSAFE_MARGIN_MS,
+  ONLINE_OVERWRITE_CONFIRM_TIMEOUT_RESULT,
 } from '../../utils/constants/onlineTimer.js';
 import { BATTLE_PHASE } from './phases/phaseTypes.js';
 
@@ -253,24 +259,16 @@ export async function waitPlayerLaneSelection(
       type: 'choice',
       owner: 'red',
       onFailsafeTimeout: () => {
-        if (pendingChoiceResolver) {
-          const resolver = pendingChoiceResolver;
-          setPendingChoiceResolver(null);
-          // フェイルセーフタイムアウト（相手の応答途絶）時：
-          // キャンセル不可なら送信側と同一の決定論的補完を行い、キャンセル可能なら空で解決
-          const fallback = !canCancel
-            ? fillRemainingPlacementLanes([], count, placementCtx)
-            : [];
-          resolver(fallback);
-        }
+        // フェイルセーフタイムアウト（相手の応答途絶）時：
+        // キャンセル不可なら送信側と同一の決定論的補完を行い、キャンセル可能なら空で解決
+        const fallback = !canCancel
+          ? fillRemainingPlacementLanes([], count, placementCtx)
+          : [];
+        resolveRemoteChoiceWait(fallback);
       },
     });
 
-    const rawVal = await new Promise((resolve) => {
-      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
-        resolve(GameState.pendingChoices.shift());
-      else setPendingChoiceResolver(resolve);
-    });
+    const rawVal = await waitRemoteChoice(CHOICE_KIND.LANE);
 
     stopOnlineTimer();
 
@@ -573,14 +571,8 @@ export async function waitPlayerLaneSelection(
       battleEvents.off('PLACEMENT_LANE_CLICK', onPlacementLaneClick);
       updateCardDetail(null);
 
-      if (checkIsOnlineMode(GameState.gameMode)) {
-        // 送信先を同期
-        await sendOnlineAction({
-          type: 'submitChoice',
-          owner: 'blue',
-          choiceData: result,
-        });
-      }
+      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      await submitLocalChoice(CHOICE_KIND.LANE, result);
 
       if (updateBattleUIHook) updateBattleUIHook();
       return result;
@@ -732,85 +724,155 @@ export function canEquipCard(playingCard, targetCard) {
 }
 
 /**
- * 既存カードがあるレーンへの配置・移動・召喚時に、合体・装備・破棄の確認モーダルを表示します。
- * 状態の変更（カードの破棄など）は行いません。
- * 本関数は確認モーダルの表示のみを担当します。「伝説」「生贄」等の配置制約チェックは
- * 呼び出し元（waitPlayerLaneSelection / playCard）が既に完了させている前提です。
- * @param {string} owner - 'blue' | 'red'
- * @param {object} tokenCard - 配置しようとしているカード
- * @param {number} laneIndex - 配置先レーン
- * @returns {Promise<boolean>} 配置を続行してよいならtrue、キャンセルされたならfalse
+ * 上書き確認ダイアログに表示するメッセージを、既存カードと配置カードの関係から決定する。
+ * 判定の優先順位は「起動 → 合体 → 装備 → 通常の破棄配置」（playCard 等の実処理と同じ順序）。
+ * @param {object} existingCard - 配置先レーンに既に存在するカード
+ * @param {object|null} tokenCard - 配置しようとしているカード
+ * @returns {string} 確認ダイアログのメッセージ
  */
-export async function confirmOverwrittenLane(owner, tokenCard, laneIndex) {
-  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-  if (board[laneIndex] === null) return true;
-
-  const existingCard = board[laneIndex];
+function buildOverwriteConfirmMessage(existingCard, tokenCard) {
   const tokenName = tokenCard ? tokenCard.name : 'トークン';
 
-  // AI（owner !== 'blue'）の場合は、確認モーダルを出さずに自動的に承諾したものとして進行する
-  if (owner !== 'blue') {
-    return true;
-  }
-
-  // 0. 起動の判定 (合体や装備に優先して処理される)
-  if (existingCard && hasSkill(existingCard, 'startup')) {
-    const confirmed = await new Promise((res) => {
-      showConfirmModal(
-        `「${tokenName}」で「${existingCard.name}」を起動しますか？`,
-        () => res(true),
-        () => res(false)
-      );
-    });
-    if (!confirmed) return false;
-    return true;
+  // 0. 起動の判定（合体や装備に優先して処理される）
+  if (hasSkill(existingCard, 'startup')) {
+    return `「${tokenName}」で「${existingCard.name}」を起動しますか？`;
   }
 
   // 1. 合体の判定
-  let canUnion = false;
-  if (tokenCard) {
-    const unionSkill =
-      tokenCard.skills && tokenCard.skills.find((s) => s.id === 'union');
-    if (unionSkill && matchesUnionMaterial(existingCard, unionSkill)) {
-      canUnion = true;
-    }
-  }
-  if (canUnion) {
-    const confirmed = await new Promise((res) => {
-      showConfirmModal(
-        `「${existingCard.name}」と合体しますか？`,
-        () => res(true),
-        () => res(false)
-      );
-    });
-    if (!confirmed) return false;
-    return true;
+  const unionSkill =
+    tokenCard &&
+    tokenCard.skills &&
+    tokenCard.skills.find((s) => s.id === 'union');
+  if (unionSkill && matchesUnionMaterial(existingCard, unionSkill)) {
+    return `「${existingCard.name}」と合体しますか？`;
   }
 
   // 2. 装備の判定（共通ヘルパーcanEquipCardで憑依・反射等の制限を考慮して判定）
   if (canEquipCard(tokenCard, existingCard)) {
-    const confirmed = await new Promise((res) => {
-      showConfirmModal(
-        `「${existingCard.name}」に「${tokenName}」を装備しますか？`,
-        () => res(true),
-        () => res(false)
-      );
-    });
-    if (!confirmed) return false;
+    return `「${existingCard.name}」に「${tokenName}」を装備しますか？`;
+  }
+
+  // 3. 通常の破棄配置
+  return `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`;
+}
+
+/**
+ * 自分（blue）の上書き確認ダイアログを表示し、回答を待機する。
+ * オンライン対戦では制限時間（選択タイマー）を設け、時間切れ時はダイアログを閉じて既定の回答で確定する。
+ * @param {string} message - 確認ダイアログのメッセージ
+ * @param {boolean} useTimer - 選択タイマーを使用するか
+ * @returns {Promise<boolean>} 「はい」なら true、「いいえ」なら false
+ */
+function showOverwriteConfirmDialog(message, useTimer) {
+  return new Promise((resolve) => {
+    let isDone = false;
+    const finish = (result) => {
+      if (isDone) return;
+      isDone = true;
+      // 選択タイマーを停止（退避中のメインタイマーがあれば自動的に再開される）
+      if (useTimer) stopOnlineTimer();
+      resolve(result);
+    };
+
+    if (useTimer) {
+      startOnlineTimer({
+        type: 'choice',
+        owner: 'blue',
+        onTimeout: () => {
+          if (isDone) return;
+          closeConfirmModal();
+          finish(ONLINE_OVERWRITE_CONFIRM_TIMEOUT_RESULT);
+        },
+      });
+    }
+
+    showConfirmModal(
+      message,
+      () => finish(true),
+      () => finish(false)
+    );
+  });
+}
+
+/**
+ * 相手（red）が上書き確認ダイアログで選んだ回答を受信して返す（オンライン対戦専用）。
+ * 相手の応答が途絶えた場合は、相手側の時間切れと同じ既定の回答で確定する。
+ * @returns {Promise<boolean>} 相手の回答（続行なら true）
+ */
+async function waitRemoteOverwriteConfirm() {
+  startOnlineTimer({
+    type: 'choice',
+    owner: 'red',
+    onFailsafeTimeout: () => {
+      resolveRemoteChoiceWait(ONLINE_OVERWRITE_CONFIRM_TIMEOUT_RESULT);
+    },
+  });
+
+  const rawVal = await waitRemoteChoice(CHOICE_KIND.CONFIRM);
+
+  stopOnlineTimer();
+
+  // Firebase 経由で文字列化される可能性も考慮して真偽値に正規化する
+  if (rawVal === true || rawVal === 'true') return true;
+  if (rawVal === false || rawVal === 'false') return false;
+  console.warn(
+    '[online] 上書き確認の回答が不正なため既定の回答を適用します:',
+    rawVal
+  );
+  return ONLINE_OVERWRITE_CONFIRM_TIMEOUT_RESULT;
+}
+
+/**
+ * 既存カードがあるレーンへの配置・移動・召喚時に、起動・合体・装備・破棄の確認モーダルを表示します。
+ * 状態の変更（カードの破棄など）は行いません。
+ * 本関数は確認モーダルの表示のみを担当します。「伝説」「生贄」等の配置制約チェックは
+ * 呼び出し元（waitPlayerLaneSelection / playCard）が既に完了させている前提です。
+ *
+ * 【オンライン対戦での同期】
+ * 呼び出し元はレーン選択の確定後に本関数を呼び、「いいえ」なら選び直し・スキップ・中止を行う。
+ * 自分の回答を相手端末へ送信し、相手端末では実際の回答を受信して同じ分岐を辿らせることで、
+ * 「自分は選び直したのに相手端末では最初のレーンに配置された」といった盤面の乖離を防ぐ。
+ *
+ * @param {string} owner - 'blue' | 'red'
+ * @param {object} tokenCard - 配置しようとしているカード
+ * @param {number} laneIndex - 配置先レーン
+ * @param {boolean} [syncRemote=true] - オンライン対戦時に回答を相手端末と同期するか。
+ *   相手端末で同じ確認処理が実行されない呼び出し（手札からのプレイ前確認など）では false を指定する。
+ * @returns {Promise<boolean>} 配置を続行してよいならtrue、キャンセルされたならfalse
+ */
+export async function confirmOverwrittenLane(
+  owner,
+  tokenCard,
+  laneIndex,
+  syncRemote = true
+) {
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  if (board[laneIndex] === null) return true;
+
+  const existingCard = board[laneIndex];
+  const isOnlineSync = syncRemote && checkIsOnlineMode(GameState.gameMode);
+
+  if (owner !== 'blue') {
+    // オンライン対戦：相手プレイヤーが確認ダイアログで選んだ回答に従う
+    if (isOnlineSync) {
+      return waitRemoteOverwriteConfirm();
+    }
+    // AI の場合は、確認モーダルを出さずに自動的に承諾したものとして進行する
     return true;
   }
 
-  // 3. 通常の破棄配置の判定
-  const confirmed = await new Promise((res) => {
-    showConfirmModal(
-      `「${existingCard.name}」を破棄して「${tokenName}」を配置しますか？`,
-      () => res(true),
-      () => res(false)
-    );
-  });
-  if (!confirmed) return false;
+  const message = buildOverwriteConfirmMessage(existingCard, tokenCard);
+  const confirmed = await showOverwriteConfirmDialog(
+    message,
+    isOnlineSync && checkIsOnlineTimerEnabled(GameState.gameMode)
+  );
 
-  return true;
+  // 【オンライン同期】回答を相手端末へ送信し、相手端末でも同じ分岐（続行／選び直し／中止）を辿らせる
+  if (isOnlineSync) {
+    await submitLocalChoice(CHOICE_KIND.CONFIRM, confirmed);
+  }
+
+  return confirmed;
 }
 
 /**
@@ -856,24 +918,15 @@ export async function waitPlayerEnemyLaneSelection(
       type: 'choice',
       owner: 'red',
       onFailsafeTimeout: () => {
-        if (pendingChoiceResolver) {
-          const resolver = pendingChoiceResolver;
-          setPendingChoiceResolver(null);
-          // フェイルセーフタイムアウト時：キャンセル不可なら有効レーンから決定論的に補完
-          resolver(
-            !canCancel && validLanes.length > 0
-              ? validLanes.slice(0, count)
-              : []
-          );
-        }
+        // フェイルセーフタイムアウト時：キャンセル不可なら有効レーンから決定論的に補完
+        resolveRemoteChoiceWait(
+          !canCancel && validLanes.length > 0 ? validLanes.slice(0, count) : []
+        );
       },
     });
 
-    const rawVal = await new Promise((resolve) => {
-      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
-        resolve(GameState.pendingChoices.shift());
-      else setPendingChoiceResolver(resolve);
-    });
+    // 【オンライン同期】現在アクション内の順番・種類（相手レーン選択）が一致する選択のみ受け取る
+    const rawVal = await waitRemoteChoice(CHOICE_KIND.ENEMY_LANE);
 
     stopOnlineTimer();
 
@@ -1025,13 +1078,8 @@ export async function waitPlayerEnemyLaneSelection(
       const result = [...GameState.targetSelectedLanes];
       cleanUp();
 
-      if (checkIsOnlineMode(GameState.gameMode)) {
-        await sendOnlineAction({
-          type: 'submitChoice',
-          owner: 'blue',
-          choiceData: result,
-        });
-      }
+      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      await submitLocalChoice(CHOICE_KIND.ENEMY_LANE, result);
 
       if (updateBattleUIHook) updateBattleUIHook();
       resolve(result);
@@ -1083,23 +1131,17 @@ export async function waitPlayerAlliedLaneSelection(
       type: 'choice',
       owner: 'red',
       onFailsafeTimeout: () => {
-        if (pendingChoiceResolver) {
-          const resolver = pendingChoiceResolver;
-          setPendingChoiceResolver(null);
-          resolver(
-            !canCancel && occupiedLanes.length > 0
-              ? occupiedLanes.slice(0, count)
-              : []
-          );
-        }
+        // フェイルセーフタイムアウト時：キャンセル不可なら占有レーンから決定論的に補完
+        resolveRemoteChoiceWait(
+          !canCancel && occupiedLanes.length > 0
+            ? occupiedLanes.slice(0, count)
+            : []
+        );
       },
     });
 
-    const rawVal = await new Promise((resolve) => {
-      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
-        resolve(GameState.pendingChoices.shift());
-      else setPendingChoiceResolver(resolve);
-    });
+    // 【オンライン同期】現在アクション内の順番・種類（味方レーン選択）が一致する選択のみ受け取る
+    const rawVal = await waitRemoteChoice(CHOICE_KIND.ALLIED_LANE);
 
     stopOnlineTimer();
 
@@ -1230,14 +1272,8 @@ export async function waitPlayerAlliedLaneSelection(
       const result = [...GameState.targetSelectedLanes];
       cleanUp();
 
-      // オンライン対戦の場合は、選択決定データを同期送信する
-      if (checkIsOnlineMode(GameState.gameMode)) {
-        await sendOnlineAction({
-          type: 'submitChoice',
-          owner: 'blue',
-          choiceData: result,
-        });
-      }
+      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      await submitLocalChoice(CHOICE_KIND.ALLIED_LANE, result);
 
       if (updateBattleUIHook) updateBattleUIHook(); // UIハイライト等の状態更新をトリガー
       resolve(result); // 非同期の呼び出し元へ選択結果配列を返却する
@@ -1272,37 +1308,28 @@ export async function waitPlayerHandSelection(
       const failsafeMs =
         ONLINE_TIMER_MULLIGAN_SEC * 1000 + ONLINE_TIMER_FAILSAFE_MARGIN_MS;
       mulliganFailsafeId = setTimeout(() => {
-        if (pendingChoiceResolver) {
-          const resolver = pendingChoiceResolver;
-          setPendingChoiceResolver(null);
-          resolver([]);
-        }
+        resolveRemoteChoiceWait([]);
       }, failsafeMs);
     } else {
       startOnlineTimer({
         type: 'choice',
         owner: 'red',
         onFailsafeTimeout: () => {
-          if (pendingChoiceResolver) {
-            const resolver = pendingChoiceResolver;
-            setPendingChoiceResolver(null);
-            const fallback = forceExact
-              ? Array.from(
-                  { length: Math.min(count, hand.length) },
-                  (_, i) => hand.length - 1 - i
-                )
-              : [];
-            resolver(fallback);
-          }
+          // フェイルセーフタイムアウト時：強制選択なら手札末尾から決定論的に補完
+          const fallback = forceExact
+            ? Array.from(
+                { length: Math.min(count, hand.length) },
+                (_, i) => hand.length - 1 - i
+              )
+            : [];
+          resolveRemoteChoiceWait(fallback);
         },
       });
     }
 
-    const rawVal = await new Promise((resolve) => {
-      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
-        resolve(GameState.pendingChoices.shift());
-      else setPendingChoiceResolver(resolve);
-    });
+    // 【オンライン同期】現在アクション内の順番・種類（手札選択）が一致する選択のみ受け取る
+    // ※ マリガンはアクション処理外のため、スコープなし（NO_CHOICE_SCOPE）として照合される
+    const rawVal = await waitRemoteChoice(CHOICE_KIND.HAND);
 
     if (mulliganFailsafeId) {
       clearTimeout(mulliganFailsafeId);
@@ -1455,13 +1482,8 @@ export async function waitPlayerHandSelection(
       playSound(SOUNDS.seClick);
       const indices = cleanUp();
 
-      if (checkIsOnlineMode(GameState.gameMode)) {
-        await sendOnlineAction({
-          type: 'submitChoice',
-          owner: 'blue',
-          choiceData: indices,
-        });
-      }
+      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      await submitLocalChoice(CHOICE_KIND.HAND, indices);
 
       resolve(indices);
     };
@@ -1497,29 +1519,23 @@ export async function waitPlayerDiscardSelection(
       type: 'choice',
       owner: 'red',
       onFailsafeTimeout: () => {
-        if (pendingChoiceResolver) {
-          const resolver = pendingChoiceResolver;
-          setPendingChoiceResolver(null);
-          if (canCancel) {
-            resolver(maxChoices > 1 ? [] : null);
-          } else {
-            resolver(
-              validCards.length > 0
-                ? maxChoices > 1
-                  ? validCards.slice(0, maxChoices).map((c) => c.uid || c.id)
-                  : validCards[0].uid || validCards[0].id
-                : null
-            );
-          }
+        // フェイルセーフタイムアウト時：キャンセル可能なら未選択、不可なら先頭から決定論的に補完
+        if (canCancel) {
+          resolveRemoteChoiceWait(maxChoices > 1 ? [] : null);
+        } else {
+          resolveRemoteChoiceWait(
+            validCards.length > 0
+              ? maxChoices > 1
+                ? validCards.slice(0, maxChoices).map((c) => c.uid || c.id)
+                : validCards[0].uid || validCards[0].id
+              : null
+          );
         }
       },
     });
 
-    const choiceStr = await new Promise((resolve) => {
-      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
-        resolve(GameState.pendingChoices.shift());
-      else setPendingChoiceResolver(resolve);
-    });
+    // 【オンライン同期】現在アクション内の順番・種類（墓地等選択）が一致する選択のみ受け取る
+    const choiceStr = await waitRemoteChoice(CHOICE_KIND.DISCARD);
 
     stopOnlineTimer();
 
@@ -1683,17 +1699,12 @@ export async function waitPlayerDiscardSelection(
           ? validCards.slice(0, maxChoices)
           : selectedCards;
 
-      if (checkIsOnlineMode(GameState.gameMode)) {
-        const choiceStr =
-          effectiveCards && effectiveCards.length > 0
-            ? effectiveCards.map((c) => c.uid || c.id).join(',')
-            : null;
-        await sendOnlineAction({
-          type: 'submitChoice',
-          owner: 'blue',
-          choiceData: choiceStr,
-        });
-      }
+      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      const multiChoiceStr =
+        effectiveCards && effectiveCards.length > 0
+          ? effectiveCards.map((c) => c.uid || c.id).join(',')
+          : null;
+      await submitLocalChoice(CHOICE_KIND.DISCARD, multiChoiceStr);
       return effectiveCards || [];
     } else {
       let isDone = false;
@@ -1737,16 +1748,11 @@ export async function waitPlayerDiscardSelection(
       const effectiveCard =
         !canCancel && !card && validCards.length > 0 ? validCards[0] : card;
 
-      if (checkIsOnlineMode(GameState.gameMode)) {
-        const choiceStr = effectiveCard
-          ? effectiveCard.uid || effectiveCard.id
-          : null;
-        await sendOnlineAction({
-          type: 'submitChoice',
-          owner: 'blue',
-          choiceData: choiceStr,
-        });
-      }
+      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      const singleChoiceStr = effectiveCard
+        ? effectiveCard.uid || effectiveCard.id
+        : null;
+      await submitLocalChoice(CHOICE_KIND.DISCARD, singleChoiceStr);
       return effectiveCard;
     }
   } else {
@@ -1778,24 +1784,18 @@ export async function waitPlayerDualDiscardSelection(
       type: 'choice',
       owner: 'red',
       onFailsafeTimeout: () => {
-        if (pendingChoiceResolver) {
-          const resolver = pendingChoiceResolver;
-          setPendingChoiceResolver(null);
-          const allCards = [...blueCards, ...redCards];
-          resolver(
-            !canCancel && allCards.length > 0
-              ? allCards.slice(0, maxChoices).map((c) => c.uid || c.id)
-              : []
-          );
-        }
+        // フェイルセーフタイムアウト時：キャンセル不可なら両墓地の先頭から決定論的に補完
+        const allCards = [...blueCards, ...redCards];
+        resolveRemoteChoiceWait(
+          !canCancel && allCards.length > 0
+            ? allCards.slice(0, maxChoices).map((c) => c.uid || c.id)
+            : []
+        );
       },
     });
 
-    const choiceStr = await new Promise((resolve) => {
-      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
-        resolve(GameState.pendingChoices.shift());
-      else setPendingChoiceResolver(resolve);
-    });
+    // 【オンライン同期】現在アクション内の順番・種類（両墓地選択）が一致する選択のみ受け取る
+    const choiceStr = await waitRemoteChoice(CHOICE_KIND.DUAL_DISCARD);
 
     stopOnlineTimer();
 
@@ -1919,17 +1919,12 @@ export async function waitPlayerDualDiscardSelection(
         ? allCards.slice(0, maxChoices)
         : selectedCards;
 
-    if (checkIsOnlineMode(GameState.gameMode)) {
-      const choiceStr =
-        effectiveCards && effectiveCards.length > 0
-          ? effectiveCards.map((c) => c.uid || c.id).join(',')
-          : null;
-      await sendOnlineAction({
-        type: 'submitChoice',
-        owner: 'blue',
-        choiceData: choiceStr,
-      });
-    }
+    // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+    const choiceStr =
+      effectiveCards && effectiveCards.length > 0
+        ? effectiveCards.map((c) => c.uid || c.id).join(',')
+        : null;
+    await submitLocalChoice(CHOICE_KIND.DUAL_DISCARD, choiceStr);
     return effectiveCards || [];
   } else {
     return [];
@@ -1962,19 +1957,16 @@ export async function waitSkillChoice(
       type: 'choice',
       owner: 'red',
       onFailsafeTimeout: () => {
-        if (pendingChoiceResolver) {
-          const resolver = pendingChoiceResolver;
-          setPendingChoiceResolver(null);
-          resolver(choices.slice(0, Math.min(maxChoices, choices.length)));
-        }
+        // フェイルセーフタイムアウト時：選択肢の先頭から決定論的に補完
+        resolveRemoteChoiceWait(
+          choices.slice(0, Math.min(maxChoices, choices.length))
+        );
       },
     });
 
-    const rawVal = await new Promise((resolve) => {
-      if (GameState.pendingChoices && GameState.pendingChoices.length > 0)
-        resolve(GameState.pendingChoices.shift());
-      else setPendingChoiceResolver(resolve);
-    });
+    // 【オンライン同期】現在アクション内の順番・種類（スキル選択）が一致する選択のみ受け取る
+    // ※ 「ランペイジ」等で同種の選択が連続しても、順番（連番）で個々の選択を区別する
+    const rawVal = await waitRemoteChoice(CHOICE_KIND.SKILL);
 
     stopOnlineTimer();
     if (
@@ -2180,13 +2172,8 @@ export async function waitSkillChoice(
       if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
         stopOnlineTimer();
       }
-      if (checkIsOnlineMode(GameState.gameMode)) {
-        await sendOnlineAction({
-          type: 'submitChoice',
-          owner: 'blue',
-          choiceData: selectedSkill,
-        });
-      }
+      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      await submitLocalChoice(CHOICE_KIND.SKILL, selectedSkill);
       resolve(selectedSkill); // App returns Array here automatically handled in UI
     };
 

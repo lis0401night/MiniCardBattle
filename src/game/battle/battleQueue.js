@@ -35,6 +35,12 @@ import {
   isOnlineTimerPaused,
 } from './onlineTimer.js';
 import { checkIsOnlineTimerEnabled } from '../../utils/constants/onlineTimer.js';
+import {
+  beginChoiceScope,
+  endChoiceScope,
+  receiveRemoteChoice,
+  CHOICE_SCOPED_ACTION_TYPES,
+} from './onlineChoiceSync.js';
 
 // ==========================================
 // 循環参照回避のための関数注入レジストリ
@@ -84,18 +90,8 @@ function requireDependency(fn, name) {
 
 // ==========================================
 // モジュールスコープ変数
+// ※ オンライン対戦の選択結果の待機・照合は onlineChoiceSync.js が一元管理する
 // ==========================================
-
-/** オンライン対戦時の選択結果を受け取るためのPromise resolver */
-export let pendingChoiceResolver = null;
-
-/**
- * pendingChoiceResolverを外部から設定するためのセッター。
- * @param {Function|null} resolver - 新しいresolver
- */
-export function setPendingChoiceResolver(resolver) {
-  pendingChoiceResolver = resolver;
-}
 
 /** オンライン対戦時の非同期競合を防ぐためのキューエンジン処理中フラグ */
 let isQueueProcessing = false;
@@ -179,18 +175,9 @@ export async function dispatchBattleAction(action, isRemote = false) {
       setLastProcessedActionKey(action._actionKey);
     }
 
-    // Firebase仕様で空配列[]が送信されないため、undefinedで来た場合は空文字列とみなす
-    const choiceData = action.choiceData !== undefined ? action.choiceData : '';
-
-    if (pendingChoiceResolver) {
-      const resolver = pendingChoiceResolver;
-      setPendingChoiceResolver(null);
-      resolver(choiceData);
-    } else {
-      if (!GameState.pendingChoices) GameState.pendingChoices = [];
-      GameState.pendingChoices.push(choiceData);
-    }
-    return; // Do not process via queue, evaluate synchronously
+    // 選択のアクションキー・順番・種類を照合し、一致する待機中の選択へ引き渡す（キューは経由しない）
+    receiveRemoteChoice(action);
+    return;
   }
 
   if (action.type === 'retire') {
@@ -235,6 +222,13 @@ export async function processActionQueue() {
         lastProcessedActionKey = action._actionKey;
       }
 
+      // 【選択同期】選択が発生しうるアクションでは、そのアクションキーを選択スコープとして開始する。
+      // 両端末は同じアクションを同じキーで処理するため、このアクション中の選択を相互に照合できる。
+      const usesChoiceScope = CHOICE_SCOPED_ACTION_TYPES.includes(action.type);
+      if (usesChoiceScope) {
+        beginChoiceScope(action._actionKey);
+      }
+
       if (action.type === 'playCard') {
         const played = await requireDependency(_playCard, 'playCard')(
           action.owner,
@@ -269,6 +263,12 @@ export async function processActionQueue() {
         }
       } else if (action.type === 'syncState') {
         applySyncState(action.state);
+      }
+
+      // 【選択同期】アクション完了。以後このアクション宛てに届いた選択は古いものとして破棄される
+      // ※ 勝敗確定による break や例外時は、外側の finally で終了させる
+      if (usesChoiceScope) {
+        endChoiceScope();
       }
 
       if (updateBattleUIHook) updateBattleUIHook(); // React側に再描画を通知
@@ -320,6 +320,8 @@ export async function processActionQueue() {
     GameState.actionQueue = [];
     showAlertModal('バトル処理中にエラーが発生しました。処理を中断します。');
   } finally {
+    // 勝敗確定の break や例外で抜けた場合も選択スコープを確実に終了する（スコープ未開始なら何もしない）
+    endChoiceScope();
     isQueueProcessing = false;
     GameState.isProcessing = false;
     if (updateBattleUIHook) updateBattleUIHook();

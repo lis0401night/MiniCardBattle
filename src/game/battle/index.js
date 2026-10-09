@@ -33,8 +33,6 @@ import { executeTutorialEnemyTurn } from './battleInit.js';
 export {
   dispatchBattleAction,
   processActionQueue,
-  pendingChoiceResolver,
-  setPendingChoiceResolver,
   getIsQueueProcessing,
   resetQueueProcessing,
   getLastProcessedActionKey,

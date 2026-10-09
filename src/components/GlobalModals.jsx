@@ -31,6 +31,7 @@ import {
   setCloseEnemyDeckModalHook,
 } from '../services/uiMainCore.js';
 import {
+  setCloseConfirmModalHook,
   setShowAlertModalHook,
   setShowConfirmModalHook,
   setShowErrorModalHook,
@@ -908,6 +909,11 @@ export default function GlobalModals() {
       setConfirmData({ message, onConfirm, onCancel, isAlert });
     });
 
+    // オンライン対戦の制限時間切れ時に、確認ダイアログをコールバックを呼ばずに閉じる
+    setCloseConfirmModalHook(() => {
+      setConfirmData(null);
+    });
+
     setShowAlertModalHook((message, onClose) => {
       playSound?.(SOUNDS?.seClick);
       setConfirmData({
@@ -1304,6 +1310,7 @@ export default function GlobalModals() {
     return () => {
       // アンマウント時にサービス側のモーダルフックを解除
       setShowConfirmModalHook(null);
+      setCloseConfirmModalHook(null);
       setShowAlertModalHook(null);
       setShowErrorModalHook(null);
       setShowPointAcquisitionModalHook(null);
