@@ -726,13 +726,16 @@ export function initBattleState() {
     playSound(SOUNDS[bgmKey]);
 
     // 既存のplayerConfig/enemyConfigをベースキャラクター定義からディープコピーして初期化する（コンティニュー時の二重適用バグ対策）
+    let savedPlayerProps = null;
+    let savedEnemyProps = null;
+
     if (
       GameState.playerConfig &&
       GameState.playerConfig.id &&
       CHARACTERS[GameState.playerConfig.id]
     ) {
       // 各モード固有のカスタム設定（闘技祭での学園名、宮殿でのHP/スキル、オンラインのプレイマット、スキン表示名など）を退避
-      const savedPlayerProps = {
+      savedPlayerProps = {
         name: GameState.playerConfig.name,
         displayName: GameState.playerConfig.displayName,
         characterName: GameState.playerConfig.characterName,
@@ -756,7 +759,7 @@ export function initBattleState() {
       CHARACTERS[GameState.enemyConfig.id]
     ) {
       // 各モード固有のカスタム設定（高難易度のHP/スキル/リーダースキル、防衛戦情報、影戦フラグ、闘技祭での学園名など）を退避
-      const savedEnemyProps = {
+      savedEnemyProps = {
         name: GameState.enemyConfig.name,
         displayName: GameState.enemyConfig.displayName,
         characterName: GameState.enemyConfig.characterName,
@@ -789,6 +792,22 @@ export function initBattleState() {
     // フリーバトル・ストーリー・チュートリアルは標準キャラクター画像を使用するため敵スキン自動同期を適用しない
     if (!checkIsTutorialMode() && !checkIsStoryMode() && !checkIsFreeMode()) {
       applySkinToConfig(GameState.enemyConfig, GameState.enemySkins);
+    }
+
+    // 夢幻の闘技祭（トーナメント）の場合、退避したトーナメント専用名（「アイギス？」「マキナ？」等）を確実に再適用・保護する
+    if (GameState.gameMode === 'tournament') {
+      if (savedPlayerProps?.name) {
+        GameState.playerConfig.name = savedPlayerProps.name;
+        GameState.playerConfig.displayName = savedPlayerProps.name;
+        GameState.playerConfig.characterName = savedPlayerProps.name;
+        GameState.playerConfig.subtitle = '';
+      }
+      if (savedEnemyProps?.name) {
+        GameState.enemyConfig.name = savedEnemyProps.name;
+        GameState.enemyConfig.displayName = savedEnemyProps.name;
+        GameState.enemyConfig.characterName = savedEnemyProps.name;
+        GameState.enemyConfig.subtitle = '';
+      }
     }
 
     // --- リーダースキルの決定・解決（5大原則の一元管理） ---

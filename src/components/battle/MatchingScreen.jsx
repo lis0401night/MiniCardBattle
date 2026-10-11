@@ -4,6 +4,7 @@ import {
   CHARACTERS,
   getLeaderDisplayNameInfo,
   getSkinImage,
+  toTournamentName,
 } from '../../utils/constants/characters.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -137,8 +138,43 @@ export default function MatchingScreen({
     enemy.skin ||
     'default';
 
-  const pData = getLeaderDisplayNameInfo(player, playerSkinId);
-  const eData = getLeaderDisplayNameInfo(enemy, enemySkinId);
+  // 夢幻の闘技祭（トーナメント）の場合、二つ名＋名前ではなく「アイギス？」「マキナ？」で置き換える
+  const isTournament = GameState.gameMode === 'tournament';
+  const pData = isTournament
+    ? {
+        subtitle: '',
+        name:
+          player.displayName ||
+          player.name ||
+          (player.charId && CHARACTERS[player.charId]?.name
+            ? toTournamentName(CHARACTERS[player.charId].name)
+            : 'プレイヤー？'),
+        fullName:
+          player.displayName ||
+          player.name ||
+          (player.charId && CHARACTERS[player.charId]?.name
+            ? toTournamentName(CHARACTERS[player.charId].name)
+            : 'プレイヤー？'),
+      }
+    : getLeaderDisplayNameInfo(player, playerSkinId);
+
+  const eData = isTournament
+    ? {
+        subtitle: '',
+        name:
+          enemy.displayName ||
+          enemy.name ||
+          (enemy.charId && CHARACTERS[enemy.charId]?.name
+            ? toTournamentName(CHARACTERS[enemy.charId].name)
+            : '参加者？'),
+        fullName:
+          enemy.displayName ||
+          enemy.name ||
+          (enemy.charId && CHARACTERS[enemy.charId]?.name
+            ? toTournamentName(CHARACTERS[enemy.charId].name)
+            : '参加者？'),
+      }
+    : getLeaderDisplayNameInfo(enemy, enemySkinId);
 
   // バトルのステージIDを決定（initBattleStateと同じ共通ロジック）
   const stageId = resolveBattleStageId({
@@ -176,7 +212,9 @@ export default function MatchingScreen({
           />
         </div>
         <div className="matching-info">
-          <div className="matching-subtitle">{eData.subtitle}</div>
+          {eData.subtitle ? (
+            <div className="matching-subtitle">{eData.subtitle}</div>
+          ) : null}
           <div className="matching-name-row">
             <span className="matching-name">{eData.name}</span>
           </div>
@@ -198,7 +236,9 @@ export default function MatchingScreen({
           />
         </div>
         <div className="matching-info">
-          <div className="matching-subtitle">{pData.subtitle}</div>
+          {pData.subtitle ? (
+            <div className="matching-subtitle">{pData.subtitle}</div>
+          ) : null}
           <div className="matching-name-row">
             <span className="matching-name">{pData.name}</span>
           </div>

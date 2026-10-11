@@ -2,7 +2,7 @@ import { loadDeck } from '../services/deck.js';
 import { setupDialogueScreen } from '../services/uiDialogue.js';
 import { performFadeTransition } from '../services/uiMainCore.js';
 import { GameState } from '../state/gameState.js';
-import { CHARACTERS } from '../utils/constants/characters.js';
+import { CHARACTERS, toTournamentName } from '../utils/constants/characters.js';
 import {
   AI_LEVEL,
   DIFFICULTY,
@@ -24,19 +24,6 @@ const TOURNAMENT_REAL_CHARACTER_COUNT = 11;
 
 /** トーナメントに参加するダミー（モブ）キャラクター数 */
 const TOURNAMENT_DUMMY_CHARACTER_COUNT = 4;
-
-/**
- * トーナメント用キャラクター名を生成する
- * 異世界の二つ名を除去し、学園世界観であることを示す「？」を付ける
- * 例: "機動戦姫 アイギス" → "アイギス？"
- */
-function toTournamentName(fullName) {
-  if (!fullName) return 'プレイヤー？';
-  // 半角・全角スペースで分割し、末尾の名前部分を取得
-  const parts = fullName.split(/[\s\u3000]+/);
-  const shortName = parts.length > 1 ? parts[parts.length - 1] : fullName;
-  return `${shortName}？`;
-}
 
 /**
  * トーナメントモードの初期化処理
@@ -181,9 +168,13 @@ export function initTournamentMode() {
   // 会話シーンのセットアップ
   // プレイヤー名をトーナメント形式（学園世界観）に変換する
   GameState.playerConfig = { ...GameState.playerConfig };
-  GameState.playerConfig.name = toTournamentName(
+  const playerTournamentName = toTournamentName(
     CHARACTERS[GameState.pendingCharId]?.name
   );
+  GameState.playerConfig.name = playerTournamentName;
+  GameState.playerConfig.displayName = playerTournamentName;
+  GameState.playerConfig.characterName = playerTournamentName;
+  GameState.playerConfig.subtitle = '';
   GameState.appState = 'pre_dialogue';
   GameState.enemyConfig = GameState.playerConfig;
   GameState.dialogueQueue = TOURNAMENT_INTRO_DIALOGUE(GameState.playerConfig);
@@ -257,12 +248,22 @@ export function startTournamentMatch() {
   // 敵のステータスをセットアップ
   GameState.enemyConfig = { ...CHARACTERS[opponent.charId] };
   GameState.enemyConfig.name = opponent.name;
+  GameState.enemyConfig.displayName = opponent.name;
+  GameState.enemyConfig.characterName = opponent.name;
+  GameState.enemyConfig.subtitle = '';
+  if (opponent.isDummy) {
+    GameState.enemyConfig.isDummy = true;
+  }
 
   // プレイヤー名もトーナメント形式に変換する（戦闘画面で表示される名前）
   GameState.playerConfig = { ...GameState.playerConfig };
-  GameState.playerConfig.name = toTournamentName(
+  const playerTournamentName = toTournamentName(
     CHARACTERS[GameState.playerConfig.id]?.name
   );
+  GameState.playerConfig.name = playerTournamentName;
+  GameState.playerConfig.displayName = playerTournamentName;
+  GameState.playerConfig.characterName = playerTournamentName;
+  GameState.playerConfig.subtitle = '';
 
   // 敵の学園スキンを設定（getDialogueが学園スキンの台詞を参照するために必要）
   if (!GameState.enemySkins) GameState.enemySkins = {}; // 再開時のフォールバック

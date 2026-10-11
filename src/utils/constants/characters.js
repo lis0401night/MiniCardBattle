@@ -1630,8 +1630,26 @@ export function canShowUnlockableCharacter(characterId, isEnemySelect = false) {
 }
 
 /**
- * キャラクター設定とスキンIDから、マッチング画面等で表示する二つ名（subtitle）と名前（name）を解決する。
- * リーダースキンが設定されている場合は、スキンの二つ名 + スキン対応名前（未設定時はキャラ名）を返す。
+ * トーナメント用キャラクター名を生成する。
+ * 異世界の二つ名を除去し、学園世界観であることを示す「？」を末尾に付与する。
+ * 例: "機動戦姫 アイギス" → "アイギス？", "廃鉄の声 マキナ" → "マキナ？"
+ *
+ * @param {string} fullName - 正式名称またはフルネーム
+ * @returns {string} 学園トーナメント用キャラクター名
+ */
+export function toTournamentName(fullName) {
+  if (!fullName) return 'プレイヤー？';
+  // 半角・全角スペースで分割し、末尾の名前部分を取得
+  const parts = fullName.split(/[\s\u3000]+/);
+  const shortName = parts.length > 1 ? parts[parts.length - 1] : fullName;
+  if (shortName.endsWith('？')) return shortName;
+  return `${shortName}？`;
+}
+
+/**
+ * リーダーキャラクターまたは対戦者オブジェクトから、表示用の二つ名（肩書）・名前・フルネームを取得する。
+ * スキン設定（skinId）が存在する場合はスキンマスタから適切な二つ名・名前を解決する。
+ * 試練の宮殿の動的ID（dungeon_boss_*）や、夢幻の闘技祭（「アイギス？」等の学園名義）にも完全対応する。
  *
  * @param {Object} charObj - キャラクター設定オブジェクト（CHARACTERS[id] または GameState.playerConfig等）
  * @param {string} [skinId='default'] - 選択されているスキンID（'default', 'summer', 'school', 'knight_high', 'assassin' 等）
@@ -1640,6 +1658,25 @@ export function canShowUnlockableCharacter(characterId, isEnemySelect = false) {
 export function getLeaderDisplayNameInfo(charObj, skinId = 'default') {
   if (!charObj) {
     return { subtitle: '不明', name: 'Unknown', fullName: '不明 Unknown' };
+  }
+
+  // 0. 夢幻の闘技祭（トーナメント）用の特殊表示名（「アイギス？」「マキナ？」「参加者1」等）の保護
+  const isTournamentObj =
+    Boolean(charObj.isDummy) ||
+    (typeof charObj.displayName === 'string' && charObj.displayName.endsWith('？')) ||
+    (typeof charObj.name === 'string' && charObj.name.endsWith('？'));
+
+  if (isTournamentObj) {
+    const tourName =
+      (typeof charObj.displayName === 'string' && charObj.displayName ? charObj.displayName : '') ||
+      (typeof charObj.name === 'string' && charObj.name ? charObj.name : '');
+    if (tourName) {
+      return {
+        subtitle: '',
+        name: tourName,
+        fullName: tourName,
+      };
+    }
   }
 
   // 1. ベースキャラクター定義の取得（動的ID dungeon_boss_* に対応するため charId / leaderCardId も参照）
@@ -1792,10 +1829,24 @@ export function applySkinToConfig(config, skinMapOrSkinId) {
     charObj.iconDamage ||
     charObj.icon;
 
-  const displayInfo = getLeaderDisplayNameInfo(charObj, selSkin);
-  config.displayName = displayInfo.fullName;
-  config.characterName = displayInfo.name;
-  config.subtitle = displayInfo.subtitle;
+  // 夢幻の闘技祭等のトーナメント特殊名義（「アイギス？」「マキナ？」「参加者1」等）が設定されている場合は名前を保護
+  const isTournamentConfig =
+    Boolean(config.isDummy) ||
+    (typeof config.displayName === 'string' &&
+      config.displayName.endsWith('？')) ||
+    (typeof config.name === 'string' && config.name.endsWith('？'));
+
+  if (isTournamentConfig) {
+    const tourName = config.displayName || config.name;
+    config.displayName = tourName;
+    config.characterName = tourName;
+    config.subtitle = '';
+  } else {
+    const displayInfo = getLeaderDisplayNameInfo(charObj, selSkin);
+    config.displayName = displayInfo.fullName;
+    config.characterName = displayInfo.name;
+    config.subtitle = displayInfo.subtitle;
+  }
 
   // スキン固有の台詞・前口上・ミラー口上の適用（ベースの台詞を基準にし、スキン固有定義が存在する項目のみ上書き）
   const skinsObj = config.skins || charObj.skins;

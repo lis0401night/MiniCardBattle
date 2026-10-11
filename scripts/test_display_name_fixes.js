@@ -3,6 +3,8 @@ import {
   CHARACTERS,
   getLeaderDisplayNameInfo,
   getLeaderNameStyle,
+  toTournamentName,
+  applySkinToConfig,
 } from '../src/utils/constants/characters.js';
 import {
   hydrateDungeonOpponent,
@@ -119,6 +121,39 @@ test('getLeaderNameStyle: 14文字以上の非常に長いプレイヤー名の�
   assert.ok(veryLongStyle.fontSize);
   const veryLongNum = parseFloat(veryLongStyle.fontSize);
   assert.strictEqual(veryLongNum, 0.8); // 下限 0.80em 保証
+});
+
+// 7. 夢幻の闘技祭（トーナメント）名前解決および保護テスト
+test('toTournamentName: 正式名称から二つ名を除去して末尾に「？」を付与すること', () => {
+  assert.strictEqual(toTournamentName('機動戦姫 アイギス'), 'アイギス？');
+  assert.strictEqual(toTournamentName('廃鉄の声 マキナ'), 'マキナ？');
+  assert.strictEqual(toTournamentName('アイギス？'), 'アイギス？');
+  assert.strictEqual(toTournamentName(''), 'プレイヤー？');
+});
+
+test('getLeaderDisplayNameInfo: トーナメント名オブジェクトから二つ名が除去され「アイギス？」単体が返ること', () => {
+  const tourPlayer = {
+    id: 'android',
+    name: 'アイギス？',
+    displayName: 'アイギス？',
+  };
+  const info = getLeaderDisplayNameInfo(tourPlayer, 'school');
+  assert.strictEqual(info.subtitle, '');
+  assert.strictEqual(info.name, 'アイギス？');
+  assert.strictEqual(info.fullName, 'アイギス？');
+});
+
+test('applySkinToConfig: 学園スキン適用時にトーナメント名（「アイギス？」「マキナ？」）が「女子生徒 アイギス」等で上書きされず保護されること', () => {
+  const enemyConfig = {
+    ...CHARACTERS.automata,
+    name: 'マキナ？',
+    displayName: 'マキナ？',
+  };
+  applySkinToConfig(enemyConfig, { automata: 'school' });
+  assert.strictEqual(enemyConfig.currentSkin, 'school');
+  assert.strictEqual(enemyConfig.name, 'マキナ？');
+  assert.strictEqual(enemyConfig.displayName, 'マキナ？');
+  assert.strictEqual(enemyConfig.subtitle, '');
 });
 
 console.log(`\n全テスト実行完了: ${passCount} / ${passCount} PASS (ALL OK)`);
