@@ -1202,7 +1202,7 @@ export const SKILLS = {
   execute: {
     name: '処刑',
     icon: '🪓',
-    desc: () => '召喚時、自分のカード1枚を選択して破壊する。',
+    desc: (val) => `召喚時、自分のカードを${val || 1}枚選択して破壊する。`,
   },
   dominate: {
     name: '支配',
@@ -1342,6 +1342,44 @@ export const SKILLS = {
     desc: () =>
       '召喚時、自分の場のカード1体を選択し、次の自分のターン開始時まで「加護」状態（全てのダメージを受けず、破壊されない）にする。',
   },
+  invoke: {
+    name: '招来',
+    icon: '🕯',
+    /**
+     * 「招来」スキルの説明セグメントを生成する。
+     * 召喚時、自分の手札と場のカードを望む数捨て、その合計パワー以下の「降臨」を持つカード1枚を
+     * 手札またはデッキから召喚し、減った手札と同数の「虚空（パワー0）」を手札に加える。
+     * @returns {Array<object>} テキストセグメント配列
+     */
+    desc: () => [
+      {
+        type: 'text',
+        value:
+          '召喚時、自分の手札と場のカードを望む数捨て、その合計パワー以下の',
+      },
+      { type: 'link', value: '「降臨」', targetSkillId: 'advent' },
+      {
+        type: 'text',
+        value:
+          'を持つカード1枚を手札またはデッキから召喚できる。減った手札と同数の',
+      },
+      { type: 'link', value: '「虚空（パワー0）」', targetId: 'token_void' },
+      {
+        type: 'text',
+        value: 'を手札に加える。',
+      },
+    ],
+  },
+  advent: {
+    name: '降臨',
+    icon: '🏛️',
+    /**
+     * 「降臨」スキルの説明テキストを生成する。
+     * 手札からの通常召喚は行えず、カードやリーダーの能力によってのみ召喚できる制約能力。
+     * @returns {string} スキル説明文
+     */
+    desc: () => 'カード・リーダーの能力以外で召喚できない。',
+  },
 };
 
 // 召喚時に発動するスキル（配置時は発動しない）
@@ -1418,6 +1456,7 @@ export const ACTIVE_SKILLS = [
   'supremacy',
   'unleash',
   'protection',
+  'invoke',
 ];
 
 // 戦闘中やターン開始時など、継続的に影響を与えるスキル
@@ -1463,6 +1502,7 @@ export const PASSIVE_SKILLS = [
   'trigger',
   'reanimate',
   'all_forms',
+  'advent',
 ];
 
 /**
@@ -1474,7 +1514,12 @@ export const TRIGGER_SKILL_IDS = ['trigger', 'madness', 'reanimate'];
  * 盤面配置制約スキルID一覧定数（配置完了後は役割を終えるスキル）
  * ※「伝説 (legendary)」は盤面上の「反逆」や「頂点」の参照対象となるため除外（表示維持）します。
  */
-export const CONSTRAINT_DISMISS_SKILL_IDS = ['takeover', 'challenge', 'apex'];
+export const CONSTRAINT_DISMISS_SKILL_IDS = [
+  'takeover',
+  'challenge',
+  'apex',
+  'advent',
+];
 
 /**
  * 盤面配置時に最初からバッジを非表示にするスキルID一覧定数
@@ -1508,7 +1553,7 @@ export const SKILL_CATEGORIES = [
       },
       {
         name: '召喚',
-        skills: ['summon', 'assemble', 'call', 'forge'],
+        skills: ['summon', 'assemble', 'call', 'forge', 'invoke'],
       },
       {
         name: '配置',
@@ -1656,7 +1701,7 @@ export const SKILL_CATEGORIES = [
     groups: [
       {
         name: '配置制約',
-        skills: ['legendary', 'takeover', 'challenge', 'apex'],
+        skills: ['legendary', 'takeover', 'challenge', 'apex', 'advent'],
       },
     ],
   },

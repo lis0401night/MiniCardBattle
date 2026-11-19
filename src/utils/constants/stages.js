@@ -21,13 +21,14 @@ export const STAGES = {
   priest: { id: 'priest', name: '千年の王墓', bgm: 'bgmStagePriest' },
   automata: { id: 'automata', name: '鋼の墓標', bgm: 'bgmStageAutomata' },
   valkyria: { id: 'valkyria', name: '約束の丘', bgm: 'bgmStageValkyria' },
+  daughter: { id: 'daughter', name: '次元の裂け目', bgm: 'bgmStageDaughter' },
   satan: { id: 'satan', name: '魔王城', bgm: 'bgmStageSatan' },
   dungeon: { id: 'dungeon', name: '試練の宮殿', bgm: 'bgmStageDungeon' },
   tournament: { id: 'tournament', name: '全国大会', bgm: 'bgmStageTournament' },
 };
 
 /** 解放制ステージのID一覧 */
-export const UNLOCKABLE_STAGE_IDS = ['automata', 'valkyria'];
+export const UNLOCKABLE_STAGE_IDS = ['automata', 'valkyria', 'daughter'];
 
 /**
  * 解放制ステージの表示条件を判定する共通関数

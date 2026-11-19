@@ -318,6 +318,8 @@ export const PREMIUM_VOICE_MAP = {
   gorilla: 'human_male_warrior',
   warriormonk: 'human_female_cool',
   ghoul: 'human_male_ikemen',
+  monument: 'human_female_cool',
+  follower: 'human_female_cute',
 };
 
 /**

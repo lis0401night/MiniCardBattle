@@ -73,7 +73,6 @@ import {
   getOrCreateUUID,
   getSeededRandom,
   hasPremiumVariant,
-  hasSkill,
   playSound,
   setRNGSeed,
   shuffleArray,
@@ -119,6 +118,7 @@ import {
   ONLINE_TIMER_MAIN_PHASE_SEC,
   checkIsOnlineTimerEnabled,
 } from '../../utils/constants/onlineTimer.js';
+import { isUnplayableAloneCard } from '../../utils/aiDiscardLogic.js';
 import { initOnlineDisconnectManager } from './onlineDisconnectManager.js';
 
 /** リーダー固有の最大HP定義。未定義のキャラクターは MAX_HP を使用する */
@@ -937,8 +937,15 @@ export function initBattleState() {
 
       spawnRules.forEach((rule) => {
         const template = CARD_MASTER.find((c) => c.id === rule.cardId);
-        if (template) {
-          GameState.enemyBoard[rule.lane] = {
+        if (!template) return;
+        const targetLanes = Array.isArray(rule.lanes)
+          ? rule.lanes
+          : typeof rule.lane === 'number'
+            ? [rule.lane]
+            : [];
+        targetLanes.forEach((laneIdx) => {
+          if (typeof laneIdx !== 'number' || laneIdx < 0 || laneIdx > 2) return;
+          GameState.enemyBoard[laneIdx] = {
             id: template.id,
             baseId: template.id,
             name: template.name,
@@ -953,7 +960,7 @@ export function initBattleState() {
             isToken: true, // 破壊された場合に墓地には送られないトークン扱い
             cantAttackTurns: 2, // 初回ターン攻撃禁止（攻撃不能効果。ターン開始時の減衰を考慮して2を設定）
           };
-        }
+        });
       });
     }
     GameState.missionProgress = {
@@ -984,6 +991,7 @@ export function initBattleState() {
     GameState.placementSelectedLanes = [];
     GameState.isEnemyTargetMode = false;
     GameState.isAlliedTargetMode = false;
+    GameState.isInvokeSelectMode = false;
     GameState.enemyTargetSkillId = null;
     GameState.targetSelectResolve = null;
     GameState.isDiscardingMode = false;
@@ -1003,6 +1011,9 @@ export function initBattleState() {
     window.finishEnemyTargetSelection = null;
     window.handleAlliedLaneClick = null;
     window.finishAlliedSelection = null;
+    window.handleInvokeBoardClick = null;
+    window.handleInvokeHandClick = null;
+    window.finishInvokeSelection = null;
     updateCardDetail(null);
     if (updateBattleUIHook) updateBattleUIHook();
 
@@ -1304,6 +1315,8 @@ export async function determineTurnOrder() {
 /**
  * マリガン（初期手札の引き直し）フェイズを開始する。
  * プレイヤーおよびAI/オンライン相手の手札引き直し選択を待機し、ドロー・手札更新を行う。
+ * AIは初期手札が「生贄」「頂点」「降臨」の単独召喚不可カードのみで初動事故を起こしている場合に全引き直しを行う。
+ * @returns {Promise<void>}
  */
 export async function startMulliganPhase() {
   GameState.battlePhase = BATTLE_PHASE.MULLIGAN;
@@ -1325,9 +1338,11 @@ export async function startMulliganPhase() {
     enemyPromise = new Promise((resolve) => {
       let aiIndices = [];
       const aiHand = GameState.enemyHand;
-      const allTakeover =
-        aiHand.length > 0 && aiHand.every((card) => hasSkill(card, 'takeover'));
-      if (allTakeover) {
+      // 初期手札がすべて単独召喚不可カード（「生贄」「頂点」「降臨」）で初動事故を起こしている場合は全枚数を引き直す
+      const allUnplayableFromHand =
+        aiHand.length > 0 &&
+        aiHand.every((card) => isUnplayableAloneCard(card));
+      if (allUnplayableFromHand) {
         aiIndices = aiHand.map((_, i) => i);
       }
       resolve(aiIndices);

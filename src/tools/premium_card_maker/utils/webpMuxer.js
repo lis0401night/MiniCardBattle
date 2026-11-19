@@ -74,6 +74,44 @@ export function extractBitstreamChunks(arrayBuffer) {
 }
 
 /**
+ * 抽出済みビットストリームチャンク列にアルファ情報が含まれているかを判定します。
+ * ALPH チャンクの存在、または VP8L（ロスレス WebP）ヘッダ内の alpha_is_used ビットを検査します。
+ *
+ * @param {Uint8Array} bitstream - extractBitstreamChunks で抽出したビットストリームバイナリ
+ * @returns {boolean} アルファチャンネル情報を含む場合 true
+ */
+function hasAlphaInBitstream(bitstream) {
+  const view = new DataView(
+    bitstream.buffer,
+    bitstream.byteOffset,
+    bitstream.byteLength
+  );
+  let pos = 0;
+
+  while (pos + 8 <= bitstream.length) {
+    const fourcc = String.fromCharCode(...bitstream.subarray(pos, pos + 4));
+    const chunkSize = view.getUint32(pos + 4, true);
+
+    if (fourcc === 'ALPH') {
+      return true;
+    }
+
+    // VP8L ペイロード先頭 0x2f シグネチャ + 4バイト目 bit4 (全体の bit 28) が alpha_is_used フラグ
+    if (fourcc === 'VP8L' && chunkSize >= 5 && pos + 13 <= bitstream.length) {
+      const signature = bitstream[pos + 8];
+      const flagsByte = bitstream[pos + 12];
+      if (signature === 0x2f && (flagsByte & 0x10) !== 0) {
+        return true;
+      }
+    }
+
+    pos += 8 + chunkSize + (chunkSize % 2);
+  }
+
+  return false;
+}
+
+/**
  * 複数の Canvas フレームからアニメーション WebP の Blob を生成します。
  *
  * @param {Array<HTMLCanvasElement|{canvas: HTMLCanvasElement, durationMs?: number}>} frames - フレーム情報配列
@@ -103,6 +141,7 @@ export async function createAnimatedWebpBlob(frames, options = {}) {
 
   // 1. 各フレームの Canvas を WebP エンコードし、ビットストリームチャンクを抽出
   const framePayloads = [];
+  let hasAnyAlpha = false;
 
   for (let i = 0; i < frames.length; i++) {
     const item = frames[i];
@@ -115,12 +154,16 @@ export async function createAnimatedWebpBlob(frames, options = {}) {
 
     const rawBuf = await canvasToWebpArrayBuffer(canvas, quality);
     const bitstream = extractBitstreamChunks(rawBuf);
+    if (!hasAnyAlpha && hasAlphaInBitstream(bitstream)) {
+      hasAnyAlpha = true;
+    }
     framePayloads.push({ bitstream, durationMs });
   }
 
   // 2. VP8X チャンク生成 (10 bytes ペイロード + 8 bytes ヘッダ)
+  // Animation bit (0x02) に加え、透過フレームを含む場合は Alpha bit (0x10) を付与してコンテナ整合性を保証
   const vp8xPayload = new Uint8Array(10);
-  vp8xPayload[0] = 0x02; // Flags: Animation bit (bit 1) 有効
+  vp8xPayload[0] = hasAnyAlpha ? 0x12 : 0x02;
 
   // Canvas 幅 - 1 (24-bit uint LE)
   const wMinus1 = width - 1;

@@ -41,6 +41,10 @@ export const CHOICE_KIND = Object.freeze({
   SKILL: 'skill',
   /** 既存カードへの上書き確認（confirmOverwrittenLane） */
   CONFIRM: 'confirm',
+  /** 「招来」の手札・盤面カード選択（waitPlayerInvokeSacrificeSelection） */
+  INVOKE_SACRIFICE: 'invokeSacrifice',
+  /** 「招来」の召喚対象カード選択（waitPlayerInvokeCardSelection） */
+  INVOKE_TARGET: 'invokeTarget',
 });
 
 /** 選択スコープを割り当てるアクション種別（選択が発生しうるアクションのみ。ホワイトリスト方式） */

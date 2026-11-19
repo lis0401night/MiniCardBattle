@@ -85,6 +85,74 @@ function clampPanAndZoom(targetPan, targetZoom, w, h) {
 }
 
 /**
+ * 動画フレーム抽出・シーク制御用の定数群
+ */
+const ALPHA_PROBE_SIZE = 16;
+const VIDEO_INITIAL_READY_TIMEOUT_MS = 8000;
+const VIDEO_SEEK_TIMEOUT_MS = 5000;
+const VIDEO_DECODE_AFTER_SEEK_TIMEOUT_MS = 2000;
+const VIDEO_MAX_SEEK_ATTEMPTS = 3;
+const VIDEO_SEEK_EPSILON_SEC = 0.0005;
+const VIDEO_END_MARGIN_SEC = 0.001;
+const VIDEO_RETRY_NUDGE_SEC = 0.04;
+const VIDEO_RETRY_BACKOFF_MS = 50;
+const FRAME_FLUSH_VISIBLE_MAX_MS = 34;
+const FRAME_FLUSH_HIDDEN_MS = 16;
+
+/**
+ * 発光エフェクト合成用の一時ワークキャンバスキャッシュ（毎フレームの DOM 生成・GC スパイク抑止用）
+ */
+const glowScratchCache = {
+  tempCanvas: null,
+  boostCanvas: null,
+  maskCanvas: null,
+};
+
+/**
+ * 指定サイズに初期化された発光エフェクト用ワークキャンバス3種を取得する
+ * @param {number} width - キャンバス幅 (px)
+ * @param {number} height - キャンバス高さ (px)
+ * @returns {{
+ *   tempCanvas: HTMLCanvasElement,
+ *   tempCtx: CanvasRenderingContext2D | null,
+ *   boostCanvas: HTMLCanvasElement,
+ *   boostCtx: CanvasRenderingContext2D | null,
+ *   maskCanvas: HTMLCanvasElement,
+ *   maskCtx: CanvasRenderingContext2D | null
+ * }} 初期化済みのワークキャンバスと各2Dコンテキスト
+ */
+function getGlowScratchCanvases(width, height) {
+  const keys = ['tempCanvas', 'boostCanvas', 'maskCanvas'];
+  for (const key of keys) {
+    if (!glowScratchCache[key]) {
+      glowScratchCache[key] = document.createElement('canvas');
+    }
+    const canvas = glowScratchCache[key];
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+  }
+
+  const { tempCanvas, boostCanvas, maskCanvas } = glowScratchCache;
+  const tempCtx = tempCanvas.getContext('2d');
+  const boostCtx = boostCanvas.getContext('2d');
+  const maskCtx = maskCanvas.getContext('2d');
+
+  for (const targetCtx of [tempCtx, boostCtx, maskCtx]) {
+    if (targetCtx) {
+      targetCtx.globalCompositeOperation = 'source-over';
+      targetCtx.globalAlpha = 1.0;
+      targetCtx.filter = 'none';
+      targetCtx.setTransform(1, 0, 0, 1, 0, 0);
+      targetCtx.clearRect(0, 0, width, height);
+    }
+  }
+
+  return { tempCanvas, tempCtx, boostCanvas, boostCtx, maskCanvas, maskCtx };
+}
+
+/**
  * 元画像のグラフィックそのものをベースにして、指定範囲を自己発光（ハイライト・グロー）させる
  * @param {CanvasRenderingContext2D} ctx - 描画先コンテキスト
  * @param {number} width - 描画先幅
@@ -92,7 +160,8 @@ function clampPanAndZoom(targetPan, targetZoom, w, h) {
  * @param {CanvasImageSource} sourceElement - 元画像/動画要素または現在フレームの Canvas
  * @param {number} progress - ループ進行度 (0.0 ~ 1.0)
  * @param {Array<Object>} regions - 発光エリア設定配列
- * @param {Object} [viewTransform] - プレビュー用ズーム・パン情報 { pan: {x, y}, zoom: number, mediaDims: {width, height} }
+ * @param {Object|null} [viewTransform=null] - プレビュー用ズーム・パン情報 { pan: {x, y}, zoom: number, mediaDims: {width, height} }
+ * @returns {void}
  */
 function drawGlowEffects(
   ctx,
@@ -125,12 +194,10 @@ function drawGlowEffects(
     const intensity = (region.intensity ?? 0.5) * glowFactor;
     if (intensity <= 0.005) return;
 
-    // 1. 元画像の切り抜き準備用キャンバスを作成
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    const tempCtx = tempCanvas.getContext('2d');
-    if (!tempCtx) return;
+    // 1. 再利用ワークキャンバスを取得して初期化（毎フレーム生成によるGCスパイクを防止）
+    const { tempCanvas, tempCtx, boostCanvas, boostCtx, maskCanvas, maskCtx } =
+      getGlowScratchCanvases(width, height);
+    if (!tempCtx || !maskCtx) return;
 
     // 元画像の描画（プレビュー時のトランスフォーム対応 or 書き出し時の直接描画）
     if (viewTransform && viewTransform.zoom) {
@@ -155,23 +222,13 @@ function drawGlowEffects(
 
     // 2. 輝度ブースト（明るさを自然に増幅して発光感を抽出）
     const boost = region.brightnessBoost || 1.4;
-    const boostCanvas = document.createElement('canvas');
-    boostCanvas.width = width;
-    boostCanvas.height = height;
-    const boostCtx = boostCanvas.getContext('2d');
     if (boostCtx) {
       boostCtx.filter = `brightness(${boost}) contrast(1.05)`;
       boostCtx.drawImage(tempCanvas, 0, 0);
+      boostCtx.filter = 'none';
       tempCtx.clearRect(0, 0, width, height);
       tempCtx.drawImage(boostCanvas, 0, 0);
     }
-
-    // 3. マスクキャンバスの作成
-    const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = width;
-    maskCanvas.height = height;
-    const maskCtx = maskCanvas.getContext('2d');
-    if (!maskCtx) return;
 
     const cx = (region.x ?? 0.5) * width;
     const cy = (region.y ?? 0.5) * height;
@@ -270,6 +327,213 @@ function drawGlowEffects(
   });
 }
 
+/**
+ * 動画フレーム空振り検知用の縮小プローブキャンバスキャッシュ
+ */
+let alphaProbeCanvas = null;
+let alphaProbeCtx = null;
+
+/**
+ * 描画済み Canvas が全ピクセル完全透明（デコーダ瞬断等による未描画状態）かどうかを高速判定する
+ * 本体の GPU Canvas に対する直接の getImageData リードバック負荷を避けるため、16x16 のプローブ用 Canvas に縮小転写して検査する。
+ * @param {HTMLCanvasElement} canvas - 検査対象の Canvas 要素
+ * @returns {boolean} 全サンプルピクセルのアルファ値が 0（完全透明）の場合 true
+ */
+function isCanvasCompletelyTransparent(canvas) {
+  if (!alphaProbeCanvas) {
+    alphaProbeCanvas = document.createElement('canvas');
+    alphaProbeCanvas.width = ALPHA_PROBE_SIZE;
+    alphaProbeCanvas.height = ALPHA_PROBE_SIZE;
+    alphaProbeCtx = alphaProbeCanvas.getContext('2d', {
+      willReadFrequently: true,
+    });
+  }
+  if (!alphaProbeCtx) return false;
+
+  alphaProbeCtx.clearRect(0, 0, ALPHA_PROBE_SIZE, ALPHA_PROBE_SIZE);
+  alphaProbeCtx.drawImage(canvas, 0, 0, ALPHA_PROBE_SIZE, ALPHA_PROBE_SIZE);
+  const { data } = alphaProbeCtx.getImageData(
+    0,
+    0,
+    ALPHA_PROBE_SIZE,
+    ALPHA_PROBE_SIZE
+  );
+
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] !== 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * シーク完了直後のハードウェアデコーダから Canvas へのフレーム転送を安定させるための短時間待機を行う
+ * バックグラウンドタブ時に requestAnimationFrame が無期限停止するブラウザ仕様を考慮し、タイマー上限を併設する。
+ * @returns {Promise<void>} 待機完了後に解決する Promise
+ */
+function waitForFramePresentationFlush() {
+  if (
+    typeof document !== 'undefined' &&
+    document.visibilityState === 'visible' &&
+    typeof requestAnimationFrame === 'function'
+  ) {
+    return Promise.race([
+      new Promise((resolve) => requestAnimationFrame(() => resolve())),
+      new Promise((resolve) => setTimeout(resolve, FRAME_FLUSH_VISIBLE_MAX_MS)),
+    ]);
+  }
+  return new Promise((resolve) => setTimeout(resolve, FRAME_FLUSH_HIDDEN_MS));
+}
+
+/**
+ * HTMLVideoElement が現在位置のフレームをデコード可能な状態（HAVE_CURRENT_DATA 以上）になるまで待機する
+ * @param {HTMLVideoElement} video - 対象のビデオ要素
+ * @param {number} [timeoutMs=VIDEO_INITIAL_READY_TIMEOUT_MS] - 最大待機時間（ミリ秒）
+ * @returns {Promise<boolean>} デコード可能状態に達した場合 true、エラーまたはタイムアウト時 false
+ */
+function waitForVideoDecodable(
+  video,
+  timeoutMs = VIDEO_INITIAL_READY_TIMEOUT_MS
+) {
+  if (
+    video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+    video.videoWidth > 0
+  ) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let timerId = null;
+
+    const cleanup = () => {
+      video.removeEventListener('loadeddata', onReady);
+      video.removeEventListener('canplay', onReady);
+      video.removeEventListener('error', onError);
+      if (timerId !== null) clearTimeout(timerId);
+    };
+
+    const onReady = () => {
+      if (settled) return;
+      if (
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        video.videoWidth > 0
+      ) {
+        settled = true;
+        cleanup();
+        resolve(true);
+      }
+    };
+
+    const onError = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(false);
+    };
+
+    video.addEventListener('loadeddata', onReady);
+    video.addEventListener('canplay', onReady);
+    video.addEventListener('error', onError);
+
+    timerId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+          video.videoWidth > 0
+      );
+    }, timeoutMs);
+  });
+}
+
+/**
+ * ビデオ要素を指定時刻へシークし、フレームデータのデコード準備が完了するまで待機する
+ * すでに目標時刻と同一位置にある場合は seeked イベントが発火しないブラウザ仕様に対応し、即座に準備状態を確認する。
+ * @param {HTMLVideoElement} video - 対象のビデオ要素
+ * @param {number} destTime - シーク先時刻（秒）
+ * @param {number} [timeoutMs=VIDEO_SEEK_TIMEOUT_MS] - タイムアウト時間（ミリ秒）
+ * @returns {Promise<boolean>} シークおよびフレームデコード準備が完了した場合 true
+ */
+async function seekVideoToTime(
+  video,
+  destTime,
+  timeoutMs = VIDEO_SEEK_TIMEOUT_MS
+) {
+  if (
+    !video.seeking &&
+    video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+    Math.abs(video.currentTime - destTime) < VIDEO_SEEK_EPSILON_SEC
+  ) {
+    await waitForFramePresentationFlush();
+    return true;
+  }
+
+  const seekSucceeded = await new Promise((resolve) => {
+    let settled = false;
+    let timerId = null;
+
+    const cleanup = () => {
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
+      if (timerId !== null) clearTimeout(timerId);
+    };
+
+    const onSeeked = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(true);
+    };
+
+    const onError = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(false);
+    };
+
+    video.addEventListener('seeked', onSeeked);
+    video.addEventListener('error', onError);
+
+    timerId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(false);
+    }, timeoutMs);
+
+    try {
+      video.currentTime = destTime;
+    } catch {
+      settled = true;
+      cleanup();
+      resolve(false);
+    }
+  });
+
+  if (!seekSucceeded) {
+    return false;
+  }
+
+  const decodable = await waitForVideoDecodable(
+    video,
+    VIDEO_DECODE_AFTER_SEEK_TIMEOUT_MS
+  );
+  if (!decodable) {
+    return false;
+  }
+
+  await waitForFramePresentationFlush();
+  return true;
+}
+
+/**
+ * プレミアムカードアニメーション作成ツール メインコンポーネント
+ * @returns {JSX.Element} ツール画面要素
+ */
 export default function PremiumCardMaker() {
   // メディア種別およびメタデータ
   /** @type {['video'|'image']} */
@@ -500,8 +764,13 @@ export default function PremiumCardMaker() {
 
   /**
    * プレビューループ（静止画アニメーション、動画再生、および発光エフェクトのリアルタイム合成）
+   * 書き出しエンコード中（isEncoding）はデコーダ・GPU・GCの競合を防ぐためループを休止する。
    */
   useEffect(() => {
+    if (isEncoding) {
+      return undefined;
+    }
+
     let lastFrameTimestamp = performance.now();
 
     const renderLoop = (now) => {
@@ -649,6 +918,7 @@ export default function PremiumCardMaker() {
       }
     };
   }, [
+    isEncoding,
     isPlaying,
     sourceType,
     imageDuration,
@@ -923,54 +1193,131 @@ export default function PremiumCardMaker() {
   };
 
   /**
-   * 動画から指定時刻のフレームを Canvas にレンダリングして取得
-   * @param {HTMLVideoElement} video - ビデオ要素
-   * @param {number} targetTime - 抽出時刻
-   * @param {number} outW - 出力幅
-   * @param {number} outH - 出力高さ
-   * @returns {Promise<HTMLCanvasElement>} レンダリング済み Canvas
+   * 動画から指定時刻のフレームを Canvas にレンダリングして取得する
+   * シーク不発・バックグラウンド遅延・ハードウェアデコーダ瞬断による透明空フレーム混入（コマ抜け）を防ぐため、
+   * 終端安全クランプ、最大3回の再シークリトライ、透明プローブ検査、および直前正常フレームによる補完を行う。
+   * @param {HTMLVideoElement} video - オフスクリーン抽出用のビデオ要素
+   * @param {number} targetTime - 抽出対象時刻（秒）
+   * @param {number} outW - 出力幅 (px)
+   * @param {number} outH - 出力高さ (px)
+   * @param {HTMLCanvasElement|null} [fallbackCanvas=null] - 全リトライ失敗時に補完使用する直前の正常ベースフレーム
+   * @returns {Promise<{canvas: HTMLCanvasElement, usedFallback: boolean}>} レンダリング済み Canvas と補完使用フラグ
    */
-  const captureFrameAtTime = (video, targetTime, outW, outH) => {
-    return new Promise((resolve) => {
-      let isDone = false;
-      const onSeeked = () => {
-        if (isDone) return;
-        isDone = true;
-        video.removeEventListener('seeked', onSeeked);
+  const captureFrameAtTime = async (
+    video,
+    targetTime,
+    outW,
+    outH,
+    fallbackCanvas = null
+  ) => {
+    const rawDuration =
+      Number.isFinite(video.duration) && video.duration > 0
+        ? video.duration
+        : Math.max(mediaDims.duration || 0, targetTime + 1);
+    const safeMaxTime = Math.max(0, rawDuration - VIDEO_END_MARGIN_SEC);
+    const clampedTime = Math.max(0, Math.min(targetTime, safeMaxTime));
 
-        const canvas = document.createElement('canvas');
-        canvas.width = outW;
-        canvas.height = outH;
-        const ctx = canvas.getContext('2d');
+    const videoWidth = video.videoWidth || mediaDims.width || outW;
+    const videoHeight = video.videoHeight || mediaDims.height || outH;
+    const prevWasOpaque = fallbackCanvas
+      ? !isCanvasCompletelyTransparent(fallbackCanvas)
+      : false;
 
-        const scaleRatio = outW / VIEWPORT_WIDTH;
-        const renderScale = zoom * scaleRatio;
-        const renderX = pan.x * scaleRatio;
-        const renderY = pan.y * scaleRatio;
+    /**
+     * 現在の video フレームを指定サイズ・構図で新規 Canvas に描画する
+     * @returns {HTMLCanvasElement|null} 描画済み Canvas（コンテキスト取得失敗時は null）
+     */
+    const renderCurrentVideoFrame = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
 
-        ctx.drawImage(
-          video,
-          renderX,
-          renderY,
-          mediaDims.width * renderScale,
-          mediaDims.height * renderScale
+      const scaleRatio = outW / VIEWPORT_WIDTH;
+      const renderScale = zoom * scaleRatio;
+      const renderX = pan.x * scaleRatio;
+      const renderY = pan.y * scaleRatio;
+
+      ctx.drawImage(
+        video,
+        renderX,
+        renderY,
+        videoWidth * renderScale,
+        videoHeight * renderScale
+      );
+      return canvas;
+    };
+
+    for (let attempt = 0; attempt < VIDEO_MAX_SEEK_ATTEMPTS; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, VIDEO_RETRY_BACKOFF_MS * attempt)
         );
-        resolve(canvas);
-      };
-
-      video.addEventListener('seeked', onSeeked);
-      video.currentTime = targetTime;
-      setTimeout(() => {
-        if (!isDone) {
-          isDone = true;
-          video.removeEventListener('seeked', onSeeked);
-          const canvas = document.createElement('canvas');
-          canvas.width = outW;
-          canvas.height = outH;
-          resolve(canvas);
+        // 同一時刻への再代入による seeked 不発やデコーダスタックを解消するため微小オフセット位置を経由する
+        const nudgeTime =
+          clampedTime > VIDEO_RETRY_NUDGE_SEC
+            ? clampedTime - VIDEO_RETRY_NUDGE_SEC
+            : Math.min(safeMaxTime, clampedTime + VIDEO_RETRY_NUDGE_SEC);
+        if (Math.abs(nudgeTime - clampedTime) >= VIDEO_SEEK_EPSILON_SEC) {
+          await seekVideoToTime(video, nudgeTime, VIDEO_SEEK_TIMEOUT_MS);
         }
-      }, 1500);
-    });
+      }
+
+      const seekOk = await seekVideoToTime(
+        video,
+        clampedTime,
+        VIDEO_SEEK_TIMEOUT_MS
+      );
+      if (
+        seekOk &&
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        video.videoWidth > 0
+      ) {
+        const rendered = renderCurrentVideoFrame();
+        if (rendered) {
+          const isBlank = isCanvasCompletelyTransparent(rendered);
+          if (!isBlank) {
+            return { canvas: rendered, usedFallback: false };
+          }
+          // 元素材自体が最初から透明な透過動画である場合は最終試行後に正当な透過フレームとして採用する
+          if (attempt === VIDEO_MAX_SEEK_ATTEMPTS - 1 && !prevWasOpaque) {
+            return { canvas: rendered, usedFallback: false };
+          }
+        }
+      }
+    }
+
+    // 終端スナップ等で seeked イベントのみ不発だったが有効なフレームが保持されている場合を救済
+    if (
+      !video.seeking &&
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+      video.videoWidth > 0
+    ) {
+      const emergencyCanvas = renderCurrentVideoFrame();
+      if (emergencyCanvas && !isCanvasCompletelyTransparent(emergencyCanvas)) {
+        return { canvas: emergencyCanvas, usedFallback: false };
+      }
+    }
+
+    // 万が一デコーダ異常が解消しなかった場合も空の透明 Canvas は返さず、直前の正常ベースフレームで補完してコマ抜けを防ぐ
+    if (fallbackCanvas) {
+      console.warn(
+        `[PremiumCardMaker] Frame seek fallback applied at ${clampedTime.toFixed(3)}s`
+      );
+      const clonedCanvas = document.createElement('canvas');
+      clonedCanvas.width = outW;
+      clonedCanvas.height = outH;
+      const clonedCtx = clonedCanvas.getContext('2d');
+      if (clonedCtx) {
+        clonedCtx.drawImage(fallbackCanvas, 0, 0, outW, outH);
+      }
+      return { canvas: clonedCanvas, usedFallback: true };
+    }
+
+    throw new Error(
+      `動画フレーム（${clampedTime.toFixed(2)}秒地点）のデコードに失敗しました。`
+    );
   };
 
   /**
@@ -1003,14 +1350,31 @@ export default function PremiumCardMaker() {
 
   /**
    * WebP アニメーションの書き出し実行
+   * @returns {Promise<void>} 書き出し完了後に解決する Promise
    */
   const handleExport = async () => {
+    if (isEncoding) return;
+
     if (!mediaUrl) {
       setStatusMessage({
         type: 'error',
         text: 'メディア（動画または画像）が読み込まれていません。',
       });
       return;
+    }
+
+    // プレビュー再生中のデコーダ・キャッシュ処理が書き出し用シークと競合しないよう事前に一時停止する
+    if (
+      sourceType === 'video' &&
+      videoRef.current &&
+      !videoRef.current.paused
+    ) {
+      videoRef.current.pause();
+    }
+    if (isPlaying) {
+      setIsPlaying(false);
+      setIsReverseMode(false);
+      setFadeOpacity(0);
     }
 
     const duration =
@@ -1028,59 +1392,102 @@ export default function PremiumCardMaker() {
     try {
       const forwardFrames = [];
       const thumbFrames = [];
+      let fallbackFrameCount = 0;
 
       if (sourceType === 'video') {
         const hiddenVideo = document.createElement('video');
         hiddenVideo.muted = true;
         hiddenVideo.playsInline = true;
+        hiddenVideo.preload = 'auto';
         hiddenVideo.src = mediaUrl;
+        hiddenVideo.load();
 
-        await new Promise((res, rej) => {
-          hiddenVideo.onloadedmetadata = () => res();
-          hiddenVideo.onerror = (e) => rej(e);
-        });
-
-        for (let i = 0; i < totalFrames; i++) {
-          const frameTime = startTime + i * frameInterval;
-          const frameCanvas = await captureFrameAtTime(
-            hiddenVideo,
-            frameTime,
-            OUTPUT_WIDTH,
-            OUTPUT_HEIGHT
-          );
-
-          if (glowEnabled && glowRegions.length > 0) {
-            const ctx = frameCanvas.getContext('2d');
-            const progressRatio = i / totalFrames;
-            drawGlowEffects(
-              ctx,
-              OUTPUT_WIDTH,
-              OUTPUT_HEIGHT,
-              frameCanvas,
-              progressRatio,
-              glowRegions
-            );
-          }
-
-          forwardFrames.push({
-            canvas: frameCanvas,
-            durationMs: Math.round(1000 / fps),
+        try {
+          await new Promise((res, rej) => {
+            if (hiddenVideo.readyState >= HTMLMediaElement.HAVE_METADATA) {
+              res();
+              return;
+            }
+            hiddenVideo.onloadedmetadata = () => res();
+            hiddenVideo.onerror = () =>
+              rej(new Error('動画メタデータの読み込みに失敗しました。'));
           });
 
-          if (includeThumbnail) {
-            const thumbCanvas = document.createElement('canvas');
-            thumbCanvas.width = THUMB_WIDTH;
-            thumbCanvas.height = THUMB_HEIGHT;
-            const thumbCtx = thumbCanvas.getContext('2d');
-            thumbCtx.drawImage(frameCanvas, 0, 0, THUMB_WIDTH, THUMB_HEIGHT);
-            thumbFrames.push({
-              canvas: thumbCanvas,
-              durationMs: Math.round(1000 / fps),
-            });
+          const isInitialDecodable = await waitForVideoDecodable(
+            hiddenVideo,
+            VIDEO_INITIAL_READY_TIMEOUT_MS
+          );
+          if (!isInitialDecodable) {
+            throw new Error('動画データの初期デコード準備に失敗しました。');
           }
 
-          const pct = Math.round(((i + 1) / totalFrames) * 45);
-          setProgress({ current: i + 1, total: totalFrames, percent: pct });
+          let lastValidBaseCanvas = null;
+
+          for (let i = 0; i < totalFrames; i++) {
+            const frameTime = startTime + i * frameInterval;
+            const { canvas: frameCanvas, usedFallback } =
+              await captureFrameAtTime(
+                hiddenVideo,
+                frameTime,
+                OUTPUT_WIDTH,
+                OUTPUT_HEIGHT,
+                lastValidBaseCanvas
+              );
+
+            if (usedFallback) {
+              fallbackFrameCount++;
+            }
+
+            // 次フレームのフォールバック補完時に発光エフェクトが二重適用されないよう、グロー合成前のベース画像を保持する
+            if (glowEnabled && glowRegions.length > 0) {
+              const baseSnapshot = document.createElement('canvas');
+              baseSnapshot.width = OUTPUT_WIDTH;
+              baseSnapshot.height = OUTPUT_HEIGHT;
+              const baseCtx = baseSnapshot.getContext('2d');
+              if (baseCtx) {
+                baseCtx.drawImage(frameCanvas, 0, 0);
+              }
+              lastValidBaseCanvas = baseSnapshot;
+
+              const ctx = frameCanvas.getContext('2d');
+              const progressRatio = i / totalFrames;
+              drawGlowEffects(
+                ctx,
+                OUTPUT_WIDTH,
+                OUTPUT_HEIGHT,
+                frameCanvas,
+                progressRatio,
+                glowRegions
+              );
+            } else {
+              lastValidBaseCanvas = frameCanvas;
+            }
+
+            forwardFrames.push({
+              canvas: frameCanvas,
+              durationMs: Math.round(1000 / fps),
+            });
+
+            if (includeThumbnail) {
+              const thumbCanvas = document.createElement('canvas');
+              thumbCanvas.width = THUMB_WIDTH;
+              thumbCanvas.height = THUMB_HEIGHT;
+              const thumbCtx = thumbCanvas.getContext('2d');
+              thumbCtx.drawImage(frameCanvas, 0, 0, THUMB_WIDTH, THUMB_HEIGHT);
+              thumbFrames.push({
+                canvas: thumbCanvas,
+                durationMs: Math.round(1000 / fps),
+              });
+            }
+
+            const pct = Math.round(((i + 1) / totalFrames) * 45);
+            setProgress({ current: i + 1, total: totalFrames, percent: pct });
+          }
+        } finally {
+          // ブラウザのハードウェアビデオデコーダ枠を即座に解放する
+          hiddenVideo.pause();
+          hiddenVideo.removeAttribute('src');
+          hiddenVideo.load();
         }
       } else {
         const hiddenImg = new Image();
@@ -1154,6 +1561,13 @@ export default function PremiumCardMaker() {
             )
           );
 
+          /**
+           * ループ境界を滑らかに接続するため末尾フレーム群へ先頭フレームをクロスフェード合成する
+           * @param {Array<{canvas: HTMLCanvasElement, durationMs: number}>} framesList - 対象フレーム配列
+           * @param {number} w - キャンバス幅 (px)
+           * @param {number} h - キャンバス高さ (px)
+           * @returns {void}
+           */
           const applySeamlessCrossfade = (framesList, w, h) => {
             const firstCanvas = framesList[0].canvas;
             const count = Math.min(fadeFrameCount, framesList.length - 1);
@@ -1188,6 +1602,13 @@ export default function PremiumCardMaker() {
       if (fadeEnabled && fadeDuration > 0) {
         const fadeFrameCount = Math.max(1, Math.round(fadeDuration * fps));
 
+        /**
+         * ループ末尾のフレーム群に指定カラーへの暗転フェードを適用し、終端単色フレームを追加する
+         * @param {Array<{canvas: HTMLCanvasElement, durationMs: number}>} framesList - 対象フレーム配列
+         * @param {number} w - キャンバス幅 (px)
+         * @param {number} h - キャンバス高さ (px)
+         * @returns {void}
+         */
         const applyFadeToFrames = (framesList, w, h) => {
           const count = Math.min(fadeFrameCount, framesList.length);
           const startIndex = framesList.length - count;
@@ -1266,9 +1687,13 @@ export default function PremiumCardMaker() {
             : '通常順方向';
       const speedLabel = playbackSpeed !== 1.0 ? ` (${playbackSpeed}x)` : '';
       const fadeLabel = fadeEnabled ? ` + 暗転(${fadeDuration}s)` : '';
+      const fallbackNote =
+        fallbackFrameCount > 0
+          ? `（※デコード遅延 ${fallbackFrameCount} コマを直前フレームで補完）`
+          : '';
       setStatusMessage({
         type: 'success',
-        text: `書き出し完了（${loopLabel}ループ${speedLabel}${fadeLabel}）！ サイズ: ${(webpBlob.size / (1024 * 1024)).toFixed(2)} MB (${finalFrames.length} フレーム)`,
+        text: `書き出し完了（${loopLabel}ループ${speedLabel}${fadeLabel}）！ サイズ: ${(webpBlob.size / (1024 * 1024)).toFixed(2)} MB (${finalFrames.length} フレーム)${fallbackNote}`,
       });
     } catch (err) {
       console.error('WebP Export failed:', err);

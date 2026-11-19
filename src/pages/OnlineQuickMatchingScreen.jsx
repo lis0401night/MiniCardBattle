@@ -16,6 +16,7 @@ import { showOnlineQuickMatch } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
+import { getQuickRating } from '../utils/constants/battlePass.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   CHARACTERS,
@@ -152,13 +153,7 @@ export default function OnlineQuickMatchingScreen() {
         isPvP: true,
         myUuid,
         myName: meData.name || resolvePlayerName(),
-        myRating:
-          meData.leaderConfig?.rating ??
-          (parseInt(
-            localStorage.getItem('mini_card_battle_quick_rating'),
-            10
-          ) ||
-            0),
+        myRating: meData.leaderConfig?.rating ?? getQuickRating(),
         opponentUuid: opData.id || '',
         opponentName: opData.name || '対戦相手',
         opponentRating: opData.leaderConfig?.rating ?? 0,
@@ -456,9 +451,7 @@ export default function OnlineQuickMatchingScreen() {
       icon: resolveValidIconId(localStorage.getItem(PROFILE_ICON_KEY)),
       playmat: GameState.selectedPlaymatId || null,
       stage: GameState.selectedStageId || 'plain',
-      rating:
-        parseInt(localStorage.getItem('mini_card_battle_quick_rating'), 10) ||
-        0,
+      rating: getQuickRating(),
     };
 
     const matchPromise = startQuickMatch(

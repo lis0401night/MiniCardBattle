@@ -28,6 +28,7 @@ import {
   consumeStartupSkill,
   createDamagePopup,
   decayCardStatus,
+  getCardCurrentPower,
   getCardImgUrl,
   grantCardStatus,
   getSeededRandom,
@@ -35,6 +36,8 @@ import {
   getSkillValue,
   hasSkill,
   playSound,
+  registerSkillResolvingSpawn,
+  releaseSkillResolvingSpawns,
   shuffleArray,
   sleep,
   createGraveKeeperEvents,
@@ -43,6 +46,7 @@ import {
   unmergeCardSkills,
   matchesCardIds,
   matchesCardKeyword,
+  matchesInvokeTarget,
   matchesResurrectTarget,
   matchesSummonTarget,
   matchesUnionMaterial,
@@ -75,6 +79,8 @@ import {
   waitPlayerDualDiscardSelection,
   waitPlayerEnemyLaneSelection,
   waitPlayerHandSelection,
+  waitPlayerInvokeCardSelection,
+  waitPlayerInvokeSacrificeSelection,
   waitPlayerLaneSelection,
   waitSkillChoice,
   triggerRetaliateSkill,
@@ -103,6 +109,7 @@ import {
   evaluateAdhocCullChoice,
   evaluateAdhocSummonMove,
   evaluateAdhocAssembleMove,
+  evaluateAdhocInvokeMove,
 } from './ai_normal.js';
 
 /**
@@ -139,6 +146,191 @@ export async function handleStartupDispelled(
     createDamagePopup(targetEl, '起動', '#facc15');
     playSound(SOUNDS.seSkill);
   }
+}
+
+/**
+ * 山札（デッキ）から取り出して初期ステータスへ復元したカードを、指定した自陣レーンへ「召喚」し、
+ * 専用VFX・召喚アニメーション・起動/合体/装備/上書き判定・誘発チェック・召喚時オンプレイ能力解決・デッキシャッフルを一括実行する共通ヘルパー。
+ * 「召集（assemble）」、「招来（invoke）」の山札召喚分岐、およびリーダースキル「次元斬（daemon_call）」「万魔の招来（demonic_call）」で共通利用する。
+ *
+ * @param {'blue' | 'red'} owner - 召喚を行うプレイヤー陣営
+ * @param {Array<object>} deck - 対象プレイヤーの山札配列（既に該当カードを取り除いた状態）
+ * @param {object} restoredCard - マスタデータから初期ステータスへ復元済みの召喚カード
+ * @param {number} targetLane - 召喚先のレーン番号 (0〜2)
+ * @param {object|null} [sourceCardForCleanup=null] - スキル発動元カード（cleanupDestroyedCards の誤破壊除外用）
+ * @param {string} [eventSource='assemble'] - イベントログに記録する召喚ソース識別子
+ * @param {string|null} [summonVfxId=null] - 召喚時にレーンへ再生する専用VFX ID（例: 'anm_summon_daughter'）
+ * @returns {Promise<void>}
+ */
+export async function executeSummonRestoredCardFromDeck(
+  owner,
+  deck,
+  restoredCard,
+  targetLane,
+  sourceCardForCleanup = null,
+  eventSource = 'assemble',
+  summonVfxId = null
+) {
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+
+  // リーダースキル等による専用召喚VFX（次元斬の次元ゲートなど）を対象レーンに再生
+  if (summonVfxId && window.triggerVfx) {
+    await sleep(200);
+    await window.triggerVfx(summonVfxId, owner, targetLane);
+  }
+
+  // カード固有の召喚アニメーションを再生
+  await playSummonAnimation(restoredCard, owner);
+
+  const existingCard = board[targetLane];
+  const unionSkill =
+    restoredCard.skills && restoredCard.skills.find((s) => s.id === 'union');
+  const unionMasterData =
+    existingCard && unionSkill && matchesUnionMaterial(existingCard, unionSkill)
+      ? CARD_MASTER.find((c) => c.id === unionSkill.summonId)
+      : null;
+
+  if (existingCard && hasSkill(existingCard, 'startup')) {
+    await handleStartupDispelled(owner, existingCard, targetLane, restoredCard);
+    // 召喚行為の一環として相手の誘発スキルチェック
+    await checkAndTriggerCounter(owner, restoredCard, targetLane);
+  } else if (existingCard && unionMasterData) {
+    const unionCard = createUnionCard(
+      owner,
+      existingCard,
+      restoredCard,
+      unionMasterData
+    );
+    // 合体召喚完了・相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを維持する
+    unionCard.isSkillResolving = true;
+    board[targetLane] = unionCard;
+
+    const callEvents = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: unionCard,
+        source: 'union',
+        keepSkillResolving: true,
+      },
+    ];
+    await playEvents(callEvents);
+
+    // 相手の誘発スキルチェック
+    await checkAndTriggerCounter(owner, unionCard, targetLane);
+
+    if (hasActiveSkill(unionCard)) {
+      await resolveOnPlaySkill(owner, targetLane, unionCard);
+    } else {
+      unionCard.isSkillResolving = false;
+      releaseSkillResolvingSpawns(unionCard);
+      unionCard.skillTriggered = true;
+    }
+    await cleanupDestroyedCards(sourceCardForCleanup);
+  } else if (canEquipCard(restoredCard, board[targetLane])) {
+    const targetCard = board[targetLane];
+    const prevResolving = Boolean(targetCard.isSkillResolving);
+    targetCard.isSkillResolving = true;
+    const { equipSkills } = applyEquipment(targetCard, restoredCard);
+
+    try {
+      const callEvents = [
+        {
+          type: 'summon_card',
+          side: owner,
+          lane: targetLane,
+          card: targetCard,
+          source: 'equip',
+          keepSkillResolving: true,
+        },
+      ];
+      await playEvents(callEvents);
+
+      // 召喚行為の一環として相手の誘発スキルチェック（アクティブスキル解決前）
+      await checkAndTriggerCounter(owner, targetCard, targetLane);
+
+      // 装備されたカードが持っていたアクティブスキルを即時発動させる
+      if (board[targetLane] === targetCard) {
+        for (let i = 0; i < equipSkills.length; i++) {
+          const sk = equipSkills[i];
+          const canTriggerEquipSkill = board.includes(targetCard)
+            ? hasSkill(targetCard, sk.id)
+            : Boolean(targetCard.isSkillResolving);
+          if (ACTIVE_SKILLS.includes(sk.id) && canTriggerEquipSkill) {
+            const remainingEquipSkills = equipSkills
+              .slice(i + 1)
+              .filter((s) => ACTIVE_SKILLS.includes(s.id));
+            await sleep(50);
+            const enhancedSk = {
+              ...sk,
+              _sourceChoices: restoredCard.choices,
+              _sourceChoices2: restoredCard.choices2,
+            };
+            await resolveActiveSkillEffect(
+              owner,
+              targetLane,
+              targetCard,
+              sk.id,
+              sk.value,
+              enhancedSk,
+              remainingEquipSkills
+            );
+            if (GameState.isBattleEnded) break;
+          }
+        }
+      }
+    } finally {
+      if (!prevResolving) {
+        targetCard.isSkillResolving = false;
+        releaseSkillResolvingSpawns(targetCard);
+      }
+    }
+    await cleanupDestroyedCards(sourceCardForCleanup);
+  } else {
+    restoredCard.uid = `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
+    restoredCard.owner = owner;
+
+    // 配置の瞬間に既存カードを安全に墓地へ送る
+    if (board[targetLane]) {
+      if (!(await discardCard(owner, board[targetLane], targetLane, false))) {
+        board[targetLane] = null;
+      }
+    }
+    board[targetLane] = restoredCard;
+
+    // 登場演出および相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを立てる
+    restoredCard.isSkillResolving = true;
+
+    const callEvents = [
+      {
+        type: 'summon_card',
+        side: owner,
+        lane: targetLane,
+        card: restoredCard,
+        source: eventSource,
+        keepSkillResolving: true,
+      },
+    ];
+    await playEvents(callEvents);
+
+    // 相手の誘発スキルチェック
+    await checkAndTriggerCounter(owner, restoredCard, targetLane);
+
+    if (hasActiveSkill(restoredCard)) {
+      await resolveOnPlaySkill(owner, targetLane, restoredCard);
+    } else {
+      restoredCard.isSkillResolving = false;
+      releaseSkillResolvingSpawns(restoredCard);
+      restoredCard.skillTriggered = true;
+    }
+    await cleanupDestroyedCards(sourceCardForCleanup);
+  }
+
+  // 山札からの召喚完了後、デッキをシャッフルして枚数表示を更新する
+  shuffleArray(deck);
+  updateDeckDisplay(owner);
+  await sleep(300);
 }
 
 /**
@@ -323,6 +515,8 @@ export async function resolveActiveSkillEffect(
   skObj = null,
   remainingSkills = []
 ) {
+  if (GameState.isBattleEnded) return;
+
   // 後続で待機している未解決スキル群（引数、またはカードの pendingSkills プロパティから取得）
   const pendingSkills =
     Array.isArray(remainingSkills) && remainingSkills.length > 0
@@ -334,9 +528,15 @@ export async function resolveActiveSkillEffect(
   const currentSkill =
     skObj ||
     (Array.isArray(c?.skills) ? c.skills.find((s) => s.id === skillId) : null);
-  const cEl = document.querySelector(
-    `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${l}"] .card`
-  );
+  const popupBoard =
+    o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const popupLane = c ? popupBoard.indexOf(c) : l;
+  const cEl =
+    popupLane !== -1
+      ? document.querySelector(
+          `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${popupLane}"] .card`
+        )
+      : null;
 
   // 演出用のポップアップと音（一括した基本演出）
   // 演出用のポップアップと音（一括した基本演出）
@@ -464,6 +664,7 @@ export async function resolveActiveSkillEffect(
       supremacy: '覇道',
       unleash: '解放',
       assemble: '召集',
+      invoke: '招来',
       protection: '保護',
     };
     let popupLabel = labels[skillId] || SKILLS[skillId]?.name || 'スキル';
@@ -726,7 +927,7 @@ export async function resolveActiveSkillEffect(
       renderHand();
       await sleep(300);
 
-      await playCard(o, selectedIdx, selectedLane);
+      await playCard(o, selectedIdx, selectedLane, 0, true);
     }
     return;
   }
@@ -857,7 +1058,408 @@ export async function resolveActiveSkillEffect(
       renderHand();
       await sleep(300);
 
-      await playCard(o, selectedIdx, selectedLane);
+      await playCard(o, selectedIdx, selectedLane, 0, true);
+    }
+    return;
+  }
+
+  // 【招来（invoke）】手札と自分の場のカードを望む数選んで捨て、捨てたカードの合計パワー以下の
+  // 「降臨」を持つカードを手札または山札から召喚し、減った手札と同数の「虚空」を手札に加える
+  if (skillId === 'invoke') {
+    const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
+    const deck = o === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+    const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    const isOfflineAI =
+      o === 'red' &&
+      GameState.gameMode !== 'online' &&
+      GameState.gameMode !== 'pvp';
+
+    const voidTpl = CARD_MASTER.find((m) => m.id === 'token_void') || {
+      name: '虚空',
+      power: 0,
+    };
+
+    /**
+     * 「招来」で手札が減った際（手札コスト破棄時または手札からの降臨召喚時）に補填する
+     * 「虚空（token_void）」トークンオブジェクトをシード乱数を用いて生成する。
+     * @param {string|number} suffix - ID・UID末尾に付与する識別サフィックス
+     * @returns {object} 手札追加用の「虚空」トークンオブジェクト
+     */
+    const createInvokeVoidToken = (suffix) => ({
+      ...voidTpl,
+      id: `token_void_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_invoke_${suffix}`,
+      uid: `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}_void_invoke_${suffix}`,
+      baseId: 'token_void',
+      filter: voidTpl.filter,
+      power: voidTpl.power,
+      currentPower: voidTpl.power,
+      basePower: voidTpl.power,
+      voiceCategory: voidTpl.voiceCategory || 'stone',
+      isToken: true,
+      isMorphToken: true,
+    });
+
+    let chosenHandIndices = [];
+    let chosenBoardLanes = [];
+    let aiPlan = null;
+    let plannedHandCardRef = null;
+
+    if (isOfflineAI) {
+      // 事前計画キューに残骸があればクリーンアップし、最新盤面から完全シミュレーションで最善プランを決定
+      consumeAIAction('invoke');
+      aiPlan = evaluateAdhocInvokeMove(o);
+      chosenHandIndices = Array.isArray(aiPlan.handIndices)
+        ? [...aiPlan.handIndices]
+        : [];
+      chosenBoardLanes = Array.isArray(aiPlan.boardLanes)
+        ? [...aiPlan.boardLanes]
+        : [];
+      if (
+        aiPlan.summonZone === 'hand' &&
+        aiPlan.targetIdx >= 0 &&
+        aiPlan.targetIdx < h.length
+      ) {
+        plannedHandCardRef = h[aiPlan.targetIdx];
+      }
+      if (
+        chosenHandIndices.length > 0 ||
+        chosenBoardLanes.length > 0 ||
+        aiPlan.summonZone !== null
+      ) {
+        await sleep(AI_THINKING_DURATION);
+      }
+    } else {
+      const sacSelection = await waitPlayerInvokeSacrificeSelection(o);
+      chosenHandIndices = Array.isArray(sacSelection?.handIndices)
+        ? [...sacSelection.handIndices]
+        : [];
+      chosenBoardLanes = Array.isArray(sacSelection?.boardLanes)
+        ? [...sacSelection.boardLanes]
+        : [];
+    }
+
+    // 重複排除・範囲検証を行い、破棄前に現在のパワーの合計を算出する
+    const validHandIndices = Array.from(new Set(chosenHandIndices))
+      .filter(
+        (idx) => Number.isInteger(idx) && idx >= 0 && idx < h.length && h[idx]
+      )
+      .sort((a, b) => b - a);
+    const validBoardLanes = Array.from(new Set(chosenBoardLanes)).filter(
+      (laneIdx) =>
+        Number.isInteger(laneIdx) &&
+        laneIdx >= 0 &&
+        laneIdx < 3 &&
+        myBoard[laneIdx] !== null
+    );
+
+    let totalSacrificedPower = 0;
+    for (const idx of validHandIndices) {
+      totalSacrificedPower += getCardCurrentPower(h[idx]);
+    }
+    for (const laneIdx of validBoardLanes) {
+      totalSacrificedPower += getCardCurrentPower(myBoard[laneIdx]);
+    }
+
+    // 1. 選択された自分の場のカードを捨てる（破壊ではなく破棄のため isDestroyed = false）
+    if (validBoardLanes.length > 0) {
+      for (const laneIdx of validBoardLanes) {
+        const boardCard = myBoard[laneIdx];
+        if (!boardCard) continue;
+        if (!(await discardCard(o, boardCard, laneIdx, false, false))) {
+          myBoard[laneIdx] = null;
+        }
+      }
+      renderBoard();
+    }
+
+    // 2. 選択された自分の手札を捨て、捨てた枚数と同じ数の「虚空」トークンを手札に加える
+    if (validHandIndices.length > 0) {
+      const droppedHandCards = [];
+      for (const idx of validHandIndices) {
+        const removed = h.splice(idx, 1)[0];
+        if (removed) droppedHandCards.push(removed);
+      }
+      droppedHandCards.reverse();
+
+      for (let v = 0; v < droppedHandCards.length; v++) {
+        h.push(createInvokeVoidToken(v));
+      }
+      updateDeckDisplay(o);
+      if (o === 'blue') renderHand();
+
+      // 手札破棄に伴う墓地送りおよび「狂気」スキルの解決を一括実行
+      await discardCardsFromHand(o, droppedHandCards);
+      if (GameState.isBattleEnded) return;
+    }
+
+    // 3. 破棄・狂気解決後の最新盤面において、召喚可能な「降臨（合計パワー以下）」カードを抽出する
+    const validHandCards = h.filter(
+      (cand) =>
+        cand &&
+        matchesInvokeTarget(cand, totalSacrificedPower) &&
+        getValidSummonLanes(o, cand).length > 0
+    );
+    const validDeckCards = deck.filter((cand) => {
+      if (!cand || !matchesInvokeTarget(cand, totalSacrificedPower))
+        return false;
+      const master = CARD_MASTER.find((m) => m.id === (cand.baseId || cand.id));
+      return getValidSummonLanes(o, master || cand).length > 0;
+    });
+
+    if (validHandCards.length === 0 && validDeckCards.length === 0) {
+      await sleep(300);
+      return;
+    }
+
+    // 4-A. オフラインAIによる「降臨」カードの召喚実行
+    if (isOfflineAI) {
+      if (!aiPlan || !aiPlan.summonZone || aiPlan.summonLane === -1) {
+        return;
+      }
+
+      if (aiPlan.summonZone === 'hand') {
+        let targetHandIdx = plannedHandCardRef
+          ? h.indexOf(plannedHandCardRef)
+          : -1;
+        if (targetHandIdx === -1 && aiPlan.targetUid) {
+          targetHandIdx = h.findIndex(
+            (cand) =>
+              cand &&
+              matchesInvokeTarget(cand, totalSacrificedPower) &&
+              (cand.uid === aiPlan.targetUid ||
+                cand.id === aiPlan.targetUid ||
+                cand.baseId === aiPlan.targetUid)
+          );
+        }
+        if (targetHandIdx === -1) return;
+
+        const targetHandCard = h[targetHandIdx];
+        const legalLanes = getValidSummonLanes(o, targetHandCard);
+        if (legalLanes.length === 0) return;
+        const finalLane = legalLanes.includes(aiPlan.summonLane)
+          ? aiPlan.summonLane
+          : legalLanes[0];
+
+        // 手札から「降臨」カードを召喚して減る1枚分の「虚空」を playCard 前に手札へ補填する
+        h.push(createInvokeVoidToken('summon'));
+        updateDeckDisplay(o);
+        renderHand();
+        await sleep(300);
+        await playCard(o, targetHandIdx, finalLane, 0, true);
+        return;
+      }
+
+      if (aiPlan.summonZone === 'deck') {
+        let targetDeckIdx = -1;
+        if (aiPlan.targetUid) {
+          targetDeckIdx = deck.findIndex(
+            (cand) =>
+              cand &&
+              matchesInvokeTarget(cand, totalSacrificedPower) &&
+              (cand.uid === aiPlan.targetUid ||
+                cand.id === aiPlan.targetUid ||
+                cand.baseId === aiPlan.targetUid)
+          );
+        }
+        if (
+          targetDeckIdx === -1 &&
+          aiPlan.targetIdx >= 0 &&
+          aiPlan.targetIdx < deck.length &&
+          matchesInvokeTarget(deck[aiPlan.targetIdx], totalSacrificedPower)
+        ) {
+          targetDeckIdx = aiPlan.targetIdx;
+        }
+        if (targetDeckIdx === -1) return;
+
+        const rawDeckCard = deck[targetDeckIdx];
+        const masterData = CARD_MASTER.find(
+          (m) => m.id === (rawDeckCard.baseId || rawDeckCard.id)
+        );
+        const restoredCard = masterData
+          ? JSON.parse(JSON.stringify(masterData))
+          : { ...rawDeckCard };
+        restoredCard.baseId = rawDeckCard.baseId || rawDeckCard.id;
+        restoredCard.basePower = restoredCard.power;
+        restoredCard.currentPower = restoredCard.power;
+        if (rawDeckCard.isPremium !== undefined) {
+          restoredCard.isPremium = rawDeckCard.isPremium;
+        }
+
+        const legalLanes = getValidSummonLanes(o, restoredCard);
+        if (legalLanes.length === 0) return;
+        const finalLane = legalLanes.includes(aiPlan.summonLane)
+          ? aiPlan.summonLane
+          : legalLanes[0];
+
+        deck.splice(targetDeckIdx, 1);
+        await sleep(300);
+        await executeSummonRestoredCardFromDeck(
+          o,
+          deck,
+          restoredCard,
+          finalLane,
+          c,
+          'invoke'
+        );
+      }
+      return;
+    }
+
+    // 4-B. プレイヤー / オンライン対戦における「降臨」カード選択モーダルとレーン選択・召喚実行
+    const invokeSelection = await waitPlayerInvokeCardSelection(
+      validHandCards,
+      validDeckCards,
+      totalSacrificedPower,
+      o
+    );
+    if (!invokeSelection || !invokeSelection.card) {
+      return;
+    }
+
+    if (invokeSelection.zone === 'hand') {
+      const pickedHandCard = invokeSelection.card;
+      const legalLanes = getValidSummonLanes(o, pickedHandCard);
+      if (legalLanes.length === 0) return;
+
+      let successSummon = false;
+      let targetLane = -1;
+      while (!successSummon) {
+        GameState.placementMessage = `招来: 「${pickedHandCard.name}」を召喚するレーンを選んでください`;
+        const selectedLanes = await waitPlayerLaneSelection(
+          1,
+          o,
+          pickedHandCard,
+          false,
+          legalLanes,
+          true,
+          true,
+          '召喚を完了',
+          true
+        );
+        GameState.placementMessage = null;
+
+        if (!selectedLanes || selectedLanes.length === 0) {
+          return;
+        }
+        targetLane = selectedLanes[0];
+
+        const proceed = await confirmOverwrittenLane(
+          o,
+          pickedHandCard,
+          targetLane
+        );
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        successSummon = true;
+      }
+
+      let finalHandIdx = h.indexOf(pickedHandCard);
+      if (finalHandIdx === -1) {
+        finalHandIdx = h.findIndex(
+          (cand) =>
+            cand &&
+            ((pickedHandCard.uid && cand.uid === pickedHandCard.uid) ||
+              (cand.baseId || cand.id) ===
+                (pickedHandCard.baseId || pickedHandCard.id))
+        );
+      }
+      if (finalHandIdx !== -1 && targetLane !== -1) {
+        // 手札から「降臨」カードを召喚して減る1枚分の「虚空」を playCard 前に手札へ補填する
+        h.push(createInvokeVoidToken('summon'));
+        updateDeckDisplay(o);
+        renderHand();
+        await sleep(300);
+        await playCard(o, finalHandIdx, targetLane, 0, true);
+      }
+      return;
+    }
+
+    if (invokeSelection.zone === 'deck') {
+      const selectedDeckCard = invokeSelection.card;
+      let removedDeckIdx = deck.indexOf(selectedDeckCard);
+      if (removedDeckIdx === -1) {
+        removedDeckIdx = deck.findIndex(
+          (cand) =>
+            cand &&
+            ((selectedDeckCard.uid && cand.uid === selectedDeckCard.uid) ||
+              cand.id === selectedDeckCard.id ||
+              (Boolean(selectedDeckCard.baseId) &&
+                (cand.baseId === selectedDeckCard.baseId ||
+                  cand.id === selectedDeckCard.baseId)))
+        );
+      }
+      if (removedDeckIdx === -1) return;
+      deck.splice(removedDeckIdx, 1);
+
+      const masterData = CARD_MASTER.find(
+        (m) => m.id === (selectedDeckCard.baseId || selectedDeckCard.id)
+      );
+      const restoredCard = masterData
+        ? JSON.parse(JSON.stringify(masterData))
+        : { ...selectedDeckCard };
+      restoredCard.baseId = selectedDeckCard.baseId || selectedDeckCard.id;
+      restoredCard.basePower = restoredCard.power;
+      restoredCard.currentPower = restoredCard.power;
+      if (selectedDeckCard.isPremium !== undefined) {
+        restoredCard.isPremium = selectedDeckCard.isPremium;
+      }
+
+      const legalLanes = getValidSummonLanes(o, restoredCard);
+      if (legalLanes.length === 0) {
+        deck.splice(removedDeckIdx, 0, selectedDeckCard);
+        updateDeckDisplay(o);
+        return;
+      }
+
+      let successSummon = false;
+      let targetLane = -1;
+      while (!successSummon) {
+        GameState.placementMessage = `招来: 「${restoredCard.name}」を召喚するレーンを選んでください`;
+        const selectedLanes = await waitPlayerLaneSelection(
+          1,
+          o,
+          restoredCard,
+          true,
+          legalLanes,
+          true,
+          true,
+          '召喚を完了',
+          true
+        );
+        GameState.placementMessage = null;
+
+        if (!selectedLanes || selectedLanes.length === 0) {
+          // レーン選択キャンセル時は山札の元の位置へ戻し、デッキ順序の改変を防ぐ
+          deck.splice(removedDeckIdx, 0, selectedDeckCard);
+          updateDeckDisplay(o);
+          return;
+        }
+        targetLane = selectedLanes[0];
+
+        const proceed = await confirmOverwrittenLane(
+          o,
+          restoredCard,
+          targetLane
+        );
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        successSummon = true;
+      }
+
+      if (targetLane !== -1) {
+        await executeSummonRestoredCardFromDeck(
+          o,
+          deck,
+          restoredCard,
+          targetLane,
+          c,
+          'invoke'
+        );
+      }
     }
     return;
   }
@@ -870,6 +1472,8 @@ export async function resolveActiveSkillEffect(
   }
 
   if (skillId === 'metamorph') {
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (board[l] !== c) return;
     // 全マスタカード（トークン除く）からランダムに1枚選択
     const validMasters = CARD_MASTER.filter((c) => !c.isToken);
     const randomMaster =
@@ -1135,9 +1739,9 @@ export async function resolveActiveSkillEffect(
     renderHand();
     await sleep(600);
   } else if (skillId === 'servant' || skillId === 'ambush') {
-    // 【重要仕様】「使役 X」において X (pValue) はトークンのパワーを指す。
+    // 【重要仕様】「使役 X」において X (pValue) はトークンのパワーを指す（0 も有効値として保持）。
     // 個数は常に 1体 であるため、レーン選択数には 1 を指定する。
-    const pValue = skillValue || 1;
+    const pValue = skillValue ?? 1;
 
     // 特定のスキルオブジェクト(skObj)があればそのsummonIdを優先、なければカード定義から、それもなければデフォルト
     let tId = skObj?.summonId || c.summonId || 'token_drone';
@@ -1286,14 +1890,21 @@ export async function resolveActiveSkillEffect(
             lane: targetLane,
             card: newToken,
             source: skillId,
+            keepSkillResolving: true,
           });
         }
         successfullyPlacedLanes.push(targetLane);
       }
       await playEvents(events);
-      // 配置演出が完了したので保護フラグを解除
+      // 親カードの召喚時能力が継続中であれば、生成したトークンの保護フラグも親カードの全能力完了まで維持する
       for (const ev of events) {
-        if (ev.card) ev.card.isSkillResolving = false;
+        if (ev.card) {
+          if (c?.isSkillResolving && skillId !== 'ambush') {
+            registerSkillResolvingSpawn(c, ev.card);
+          } else if (skillId !== 'ambush') {
+            ev.card.isSkillResolving = false;
+          }
+        }
       }
       await cleanupDestroyedCards(c);
 
@@ -1312,9 +1923,23 @@ export async function resolveActiveSkillEffect(
             await executeSingleCombat(o, targetLane);
           }
         }
+        // 単体戦闘終了後、親カードの召喚時能力解決中であれば保護対象へ登録し、そうでなければ解除してクリーンアップ
+        for (const ev of events) {
+          if (ev.card) {
+            if (c?.isSkillResolving) {
+              registerSkillResolvingSpawn(c, ev.card);
+            } else {
+              ev.card.isSkillResolving = false;
+            }
+          }
+        }
+        await cleanupDestroyedCards(c);
       }
     }
   } else if (skillId === 'clone') {
+    const myBoardForClone =
+      o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (myBoardForClone[l] !== c) return;
     // UI選択部分はbattle/Rendererでは隠蔽しきれないためここに残す
     const count = skillValue || 1;
     const tC = CARD_MASTER.find((m) => m.id === 'token_clone');
@@ -1475,13 +2100,20 @@ export async function resolveActiveSkillEffect(
           lane: targetLane,
           card: newToken,
           source: 'clone',
+          keepSkillResolving: true,
         });
       }
     }
     await playEvents(events);
-    // 配置演出が完了したので保護フラグを解除
+    // 親カードの召喚時能力が継続中であれば保護を維持し、そうでなければ解除
     for (const ev of events) {
-      if (ev.card) ev.card.isSkillResolving = false;
+      if (ev.card) {
+        if (c?.isSkillResolving) {
+          registerSkillResolvingSpawn(c, ev.card);
+        } else {
+          ev.card.isSkillResolving = false;
+        }
+      }
     }
     await cleanupDestroyedCards(c);
   } else if (skillId === 'fate') {
@@ -2407,8 +3039,14 @@ export async function resolveActiveSkillEffect(
           playSound(SOUNDS.sePlace);
           renderBoard();
           await sleep(PLACE_ANIMATION_DURATION);
-          // 配置演出が完了したので保護フラグを解除（復活したカード自身）
-          if (board[targetLane]) board[targetLane].isSkillResolving = false;
+          // 親カードの召喚時能力が継続中であれば保護を維持し、そうでなければ解除
+          if (board[targetLane]) {
+            if (c?.isSkillResolving) {
+              registerSkillResolvingSpawn(c, board[targetLane]);
+            } else {
+              board[targetLane].isSkillResolving = false;
+            }
+          }
           await cleanupDestroyedCards(c);
         }
       }
@@ -2607,7 +3245,13 @@ export async function resolveActiveSkillEffect(
             playSound(SOUNDS.sePlace);
             renderBoard();
             await sleep(PLACE_ANIMATION_DURATION);
-            if (board[targetLane]) board[targetLane].isSkillResolving = false;
+            if (board[targetLane]) {
+              if (c?.isSkillResolving) {
+                registerSkillResolvingSpawn(c, board[targetLane]);
+              } else {
+                board[targetLane].isSkillResolving = false;
+              }
+            }
             await cleanupDestroyedCards(c);
           }
         }
@@ -2960,109 +3604,14 @@ export async function resolveActiveSkillEffect(
         }
 
         if (targetLane !== -1) {
-          const board =
-            o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-
-          // 演出：召集による召喚アニメーションを再生
-          await playSummonAnimation(restoredCard, o);
-
-          const existingCard = board[targetLane];
-          if (existingCard && hasSkill(existingCard, 'startup')) {
-            await handleStartupDispelled(
-              o,
-              existingCard,
-              targetLane,
-              restoredCard
-            );
-            // 召喚行為の一環として相手の誘発スキルチェック
-            await checkAndTriggerCounter(o, restoredCard, targetLane);
-          } else if (canEquipCard(restoredCard, board[targetLane])) {
-            const targetCard = board[targetLane];
-            const { equipSkills } = applyEquipment(targetCard, restoredCard);
-
-            let callEvents = [];
-            callEvents.push({
-              type: 'summon_card',
-              side: o,
-              lane: targetLane,
-              card: targetCard,
-              source: 'equip',
-            });
-            await playEvents(callEvents);
-
-            // 召喚行為の一環として相手の誘発スキルチェック（アクティブスキル解決前）
-            await checkAndTriggerCounter(o, targetCard, targetLane);
-
-            // 装備されたカードが持っていたアクティブスキルを即時発動させる
-            // ※ 忘却（silence）や沈黙（oblivion）等で対象カードの能力が消去された場合、または盤面からカードが除去された場合は不発
-            if (board[targetLane] === targetCard) {
-              for (const sk of equipSkills) {
-                if (
-                  ACTIVE_SKILLS.includes(sk.id) &&
-                  hasSkill(targetCard, sk.id)
-                ) {
-                  await sleep(50);
-                  const enhancedSk = {
-                    ...sk,
-                    _sourceChoices: restoredCard.choices,
-                    _sourceChoices2: restoredCard.choices2,
-                  };
-                  await resolveActiveSkillEffect(
-                    o,
-                    targetLane,
-                    targetCard,
-                    sk.id,
-                    sk.value,
-                    enhancedSk
-                  );
-                }
-              }
-            }
-            await cleanupDestroyedCards(c);
-          } else {
-            restoredCard.uid = `${o}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
-            restoredCard.owner = o;
-
-            // 配置の瞬間に既存カードを安全に墓地へ送る
-            if (board[targetLane]) {
-              if (
-                !(await discardCard(o, board[targetLane], targetLane, false))
-              ) {
-                board[targetLane] = null;
-              }
-            }
-            board[targetLane] = restoredCard;
-
-            // 出現時スキルを持つ場合は即座に保護フラグを立てる
-            if (hasActiveSkill(restoredCard)) {
-              restoredCard.isSkillResolving = true;
-            }
-
-            let callEvents = [];
-            callEvents.push({
-              type: 'summon_card',
-              side: o,
-              lane: targetLane,
-              card: restoredCard,
-              source: 'assemble',
-            });
-            await playEvents(callEvents);
-
-            // 相手の誘発スキルチェック
-            await checkAndTriggerCounter(o, restoredCard, targetLane);
-
-            if (hasActiveSkill(restoredCard)) {
-              await resolveOnPlaySkill(o, targetLane, restoredCard);
-            } else {
-              restoredCard.isSkillResolving = false;
-            }
-            await cleanupDestroyedCards(c);
-          }
-
-          // 召集完了後、探索と同様にデッキをシャッフルする
-          shuffleArray(deck);
-          updateDeckDisplay(o);
-          await sleep(300);
+          await executeSummonRestoredCardFromDeck(
+            o,
+            deck,
+            restoredCard,
+            targetLane,
+            c,
+            'assemble'
+          );
         } else {
           // 万一レーン未選択のまま抜けた場合の安全復元（元の位置へ戻す）
           if (removedDeckIdx !== -1) {
@@ -3305,45 +3854,61 @@ export async function resolveActiveSkillEffect(
             await checkAndTriggerCounter(o, topCard, targetLane);
           } else if (canEquipCard(topCard, board[targetLane])) {
             const targetCard = board[targetLane];
+            const prevResolving = Boolean(targetCard.isSkillResolving);
+            targetCard.isSkillResolving = true;
             const { equipSkills } = applyEquipment(targetCard, topCard);
 
-            let callEvents = [];
-            callEvents.push({
-              type: 'summon_card',
-              side: o,
-              lane: targetLane,
-              card: targetCard,
-              source: 'equip',
-            });
-            await playEvents(callEvents);
+            try {
+              let callEvents = [];
+              callEvents.push({
+                type: 'summon_card',
+                side: o,
+                lane: targetLane,
+                card: targetCard,
+                source: 'equip',
+                keepSkillResolving: true,
+              });
+              await playEvents(callEvents);
 
-            // 召喚行為の一環として相手の誘発スキルチェック（アクティブスキル解決前）
-            await checkAndTriggerCounter(o, targetCard, targetLane);
+              // 召喚行為の一環として相手の誘発スキルチェック（アクティブスキル解決前）
+              await checkAndTriggerCounter(o, targetCard, targetLane);
 
-            // 装備されたカードが持っていたアクティブスキルを即時発動させる
-            // ※ 忘却（silence）や沈黙（oblivion）等で対象カードの能力が消去された場合、または盤面からカードが除去された場合は不発
-            if (board[targetLane] === targetCard) {
-              for (const sk of equipSkills) {
-                if (
-                  ACTIVE_SKILLS.includes(sk.id) &&
-                  hasSkill(targetCard, sk.id)
-                ) {
-                  await sleep(50);
-                  // 【バグ修正】選択スキルに装備元の選択肢情報を渡すため、enhancedSk オブジェクトを構築して渡す
-                  const enhancedSk = {
-                    ...sk,
-                    _sourceChoices: topCard.choices,
-                    _sourceChoices2: topCard.choices2,
-                  };
-                  await resolveActiveSkillEffect(
-                    o,
-                    targetLane,
-                    targetCard,
-                    sk.id,
-                    sk.value,
-                    enhancedSk
-                  );
+              // 装備されたカードが持っていたアクティブスキルを即時発動させる
+              // ※ 忘却（silence）や沈黙（oblivion）等で対象カードの能力が消去された場合、または誘発で盤面からカードが除去された場合は不発
+              if (board[targetLane] === targetCard) {
+                for (let i = 0; i < equipSkills.length; i++) {
+                  const sk = equipSkills[i];
+                  const canTriggerEquipSkill = board.includes(targetCard)
+                    ? hasSkill(targetCard, sk.id)
+                    : Boolean(targetCard.isSkillResolving);
+                  if (ACTIVE_SKILLS.includes(sk.id) && canTriggerEquipSkill) {
+                    const remainingEquipSkills = equipSkills
+                      .slice(i + 1)
+                      .filter((s) => ACTIVE_SKILLS.includes(s.id));
+                    await sleep(50);
+                    // 【バグ修正】選択スキルに装備元の選択肢情報を渡すため、enhancedSk オブジェクトを構築して渡す
+                    const enhancedSk = {
+                      ...sk,
+                      _sourceChoices: topCard.choices,
+                      _sourceChoices2: topCard.choices2,
+                    };
+                    await resolveActiveSkillEffect(
+                      o,
+                      targetLane,
+                      targetCard,
+                      sk.id,
+                      sk.value,
+                      enhancedSk,
+                      remainingEquipSkills
+                    );
+                    if (GameState.isBattleEnded) break;
+                  }
                 }
+              }
+            } finally {
+              if (!prevResolving) {
+                targetCard.isSkillResolving = false;
+                releaseSkillResolvingSpawns(targetCard);
               }
             }
             await cleanupDestroyedCards(c);
@@ -3361,10 +3926,8 @@ export async function resolveActiveSkillEffect(
             }
             board[targetLane] = topCard;
 
-            // 出現時スキルを持つ場合は即座に保護フラグを立てる
-            if (hasActiveSkill(topCard)) {
-              topCard.isSkillResolving = true;
-            }
+            // 登場演出および相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを立てる
+            topCard.isSkillResolving = true;
 
             let callEvents = [];
 
@@ -3374,6 +3937,7 @@ export async function resolveActiveSkillEffect(
               lane: targetLane,
               card: topCard,
               source: 'call',
+              keepSkillResolving: true,
             });
             await playEvents(callEvents);
 
@@ -3384,6 +3948,8 @@ export async function resolveActiveSkillEffect(
               await resolveOnPlaySkill(o, targetLane, topCard);
             } else {
               topCard.isSkillResolving = false;
+              releaseSkillResolvingSpawns(topCard);
+              topCard.skillTriggered = true;
             }
             await cleanupDestroyedCards(c);
           }
@@ -3618,7 +4184,13 @@ export async function resolveActiveSkillEffect(
         playSound(SOUNDS.sePlace);
         renderBoard();
         await sleep(PLACE_ANIMATION_DURATION);
-        if (board[targetLane]) board[targetLane].isSkillResolving = false;
+        if (board[targetLane]) {
+          if (c?.isSkillResolving) {
+            registerSkillResolvingSpawn(c, board[targetLane]);
+          } else {
+            board[targetLane].isSkillResolving = false;
+          }
+        }
         await cleanupDestroyedCards(c);
       }
     }
@@ -3741,12 +4313,20 @@ export async function resolveActiveSkillEffect(
       }
     }
   } else if (skillId === 'execute') {
-    // 【処刑】召喚時、自分のカード1枚を選択し、そのカードを破壊する
+    // 【処刑】召喚時、自分のカードを指定枚数選択して破壊する
     const myBoard = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-    const hasMyCard = myBoard.some((bc) => bc !== null);
+    const occupiedLanes = myBoard
+      .map((bc, i) => (bc !== null ? i : -1))
+      .filter((i) => i !== -1);
 
-    if (hasMyCard) {
-      let selectedLanes;
+    if (occupiedLanes.length > 0) {
+      const valCount =
+        skillValue === undefined || skillValue === null || skillValue === 0
+          ? 1
+          : skillValue;
+      const selectCount = Math.min(valCount, occupiedLanes.length);
+      let selectedLanes = [];
+
       if (
         o === 'red' &&
         GameState.gameMode !== 'online' &&
@@ -3756,11 +4336,8 @@ export async function resolveActiveSkillEffect(
         consumeAIAction('execute');
 
         if (checkIsEasyAI()) {
-          // Easy AI: 最もパワーの低いカードを単純選択
-          const occupiedLanes = myBoard
-            .map((bc, i) => (bc !== null ? i : -1))
-            .filter((i) => i !== -1);
-          occupiedLanes.sort((a, b) => {
+          // Easy AI: 最もパワーの低いカードを単純選択（破壊不能カードを優先）
+          const sortedLanes = [...occupiedLanes].sort((a, b) => {
             const aUndestroyable = !canCardBeDestroyed(
               GameState,
               myBoard[a],
@@ -3779,66 +4356,80 @@ export async function resolveActiveSkillEffect(
             if (diff !== 0) return diff;
             return a - b;
           });
-          selectedLanes = occupiedLanes.length > 0 ? [occupiedLanes[0]] : [];
+          selectedLanes = sortedLanes.slice(0, selectCount);
         } else {
-          // Normal以上: 常に最新の盤面状況に基づき直前シミュレーションで破壊対象レーンを評価決定
-          const bestLane = evaluateAdhocExecuteChoice(myBoard, o);
-          selectedLanes = bestLane !== -1 ? [bestLane] : [];
+          // Normal以上: 常に最新の盤面状況に基づき直前シミュレーションで破壊対象レーン配列を評価決定
+          selectedLanes = evaluateAdhocExecuteChoice(myBoard, selectCount, o);
         }
         await sleep(AI_THINKING_DURATION);
         // React DOMコミットを確実にするため、再描画してから少し待つ
         renderBoard();
         await sleep(100);
       } else {
-        // プレイヤーの場合：自分の場のカード1枚を選択させる
-        selectedLanes = await waitPlayerAlliedLaneSelection(1, o);
+        // プレイヤー（またはオンライン相手）の場合：自分の場のカードを指定枚数まとめて選択させる
+        selectedLanes = await waitPlayerAlliedLaneSelection(selectCount, o);
       }
 
       if (selectedLanes && selectedLanes.length > 0) {
-        const targetLane = selectedLanes[0];
-        const targetCard = myBoard[targetLane];
-        if (targetCard) {
-          // 「無効」または「戦乙女の加護」を持つカードは破壊できない
-          if (!canCardBeDestroyed(GameState, targetCard, o)) {
-            const tgtEl = document.querySelector(
-              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
-            );
-            const isGuard = isValkyriaGuardActive(GameState, o);
-            if (tgtEl)
-              createDamagePopup(
-                tgtEl,
-                isGuard ? '加護' : '無効',
-                isGuard ? VALKYRIA_GUARD_POPUP_COLOR : '#94a3b8'
+        const uniqueSelectedLanes = [...new Set(selectedLanes)].slice(
+          0,
+          selectCount
+        );
+        // 先行対象の誘爆・分裂等で他レーンのカードが消滅または別トークンに置換された場合の誤破壊を防ぐため、選択時点の参照を保持
+        const selectedTargets = uniqueSelectedLanes.map((lane) => ({
+          lane,
+          card: myBoard[lane],
+        }));
+
+        // 選択された複数のカードを順次破壊する
+        for (const {
+          lane: targetLane,
+          card: expectedCard,
+        } of selectedTargets) {
+          const targetCard = myBoard[targetLane];
+          if (targetCard && targetCard === expectedCard) {
+            // 「無効」または「戦乙女の加護」を持つカードは破壊できない
+            if (!canCardBeDestroyed(GameState, targetCard, o)) {
+              const tgtEl = document.querySelector(
+                `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
               );
-            playSound(SOUNDS.seSkill);
-            await sleep(300);
-          } else {
-            // VFX演出（SEも triggerVfx 内で自動再生されます）
-            if (typeof window.triggerVfx === 'function') {
-              await window.triggerVfx('anm_skill_execute', o, targetLane);
+              const isGuard = isValkyriaGuardActive(GameState, o);
+              if (tgtEl)
+                createDamagePopup(
+                  tgtEl,
+                  isGuard ? '加護' : '無効',
+                  isGuard ? VALKYRIA_GUARD_POPUP_COLOR : '#94a3b8'
+                );
+              playSound(SOUNDS.seSkill);
+              await sleep(300);
             } else {
-              playSound(SOUNDS.seSkillExecute);
+              // VFX演出（SEも triggerVfx 内で自動再生されます）
+              if (typeof window.triggerVfx === 'function') {
+                await window.triggerVfx('anm_skill_execute', o, targetLane);
+              } else {
+                playSound(SOUNDS.seSkillExecute);
+              }
+              const tgtEl = document.querySelector(
+                `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
+              );
+              if (tgtEl) {
+                tgtEl.classList.remove('anim-shake');
+                void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
+                tgtEl.classList.add('anim-shake');
+                tgtEl.classList.add('anim-card-destroy');
+                createDamagePopup(tgtEl, '破壊', '#991b1b');
+              }
+              if (targetCard.voiceCategory) {
+                playCardVoice(targetCard, 'death');
+              }
+              await sleep(300);
+              // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
+              if (!(await discardCard(o, targetCard, targetLane, true)))
+                myBoard[targetLane] = null;
+              // 破壊された陣営の生存カードに対する「報復」スキルの誘発
+              triggerRetaliateSkill(o);
+              renderBoard();
             }
-            const tgtEl = document.querySelector(
-              `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${targetLane}"] .card`
-            );
-            if (tgtEl) {
-              tgtEl.classList.remove('anim-shake');
-              void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
-              tgtEl.classList.add('anim-shake');
-              tgtEl.classList.add('anim-card-destroy');
-              createDamagePopup(tgtEl, '破壊', '#991b1b');
-            }
-            if (targetCard.voiceCategory) {
-              playCardVoice(targetCard, 'death');
-            }
-            await sleep(300);
-            // discardCardで墓地送り（分裂・誘爆・装備・合体素材・石化・傀儡の完全処理）
-            if (!(await discardCard(o, targetCard, targetLane, true)))
-              myBoard[targetLane] = null;
-            // 破壊された陣営の生存カードに対する「報復」スキルの誘発
-            triggerRetaliateSkill(o);
-            renderBoard();
           }
         }
       }
@@ -3904,7 +4495,9 @@ export async function resolveActiveSkillEffect(
     }
   } else if (skillId === 'buff') {
     // 【「強化」スキル処理】
-    // 召喚時、自身のパワーを+xする
+    // 召喚時、自身のパワーを+xする（自身が既に盤面から離れている場合は不発）
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (board[l] !== c) return;
     const isReversed = isReverseActive(GameState);
     let bVal = skillValue || 1;
     if (isReversed) {
@@ -4127,6 +4720,8 @@ export async function resolveActiveSkillEffect(
   } else if (skillId === 'unleash') {
     // 【「解放」スキル処理】
     // 召喚時、自身の防御能力を除去し、スタン状態（待機・拘束・スロットエントリ）を完全解除する
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (board[l] !== c) return;
     applyUnleashSkill(c);
 
     playSound(SOUNDS.seSkill);
@@ -4142,6 +4737,25 @@ export async function resolveActiveSkillEffect(
     }
     await sleep(200);
   } else {
+    // 自身が盤面に残っていないと解決できない自己対象スキルは、上書き後の別カードへ誤爆しないようガードする
+    const SELF_TARGET_ENGINE_SKILLS = [
+      'double_power',
+      'decay',
+      'lone_wolf',
+      'portent',
+      'invade',
+      'replicate',
+      'standby',
+      'stealth',
+      'invincible',
+      'buff_void',
+      'supremacy',
+    ];
+    const board = o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+    if (c && SELF_TARGET_ENGINE_SKILLS.includes(skillId) && board[l] !== c) {
+      return;
+    }
+
     // 標準的なスキルは完全に Engine と Renderer に移譲
     let events = [];
     applyActiveSkillLogic(currentState, o, l, skillId, skillValue || 0, events);

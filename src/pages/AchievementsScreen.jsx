@@ -21,7 +21,11 @@ import {
   saveAchievements,
 } from '../utils/constants/achievements.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
-import { CHARACTERS } from '../utils/constants/characters.js';
+import {
+  CHARACTERS,
+  UNLOCKABLE_CHARACTER_IDS,
+} from '../utils/constants/characters.js';
+import { UNLOCKABLE_STAGE_IDS } from '../utils/constants/stages.js';
 import { playSound } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 
@@ -172,7 +176,8 @@ export default function AchievementsScreen() {
 
   /**
    * 実績画面のタイトルを10回クリックした際のデバッグ用全解除ハンドラー
-   * 実績全解除・ボス解放統計の更新に加え、解放制キャラクター（automata, valkyria）の解放を行う
+   * 実績全解除・ボス解放統計の更新に加え、解放制キャラクター（automata, valkyria, daughter 等）の解放を行う
+   * @returns {void}
    */
   const handleTitleClick = () => {
     const newCount = clickCount + 1;
@@ -214,20 +219,21 @@ export default function AchievementsScreen() {
               achievementData.stats.storyClears['knight'] = 1; // サタン解放用
             }
 
-            // 3. 解放制キャラクターおよびステージ（マキナ、アンジェ等）の全解放
+            // 3. 解放制キャラクターおよびステージ（マキナ、アンジェ、ベルカ等）の全解放
             try {
-              const allUnlockableIds = ['automata', 'valkyria'];
+              const allUnlockableCharIds = [...UNLOCKABLE_CHARACTER_IDS];
+              const allUnlockableStageIds = [...UNLOCKABLE_STAGE_IDS];
               localStorage.setItem(
                 'mini_card_battle_unlocked_characters',
-                JSON.stringify(allUnlockableIds)
+                JSON.stringify(allUnlockableCharIds)
               );
               localStorage.setItem(
                 'mini_card_battle_unlocked_stages',
-                JSON.stringify(allUnlockableIds)
+                JSON.stringify(allUnlockableStageIds)
               );
               if (GameState) {
-                GameState.unlockedCharacters = [...allUnlockableIds];
-                GameState.unlockedStages = [...allUnlockableIds];
+                GameState.unlockedCharacters = [...allUnlockableCharIds];
+                GameState.unlockedStages = [...allUnlockableStageIds];
               }
             } catch (e) {
               console.error(

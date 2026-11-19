@@ -28,6 +28,11 @@ export default function FortuneRankingScreen() {
           pointField: 'fortune_total_cost_valkyria',
           unit: '',
         },
+        {
+          label: '合計目標値（ベルカ）',
+          pointField: 'fortune_total_cost_daughter',
+          unit: '',
+        },
       ]}
     />
   );

@@ -117,6 +117,22 @@ export const VFX_DATA = {
     targetSide: 'self', // 自陣に表示
   },
 
+  // ベルカ召喚用VFX（縦斬撃＋次元のゲート開放）
+  anm_summon_daughter: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_summon_daughter.png',
+    columns: 6,
+    rows: 5,
+    frameCount: 30,
+    duration: 1000,
+    se: 'seVS',
+    position: 'lane', // ターゲットのレーンに合わせて表示
+    offsetY: 0,
+    scale: 0.8,
+    shake: false,
+    targetSide: 'self', // 自陣に表示
+  },
+
   // セレスティア召喚用VFX
   anm_summon_celestia: {
     type: 'sprite',
@@ -179,6 +195,38 @@ export const VFX_DATA = {
     scale: 1.5,
     shake: false,
     targetSide: 'enemy', // 基本は相手のHPがターゲット
+  },
+
+  // アストレアSPスキル「星界の秩序」用VFX（相手HPゲージ位置に紫のオーブ）
+  anm_astral_order_enemy: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_astraea_orb_purple.png',
+    columns: 6,
+    rows: 5,
+    frameCount: 30,
+    duration: 1000,
+    se: 'seSkillCharge', // エリシアと同じ効果音を再生
+    position: 'hp', // 相手HPゲージの高さに合わせて表示
+    offsetY: 0,
+    scale: 0.5, // position: 'hp' 時は320x320基準となるため適正サイズ(160x160)に調整
+    shake: false,
+    targetSide: 'enemy',
+  },
+
+  // アストレアSPスキル「星界の秩序」用VFX（自分HPゲージ位置に青のオーブ）
+  anm_astral_order_self: {
+    type: 'sprite',
+    src: 'assets/vfx/vfx_astraea_orb_blue.png',
+    columns: 6,
+    rows: 5,
+    frameCount: 30,
+    duration: 1000,
+    se: null, // 同時再生時の二重鳴動を防ぐため効果音は enemy 側で再生
+    position: 'hp', // 自分HPゲージの高さに合わせて表示
+    offsetY: 0,
+    scale: 0.5, // position: 'hp' 時は320x320基準となるため適正サイズ(160x160)に調整
+    shake: false,
+    targetSide: 'self',
   },
 
   // ナイアSPスキル「深淵の儀式」用VFX

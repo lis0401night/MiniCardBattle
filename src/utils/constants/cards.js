@@ -212,7 +212,7 @@ export const CARD_MASTER = [
     name: '大斧の処刑人',
     rarity: 1,
     power: 8,
-    skills: [{ id: 'execute' }],
+    skills: [{ id: 'execute', value: 1 }],
     voiceCategory: 'human_male_warrior',
     flavor:
       'その一撃は全てを終わらせる。あるいは、無辜の民を巻き込む。処刑人は常に選択を迫られる。',
@@ -618,7 +618,7 @@ export const CARD_MASTER = [
     power: 0,
     skills: [{ id: 'choice', value: 1 }],
     choices: [
-      { id: 'artillery', value: 2 },
+      { id: 'artillery', value: 3 },
       { id: 'snipe', value: 8 },
     ],
     voiceCategory: 'magic',
@@ -793,7 +793,7 @@ export const CARD_MASTER = [
     obtain: ['succubus_normal', 'succubus_hard'],
     name: '幻惑の歌姫',
     rarity: 1,
-    power: 1,
+    power: 2,
     skills: [{ id: 'dominate', value: 3 }],
     voiceCategory: 'human_female_sexy',
     flavor:
@@ -922,7 +922,7 @@ export const CARD_MASTER = [
     name: '暴走する解体者',
     rarity: 1,
     power: 8,
-    skills: [{ id: 'defender' }, { id: 'startup' }, { id: 'pierce' }],
+    skills: [{ id: 'defender' }, { id: 'startup' }],
     voiceCategory: 'machine_new',
     flavor:
       '都市開発のために造られた巨大な鉄の腕は、今や全てを瓦礫へと変える恐るべき破壊兵器と化した。',
@@ -948,6 +948,28 @@ export const CARD_MASTER = [
     voiceCategory: 'wolf',
     flavor:
       'その身を焦がす炎は、尽きることのない飢えと怒りの顕れ。獲物を見つけたが最後、燃え盛る牙が瞬く間に喉笛を食いちぎる。',
+  },
+  {
+    id: 'follower',
+    obtain: ['exchange_fortune'],
+    name: '教団の残党',
+    rarity: 1,
+    power: 3,
+    skills: [{ id: 'invoke' }],
+    voiceCategory: 'human_male_ikemen',
+    flavor:
+      '眠れる魔王の復活を企てる教団の残党。幾多の犠牲と引き換えに紡がれる呪文が、次元の境界を静かに軋ませていく。',
+  },
+  {
+    id: 'adventchampion',
+    obtain: ['exchange_fortune'],
+    name: '奈落のチャンピオン',
+    rarity: 1,
+    power: 7,
+    skills: [{ id: 'advent', value: 7 }],
+    voiceCategory: 'devil',
+    flavor:
+      '禁断の召喚陣より現世へ呼び降ろされた英雄。ただ眼前の生命を蹂躙する破壊衝動の権化となって猛り狂う。',
   },
   {
     id: 'bigeye',
@@ -1410,7 +1432,10 @@ export const CARD_MASTER = [
     name: '恐怖の調理長',
     rarity: 2,
     power: 5,
-    skills: [{ id: 'execute' }, { id: 'heal', value: 5 }],
+    skills: [
+      { id: 'execute', value: 1 },
+      { id: 'heal', value: 5 },
+    ],
     voiceCategory: 'human_male_warrior',
     flavor:
       '彼の作る肉シチューは絶品だが、何の肉を使っているかは誰も聞こうとしない。',
@@ -1688,7 +1713,7 @@ export const CARD_MASTER = [
     name: '蛇の神官',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'challenge' }, { id: 'toxic', value: 4 }],
+    skills: [{ id: 'challenge' }, { id: 'toxic', value: 3 }],
     voiceCategory: 'human_female_cool',
     flavor:
       '毒蛇を従え、戦士に過酷な試練を課す神殿の導き手。猛毒に耐え抜き、その牙を掻いくぐった者のみが真の勇者と認められる。',
@@ -1812,7 +1837,7 @@ export const CARD_MASTER = [
     power: 0,
     skills: [{ id: 'choice', value: 1 }],
     choices: [
-      { id: 'dominate', value: 4 },
+      { id: 'dominate', value: 5 },
       { id: 'burial', value: 8 },
     ],
     voiceCategory: 'magic',
@@ -1858,7 +1883,10 @@ export const CARD_MASTER = [
     name: '聖餐の司祭',
     rarity: 2,
     power: 4,
-    skills: [{ id: 'execute' }, { id: 'resurrect', value: 5 }],
+    skills: [
+      { id: 'execute', value: 1 },
+      { id: 'resurrect', value: 5 },
+    ],
     voiceCategory: 'human_female_sexy',
     flavor: '一つの命を奪うことで、深淵より悪魔を呼び覚ます。',
   },
@@ -1955,7 +1983,7 @@ export const CARD_MASTER = [
     power: 6,
     skills: [
       { id: 'ambush', value: 1, summonId: 'token_automata' },
-      { id: 'execute' },
+      { id: 'execute', value: 1 },
     ],
     voiceCategory: 'human_male_warrior',
     flavor:
@@ -1986,6 +2014,28 @@ export const CARD_MASTER = [
     voiceCategory: 'stone',
     flavor:
       '天の怒りを顕現せし剛雷の戦鎚。主の呼応に応じて雷鳴と共に飛来し、万物を等しく打ち砕く。',
+  },
+  {
+    id: 'monument',
+    obtain: ['exchange_fortune'],
+    name: '封魔の楔',
+    rarity: 2,
+    power: 7,
+    skills: [{ id: 'defender' }, { id: 'invoke' }],
+    voiceCategory: 'sword',
+    flavor:
+      '終焉の大悪魔を道連れに、大天使がその身を捧げて大地へ穿った神槍の楔。地底深くに埋没した刃からは聖なる蒼光と獄炎が噴き出し、張り巡らされた鎖が今も激しく軋み続けている。',
+  },
+  {
+    id: 'colossus',
+    obtain: ['exchange_fortune'],
+    name: '英雄の巨像',
+    rarity: 2,
+    power: 7,
+    skills: [{ id: 'defender' }, { id: 'reinforce', value: 1 }],
+    voiceCategory: 'stone',
+    flavor:
+      '朽ち果てたアリーナに今なお立ち続ける、不敗を誇った初代チャンピオンの石像。右手の剣と左手の戦斧は、かつて誰も越えられなかった栄光の証として静かに風雪を耐えている。',
   },
   {
     id: 'laser',
@@ -2151,7 +2201,7 @@ export const CARD_MASTER = [
     obtain: ['pack_1'],
     name: '魂の道しるべ',
     rarity: 2,
-    power: 0,
+    power: 1,
     skills: [{ id: 'reanimate' }, { id: 'equip' }, { id: 'choice', value: 1 }],
     choices: [
       { id: 'servant', value: 1, summonId: 'token_soul' },
@@ -2292,6 +2342,32 @@ export const CARD_MASTER = [
     voiceCategory: 'stone',
     flavor:
       '煮えたぎる溶岩から引き上げられた灼熱の鎖。アグニカに仇なす者を縛り上げ、灰になるまで焼き焦がす。',
+  },
+  {
+    id: 'tombrobber',
+    obtain: ['pack_1'],
+    name: '不運な盗掘者',
+    rarity: 2,
+    power: 1,
+    skills: [{ id: 'salvage', value: 1 }, { id: 'invoke' }],
+    voiceCategory: 'human_male_normal',
+    flavor:
+      '歓喜の笑みを浮かべて掲げた古代の遺物が、決して触れてはならぬ災厄の鍵であったことに気づく者はもういない。',
+  },
+  {
+    id: 'orthrus',
+    obtain: ['pack_1'],
+    name: '焦土の開拓者',
+    rarity: 2,
+    power: 4,
+    skills: [
+      { id: 'advent', value: 6 },
+      { id: 'quick' },
+      { id: 'double_strike' },
+    ],
+    voiceCategory: 'beast',
+    flavor:
+      '次元の亀裂より戒めの鎖を断ち切って躍り出る双頭の魔獣。二つの顎から噴き上がる獄炎は、獲物が悲鳴を上げるよりも早くその喉元を食い千切る。',
   },
   {
     id: 'firstlight',
@@ -2448,7 +2524,7 @@ export const CARD_MASTER = [
     rarity: 3,
     power: 5,
     skills: [
-      { id: 'execute' },
+      { id: 'execute', value: 1 },
       { id: 'servant', value: 2, summonId: 'token_knight' },
       { id: 'servant', value: 2, summonId: 'token_knight' },
     ],
@@ -2720,7 +2796,7 @@ export const CARD_MASTER = [
     ],
     choices: [
       { id: 'resurrect', value: 6 },
-      { id: 'charge', value: 3 },
+      { id: 'charge', value: 2 },
     ],
     voiceCategory: 'magic',
     flavor:
@@ -3041,7 +3117,7 @@ export const CARD_MASTER = [
     skills: [
       { id: 'legendary' },
       { id: 'sacrifice', value: 3 },
-      { id: 'execute' },
+      { id: 'execute', value: 1 },
       { id: 'cull', value: 1 },
       { id: 'cull', value: 1 },
     ],
@@ -3110,6 +3186,38 @@ export const CARD_MASTER = [
     ],
     voiceCategory: 'sword',
     flavor: 'かつて天を突く巨躯を貫き、大地に縫い留めたとされる神器。',
+  },
+  {
+    id: 'eater',
+    obtain: ['exchange_fortune'],
+    name: 'ワールド・イーター',
+    rarity: 3,
+    power: 8,
+    skills: [
+      { id: 'servant', value: 0, summonId: 'token_void' },
+      { id: 'servant', value: 0, summonId: 'token_void' },
+      { id: 'execute', value: 2 },
+    ],
+    voiceCategory: 'monster',
+    flavor:
+      '空を覆う異形の巨体が口を開く時、その奥には星々すら吸い込む漆黒の深淵が渦巻いている。触れられたあらゆる物質は存在ごと削り取られ、無へと還っていく。',
+  },
+  {
+    id: 'archdaemon',
+    obtain: ['exchange_fortune'],
+    name: '劫火のデーモン・ロード',
+    rarity: 3,
+    power: 9,
+    skills: [
+      { id: 'legendary' },
+      { id: 'advent', value: 10 },
+      { id: 'spread', value: 3 },
+      { id: 'berserk', value: 3 },
+      { id: 'cleave' },
+    ],
+    voiceCategory: 'devil',
+    flavor:
+      '永き封印の鎖を引きちぎり、黒き太陽の下へ再び顕現した古の大悪魔。長き眠りで溜め込まれた怨嗟の獄炎は大地を割り、触れるものすべてを焼き尽くす。',
   },
   {
     id: 'gaston',
@@ -3337,7 +3445,7 @@ export const CARD_MASTER = [
     obtain: ['pack_1'],
     name: '黒夜叉',
     rarity: 3,
-    power: 5,
+    power: 4,
     skills: [
       { id: 'trigger' },
       { id: 'legendary' },
@@ -3386,6 +3494,22 @@ export const CARD_MASTER = [
     voiceCategory: 'human_male_warrior',
     flavor:
       '炎の民が崇拝する神の一柱。天高く掲げられたその神槌は、創造の火花と破壊の轟音をもたらす。',
+  },
+  {
+    id: 'archangel',
+    obtain: ['pack_1'],
+    name: '再誕のアークエンジェル',
+    rarity: 3,
+    power: 6,
+    skills: [
+      { id: 'legendary' },
+      { id: 'advent', value: 7 },
+      { id: 'support', value: 3 },
+      { id: 'pierce' },
+    ],
+    voiceCategory: 'human_female_cool',
+    flavor:
+      '大悪魔を封じるため永劫の闇へ身を投じた天界の戦神。封印の崩壊と共に再び現世へ舞い降り、楔より抜き放った神槍と慈悲の光を手に宿敵へと立ち向かう。',
   },
   {
     id: 'catastrophe',
@@ -3633,7 +3757,7 @@ export const CARD_MASTER = [
     obtain: ['knight_high'],
     name: '血濡れの決闘者',
     rarity: 4,
-    power: 4,
+    power: 5,
     skills: [
       { id: 'legendary' },
       { id: 'sacrifice', value: 2 },
@@ -3720,8 +3844,12 @@ export const CARD_MASTER = [
     power: 3,
     skills: [
       { id: 'loss', value: 4 },
-      { id: 'snipe', value: 6 },
       { id: 'pierce' },
+      { id: 'choice', value: 1 },
+    ],
+    choices: [
+      { id: 'snipe', value: 6 },
+      { id: 'buff', value: 3 },
     ],
     voiceCategory: 'human_male_ikemen',
     flavor:
@@ -3775,10 +3903,7 @@ export const CARD_MASTER = [
     name: '神罰',
     rarity: 4,
     power: 0,
-    skills: [
-      { id: 'sacrifice', value: 2 },
-      { id: 'choice', value: 1 },
-    ],
+    skills: [{ id: 'choice', value: 1 }],
     choices: [
       { id: 'artillery', value: 3 },
       { id: 'spread', value: 3 },
@@ -3888,7 +4013,12 @@ export const CARD_MASTER = [
     name: '賢者の石',
     rarity: 4,
     power: 0,
-    skills: [{ id: 'convert', value: 1 }, { id: 'leap' }],
+    skills: [
+      { id: 'convert', value: 1 },
+      { id: 'sacrifice', value: 1 },
+      { id: 'loss', value: 1 },
+      { id: 'leap' },
+    ],
     voiceCategory: 'magic',
     flavor:
       '探求者たちが生涯を捧げて到達した至高の結晶。その深紅の輝きは、存在を代償に次元を超える奇跡を起こす。',
@@ -3926,7 +4056,7 @@ export const CARD_MASTER = [
     name: '刀狩りの豪傑',
     rarity: 4,
     power: 4,
-    skills: [{ id: 'arm_self' }, { id: 'pierce' }],
+    skills: [{ id: 'arm_self' }],
     voiceCategory: 'human_male_warrior',
     flavor:
       '敗者の武具を奪い、己の力へと変える。その桁外れの剛腕から繰り出される一撃は、いかなる盾をも容易く貫く。',
@@ -3984,7 +4114,7 @@ export const CARD_MASTER = [
     power: 4,
     skills: [{ id: 'force', value: 1 }],
     choices: [
-      { id: 'lone_wolf', value: 2 },
+      { id: 'buff', value: 4 },
       { id: 'clone', value: 1 },
     ],
     voiceCategory: 'human_male_old',
@@ -4011,7 +4141,7 @@ export const CARD_MASTER = [
     skills: [
       { id: 'legendary' },
       { id: 'dominate', value: 5 },
-      { id: 'execute' },
+      { id: 'execute', value: 1 },
     ],
     voiceCategory: 'human_female_cool',
     flavor:
@@ -4330,7 +4460,7 @@ export const CARD_MASTER = [
     isToken: true,
     skills: [
       { id: 'spread', value: 3 },
-      { id: 'artillery', value: 2 },
+      { id: 'artillery', value: 3 },
       { id: 'immune' },
     ],
     voiceCategory: 'machine_new',
@@ -4459,6 +4589,7 @@ export const PREMIUM_CARD_IDS = [
   'darkgeneral',
   'motorcycle',
   'gungnir',
+  'archdaemon',
   // --- 防衛戦：交換所：シルバー ---
   'dreadnought',
   'armsuits',
@@ -4486,6 +4617,7 @@ export const PREMIUM_CARD_IDS = [
   'cavalry',
   'employee',
   'mjolnir',
+  'monument',
   // --- バトルパスS1 ---
   'royalguard',
   'gorilla',
@@ -4493,12 +4625,21 @@ export const PREMIUM_CARD_IDS = [
   'ghoul',
   'omnipotent',
   'yasha',
+  // --- バトルパスS2 ---
+  'laser',
+  'mercenaryleader',
+  'predator',
+  'gammaray',
+  'prototype',
+  'archangel',
   // --- 運命の邂逅 ---
   'liberator',
   'dwarf',
+  'follower',
   // --- シリアルコード ---
   'sniper',
   'cheetah',
   'tortoise',
   'falcon',
+  // --- 入手方法未設定 ---
 ];

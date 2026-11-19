@@ -1300,6 +1300,53 @@ export function applyUnleashSkill(card) {
 }
 
 /**
+ * 親カードの召喚時スキル解決中に生成・配置された子カード／トークンを紐付けて管理するマップ。
+ * カードオブジェクト自体に余計な参照プロパティを持たせず、シリアライズやクローンへの影響を防ぐ。
+ * @type {WeakMap<object, Set<object>>}
+ */
+const resolvingSpawnMap = new WeakMap();
+
+/**
+ * 親カードの召喚時能力解決中に盤面へ配置された子カード／トークンを保護対象として登録する。
+ * 親カードの全召喚時能力が完了するまで `isSkillResolving = true` を維持し、
+ * 元々パワー0のトークン（「虚空」等）が後続スキル（「処刑」等）の解決前に即自壊するのを防ぐ。
+ *
+ * @param {object|null|undefined} parentCard - 現在スキル解決中の親カードオブジェクト
+ * @param {object|null|undefined} spawnedCard - 盤面に配置された子カードまたはトークンオブジェクト
+ * @returns {void}
+ */
+export function registerSkillResolvingSpawn(parentCard, spawnedCard) {
+  if (!parentCard || !spawnedCard || parentCard === spawnedCard) return;
+  if (!parentCard.isSkillResolving) return;
+  spawnedCard.isSkillResolving = true;
+  let spawnSet = resolvingSpawnMap.get(parentCard);
+  if (!spawnSet) {
+    spawnSet = new Set();
+    resolvingSpawnMap.set(parentCard, spawnSet);
+  }
+  spawnSet.add(spawnedCard);
+}
+
+/**
+ * 親カードの召喚時能力解決完了（または能力消去）に伴い、
+ * 保護対象として登録されていたすべての子カード／トークンの保護フラグを解除する。
+ *
+ * @param {object|null|undefined} parentCard - スキル解決が完了した親カードオブジェクト
+ * @returns {void}
+ */
+export function releaseSkillResolvingSpawns(parentCard) {
+  if (!parentCard) return;
+  const spawnSet = resolvingSpawnMap.get(parentCard);
+  if (!spawnSet) return;
+  resolvingSpawnMap.delete(parentCard);
+  for (const spawnedCard of spawnSet) {
+    if (spawnedCard) {
+      spawnedCard.isSkillResolving = false;
+    }
+  }
+}
+
+/**
  * 対象カードの全能力と一時効果を消去する共通処理（沈黙・忘却等で共用）。
  * スキル配列、選択肢、召喚ID、スキル解決中フラグ等を初期化します。
  * ※状態（ステータス: isStatus === true / stunTurns / invincibleTurns / corrosion 等）は能力ではないため消去されず、スロット内に保護されます。
@@ -1316,6 +1363,7 @@ export function clearCardAbilities(targetCard) {
   targetCard.supremacySkills = [];
   if ('summonId' in targetCard) delete targetCard.summonId;
   if ('isSkillResolving' in targetCard) targetCard.isSkillResolving = false;
+  releaseSkillResolvingSpawns(targetCard);
 }
 
 /**
@@ -3685,4 +3733,97 @@ export function collectPresentBoardTargets(myBoard, isExcludeBoard) {
         .filter(Boolean)
     : [];
   return { presentBoardCards, presentBoardIds };
+}
+
+/**
+ * カードの「元々のパワー（基礎パワー）」を取得する共通ユーティリティ関数。
+ * 分身（token_clone）や増援（token_reinforce）など生成時にパワーが決まる動的トークンは生成時の基礎パワーを参照し、
+ * それ以外のカードは CARD_MASTER の定義パワーを最優先で返却します（ダメージ・バフ・装備の影響を受けません）。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @returns {number} カードの元々のパワー（取得不能な場合は 0）
+ */
+export function getCardOriginalPower(card) {
+  if (!card || typeof card !== 'object') return 0;
+  const rawId = String(card.baseId || card.id || '');
+  if (
+    rawId === 'token_clone' ||
+    rawId.startsWith('cl_') ||
+    rawId === 'token_reinforce' ||
+    rawId.startsWith('token_reinforce_')
+  ) {
+    return card.basePower ?? card.power ?? 0;
+  }
+  const master = CARD_MASTER?.find((m) => m.id === (card.baseId || card.id));
+  if (master && typeof master.power === 'number') {
+    return master.power;
+  }
+  return card.basePower ?? card.power ?? 0;
+}
+
+/**
+ * カードの「現在のパワー」を取得する共通ユーティリティ関数。
+ * バフ・ダメージ・装備等が反映された currentPower が有効な数値であればそれを優先し、
+ * 未設定の場合はカード固有の power にフォールバックします（取得不能な場合は 0）。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @returns {number} カードの現在のパワー（取得不能な場合は 0）
+ */
+export function getCardCurrentPower(card) {
+  if (!card || typeof card !== 'object') return 0;
+  if (
+    typeof card.currentPower === 'number' &&
+    !Number.isNaN(card.currentPower)
+  ) {
+    return card.currentPower;
+  }
+  if (typeof card.power === 'number' && !Number.isNaN(card.power)) {
+    return card.power;
+  }
+  return 0;
+}
+
+/**
+ * 対象カードが「降臨（advent）」能力を持っている場合、その要求降臨値（数値）を取得する。
+ * 降臨能力を持たないカードの場合は null を返します。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト
+ * @returns {number|null} 降臨の数値（0以上の整数）。降臨を持たない場合は null
+ */
+export function getAdventRequirement(card) {
+  if (!card || typeof card !== 'object') return null;
+  if (Array.isArray(card.skills)) {
+    const adventSk = card.skills.find(
+      (s) => s && (s.id === 'advent' || s === 'advent')
+    );
+    if (adventSk) {
+      return typeof adventSk === 'object' ? (adventSk.value ?? 0) : 0;
+    }
+    return null;
+  }
+  const master = CARD_MASTER?.find((m) => m.id === (card.baseId || card.id));
+  if (master && Array.isArray(master.skills)) {
+    const adventSk = master.skills.find(
+      (s) => s && (s.id === 'advent' || s === 'advent')
+    );
+    if (adventSk) {
+      return typeof adventSk === 'object' ? (adventSk.value ?? 0) : 0;
+    }
+  }
+  return null;
+}
+
+/**
+ * 対象カードが「招来（invoke）」によって召喚可能な「降臨」カードか判定する。
+ * 「降臨」能力を持ち、かつその数値が捨てたカードのパワー合計（maxAdventValue）以下である場合に true を返します。
+ *
+ * @param {object|null|undefined} card - 判定対象のカードオブジェクト（手札またはデッキ内）
+ * @param {number} maxAdventValue - 捨てたカードのパワー合計値
+ * @returns {boolean} 召喚対象として有効であれば true、それ以外は false
+ */
+export function matchesInvokeTarget(card, maxAdventValue) {
+  const req = getAdventRequirement(card);
+  if (req === null) return false;
+  const limit = Number.isFinite(maxAdventValue) ? maxAdventValue : 0;
+  return req <= limit;
 }

@@ -154,6 +154,9 @@ export const AUDIO_INSTANCES = {
   bgmStageValkyria: createAudioInstance(
     'assets/audio/bgm/bgm_stage_valkyria01.mp3'
   ),
+  bgmStageDaughter: createAudioInstance(
+    'assets/audio/bgm/bgm_stage_daughter01.mp3'
+  ),
   bgmStageTournament: createAudioInstance(
     'assets/audio/bgm/bgm_tournament02.mp3'
   ),

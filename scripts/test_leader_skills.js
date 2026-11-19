@@ -70,6 +70,13 @@ console.log('\n--- 1. キャラクター基本スキル（原則①） ---');
     s_knight?.action === 'holy_march' && s_knight?.cost === 5,
     'セレスティア基本スキル (holy_march, cost: 5)'
   );
+  const s_daughter = resolveLeaderSkill({ charId: 'daughter' });
+  assert(
+    s_daughter?.action === 'daemon_call' &&
+      s_daughter?.cost === 5 &&
+      s_daughter?.name === '次元斬',
+    'ベルカ基本スキル (daemon_call, cost: 5, 次元斬)'
+  );
 }
 
 // ------------------------------------------------------------
@@ -274,6 +281,32 @@ console.log('\n--- 5. 運命の邂逅（原則⑤） ---');
   assert(
     s_fortune_ange?.action === 'ragnarok',
     '運命の邂逅アンジェ（スキル変更あり） -> ragnarok'
+  );
+  const s_fortune_berka_normal = resolveLeaderSkill({
+    charId: 'daughter',
+    isEnemy: true,
+    gameMode: 'event_daughter_fortune',
+  });
+  assert(
+    s_fortune_berka_normal?.action === 'daemon_call' &&
+      s_fortune_berka_normal?.cost === 5,
+    '運命の邂逅ベルカ（スキル変更なし） -> daemon_call cost: 5'
+  );
+  const s_fortune_berka = resolveLeaderSkill({
+    charId: 'daughter',
+    isEnemy: true,
+    gameMode: 'event_daughter_fortune',
+    fortuneHandicaps: {
+      enemy_leader_skill_change: true,
+      enemy_sp_minus_1: true,
+    },
+  });
+  assert(
+    s_fortune_berka?.action === 'demonic_call' &&
+      s_fortune_berka?.name === '万魔の招来' &&
+      s_fortune_berka?.cost === 4 &&
+      s_fortune_berka?.desc.includes('(SP:4)'),
+    '運命の邂逅ベルカ（スキル変更あり＋SP-1補正） -> demonic_call cost: 4, desc同期'
   );
 
   // プレイヤーレダ ＋ プレイヤーSP+1

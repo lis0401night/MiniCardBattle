@@ -420,6 +420,16 @@
                         等級（アンジェ）
                       </button>
                     </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 70px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('grade_daughter')"
+                        aria-label="等級（ベルカ）で並び替え"
+                      >
+                        等級（ベルカ）
+                      </button>
+                    </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 90px">
                       <button
                         type="button"
@@ -428,6 +438,16 @@
                         aria-label="バトルパスS1で並び替え"
                       >
                         バトルパスS1
+                      </button>
+                    </th>
+                    <th class="p-2 md:p-3 text-center" style="min-width: 90px">
+                      <button
+                        type="button"
+                        class="w-full cursor-pointer hover:text-indigo-500 transition-colors focus:outline-none focus:text-indigo-500"
+                        onclick="window.sortBy('battle_pass_s2')"
+                        aria-label="バトルパスS2で並び替え"
+                      >
+                        バトルパスS2
                       </button>
                     </th>
                     <th class="p-2 md:p-3 text-center" style="min-width: 65px">
@@ -1027,7 +1047,7 @@
             <div id="section-premium"></div>
             <!-- 所持シャインセクション -->
             <div id="section-shine"></div>
-            <!-- バトルパスS1セクション -->
+            <!-- バトルパスセクション -->
             <div id="section-battle-pass"></div>
             <!-- 所持カード・収集率セクション -->
             <div id="section-inventory"></div>
@@ -1286,6 +1306,7 @@
       let CARD_MASTER = [];
       let PREMIUM_CARD_IDS = [];
       let CHARACTERS = {};
+      let getSkinImage = null;
       let SKIN_MASTER = {};
       let findSkinEntry = () => null;
       let PLAYMAT_MASTER = [];
@@ -1447,7 +1468,31 @@
         default: '通常',
         summer: '水着',
         school: '学園',
+        assassin: 'ギルドの暗殺者',
+        empress: '蒼穹の審判者',
       };
+
+      // 管理画面で表示するバトルパスシーズン定義一覧（battlePass.js の BATTLE_PASS_MASTER 準拠）
+      const ADMIN_BATTLE_PASS_SEASONS = [
+        {
+          id: 'battle_pass_vol1',
+          name: 'バトルパス S1',
+          rewardLabel: 'ギルドの暗殺者 レダ',
+          maxPts: 150,
+          maxLevel: 15,
+          accentColor: 'indigo',
+          barGradient: 'from-indigo-500 via-purple-500 to-amber-400',
+        },
+        {
+          id: 'battle_pass_vol2',
+          name: 'バトルパス S2',
+          rewardLabel: '蒼穹の審判者 アストレア',
+          maxPts: 150,
+          maxLevel: 15,
+          accentColor: 'sky',
+          barGradient: 'from-sky-500 via-indigo-500 to-amber-400',
+        },
+      ];
 
       // ステージIDの日本語名マップ（stages.jsのnameに準拠）
       const STAGE_NAME_MAP = {
@@ -1466,6 +1511,8 @@
         satan: '魔王城',
         dungeon: '試練の宮殿',
         automata: '鋼の墓標',
+        valkyria: '約束の丘',
+        daughter: '次元の裂け目',
       };
 
       /**
@@ -1939,6 +1986,9 @@
             const charactersModule =
               await import('../src/utils/constants/characters.js');
             CHARACTERS = charactersModule.CHARACTERS || {};
+            if (typeof charactersModule.getSkinImage === 'function') {
+              getSkinImage = charactersModule.getSkinImage;
+            }
           } catch (e) {
             console.warn(
               'characters.js の読み込みに失敗。キャラクター名は生IDで表示されます。',
@@ -2228,11 +2278,30 @@
             high_difficulty_total_points: 900 + idx * 100,
             fortune_points: 150 + idx * 25,
             fortune_total_points: 600 + idx * 50,
-            quick_rating: 1500 + idx * 45,
-            unlocked_battle_passes: idx % 2 === 0 ? ['battle_pass_vol1'] : [],
+            fortune_max_total_cost_automata:
+              idx % 2 === 0 ? Math.min(20, 6 + idx * 2) : 0,
+            fortune_max_total_cost_valkyria:
+              idx % 3 !== 2 ? Math.min(20, 4 + idx * 2) : 0,
+            fortune_max_total_cost_daughter:
+              idx < 5 ? Math.min(20, 20 - idx * 3) : 0,
+            quick_rating: Math.min(300, 30 + idx * 35),
+            unlocked_battle_passes:
+              idx === 0
+                ? ['battle_pass_vol1', 'battle_pass_vol2']
+                : idx % 2 === 0
+                  ? ['battle_pass_vol1', 'battle_pass_vol2']
+                  : idx % 3 === 1
+                    ? ['battle_pass_vol1']
+                    : [],
             battle_pass_points: {
               battle_pass_vol1:
-                idx % 2 === 0 ? (idx === 0 ? 150 : idx * 25) : 0,
+                idx === 0 || idx % 2 === 0
+                  ? 150
+                  : idx % 3 === 1
+                    ? Math.min(150, idx * 30)
+                    : 0,
+              battle_pass_vol2:
+                idx === 0 ? 150 : idx % 2 === 0 ? Math.min(150, idx * 20) : 0,
             },
             has_defense_deck: true,
             deck,
@@ -2584,6 +2653,17 @@
             0
           );
         }
+        if (key === 'battle_pass_s2') {
+          const isUnlocked =
+            Array.isArray(p.unlocked_battle_passes) &&
+            p.unlocked_battle_passes.includes('battle_pass_vol2');
+          if (!isUnlocked) return -1;
+          return (
+            p.battle_pass_points?.battle_pass_vol2 ??
+            p.battle_pass_points_battle_pass_vol2 ??
+            0
+          );
+        }
         const SORT_KEY_MAP = {
           defense: 'total_points',
           challenge: 'challenge_total_points',
@@ -2593,6 +2673,7 @@
           defense_wins: 'defense_wins',
           grade: 'fortune_max_total_cost_automata',
           grade_valkyria: 'fortune_max_total_cost_valkyria',
+          grade_daughter: 'fortune_max_total_cost_daughter',
           lastAccess: 'lastAccessAt',
         };
         return p[SORT_KEY_MAP[key]] || 0;
@@ -2601,6 +2682,31 @@
       // =============================
       // プレイヤー一覧レンダリング
       // =============================
+      /**
+       * プレイヤー一覧テーブル用のバトルパス進捗セルHTMLを生成する
+       * @param {Object} p - プレイヤーデータ
+       * @param {string} passId - バトルパスID（'battle_pass_vol1' | 'battle_pass_vol2' 等）
+       * @param {string} [accentColor='indigo'] - 未完走時の文字色クラス名（Tailwind色名）
+       * @returns {string} セル内HTML文字列
+       */
+      function renderBattlePassTableCell(p, passId, accentColor = 'indigo') {
+        const isUnlocked =
+          Array.isArray(p.unlocked_battle_passes) &&
+          p.unlocked_battle_passes.includes(passId);
+        if (!isUnlocked) {
+          return '<span class="text-[9px] font-bold text-slate-300 italic">未解放</span>';
+        }
+        const bpPts =
+          p.battle_pass_points?.[passId] ??
+          p[`battle_pass_points_${passId}`] ??
+          0;
+        const bpLevel = Math.min(15, Math.floor(bpPts / 10));
+        if (bpPts >= 150) {
+          return '<span class="text-[9px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-200">Lv.15 完走</span>';
+        }
+        return `<div class="text-[11px] font-black text-${accentColor}-600">Lv.${bpLevel} <span class="text-[9px] font-normal text-slate-400">(${bpPts}Pt)</span></div>`;
+      }
+
       function renderPlayerList() {
         const totalCount = allPlayers.length;
         const includedCount = totalCount - excludedPlayerIds.size;
@@ -2697,23 +2803,13 @@
                 <div class="text-[11px] font-black text-rose-500">${p.fortune_max_total_cost_valkyria !== undefined && p.fortune_max_total_cost_valkyria >= 0 ? p.fortune_max_total_cost_valkyria : '-'}</div>
               </td>
               <td class="p-2 md:p-3 text-center">
-                ${(() => {
-                  const isUnlocked =
-                    Array.isArray(p.unlocked_battle_passes) &&
-                    p.unlocked_battle_passes.includes('battle_pass_vol1');
-                  if (!isUnlocked) {
-                    return '<span class="text-[9px] font-bold text-slate-300 italic">未解放</span>';
-                  }
-                  const bpPts =
-                    p.battle_pass_points?.battle_pass_vol1 ??
-                    p.battle_pass_points_battle_pass_vol1 ??
-                    0;
-                  const bpLevel = Math.min(15, Math.floor(bpPts / 10));
-                  if (bpPts >= 150) {
-                    return '<span class="text-[9px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-200">Lv.15 完走</span>';
-                  }
-                  return `<div class="text-[11px] font-black text-indigo-600">Lv.${bpLevel} <span class="text-[9px] font-normal text-slate-400">(${bpPts}Pt)</span></div>`;
-                })()}
+                <div class="text-[11px] font-black text-fuchsia-500">${p.fortune_max_total_cost_daughter !== undefined && p.fortune_max_total_cost_daughter >= 0 ? p.fortune_max_total_cost_daughter : '-'}</div>
+              </td>
+              <td class="p-2 md:p-3 text-center">
+                ${renderBattlePassTableCell(p, 'battle_pass_vol1', 'indigo')}
+              </td>
+              <td class="p-2 md:p-3 text-center">
+                ${renderBattlePassTableCell(p, 'battle_pass_vol2', 'sky')}
               </td>
               <td class="p-2 md:p-3 text-center">
                 <div class="text-[11px] font-black ${ownedCardTypes > 0 ? 'text-indigo-600' : 'text-slate-300'}">${ownedCardTypes > 0 ? `${ownedCardTypes}種` : '-'}</div>
@@ -2983,6 +3079,10 @@
                 p.fortune_max_total_cost_valkyria !== undefined &&
                 p.fortune_max_total_cost_valkyria >= 0
                   ? `等級（アンジェ）: ${p.fortune_max_total_cost_valkyria}`
+                  : null,
+                p.fortune_max_total_cost_daughter !== undefined &&
+                p.fortune_max_total_cost_daughter >= 0
+                  ? `等級（ベルカ）: ${p.fortune_max_total_cost_daughter}`
                   : null,
               ]
                 .filter(Boolean)
@@ -3457,10 +3557,10 @@
       }
 
       // =============================
-      // バトルパスS1セクション
+      // バトルパスセクション
       // =============================
       /**
-       * プレイヤーのバトルパスS1（天槍の進軍）の解放状況・蓄積ポイント・達成レベルを描画する
+       * プレイヤーの全バトルパス（S1, S2 等）の解放状況・蓄積ポイント・達成レベルを描画する
        * @param {Object} p - プレイヤーデータ
        * @returns {void}
        */
@@ -3468,58 +3568,73 @@
         const sectionEl = document.getElementById('section-battle-pass');
         if (!sectionEl) return;
 
-        // 解放判定（配列形式または真偽値に対応）
-        const isUnlocked =
-          Array.isArray(p.unlocked_battle_passes) &&
-          p.unlocked_battle_passes.includes('battle_pass_vol1');
+        const unlockedPasses = Array.isArray(p.unlocked_battle_passes)
+          ? p.unlocked_battle_passes
+          : [];
 
-        if (!isUnlocked) {
-          sectionEl.innerHTML = `
-            <div class="space-y-2">
+        const cardsHtml = ADMIN_BATTLE_PASS_SEASONS.map((season) => {
+          const isUnlocked = unlockedPasses.includes(season.id);
+          if (!isUnlocked) {
+            return `
+              <div class="bg-slate-800/40 rounded-xl p-3 border border-white/5 flex justify-between items-center">
+                <div>
+                  <div class="text-[10px] font-black text-slate-400">🎫 ${escapeHtml(season.name)}</div>
+                  <div class="text-[9px] text-slate-500 mt-0.5">目玉報酬: ${escapeHtml(season.rewardLabel)}</div>
+                </div>
+                <span class="text-[9px] font-bold text-slate-500 bg-slate-900/60 px-2 py-0.5 rounded border border-slate-700/60">未解放</span>
+              </div>
+            `;
+          }
+
+          const pts =
+            p.battle_pass_points?.[season.id] ??
+            p[`battle_pass_points_${season.id}`] ??
+            0;
+          const maxPts = season.maxPts || 150;
+          const maxLevel = season.maxLevel || 15;
+          const currentLevel = Math.min(maxLevel, Math.floor(pts / 10));
+          const isCompleted = pts >= maxPts;
+          const percent = Math.min(100, Math.round((pts / maxPts) * 100));
+
+          return `
+            <div class="bg-slate-800/50 rounded-xl p-3 border border-${season.accentColor}-500/20 space-y-2">
               <div class="flex justify-between items-center">
-                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">🎫 バトルパス S1 (天槍の進軍)</span>
-                <span class="text-[9px] font-bold text-slate-400">未解放</span>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[10px] font-black text-${season.accentColor}-300">🎫 ${escapeHtml(season.name)}</span>
+                  <span class="text-[9px] text-slate-400">（${escapeHtml(season.rewardLabel)}）</span>
+                </div>
+                ${
+                  isCompleted
+                    ? `<span class="text-[9px] font-black text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-600/60">Lv.${maxLevel} 完走</span>`
+                    : `<span class="text-[9px] font-black text-${season.accentColor}-300">Lv.${currentLevel} / ${maxLevel}</span>`
+                }
               </div>
-              <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5 text-center text-xs text-slate-500 font-bold">
-                バトルパス未解放（ショップ・交換所にて解放可能です）
-              </div>
-            </div>
-          `;
-          return;
-        }
-
-        // ポイントとレベル計算（最大150Pt / Lv.15完走）
-        const pts =
-          p.battle_pass_points?.battle_pass_vol1 ??
-          p.battle_pass_points_battle_pass_vol1 ??
-          0;
-        const maxPts = 150;
-        const currentLevel = Math.min(15, Math.floor(pts / 10));
-        const isCompleted = pts >= maxPts;
-        const percent = Math.min(100, Math.round((pts / maxPts) * 100));
-
-        sectionEl.innerHTML = `
-          <div class="space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">🎫 バトルパス S1 (天槍の進軍)</span>
-              ${
-                isCompleted
-                  ? '<span class="text-[9px] font-black text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-600/60">Lv.15 完走</span>'
-                  : `<span class="text-[9px] font-black text-indigo-300">Lv.${currentLevel} / 15</span>`
-              }
-            </div>
-            <div class="bg-slate-800/50 rounded-xl p-3 border border-indigo-500/20">
-              <div class="flex justify-between items-center mb-1.5">
+              <div class="flex justify-between items-center">
                 <span class="text-[10px] font-bold text-slate-300">進捗ポイント</span>
                 <span class="text-xs font-black text-white">${formatNumber(pts)} <span class="text-[9px] text-slate-500 font-normal">/ ${maxPts} Pt (${percent}%)</span></span>
               </div>
-              <div class="w-full bg-slate-700/50 rounded-full h-2 mb-2">
-                <div class="h-2 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-amber-400" style="width: ${percent}%"></div>
+              <div class="w-full bg-slate-700/50 rounded-full h-2">
+                <div class="h-2 rounded-full bg-gradient-to-r ${season.barGradient}" style="width: ${percent}%"></div>
               </div>
               <div class="flex justify-between text-[9px] text-slate-400">
                 <span>達成レベル: <strong class="text-white">Lv.${currentLevel}</strong></span>
                 <span>${isCompleted ? '全報酬受取可能' : `次のLvまで: ${10 - (pts % 10)} Pt`}</span>
               </div>
+            </div>
+          `;
+        }).join('');
+
+        const unlockedCount = ADMIN_BATTLE_PASS_SEASONS.filter((s) =>
+          unlockedPasses.includes(s.id)
+        ).length;
+
+        sectionEl.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">🎫 バトルパス進捗 (${unlockedCount} / ${ADMIN_BATTLE_PASS_SEASONS.length} 解放)</span>
+            </div>
+            <div class="space-y-2">
+              ${cardsHtml}
             </div>
           </div>
         `;
@@ -4829,8 +4944,8 @@
               charId,
               charName,
               name: skinName,
-              condition: entry.condition || '',
-              desc: entry.desc || '',
+              condition: entry.unlockCondition || entry.condition || '',
+              desc: entry.description || entry.desc || '',
               unlockedCount: 0,
               activeCount: 0,
               unlockedPlayers: [],

@@ -58,6 +58,12 @@ import {
 import { openCardPreview } from '../services/uiGallery.js';
 import { BATTLE_PHASE } from '../game/battle/phases/phaseTypes.js';
 
+/**
+ * バトル画面全体の表示・入力制御を行うメインページコンポーネント。
+ * 盤面・手札・リーダースキル・各種カード/レーン選択モードのUIおよびイベント連携を管理する。
+ *
+ * @returns {JSX.Element} バトル画面要素
+ */
 export default function BattleScreen() {
   const [_renderVersion, setRenderVersion] = useState(0);
   const [cardDetailHtml, setCardDetailHtml] = useState('');
@@ -236,7 +242,16 @@ export default function BattleScreen() {
     setRenderVersion((v) => v + 1);
   }, []);
 
-  // Board や Hand からのイベントを GameState へ伝える
+  /**
+   * 盤面セルまたは盤面上のカードがクリックされた際のイベントハンドラ。
+   * 配置・ターゲット選択・「招来」破棄選択モード時は専用ハンドラへ委譲し、
+   * 通常時は手札からの召喚判定（配置制約・降臨制限を含む）またはカード詳細表示を行う。
+   *
+   * @param {number} lane - クリックされたレーンインデックス (0〜2)
+   * @param {string} side - クリックされた陣営 ('player' | 'enemy')
+   * @param {object|null} card - そのレーンに存在するカードオブジェクト（空きレーン時は null）
+   * @returns {Promise<void>}
+   */
   const handleCellClick = async (lane, side, card) => {
     if (
       isInitializing ||
@@ -268,6 +283,11 @@ export default function BattleScreen() {
         window.handleAlliedLaneClick(lane);
       return;
     }
+    if (GameState.isInvokeSelectMode) {
+      if (side === 'player' && window.handleInvokeBoardClick)
+        window.handleInvokeBoardClick(lane);
+      return;
+    }
     if (
       GameState.isProcessing ||
       (typeof isTransitioning === 'function' && isTransitioning())
@@ -284,6 +304,18 @@ export default function BattleScreen() {
     // カード配置処理
     if (GameState.selectedCardIndex !== null && side === 'player') {
       const newCard = GameState.playerHand[GameState.selectedCardIndex];
+
+      // 「降臨（advent）」制限チェック：通常の手札プレイでは召喚不可
+      if (hasSkill && hasSkill(newCard, 'advent')) {
+        playSound(SOUNDS.seDamage);
+        showConfirmModal(
+          `「${newCard.name}」は降臨を持つため、カード・リーダーの能力以外では召喚できません。`,
+          () => {},
+          null,
+          true
+        );
+        return;
+      }
 
       if (
         GameState.turnCount === 1 &&
@@ -415,15 +447,17 @@ export default function BattleScreen() {
 
   /**
    * 手札のカードクリック時のハンドラ
-   * 通常時はカード選択・レーンハイライトを行い、手札破棄モード（isDiscardingMode）時は対象カードの選択・解除を管理します。
+   * 通常時はカード選択・レーンハイライトを行い、手札破棄モード（isDiscardingMode）および
+   * 「招来」破棄選択モード（isInvokeSelectMode）時は対象カードの選択・解除を管理します。
    * 1枚指定（discardMaxCount === 1）時は別のカードをクリックした際に即座に選択対象を差し替えます。
    * @param {number} idx - クリックされた手札カードのインデックス
+   * @returns {void}
    */
   const handleHandCardClick = (idx) => {
-    // 【重要システム処理】手札破棄モード（isDiscardingMode）中は、
+    // 【重要システム処理】手札破棄モード（isDiscardingMode）または「招来」選択モード（isInvokeSelectMode）中は、
     // システムが明示的にプレイヤーへ手札選択を要求しているため、
     // ターン制限（敵ターン中である等）や処理中フラグ（isProcessing）などのすべての制限を完全にバイパスしてクリックを許可する。
-    if (!GameState.isDiscardingMode) {
+    if (!GameState.isDiscardingMode && !GameState.isInvokeSelectMode) {
       if (GameState.isProcessing) return;
       if (
         GameState.battlePhase !== BATTLE_PHASE.MULLIGAN &&
@@ -438,6 +472,12 @@ export default function BattleScreen() {
     if (isTutorialMode() && filterHandCardClick(idx)) return;
 
     playSound(SOUNDS.seClick);
+
+    if (GameState.isInvokeSelectMode) {
+      if (window.handleInvokeHandClick) window.handleInvokeHandClick(idx);
+      setRenderVersion((v) => v + 1);
+      return;
+    }
 
     if (GameState.isDiscardingMode) {
       if (GameState.discardSelectedIndices.includes(idx)) {
@@ -635,7 +675,9 @@ export default function BattleScreen() {
               cardDetailHtml ||
               (GameState.isDiscardingMode
                 ? `<div class="skill-info" style="color:#facc15; font-weight:bold;">${GameState.battlePhase === BATTLE_PHASE.MULLIGAN ? `${GameState.firstPlayer === 'blue' ? '先攻' : '後攻'}：引き直すカードを` : '捨てるカードを'}${GameState.discardMaxCount}枚${GameState.isDiscardingExact ? '' : 'まで'}選んでください</div>`
-                : ''),
+                : GameState.isInvokeSelectMode
+                  ? '<div class="skill-info" style="color:#facc15; font-weight:bold;">招来: 捨てる手札・場のカードを選んでください（合計パワー: 0）</div>'
+                  : ''),
           }}
         ></div>
       </div>
@@ -648,7 +690,7 @@ export default function BattleScreen() {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             id="btn-leader-skill"
-            className={`action-btn leader-skill-btn ${GameState.playerConfig?.leaderSkill && GameState.playerSP >= GameState.playerConfig.leaderSkill.cost && !GameState.isPlacementMode && !GameState.isDiscardingMode && !GameState.isEnemyTargetMode ? 'ready glow active' : ''}`}
+            className={`action-btn leader-skill-btn ${GameState.playerConfig?.leaderSkill && GameState.playerSP >= GameState.playerConfig.leaderSkill.cost && !GameState.isPlacementMode && !GameState.isDiscardingMode && !GameState.isEnemyTargetMode && !GameState.isAlliedTargetMode && !GameState.isInvokeSelectMode ? 'ready glow active' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               playSound(SOUNDS.seClick);
@@ -670,6 +712,20 @@ export default function BattleScreen() {
               }}
             >
               {GameState.placementButtonText || '配置完了'}
+            </button>
+          ) : GameState.isInvokeSelectMode ? (
+            <button
+              id="btn-end-turn"
+              className="action-btn"
+              style={{ background: '#ef4444', borderColor: '#dc2626' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                playSound(SOUNDS.seClick);
+                if (window.finishInvokeSelection)
+                  window.finishInvokeSelection();
+              }}
+            >
+              選択完了
             </button>
           ) : GameState.isDiscardingMode ? (
             <button
@@ -822,7 +878,9 @@ export default function BattleScreen() {
       <Hand
         playerHand={GameState.playerHand}
         selectedCardIndex={GameState.selectedCardIndex}
-        isDiscardingMode={GameState.isDiscardingMode}
+        isDiscardingMode={
+          GameState.isDiscardingMode || GameState.isInvokeSelectMode
+        }
         discardSelectedIndices={GameState.discardSelectedIndices}
         onCardClick={handleHandCardClick}
         onCardLongPress={handleHandCardLongPress}

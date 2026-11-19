@@ -1,13 +1,17 @@
 import { hasSkill, shuffleArray } from './gameUtils.js';
 
 /**
- * 対象のカードが「生贄(takeover)」または「頂点(apex)」スキルを保持しているか判定します。
- * @param {Object} card - 判定対象のカードオブジェクト
- * @returns {boolean} 生贄または頂点スキルを所持していれば true
+ * 対象のカードが「生贄(takeover)」「頂点(apex)」「降臨(advent)」のいずれかのスキルを保持しているか判定する。
+ * いずれも手札からの単独召喚が行えない制約カードであるため、AIの初期マリガン判定や手札破棄・入れ替え時の手札事故回避基準として共通利用する。
+ *
+ * @param {Object|null|undefined} card - 判定対象のカードオブジェクト
+ * @returns {boolean} 生贄・頂点・降臨スキルのいずれかを所持していれば true
  */
-function isTakeoverOrApex(card) {
-  if (!card || !card.skills) return false;
-  return card.skills.some((s) => s.id === 'takeover' || s.id === 'apex');
+export function isUnplayableAloneCard(card) {
+  if (!card || !Array.isArray(card.skills)) return false;
+  return card.skills.some(
+    (s) => s && (s.id === 'takeover' || s.id === 'apex' || s.id === 'advent')
+  );
 }
 
 /**
@@ -17,10 +21,10 @@ function isTakeoverOrApex(card) {
  * 1. 「狂気（madness）」がある場合は最優先で選ぶ（捨てられた時にノーコスト召喚できるため）
  * 2. 「虚空（token_void）」がある場合は次点で選ぶ（パワー0の不要トークンを掃除）
  * 3. 「〇枚まで（任意: isExact=false）」の場合：
- *    - 狂気・虚空を優先的に破棄し、残る手札が「生贄」「頂点」のみで召喚不能事故が発生する場合に限り、生贄・頂点を追加破棄
+ *    - 狂気・虚空を優先的に破棄し、残る手札が「生贄」「頂点」「降臨」のみで召喚不能事故が発生する場合に限り、それらを追加破棄
  *    - それ以外は有用な通常カードを無駄に捨てずに1枚〜必要最小限の枚数で決定（それ以上捨てない）
  * 4. 「〇枚（強制: isExact=true）」の場合：
- *    - 指定枚数に達するまで「生贄/頂点」＞「通常カード」の優先順位で追加選定して必ずcount枚を確保する
+ *    - 指定枚数に達するまで「生贄/頂点/降臨」＞「通常カード」の優先順位で追加選定して必ずcount枚を確保する
  *
  * @param {Array} hand - 現在の手札配列
  * @param {number} count - 破棄する最大枚数（または指定枚数）
@@ -42,17 +46,17 @@ export function getAIDiscardIndices(hand, count, isExact = false) {
       !madnessCards.includes(x) &&
       (x.card.id === 'token_void' || x.card.baseId === 'token_void')
   );
-  const takeoverApexCards = candidates.filter(
+  const unplayableAloneCards = candidates.filter(
     (x) =>
       !madnessCards.includes(x) &&
       !voidCards.includes(x) &&
-      isTakeoverOrApex(x.card)
+      isUnplayableAloneCard(x.card)
   );
   const normalCards = candidates.filter(
     (x) =>
       !madnessCards.includes(x) &&
       !voidCards.includes(x) &&
-      !takeoverApexCards.includes(x)
+      !unplayableAloneCards.includes(x)
   );
 
   const selected = [];
@@ -73,27 +77,27 @@ export function getAIDiscardIndices(hand, count, isExact = false) {
 
   // 【ステップ3】「〇枚まで（任意: isExact=false）」の場合の必要最小限判定
   if (!isExact) {
-    // 狂気・虚空を破棄した後、残りの手札が「生贄」「頂点」のみで事故が起きるか確認
+    // 狂気・虚空を破棄した後、残りの手札が「生贄」「頂点」「降臨」のみで事故が起きるか確認
     const selectedIndicesSet = new Set(selected.map((x) => x.idx));
     const remainingCandidates = candidates.filter(
       (x) => !selectedIndicesSet.has(x.idx)
     );
 
-    const remainingTakeoverApex = remainingCandidates.filter((x) =>
-      isTakeoverOrApex(x.card)
+    const remainingUnplayableAlone = remainingCandidates.filter((x) =>
+      isUnplayableAloneCard(x.card)
     );
     const remainingNormal = remainingCandidates.filter(
-      (x) => !isTakeoverOrApex(x.card)
+      (x) => !isUnplayableAloneCard(x.card)
     );
 
-    // 残る手札が「生贄/頂点」のみで、手札事故（通常召喚できるカードが手札に無い状態）の場合
+    // 残る手札が「生贄/頂点/降臨」のみで、手札事故（通常召喚できるカードが手札に無い状態）の場合
     if (
       remainingCandidates.length > 0 &&
       remainingNormal.length === 0 &&
-      remainingTakeoverApex.length > 0
+      remainingUnplayableAlone.length > 0
     ) {
-      // プレイ可能な通常カードが残るまで、またはcount上限に達するまで「生贄/頂点」を追加破棄
-      for (const item of shuffleArray(takeoverApexCards)) {
+      // プレイ可能な通常カードを引き込めるよう、count上限の範囲で1枚追加破棄
+      for (const item of shuffleArray(unplayableAloneCards)) {
         if (selected.length < count && !selected.includes(item)) {
           selected.push(item);
           break; // 1枚破棄して入れ替えることで状況改善を図り打ち切る
@@ -106,8 +110,8 @@ export function getAIDiscardIndices(hand, count, isExact = false) {
   }
 
   // 【ステップ4】「〇枚（強制: isExact=true）」の場合のみ、規定数(count)に達するまで追加破棄
-  // 4-A: 手札事故が起きやすい「生贄/頂点」を優先消化
-  for (const item of shuffleArray(takeoverApexCards)) {
+  // 4-A: 手札事故が起きやすい「生贄/頂点/降臨」を優先消化
+  for (const item of shuffleArray(unplayableAloneCards)) {
     if (selected.length < count && !selected.includes(item)) {
       selected.push(item);
     }

@@ -14,6 +14,8 @@ export const SCHOOL_NAMES = {
   priest: '王谷ハイスクール',
   automata: 'X大学付属高校',
   valkyria: '黄昏高校',
+  // TODO: 魔皇女 ベルカ（daughter）は現状「夢幻の闘技祭」使用不可（config.js の TOURNAMENT_BANNED_LEADER_IDS 参照）。
+  // 今後参戦させる際は、高校名および TOURNAMENT_CHARACTER_DIALOGUES.daughter を追加すること。
 };
 
 export const TOURNAMENT_CHARACTER_DIALOGUES = {

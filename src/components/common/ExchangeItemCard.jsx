@@ -101,8 +101,9 @@ export default function ExchangeItemCard({
     masterClass = PLAYMAT_MASTER.find((p) => p.id === item.id) || {};
   }
 
-  const rarityClass =
-    (isCard || isPremium) && masterClass.rarity
+  const rarityClass = isBattlePass
+    ? ' rarity-3'
+    : (isCard || isPremium) && masterClass.rarity
       ? ` rarity-${masterClass.rarity}`
       : '';
 
@@ -204,20 +205,23 @@ export default function ExchangeItemCard({
         id: item.id,
         type: item.type,
         cost: item.cost,
-        itemObj: isCard || isPremium ? masterClass : {},
+        itemObj:
+          isCard || isPremium
+            ? masterClass
+            : isBattlePass
+              ? item.passObj || {}
+              : {},
         packObj: isPack ? item.packObj || item : null,
         titleColor:
-          isPack || isShineTicket
+          isPack || isShineTicket || isBattlePass
             ? '#facc15'
-            : isBattlePass
-              ? '#f59e0b'
-              : isCard || isPremium
-                ? null
-                : isPlaymat || isIcon
-                  ? '#facc15'
-                  : charObj
-                    ? charObj.color
-                    : '#fff',
+            : isCard || isPremium
+              ? null
+              : isPlaymat || isIcon
+                ? '#facc15'
+                : charObj
+                  ? charObj.color
+                  : '#fff',
         canExchange: canAfford && !isUnlocked,
         isMaxed: isUnlocked,
         titleName: displayName,
@@ -428,7 +432,7 @@ export default function ExchangeItemCard({
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: 'bold',
-                  color: '#fbbf24',
+                  color: '#facc15',
                   textShadow: '0 1px 4px rgba(0, 0, 0, 0.9)',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',

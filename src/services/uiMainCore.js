@@ -289,22 +289,45 @@ export function updateVolume(val) {
   localStorage.setItem(LEGACY_VOLUME_KEY, numericVal);
 }
 
+/**
+ * セーブデータ（LocalStorage内の全ゲームデータ）の完全削除処理
+ * 誤操作によるデータ消失を防ぐため、1段階目の通常確認と2段階目の最終警告ダイアログを経て削除を実行する。
+ * @returns {void}
+ */
 export function resetGameData() {
   playSound(SOUNDS.seClick);
   showConfirmModal(
     '本当に全てのデータを削除しますか？\nデッキと所持カードが初期化されます。(この操作は取り消せません)',
     () => {
-      const keys = Object.keys(localStorage);
-      keys.forEach((key) => {
-        if (key.startsWith(GAME_KEY_PREFIX)) {
-          localStorage.removeItem(key);
-        }
-      });
-      // 新規作成された実績データも初期化対象に含まれる
-      playSound(SOUNDS.seDestroy);
-      showAlertModal('データをリセットしました。タイトルに戻ります。', () => {
-        location.reload();
-      });
+      // 1個目のOK押下直後の誤タップ（連打）を防ぐため微小ウェイトを挟んで2個目の最終警告ダイアログを表示する
+      setTimeout(() => {
+        showConfirmModal(
+          '【最終確認】\n所持カード・デッキ・解放キャラ・スキン・実績・各種ポイントなど、すべてのセーブデータが完全に消去されます。\n事前に「データ連携」でバックアップを保存していない場合、元に戻すことはできません。\n\n本当にデータを削除してよろしいですか？',
+          () => {
+            const keys = Object.keys(localStorage);
+            keys.forEach((key) => {
+              if (key.startsWith(GAME_KEY_PREFIX)) {
+                localStorage.removeItem(key);
+              }
+            });
+            // 新規作成された実績データも初期化対象に含まれる
+            playSound(SOUNDS.seDestroy);
+            showAlertModal(
+              'データをリセットしました。タイトルに戻ります。',
+              () => {
+                location.reload();
+              }
+            );
+          },
+          null,
+          false,
+          {
+            title: '⚠️ 最終警告',
+            confirmLabel: '削除する',
+            isDanger: true,
+          }
+        );
+      }, 60);
     }
   );
 }

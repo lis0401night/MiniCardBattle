@@ -21,7 +21,9 @@ import {
   savePointsToServer,
 } from '../../utils/apiUtils.js';
 import {
-  QUICK_RATING_KEY,
+  getMaxQuickRatingCap,
+  getQuickRating,
+  setQuickRating,
   syncAllBattlePassesWithRating,
 } from '../../utils/constants/battlePass.js';
 import { SOUNDS } from '../../utils/sounds.js';
@@ -104,6 +106,8 @@ export default function RankingScreen({
               fortune_total_cost_automata: resolveFortuneMaxCostAutomata(p),
               fortune_total_cost_valkyria:
                 p.fortune_max_total_cost_valkyria || 0,
+              fortune_total_cost_daughter:
+                p.fortune_max_total_cost_daughter || 0,
             };
           });
 
@@ -160,25 +164,32 @@ export default function RankingScreen({
                   myData.fortune_total_cost_valkyria =
                     syncResult.fortune_max_total_cost_valkyria ??
                     myData.fortune_total_cost_valkyria;
+                  myData.fortune_total_cost_daughter =
+                    syncResult.fortune_max_total_cost_daughter ??
+                    myData.fortune_total_cost_daughter;
                 } else if (syncMode === 'high_difficulty') {
                   myData.high_difficulty_points = syncResult.points;
                   myData.high_difficulty_total_points = syncResult.totalPoints;
                 }
               }
 
-              // クイックマッチレートのローカル・サーバー同期
-              const localQuickRating =
-                parseInt(localStorage.getItem(QUICK_RATING_KEY), 10) || 0;
-              const serverQuickRating = myData.quick_rating || 0;
+              // クイックマッチレートのローカル・サーバー同期（全バトルパス合計ポイントで上限キャップ）
+              const maxQuickCap = getMaxQuickRatingCap();
+              const localQuickRating = getQuickRating();
+              const rawServerQuickRating = myData.quick_rating || 0;
+              const serverQuickRating = Math.min(
+                maxQuickCap,
+                Math.max(0, rawServerQuickRating)
+              );
               const mergedRating = Math.max(
                 localQuickRating,
                 serverQuickRating
               );
               myData.quick_rating = mergedRating;
               if (localQuickRating < mergedRating) {
-                localStorage.setItem(QUICK_RATING_KEY, String(mergedRating));
+                setQuickRating(mergedRating);
                 syncAllBattlePassesWithRating();
-              } else if (localQuickRating > serverQuickRating) {
+              } else if (localQuickRating > rawServerQuickRating) {
                 savePointsToServer(
                   'update_quick_rating.php',
                   mergedRating,
@@ -223,18 +234,23 @@ export default function RankingScreen({
                 0;
               const clearedDataAutomata = loadFortuneClearedData('automata');
               const clearedDataValkyria = loadFortuneClearedData('valkyria');
+              const clearedDataDaughter = loadFortuneClearedData('daughter');
               const fortuneMaxGrade = Math.max(
                 clearedDataAutomata.maxGradeLevel || 0,
                 clearedDataValkyria.maxGradeLevel || 0,
+                clearedDataDaughter.maxGradeLevel || 0,
                 0
               );
               const fortuneTotalCostAutomata =
                 clearedDataAutomata.maxTotalCost || 0;
               const fortuneTotalCostValkyria =
                 clearedDataValkyria.maxTotalCost || 0;
+              const fortuneTotalCostDaughter =
+                clearedDataDaughter.maxTotalCost || 0;
               const fortuneTotalCost = Math.max(
                 fortuneTotalCostAutomata,
-                fortuneTotalCostValkyria
+                fortuneTotalCostValkyria,
+                fortuneTotalCostDaughter
               );
 
               const highDifficultyPts =
@@ -247,8 +263,7 @@ export default function RankingScreen({
                   localStorage.getItem(HIGH_DIFFICULTY_TOTAL_POINTS_KEY),
                   10
                 ) || 0;
-              const quickRatingPts =
-                parseInt(localStorage.getItem(QUICK_RATING_KEY), 10) || 0;
+              const quickRatingPts = getQuickRating();
 
               let hasCreated = false;
               if (syncMode === 'challenge' && challengeTotalPts > 0) {
@@ -265,7 +280,8 @@ export default function RankingScreen({
                 (fortuneTotalPts > 0 ||
                   fortuneMaxGrade > 0 ||
                   fortuneTotalCostAutomata > 0 ||
-                  fortuneTotalCostValkyria > 0)
+                  fortuneTotalCostValkyria > 0 ||
+                  fortuneTotalCostDaughter > 0)
               ) {
                 const res = await syncModePoints('fortune', null);
                 hasCreated = Boolean(res);
@@ -310,6 +326,7 @@ export default function RankingScreen({
                   fortune_total_cost: fortuneTotalCost,
                   fortune_total_cost_automata: fortuneTotalCostAutomata,
                   fortune_total_cost_valkyria: fortuneTotalCostValkyria,
+                  fortune_total_cost_daughter: fortuneTotalCostDaughter,
                   high_difficulty_points: highDifficultyPts,
                   high_difficulty_total_points: highDifficultyTotalPts,
                   quick_rating: quickRatingPts,
@@ -448,11 +465,12 @@ export default function RankingScreen({
                 }}
                 style={{
                   flex: 1,
-                  padding: '10px 0',
+                  padding: tabs.length >= 4 ? '8px 4px' : '10px 0',
                   border: 'none',
                   cursor: 'pointer',
                   fontWeight: 'bold',
-                  fontSize: '0.85rem',
+                  fontSize: tabs.length >= 4 ? '0.75rem' : '0.85rem',
+                  lineHeight: 1.25,
                   transition: 'all 0.2s ease',
                   background:
                     activeTabIndex === i

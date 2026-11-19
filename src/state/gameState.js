@@ -128,6 +128,7 @@ export const GameState = {
   // スキル対象選択中の一時状態
   isEnemyTargetMode: false,
   isAlliedTargetMode: false,
+  isInvokeSelectMode: false,
   enemyTargetSkillId: null,
   targetSelectResolve: null,
   battleCount: 1,

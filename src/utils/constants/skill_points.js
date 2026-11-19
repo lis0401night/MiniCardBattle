@@ -375,8 +375,8 @@ export const SKILL_POINTS = {
     multiplier: 3,
   },
   execute: {
-    base: -3,
-    multiplier: 0,
+    base: 0,
+    multiplier: -3,
   },
   dominate: {
     base: 1,
@@ -453,5 +453,13 @@ export const SKILL_POINTS = {
   protection: {
     base: 1,
     multiplier: 0,
+  },
+  invoke: {
+    base: 1,
+    multiplier: 0,
+  },
+  advent: {
+    base: 0,
+    multiplier: -1,
   },
 };

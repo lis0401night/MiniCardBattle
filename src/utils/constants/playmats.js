@@ -96,6 +96,12 @@ const BASE_PLAYMATS = [
     targetCharacter: 'valkyria',
   },
   {
+    id: 'daughter',
+    name: 'ベルカ',
+    image: 'assets/boards/board_daughter.webp',
+    targetCharacter: 'daughter',
+  },
+  {
     id: 'satan',
     name: 'サタン',
     image: 'assets/boards/board_satan.webp',
