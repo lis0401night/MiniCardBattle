@@ -407,6 +407,11 @@ function waitForVideoDecodable(
     let settled = false;
     let timerId = null;
 
+    /**
+     * 初期デコード待機用のイベントリスナーとタイムアウトタイマーを一括解除する。
+     * Promise 確定時（成功・エラー・タイムアウト）に呼び出され、購読解除の責任を持つ。
+     * @returns {void}
+     */
     const cleanup = () => {
       video.removeEventListener('loadeddata', onReady);
       video.removeEventListener('canplay', onReady);
@@ -414,6 +419,11 @@ function waitForVideoDecodable(
       if (timerId !== null) clearTimeout(timerId);
     };
 
+    /**
+     * loadeddata / canplay イベント発火時にビデオの準備状態を確認する。
+     * デコード可能なフレーム寸法・データが揃った時点で購読を解除し Promise を true で解決する（未成立時は待機継続）。
+     * @returns {void}
+     */
     const onReady = () => {
       if (settled) return;
       if (
@@ -426,6 +436,11 @@ function waitForVideoDecodable(
       }
     };
 
+    /**
+     * error イベント発火時に初期デコード待機を即座に終了する。
+     * イベント購読とタイマーを解除し、Promise を false で確定させる。
+     * @returns {void}
+     */
     const onError = () => {
       if (settled) return;
       settled = true;
@@ -462,6 +477,12 @@ async function seekVideoToTime(
   destTime,
   timeoutMs = VIDEO_SEEK_TIMEOUT_MS
 ) {
+  if (video.error) {
+    throw new Error(
+      `動画のデコード中に致命的なエラーが発生しました (code: ${video.error.code})。`
+    );
+  }
+
   if (
     !video.seeking &&
     video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
@@ -471,16 +492,26 @@ async function seekVideoToTime(
     return true;
   }
 
-  const seekSucceeded = await new Promise((resolve) => {
+  const seekSucceeded = await new Promise((resolve, reject) => {
     let settled = false;
     let timerId = null;
 
+    /**
+     * シーク待機用のイベントリスナーとタイムアウトタイマーを一括解除する。
+     * Promise 確定時（seeked・error・タイムアウト・例外）に購読解除を行う。
+     * @returns {void}
+     */
     const cleanup = () => {
       video.removeEventListener('seeked', onSeeked);
       video.removeEventListener('error', onError);
       if (timerId !== null) clearTimeout(timerId);
     };
 
+    /**
+     * seeked イベント発火時にシーク完了として待機を終了する。
+     * イベント購読とタイマーを解除し、Promise を true で解決する。
+     * @returns {void}
+     */
     const onSeeked = () => {
       if (settled) return;
       settled = true;
@@ -488,10 +519,24 @@ async function seekVideoToTime(
       resolve(true);
     };
 
+    /**
+     * error イベント発火時にシーク待機を終了し、購読解除を行う。
+     * video.error が設定されている終端的なメディアエラーの場合は Promise を reject して書き出しを中断し、
+     * それ以外の一時的な失敗では false で解決して既存の再試行・補完へ委ねる。
+     * @returns {void}
+     */
     const onError = () => {
       if (settled) return;
       settled = true;
       cleanup();
+      if (video.error) {
+        reject(
+          new Error(
+            `動画のシーク・デコード中に致命的なエラーが発生しました (code: ${video.error.code})。`
+          )
+        );
+        return;
+      }
       resolve(false);
     };
 
@@ -718,9 +763,11 @@ export default function PremiumCardMaker() {
   };
 
   /**
-   * 再生・停止トグル
+   * 再生・停止トグル（書き出し中は競合防止のため再生操作を抑止）
+   * @returns {void}
    */
   const togglePlay = () => {
+    if (isEncoding) return;
     if (sourceType === 'video') {
       const video = videoRef.current;
       if (!video) return;
@@ -1250,6 +1297,11 @@ export default function PremiumCardMaker() {
     };
 
     for (let attempt = 0; attempt < VIDEO_MAX_SEEK_ATTEMPTS; attempt++) {
+      if (video.error) {
+        throw new Error(
+          `動画フレーム（${clampedTime.toFixed(2)}秒地点）で致命的なデコードエラーが発生しました (code: ${video.error.code})。`
+        );
+      }
       if (attempt > 0) {
         await new Promise((resolve) =>
           setTimeout(resolve, VIDEO_RETRY_BACKOFF_MS * attempt)
@@ -1298,6 +1350,12 @@ export default function PremiumCardMaker() {
       if (emergencyCanvas && !isCanvasCompletelyTransparent(emergencyCanvas)) {
         return { canvas: emergencyCanvas, usedFallback: false };
       }
+    }
+
+    if (video.error) {
+      throw new Error(
+        `動画フレーム（${clampedTime.toFixed(2)}秒地点）で致命的なデコードエラーが発生しました (code: ${video.error.code})。`
+      );
     }
 
     // 万が一デコーダ異常が解消しなかった場合も空の透明 Canvas は返さず、直前の正常ベースフレームで補完してコマ抜けを防ぐ
@@ -2196,6 +2254,7 @@ export default function PremiumCardMaker() {
                     <button
                       className={`pcm-btn-icon primary`}
                       onClick={togglePlay}
+                      disabled={isEncoding}
                       title={isPlaying ? '一時停止' : '再生'}
                     >
                       {isPlaying ? '⏸' : '▶'}
@@ -2630,6 +2689,7 @@ export default function PremiumCardMaker() {
                   <button
                     className={`pcm-btn-icon primary`}
                     onClick={togglePlay}
+                    disabled={isEncoding}
                     style={{ width: '80px', height: '32px' }}
                   >
                     {isPlaying ? '⏸ 停止' : '▶ 再生'}

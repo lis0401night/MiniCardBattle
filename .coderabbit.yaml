@@ -20,7 +20,7 @@ reviews:
         mode: 'warning'
         instructions: |
           カードを場に出す変更が含まれる場合、以下を満たしているか判定してください（該当変更がないPRはPassとする）。
-          1. 「召喚（Summon）」（手札プレイ, summon, assemble, call, forge, madness, reanimate, invoke, trigger, dungeon_summon_leader, daemon_call）では制約チェックが有効（checkConstraints = true）であり、確定後にオンプレイ能力（resolveOnPlaySkill）が適切に解決されること。
+          1. 「召喚（Summon）」（手札プレイ, summon, assemble, call, forge, madness, reanimate, invoke, trigger, dungeon_summon_leader, daemon_call, demonic_call）では制約チェックが有効（checkConstraints = true）であり、確定後にオンプレイ能力（resolveOnPlaySkill）が適切に解決されること。
           2. 「配置（Place）」（resurrect, puppet, clone, servant, ambush, dragon_summon, dragon_high_ritual, satan_avatar, holy_march, evil_march, death_target, devilhunter_resurrect, overdrive, warlock_place_daemons, iron_march, last_battalion, night_parade, elf_polarbear_combo）では通常の召喚制約を無視（checkConstraints = false）し、オンプレイ能力を発動させないこと。
           3. 「封印（seal）」状態のレーン（sealedLanes[lane] > 0）への召喚・配置・移動がいずれの経路でも拒否されること。
       - name: 'セーブデータ・API後方互換性と消失防止'
@@ -129,8 +129,9 @@ reviews:
              - 「招来」スキル: invoke（手札・場のカードを捨てて手札・山札から召喚）
              - 「誘発」スキル: trigger（相手召喚時の手札からの割り込み召喚）
              - リーダースキル「試練の宮殿」: dungeon_summon_leader
-             - リーダースキル「魔王の号令」: daemon_call
-           - 制約チェック: 【有効 (checkConstraints = true)】。伝説（legendary: 中央のみ）、生贄（takeover: 配置済みレーンのみ）、挑戦（challenge: 正面に敵がいるレーン）、頂点（apex: 自分場に伝説が必要）、先攻初手中央制限に従う。また「降臨（advent）」を持つカードは能力以外（通常手札プレイ）では召喚できない。
+             - リーダースキル「次元斬」: daemon_call
+             - リーダースキル「万魔の招来」: demonic_call
+           - 制約チェック: 【有効 (checkConstraints = true)】。伝説（legendary: 中央のみ）、生贄（takeover: 配置済みレーンのみ）、挑戦（challenge: 正面に敵がいるレーン）、頂点（apex: 自分の「伝説」カードが配置されているレーンのみ）、先攻初手中央制限に従う。また「降臨（advent）」を持つカードは能力以外（通常手札プレイ）では召喚できない。
            - 実装基準: waitPlayerLaneSelection(..., checkConstraints = true) を使用し、確定後に resolveOnPlaySkill(...) を呼び出す。
            - 画面ボタン表記: 「召喚を完了」（キャンセル可能時は「召喚完了」/「キャンセル」）
         2. **「配置（Place）」**:
@@ -170,7 +171,7 @@ reviews:
           - 「忘却」＝ silence（正面のカードの全能力無効）
           - 「沈黙」＝ oblivion（お互いの場の全カードの全能力無効）
         - **キャラクターID**（src/utils/constants/characters.js）:
-          - android ＝ 機動戦姫 アイギス / dragon ＝ 焔竜姫 イグニス / knight ＝ 聖騎士 セレスティア / cthulhu ＝ 深淵の呼び声 ナイア / elf ＝ 流浪の射手 リナ / cleric ＝ 狂信の聖職者 エリシア / devilhunter ＝ 悪魔狩り マリア / witch ＝ 時駆けの魔女 クロエ / oni ＝ 鬼血の陰陽師 カグラ / priest ＝ 王墓の守護者 ネフティ / automata ＝ 廃鉄の声 マキナ (解放制) / valkyria ＝ 紅蓮の翼 アンジェ (解放制) / void ＝ 虚空の騎士 ゼノン (ボス) / succubus ＝ 隷属の女王 ヴィオラ (ボス) / warlock ＝ 闇の総帥 バルタザール (ボス) / satan ＝ 魔王 サタン (ボス)
+          - android ＝ 機動戦姫 アイギス / dragon ＝ 焔竜姫 イグニス / knight ＝ 聖騎士 セレスティア / cthulhu ＝ 深淵の呼び声 ナイア / elf ＝ 流浪の射手 リナ / cleric ＝ 狂信の聖職者 エリシア / devilhunter ＝ 悪魔狩り マリア / witch ＝ 時駆けの魔女 クロエ / oni ＝ 鬼血の陰陽師 カグラ / priest ＝ 王墓の守護者 ネフティ / automata ＝ 廃鉄の声 マキナ (解放制) / valkyria ＝ 紅蓮の翼 アンジェ (解放制) / daughter ＝ 魔皇女 ベルカ (解放制) / void ＝ 虚空の騎士 ゼノン (ボス) / succubus ＝ 隷属の女王 ヴィオラ (ボス) / warlock ＝ 闇の総帥 バルタザール (ボス) / satan ＝ 魔王 サタン (ボス)
         - **リーダースキルaction**（src/utils/constants/characters.js, leaderSkills.js）: 各定義の action と厳密一致させる。
         - **カードID**（src/utils/constants/cards.js）: CARD_MASTER の id / name と完全一致で照合する。
 

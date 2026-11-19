@@ -4478,3 +4478,30 @@ body.vfx-shake {
 .glossary-arrow-open {
   transform: rotate(90deg);
 }
+
+/* 墓地・デッキ・手札選択モーダルのカードアイテムホバー表示（3列グリッド内の詳細度 0,3,0 にも対応） */
+.deck-card-item.discard-selection-card,
+.card-list-grid-3col .deck-card-item.discard-selection-card {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.deck-card-item.discard-selection-card:hover,
+.card-list-grid-3col .deck-card-item.discard-selection-card:hover {
+  transform: scale(1.05);
+}
+
+/* バトルパス選択メニューのカード状態・ホバー影管理 */
+.battle-pass-menu-card {
+  box-shadow: var(--bp-base-shadow, none);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.battle-pass-menu-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--bp-hover-shadow, var(--bp-base-shadow, none));
+}

@@ -3827,3 +3827,40 @@ export function matchesInvokeTarget(card, maxAdventValue) {
   const limit = Number.isFinite(maxAdventValue) ? maxAdventValue : 0;
   return req <= limit;
 }
+
+/**
+ * 指定されたカード配列（山札・手札・墓地等）から、選択された対象カードの正確なインデックスを検索する。
+ * 同一参照（indexOf）を最優先し、複製オブジェクトの場合は uid 一致のみで特定する。
+ * id / baseId による照合は uid 照合が使用できない場合の限定フォールバックに留め、同名別個体（通常版とシャイン版等）の誤削除を防ぐ。
+ *
+ * @param {Array<object>} zone - 検索対象のカード配列
+ * @param {object|null|undefined} targetCard - 特定したいカードオブジェクト
+ * @returns {number} 一致した要素のインデックス（見つからない場合は -1）
+ */
+export function findCardIndexInZone(zone, targetCard) {
+  if (!Array.isArray(zone) || !targetCard) return -1;
+
+  // 1. 同一参照による完全一致（最優先）
+  const refIdx = zone.indexOf(targetCard);
+  if (refIdx !== -1) return refIdx;
+
+  // 2. 複製オブジェクトの場合: uid が利用可能なら uid 完全一致のみで照合する
+  if (targetCard.uid) {
+    const uidIdx = zone.findIndex((c) => c && c.uid === targetCard.uid);
+    if (uidIdx !== -1) return uidIdx;
+    const allHaveUid = zone.every((c) => !c || Boolean(c.uid));
+    if (allHaveUid) return -1;
+  }
+
+  // 3. uid による照合が使えない限定ケースの代替照合（id → baseId）
+  if (targetCard.id !== undefined) {
+    const idIdx = zone.findIndex((c) => c && c.id === targetCard.id);
+    if (idIdx !== -1) return idIdx;
+  }
+  if (targetCard.baseId) {
+    return zone.findIndex(
+      (c) => c && (c.baseId === targetCard.baseId || c.id === targetCard.baseId)
+    );
+  }
+  return -1;
+}

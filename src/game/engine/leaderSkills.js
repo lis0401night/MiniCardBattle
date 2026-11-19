@@ -2365,14 +2365,14 @@ export function applyLeaderSkillLogic(
         }
       }
 
-      // その後、カードを4枚引く
+      // その後、山札トップ（配列末尾）からカードを4枚引く
       if (Array.isArray(hand)) {
         for (
           let i = 0;
           i < 4 && deck.length > 0 && hand.length < MAX_HAND_CAPACITY;
           i++
         ) {
-          const drawn = deck.shift();
+          const drawn = deck.pop();
           if (drawn) {
             drawn.uid = `${owner}_sim_dr_${Math.floor(getSeededRandom() * 1000000000)}`;
             hand.push(drawn);

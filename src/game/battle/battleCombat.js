@@ -245,9 +245,9 @@ async function executeDiscardTriggeredSummon(owner, card, targetLane, source) {
     const targetCard = board[targetLane];
     const prevResolving = Boolean(targetCard.isSkillResolving);
     targetCard.isSkillResolving = true;
-    const { equipSkills } = applyEquipment(targetCard, card);
 
     try {
+      const { equipSkills } = applyEquipment(targetCard, card);
       let events = [
         {
           type: 'summon_card',
@@ -315,31 +315,36 @@ async function executeDiscardTriggeredSummon(owner, card, targetLane, source) {
     }
     board[targetLane] = card;
 
-    // 登場演出および相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを維持する
+    // 登場演出および相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを維持し、例外中断時も確実に解除する
     card.isSkillResolving = true;
 
-    let events = [
-      {
-        type: 'summon_card',
-        side: owner,
-        lane: targetLane,
-        card: card,
-        source,
-        keepSkillResolving: true,
-      },
-    ];
-    await playEvents(events);
+    try {
+      let events = [
+        {
+          type: 'summon_card',
+          side: owner,
+          lane: targetLane,
+          card: card,
+          source,
+          keepSkillResolving: true,
+        },
+      ];
+      await playEvents(events);
 
-    // 相手の誘発スキルチェック
-    await checkAndTriggerCounter(owner, card, targetLane);
+      // 相手の誘発スキルチェック
+      await checkAndTriggerCounter(owner, card, targetLane);
 
-    // 出現時スキルの発動（沈黙・忘却等で能力が消去された場合は不発。誘発による破壊時は自己強化・速攻等の自己対象スキルのみ個別スキップされる）
-    if (hasActiveSkill(card)) {
-      await resolveOnPlaySkill(owner, targetLane, card);
-    } else {
-      card.isSkillResolving = false;
-      releaseSkillResolvingSpawns(card);
-      card.skillTriggered = true;
+      // 出現時スキルの発動（沈黙・忘却等で能力が消去された場合は不発。誘発による破壊時は自己強化・速攻等の自己対象スキルのみ個別スキップされる）
+      if (hasActiveSkill(card)) {
+        await resolveOnPlaySkill(owner, targetLane, card);
+      } else {
+        card.skillTriggered = true;
+      }
+    } finally {
+      if (card.isSkillResolving) {
+        card.isSkillResolving = false;
+        releaseSkillResolvingSpawns(card);
+      }
     }
     await cleanupDestroyedCards();
   }
@@ -1448,29 +1453,34 @@ export async function playCard(o, hI, l, depth = 0, isAbilitySummon = false) {
         masterData
       );
 
-      // 合体召喚完了・相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを維持する
+      // 合体召喚完了・相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを維持し、例外中断時も確実に解除する
       unionCard.isSkillResolving = true;
       b[l] = unionCard;
 
-      playSound(SOUNDS.sePlace);
-      playCardVoice(unionCard, 'play');
+      try {
+        playSound(SOUNDS.sePlace);
+        playCardVoice(unionCard, 'play');
 
-      if (o === 'blue') {
-        GameState.selectedCardIndex = null;
-        updateCardDetail(null);
-      }
-      renderHand();
-      renderBoard();
+        if (o === 'blue') {
+          GameState.selectedCardIndex = null;
+          updateCardDetail(null);
+        }
+        renderHand();
+        renderBoard();
 
-      // 相手の手札の「誘発（trigger）」スキルチェック
-      await checkAndTriggerCounter(o, unionCard, l, depth);
+        // 相手の手札の「誘発（trigger）」スキルチェック
+        await checkAndTriggerCounter(o, unionCard, l, depth);
 
-      if (hasActiveSkill(unionCard)) {
-        await resolveOnPlaySkill(o, l, unionCard);
-      } else {
-        unionCard.isSkillResolving = false;
-        releaseSkillResolvingSpawns(unionCard);
-        unionCard.skillTriggered = true;
+        if (hasActiveSkill(unionCard)) {
+          await resolveOnPlaySkill(o, l, unionCard);
+        } else {
+          unionCard.skillTriggered = true;
+        }
+      } finally {
+        if (unionCard.isSkillResolving) {
+          unionCard.isSkillResolving = false;
+          releaseSkillResolvingSpawns(unionCard);
+        }
       }
       await cleanupDestroyedCards();
 
@@ -1484,23 +1494,24 @@ export async function playCard(o, hI, l, depth = 0, isAbilitySummon = false) {
       const targetCard = b[l];
       const prevResolving = Boolean(targetCard.isSkillResolving);
       targetCard.isSkillResolving = true;
-      const consumedCard = h.splice(hI, 1)[0];
-
-      // 共通ヘルパー applyEquipment により装備・パラメータ・スキル・選択肢・武装消費を統合適用
-      const { equipSkills } = applyEquipment(targetCard, consumedCard);
-
-      // 配置音・ボイス
-      playSound(SOUNDS.sePlace);
-      playCardVoice(playingCard, 'play');
-
-      if (o === 'blue') {
-        GameState.selectedCardIndex = null;
-        updateCardDetail(null);
-      }
-      renderHand();
-      renderBoard();
 
       try {
+        const consumedCard = h.splice(hI, 1)[0];
+
+        // 共通ヘルパー applyEquipment により装備・パラメータ・スキル・選択肢・武装消費を統合適用
+        const { equipSkills } = applyEquipment(targetCard, consumedCard);
+
+        // 配置音・ボイス
+        playSound(SOUNDS.sePlace);
+        playCardVoice(playingCard, 'play');
+
+        if (o === 'blue') {
+          GameState.selectedCardIndex = null;
+          updateCardDetail(null);
+        }
+        renderHand();
+        renderBoard();
+
         // 相手の手札の「誘発（trigger）」スキルチェック
         await checkAndTriggerCounter(o, targetCard, l, depth);
 
@@ -1570,43 +1581,48 @@ export async function playCard(o, hI, l, depth = 0, isAbilitySummon = false) {
     );
   }
 
-  // 登場から相手の「誘発」および自身の全召喚時スキル完了まで保護フラグを立てる
+  // 登場から相手の「誘発」および自身の全召喚時スキル完了まで保護フラグを立て、例外中断時も確実に解除する
   c.isSkillResolving = true;
 
-  // 旧環境データ由来等のパワー欠落・異常(手札なのに0やNaN)を自動修復
-  if (
-    c.currentPower === undefined ||
-    Number.isNaN(c.currentPower) ||
-    (c.currentPower <= 0 && (c.power || 0) > 0)
-  ) {
-    c.currentPower = c.power || 0;
-    c.basePower = c.power || 0;
-  }
+  try {
+    // 旧環境データ由来等のパワー欠落・異常(手札なのに0やNaN)を自動修復
+    if (
+      c.currentPower === undefined ||
+      Number.isNaN(c.currentPower) ||
+      (c.currentPower <= 0 && (c.power || 0) > 0)
+    ) {
+      c.currentPower = c.power || 0;
+      c.basePower = c.power || 0;
+    }
 
-  // 配置音とボイスの再生
-  playSound(SOUNDS.sePlace);
-  playCardVoice(c, 'play');
+    // 配置音とボイスの再生
+    playSound(SOUNDS.sePlace);
+    playCardVoice(c, 'play');
 
-  if (o === 'blue') {
-    GameState.selectedCardIndex = null;
-    updateCardDetail(null);
-  }
-  renderHand();
-  renderBoard();
+    if (o === 'blue') {
+      GameState.selectedCardIndex = null;
+      updateCardDetail(null);
+    }
+    renderHand();
+    renderBoard();
 
-  trackMissionPower(GameState);
+    trackMissionPower(GameState);
 
-  // 相手の手札の「誘発（trigger）」スキルチェック
-  await checkAndTriggerCounter(o, c, l, depth);
+    // 相手の手札の「誘発（trigger）」スキルチェック
+    await checkAndTriggerCounter(o, c, l, depth);
 
-  // 出現時スキルの発動（単一または複数。沈黙・忘却等でスキルが消去された場合は不発。誘発による破壊時は自身のパワー上昇や速攻等の自己対象スキルのみ不発となり他スキルは発動する）
-  if (hasActiveSkill(c)) {
-    await sleep(50); // React DOMコミット待機
-    await resolveOnPlaySkill(o, l, c);
-  } else {
-    c.isSkillResolving = false;
-    releaseSkillResolvingSpawns(c);
-    c.skillTriggered = true;
+    // 出現時スキルの発動（単一または複数。沈黙・忘却等でスキルが消去された場合は不発。誘発による破壊時は自身のパワー上昇や速攻等の自己対象スキルのみ不発となり他スキルは発動する）
+    if (hasActiveSkill(c)) {
+      await sleep(50); // React DOMコミット待機
+      await resolveOnPlaySkill(o, l, c);
+    } else {
+      c.skillTriggered = true;
+    }
+  } finally {
+    if (c.isSkillResolving) {
+      c.isSkillResolving = false;
+      releaseSkillResolvingSpawns(c);
+    }
   }
 
   // スキル解決後、自分自身（パワー0のスペル等）や他カードの死亡を一括確認する。

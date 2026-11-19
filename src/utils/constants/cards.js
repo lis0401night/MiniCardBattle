@@ -4641,5 +4641,6 @@ export const PREMIUM_CARD_IDS = [
   'cheetah',
   'tortoise',
   'falcon',
+  'clone',
   // --- 入手方法未設定 ---
 ];

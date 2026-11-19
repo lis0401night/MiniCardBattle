@@ -21,6 +21,7 @@ import {
   checkIsEasyAI,
   checkIsOnlineMode,
   createDamagePopup,
+  findCardIndexInZone,
   getCardImgUrl,
   getDialogue,
   getSeededRandom,
@@ -201,47 +202,56 @@ export async function activateLeaderSkill(
   else GameState.enemySP -= config.leaderSkill.cost;
   updateSPOrbs(owner);
 
-  // 演出
-  playSound(SOUNDS.seLegend);
-  await showLeaderSkillCutin(config, isBlue, owner);
+  let keepProcessing = false;
+  try {
+    // 演出
+    playSound(SOUNDS.seLegend);
+    await showLeaderSkillCutin(config, isBlue, owner);
 
-  // スキル効果の実行
-  await executeLeaderSkillAction(
-    owner,
-    action,
-    isBlue,
-    config,
-    tokenLanes,
-    forcedTargetIdx,
-    forcedTargetUid
-  );
+    // スキル効果の実行
+    await executeLeaderSkillAction(
+      owner,
+      action,
+      isBlue,
+      config,
+      tokenLanes,
+      forcedTargetIdx,
+      forcedTargetUid
+    );
 
-  if (checkWinCondition()) return;
+    if (checkWinCondition()) {
+      keepProcessing = true;
+      return;
+    }
 
-  // 盤面が一杯かつ手札も無空で、スキルも使えない場合のオートスキップ（プレイヤーのみ）
-  // 手札がある場合は上書き配置が可能なため、勝手に終了させない
-  if (
-    isBlue &&
-    GameState.playerBoard.every((c) => c !== null) &&
-    GameState.playerHand.length === 0 &&
-    (!GameState.playerConfig.leaderSkill.cost ||
-      GameState.playerSP < GameState.playerConfig.leaderSkill.cost)
-  ) {
-    const st = document.getElementById('turn-status');
-    st.innerText = 'BOARD FULL - AUTO SKIP';
-    st.style.color = '#94a3b8';
-    GameState.isProcessing = true;
-    setTimeout(() => {
-      GameState.selectedCardIndex = null;
-      updateCardDetail(null);
-      renderHand();
-      renderBoard();
-      endTurnLogic('blue');
-    }, 1500);
-    return;
+    // 盤面が一杯かつ手札も無空で、スキルも使えない場合のオートスキップ（プレイヤーのみ）
+    // 手札がある場合は上書き配置が可能なため、勝手に終了させない
+    if (
+      isBlue &&
+      GameState.playerBoard.every((c) => c !== null) &&
+      GameState.playerHand.length === 0 &&
+      (!GameState.playerConfig.leaderSkill.cost ||
+        GameState.playerSP < GameState.playerConfig.leaderSkill.cost)
+    ) {
+      const st = document.getElementById('turn-status');
+      st.innerText = 'BOARD FULL - AUTO SKIP';
+      st.style.color = '#94a3b8';
+      GameState.isProcessing = true;
+      keepProcessing = true;
+      setTimeout(() => {
+        GameState.selectedCardIndex = null;
+        updateCardDetail(null);
+        renderHand();
+        renderBoard();
+        endTurnLogic('blue');
+      }, 1500);
+      return;
+    }
+  } finally {
+    if (!keepProcessing) {
+      GameState.isProcessing = prevProc;
+    }
   }
-
-  GameState.isProcessing = prevProc;
 }
 
 export async function showLeaderSkillCutin(config, isBlue, owner) {
@@ -431,126 +441,119 @@ export async function executeLeaderSkillAction(
 
     if (!selectedCard) return;
 
-    // 山札から対象カードを一時取り出し（キャンセル時の元位置復元用にインデックスを保持）
-    let removedDeckIdx = deck.indexOf(selectedCard);
-    if (removedDeckIdx === -1) {
-      removedDeckIdx = deck.findIndex(
-        (card) =>
-          card &&
-          ((selectedCard.uid && card.uid === selectedCard.uid) ||
-            card.id === selectedCard.id ||
-            (Boolean(selectedCard.baseId) &&
-              (card.baseId === selectedCard.baseId ||
-                card.id === selectedCard.baseId)))
-      );
-    }
+    // 山札から対象カードを一時取り出し（キャンセル・封印拒否・例外時の元位置復元用にインデックスを保持）
+    const removedDeckIdx = findCardIndexInZone(deck, selectedCard);
     if (removedDeckIdx !== -1) {
       deck.splice(removedDeckIdx, 1);
     }
 
-    // マスタデータから初期ステータスへ復元し、プレミアム・シャイン属性を引き継ぐ
-    const masterData = CARD_MASTER.find(
-      (m) => m.id === (selectedCard.baseId || selectedCard.id)
-    );
-    const restoredCard = masterData
-      ? JSON.parse(JSON.stringify(masterData))
-      : JSON.parse(JSON.stringify(selectedCard));
-    restoredCard.baseId = selectedCard.baseId || selectedCard.id;
-    restoredCard.basePower = restoredCard.power;
-    restoredCard.currentPower = restoredCard.power;
-    if (selectedCard.isPremium !== undefined) {
-      restoredCard.isPremium = selectedCard.isPremium;
-    }
-    if (selectedCard.isShine !== undefined) {
-      restoredCard.isShine = selectedCard.isShine;
-    }
-
-    const legalLanes = getValidSummonLanes(owner, restoredCard);
-    if (legalLanes.length === 0) {
-      if (removedDeckIdx !== -1) {
-        deck.splice(removedDeckIdx, 0, selectedCard);
-      } else {
-        deck.push(selectedCard);
-      }
-      updateDeckDisplay(owner);
-      return;
-    }
-
-    const initialRestrictLanes =
-      isOfflineAI &&
-      Array.isArray(tokenLanes) &&
-      tokenLanes.length > 0 &&
-      legalLanes.includes(tokenLanes[0])
-        ? [tokenLanes[0]]
-        : null;
-
-    // 召喚ルール制約チェック有効（checkConstraints = true）でレーン選択・上書き確認を行う
-    let successCall = false;
-    let targetLane = -1;
-    while (!successCall) {
-      GameState.placementMessage = `${config?.leaderSkill?.name || '次元斬'}: 「${restoredCard.name}」を召喚するレーンを選んでください`;
-      const selectedLanes = await waitPlayerLaneSelection(
-        1,
-        owner,
-        restoredCard,
-        true,
-        initialRestrictLanes,
-        true,
-        true,
-        '召喚完了'
+    let shouldRestoreDeckCard = true;
+    try {
+      // マスタデータから初期ステータスへ復元し、プレミアム・シャイン属性を引き継ぐ
+      const masterData = CARD_MASTER.find(
+        (m) => m.id === (selectedCard.baseId || selectedCard.id)
       );
-      GameState.placementMessage = null;
-
-      if (isOfflineAI) {
-        await sleep(600);
+      const restoredCard = masterData
+        ? JSON.parse(JSON.stringify(masterData))
+        : JSON.parse(JSON.stringify(selectedCard));
+      restoredCard.baseId = selectedCard.baseId || selectedCard.id;
+      restoredCard.basePower = restoredCard.power;
+      restoredCard.currentPower = restoredCard.power;
+      if (selectedCard.isPremium !== undefined) {
+        restoredCard.isPremium = selectedCard.isPremium;
+      }
+      if (selectedCard.isShine !== undefined) {
+        restoredCard.isShine = selectedCard.isShine;
       }
 
-      if (!selectedLanes || selectedLanes.length === 0) {
-        // キャンセル時は山札の元の位置へ戻し、デッキ順序の改変を防止する
+      const legalLanes = getValidSummonLanes(owner, restoredCard);
+      if (legalLanes.length === 0) {
+        return;
+      }
+
+      const initialRestrictLanes =
+        isOfflineAI &&
+        Array.isArray(tokenLanes) &&
+        tokenLanes.length > 0 &&
+        legalLanes.includes(tokenLanes[0])
+          ? [tokenLanes[0]]
+          : null;
+
+      // 召喚ルール制約チェック有効（checkConstraints = true）でレーン選択・上書き確認を行う
+      let successCall = false;
+      let targetLane = -1;
+      while (!successCall) {
+        GameState.placementMessage = `${config?.leaderSkill?.name || '次元斬'}: 「${restoredCard.name}」を召喚するレーンを選んでください`;
+        let selectedLanes = null;
+        try {
+          selectedLanes = await waitPlayerLaneSelection(
+            1,
+            owner,
+            restoredCard,
+            true,
+            initialRestrictLanes,
+            true,
+            true,
+            '召喚完了'
+          );
+        } finally {
+          GameState.placementMessage = null;
+        }
+
+        if (isOfflineAI) {
+          await sleep(600);
+        }
+
+        if (!selectedLanes || selectedLanes.length === 0) {
+          return;
+        }
+        targetLane = selectedLanes[0];
+
+        const proceed = await confirmOverwrittenLane(
+          owner,
+          restoredCard,
+          targetLane
+        );
+        if (!proceed) {
+          await sleep(200);
+          continue;
+        }
+        successCall = true;
+      }
+
+      if (targetLane !== -1) {
+        // バトルボーナスのリーダースキル使用記録イベントを送出
+        await playEvents([
+          { type: 'leader_skill', skill: action, side: owner },
+        ]);
+        // ベルカ専用の次元ゲート開放VFX（anm_summon_daughter）を対象レーンに再生して「召喚」を実行
+        const summoned = await executeSummonRestoredCardFromDeck(
+          owner,
+          deck,
+          restoredCard,
+          targetLane,
+          null,
+          'daemon_call',
+          'anm_summon_daughter',
+          () => {
+            shouldRestoreDeckCard = false;
+          }
+        );
+        if (summoned) {
+          renderBoard();
+          await cleanupDestroyedCards();
+        }
+      }
+    } finally {
+      if (shouldRestoreDeckCard) {
+        // キャンセル・封印拒否・確定前例外時は山札の元の位置へ戻し、デッキ順序の改変・消失を防止する
         if (removedDeckIdx !== -1) {
           deck.splice(removedDeckIdx, 0, selectedCard);
         } else {
           deck.push(selectedCard);
         }
         updateDeckDisplay(owner);
-        return;
       }
-      targetLane = selectedLanes[0];
-
-      const proceed = await confirmOverwrittenLane(
-        owner,
-        restoredCard,
-        targetLane
-      );
-      if (!proceed) {
-        await sleep(200);
-        continue;
-      }
-      successCall = true;
-    }
-
-    if (targetLane !== -1) {
-      // バトルボーナスのリーダースキル使用記録イベントを送出
-      await playEvents([{ type: 'leader_skill', skill: action, side: owner }]);
-      // ベルカ専用の次元ゲート開放VFX（anm_summon_daughter）を対象レーンに再生して「召喚」を実行
-      await executeSummonRestoredCardFromDeck(
-        owner,
-        deck,
-        restoredCard,
-        targetLane,
-        null,
-        'daemon_call',
-        'anm_summon_daughter'
-      );
-      renderBoard();
-      await cleanupDestroyedCards();
-    } else {
-      if (removedDeckIdx !== -1) {
-        deck.splice(removedDeckIdx, 0, selectedCard);
-      } else {
-        deck.push(selectedCard);
-      }
-      updateDeckDisplay(owner);
     }
     return;
   } else if (action === 'demonic_call') {
@@ -640,127 +643,129 @@ export async function executeLeaderSkillAction(
 
       if (!selectedCard) break;
 
-      let removedDeckIdx = deck.indexOf(selectedCard);
-      if (removedDeckIdx === -1) {
-        removedDeckIdx = deck.findIndex(
-          (card) =>
-            card &&
-            ((selectedCard.uid && card.uid === selectedCard.uid) ||
-              card.id === selectedCard.id ||
-              (Boolean(selectedCard.baseId) &&
-                (card.baseId === selectedCard.baseId ||
-                  card.id === selectedCard.baseId)))
-        );
-      }
+      const removedDeckIdx = findCardIndexInZone(deck, selectedCard);
       if (removedDeckIdx !== -1) {
         deck.splice(removedDeckIdx, 1);
       }
 
-      const masterData = CARD_MASTER.find(
-        (m) => m.id === (selectedCard.baseId || selectedCard.id)
-      );
-      const restoredCard = masterData
-        ? JSON.parse(JSON.stringify(masterData))
-        : JSON.parse(JSON.stringify(selectedCard));
-      restoredCard.baseId = selectedCard.baseId || selectedCard.id;
-      restoredCard.basePower = restoredCard.power;
-      restoredCard.currentPower = restoredCard.power;
-      if (selectedCard.isPremium !== undefined) {
-        restoredCard.isPremium = selectedCard.isPremium;
-      }
-      if (selectedCard.isShine !== undefined) {
-        restoredCard.isShine = selectedCard.isShine;
-      }
-
-      const legalLanes = getValidSummonLanes(owner, restoredCard);
-      if (legalLanes.length === 0) {
-        if (removedDeckIdx !== -1) {
-          deck.splice(removedDeckIdx, 0, selectedCard);
-        } else {
-          deck.push(selectedCard);
-        }
-        updateDeckDisplay(owner);
-        break;
-      }
-
-      const initialRestrictLanes =
-        isOfflineAI && aiPickedLane !== -1 && legalLanes.includes(aiPickedLane)
-          ? [aiPickedLane]
-          : isOfflineAI &&
-              Array.isArray(tokenLanes) &&
-              tokenLanes.length > 0 &&
-              legalLanes.includes(tokenLanes[0])
-            ? [tokenLanes[0]]
-            : null;
-
-      let targetLane = -1;
-      let canceledToReselectCard = false;
-      while (targetLane === -1 && !canceledToReselectCard) {
-        GameState.placementMessage = `${config?.leaderSkill?.name || '万魔の招来'}: 「${restoredCard.name}」を召喚するレーンを選んでください`;
-        const selectedLanes = await waitPlayerLaneSelection(
-          1,
-          owner,
-          restoredCard,
-          !isOfflineAI,
-          initialRestrictLanes,
-          true,
-          true,
-          '召喚完了'
+      let shouldRestoreDeckCard = true;
+      try {
+        const masterData = CARD_MASTER.find(
+          (m) => m.id === (selectedCard.baseId || selectedCard.id)
         );
-        GameState.placementMessage = null;
-
-        if (isOfflineAI) {
-          await sleep(600);
+        const restoredCard = masterData
+          ? JSON.parse(JSON.stringify(masterData))
+          : JSON.parse(JSON.stringify(selectedCard));
+        restoredCard.baseId = selectedCard.baseId || selectedCard.id;
+        restoredCard.basePower = restoredCard.power;
+        restoredCard.currentPower = restoredCard.power;
+        if (selectedCard.isPremium !== undefined) {
+          restoredCard.isPremium = selectedCard.isPremium;
+        }
+        if (selectedCard.isShine !== undefined) {
+          restoredCard.isShine = selectedCard.isShine;
         }
 
-        if (!selectedLanes || selectedLanes.length === 0) {
-          // プレイヤーがレーン選択で戻った場合は山札に戻してカード選択からやり直す
+        const legalLanes = getValidSummonLanes(owner, restoredCard);
+        if (legalLanes.length === 0) {
+          break;
+        }
+
+        const initialRestrictLanes =
+          isOfflineAI &&
+          aiPickedLane !== -1 &&
+          legalLanes.includes(aiPickedLane)
+            ? [aiPickedLane]
+            : isOfflineAI &&
+                Array.isArray(tokenLanes) &&
+                tokenLanes.length > 0 &&
+                legalLanes.includes(tokenLanes[0])
+              ? [tokenLanes[0]]
+              : null;
+
+        let targetLane = -1;
+        let canceledToReselectCard = false;
+        while (targetLane === -1 && !canceledToReselectCard) {
+          GameState.placementMessage = `${config?.leaderSkill?.name || '万魔の招来'}: 「${restoredCard.name}」を召喚するレーンを選んでください`;
+          let selectedLanes = null;
+          try {
+            selectedLanes = await waitPlayerLaneSelection(
+              1,
+              owner,
+              restoredCard,
+              !isOfflineAI,
+              initialRestrictLanes,
+              true,
+              true,
+              '召喚完了'
+            );
+          } finally {
+            GameState.placementMessage = null;
+          }
+
+          if (isOfflineAI) {
+            await sleep(600);
+          }
+
+          if (!selectedLanes || selectedLanes.length === 0) {
+            // プレイヤーがレーン選択で戻った場合は finally で山札に戻してカード選択からやり直す
+            if (isOfflineAI) {
+              summonCompleted = true;
+            } else {
+              canceledToReselectCard = true;
+            }
+            break;
+          }
+
+          const candidateLane = selectedLanes[0];
+          const proceed = await confirmOverwrittenLane(
+            owner,
+            restoredCard,
+            candidateLane
+          );
+          if (!proceed) {
+            await sleep(200);
+            continue;
+          }
+          targetLane = candidateLane;
+        }
+
+        if (targetLane !== -1) {
+          const summoned = await executeSummonRestoredCardFromDeck(
+            owner,
+            deck,
+            restoredCard,
+            targetLane,
+            null,
+            'demonic_call',
+            'anm_summon_daughter',
+            () => {
+              shouldRestoreDeckCard = false;
+            }
+          );
+          if (summoned) {
+            renderBoard();
+            await cleanupDestroyedCards();
+            summonCompleted = true;
+          } else {
+            break;
+          }
+        }
+      } finally {
+        if (shouldRestoreDeckCard) {
           if (removedDeckIdx !== -1) {
             deck.splice(removedDeckIdx, 0, selectedCard);
           } else {
             deck.push(selectedCard);
           }
           updateDeckDisplay(owner);
-          if (isOfflineAI) {
-            summonCompleted = true;
-          } else {
-            canceledToReselectCard = true;
-          }
-          break;
         }
-
-        const candidateLane = selectedLanes[0];
-        const proceed = await confirmOverwrittenLane(
-          owner,
-          restoredCard,
-          candidateLane
-        );
-        if (!proceed) {
-          await sleep(200);
-          continue;
-        }
-        targetLane = candidateLane;
-      }
-
-      if (targetLane !== -1) {
-        await executeSummonRestoredCardFromDeck(
-          owner,
-          deck,
-          restoredCard,
-          targetLane,
-          null,
-          'demonic_call',
-          'anm_summon_daughter'
-        );
-        renderBoard();
-        await cleanupDestroyedCards();
-        summonCompleted = true;
       }
     }
 
     if (GameState.isBattleEnded || checkWinCondition()) return;
 
-    // 3. その後、カードを4枚引く
+    // 3. その後、山札トップ（配列末尾）からカードを4枚引く
     let drawnAny = false;
     for (
       let i = 0;
@@ -769,7 +774,7 @@ export async function executeLeaderSkillAction(
       hand.length < MAX_HAND_CAPACITY;
       i++
     ) {
-      const drawn = deck.shift();
+      const drawn = deck.pop();
       if (!drawn) continue;
       drawn.uid = `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).slice(2, 7)}`;
       hand.push(drawn);

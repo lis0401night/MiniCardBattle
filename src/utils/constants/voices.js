@@ -320,6 +320,7 @@ export const PREMIUM_VOICE_MAP = {
   ghoul: 'human_male_ikemen',
   monument: 'human_female_cool',
   follower: 'human_female_cute',
+  clone: 'human_male_ikemen',
 };
 
 /**

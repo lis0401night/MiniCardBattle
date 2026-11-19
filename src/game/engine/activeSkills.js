@@ -109,7 +109,6 @@ export function applyActiveSkillLogic(
     'invincible',
     'buff_void',
     'buff',
-    'inspire',
     'supremacy',
     'unleash',
     'awake',
@@ -2240,32 +2239,110 @@ export function applyActiveSkillLogic(
     }
     case 'invoke': {
       // 【招来(invoke)スキル処理（汎用エンジン近似）】
-      // 手札・自陣カードの現在のパワー合計で召喚可能な「降臨」カードが手札または山札に存在する場合、ボーナスを仮加算する
+      // 手札・自陣カードの現在のパワー合計（候補自身を除く）で召喚可能な「降臨」カードが存在し、
+      // かつ破棄後の盤面に召喚ルール（封印・先攻1T中央・伝説・生贄・頂点・挑戦）を満たすレーンがある場合のみ仮ボーナスを加算する
       const turnCount = state.turnCount ?? 0;
       const firstPlayer = state.firstPlayer;
       if (turnCount === 1 && firstPlayer === owner && l !== 1) break;
 
+      const candidateLanes = (
+        turnCount === 1 && firstPlayer === owner ? [1] : [0, 1, 2]
+      ).filter((laneIdx) => !isLaneSealed(state, owner, laneIdx));
+      if (candidateLanes.length === 0) break;
+
       const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
       const myDeck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
       const myBoard = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+      const oppBoard = owner === 'blue' ? state.enemyBoard : state.playerBoard;
 
-      let maxSacrificePower = 0;
+      let totalHandPower = 0;
       if (Array.isArray(myHand)) {
         for (const hCard of myHand) {
-          if (hCard) maxSacrificePower += getCardCurrentPower(hCard);
+          if (hCard) totalHandPower += getCardCurrentPower(hCard);
         }
       }
-      if (Array.isArray(myBoard)) {
-        for (const bCard of myBoard) {
-          if (bCard) maxSacrificePower += getCardCurrentPower(bCard);
+
+      /**
+       * 指定した降臨候補カードについて、盤面破棄パターン（2^3通り）のいずれかで
+       * 破棄パワー条件と破棄後盤面の召喚制約を同時に満たせるか判定する。
+       * @param {object} rawCandidate - 判定対象のカード
+       * @param {number} handPowerPool - 破棄に利用可能な手札パワー合計（手札候補自身は除外済み）
+       * @param {boolean} isFromDeck - 山札候補であれば true（マスタ定義で制約判定）
+       * @returns {boolean} 合法的に招来可能であれば true
+       */
+      const canLegallyInvokeCandidate = (
+        rawCandidate,
+        handPowerPool,
+        isFromDeck
+      ) => {
+        if (!rawCandidate) return false;
+        const checkCard = isFromDeck
+          ? CARD_MASTER.find(
+              (m) => m.id === (rawCandidate.baseId || rawCandidate.id)
+            ) || rawCandidate
+          : rawCandidate;
+
+        for (let mask = 0; mask < 8; mask++) {
+          let boardSacPower = 0;
+          let validMask = true;
+          for (let bIdx = 0; bIdx < 3; bIdx++) {
+            if (mask & (1 << bIdx)) {
+              const bc = Array.isArray(myBoard) ? myBoard[bIdx] : null;
+              if (!bc) {
+                validMask = false;
+                break;
+              }
+              boardSacPower += getCardCurrentPower(bc);
+            }
+          }
+          if (!validMask) continue;
+          if (!matchesInvokeTarget(rawCandidate, handPowerPool + boardSacPower))
+            continue;
+
+          const hasValidLane = candidateLanes.some((laneIdx) => {
+            const postCard =
+              mask & (1 << laneIdx)
+                ? null
+                : Array.isArray(myBoard)
+                  ? myBoard[laneIdx]
+                  : null;
+            if (hasSkill(checkCard, 'legendary') && laneIdx !== 1) return false;
+            if (hasSkill(checkCard, 'takeover') && postCard === null)
+              return false;
+            if (
+              hasSkill(checkCard, 'apex') &&
+              (!postCard || !hasSkill(postCard, 'legendary'))
+            ) {
+              return false;
+            }
+            if (
+              hasSkill(checkCard, 'challenge') &&
+              (!Array.isArray(oppBoard) || oppBoard[laneIdx] === null)
+            ) {
+              return false;
+            }
+            return true;
+          });
+          if (hasValidLane) return true;
         }
-      }
+        return false;
+      };
 
       const hasInvokeTarget =
         (Array.isArray(myHand) &&
-          myHand.some((hc) => matchesInvokeTarget(hc, maxSacrificePower))) ||
+          myHand.some(
+            (hc) =>
+              hc &&
+              canLegallyInvokeCandidate(
+                hc,
+                totalHandPower - getCardCurrentPower(hc),
+                false
+              )
+          )) ||
         (Array.isArray(myDeck) &&
-          myDeck.some((dc) => matchesInvokeTarget(dc, maxSacrificePower)));
+          myDeck.some(
+            (dc) => dc && canLegallyInvokeCandidate(dc, totalHandPower, true)
+          ));
       if (!hasInvokeTarget) break;
 
       const invokeBonus = 4;

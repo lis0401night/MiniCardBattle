@@ -28,6 +28,7 @@ import {
   consumeStartupSkill,
   createDamagePopup,
   decayCardStatus,
+  findCardIndexInZone,
   getCardCurrentPower,
   getCardImgUrl,
   grantCardStatus,
@@ -150,7 +151,7 @@ export async function handleStartupDispelled(
 
 /**
  * 山札（デッキ）から取り出して初期ステータスへ復元したカードを、指定した自陣レーンへ「召喚」し、
- * 専用VFX・召喚アニメーション・起動/合体/装備/上書き判定・誘発チェック・召喚時オンプレイ能力解決・デッキシャッフルを一括実行する共通ヘルパー。
+ * 専用VFX・召喚アニメーション・確定直前の封印確認・起動/合体/装備/上書き判定・誘発チェック・召喚時オンプレイ能力解決・デッキシャッフルを一括実行する共通ヘルパー。
  * 「召集（assemble）」、「招来（invoke）」の山札召喚分岐、およびリーダースキル「次元斬（daemon_call）」「万魔の招来（demonic_call）」で共通利用する。
  *
  * @param {'blue' | 'red'} owner - 召喚を行うプレイヤー陣営
@@ -160,7 +161,8 @@ export async function handleStartupDispelled(
  * @param {object|null} [sourceCardForCleanup=null] - スキル発動元カード（cleanupDestroyedCards の誤破壊除外用）
  * @param {string} [eventSource='assemble'] - イベントログに記録する召喚ソース識別子
  * @param {string|null} [summonVfxId=null] - 召喚時にレーンへ再生する専用VFX ID（例: 'anm_summon_daughter'）
- * @returns {Promise<void>}
+ * @param {Function|null} [onCommit=null] - 盤面への召喚確定直前に呼び出される通知コールバック（山札返却ガード解除用）
+ * @returns {Promise<boolean>} 召喚が確定・実行された場合は true、封印レーン等により拒否された場合は false
  */
 export async function executeSummonRestoredCardFromDeck(
   owner,
@@ -169,8 +171,17 @@ export async function executeSummonRestoredCardFromDeck(
   targetLane,
   sourceCardForCleanup = null,
   eventSource = 'assemble',
-  summonVfxId = null
+  summonVfxId = null,
+  onCommit = null
 ) {
+  if (
+    targetLane < 0 ||
+    targetLane > 2 ||
+    isLaneSealed(GameState, owner, targetLane)
+  ) {
+    return false;
+  }
+
   const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
 
   // リーダースキル等による専用召喚VFX（次元斬の次元ゲートなど）を対象レーンに再生
@@ -181,6 +192,15 @@ export async function executeSummonRestoredCardFromDeck(
 
   // カード固有の召喚アニメーションを再生
   await playSummonAnimation(restoredCard, owner);
+
+  // 【最優先グローバルルール】演出待機後の確定直前にも封印状態を再確認し、封印レーンへの確定・既存カード上書き破棄を確実に阻止する
+  if (isLaneSealed(GameState, owner, targetLane)) {
+    return false;
+  }
+
+  if (typeof onCommit === 'function') {
+    onCommit();
+  }
 
   const existingCard = board[targetLane];
   const unionSkill =
@@ -201,40 +221,45 @@ export async function executeSummonRestoredCardFromDeck(
       restoredCard,
       unionMasterData
     );
-    // 合体召喚完了・相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを維持する
+    // 合体召喚完了・相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを維持し、例外中断時も確実に解除する
     unionCard.isSkillResolving = true;
     board[targetLane] = unionCard;
 
-    const callEvents = [
-      {
-        type: 'summon_card',
-        side: owner,
-        lane: targetLane,
-        card: unionCard,
-        source: 'union',
-        keepSkillResolving: true,
-      },
-    ];
-    await playEvents(callEvents);
+    try {
+      const callEvents = [
+        {
+          type: 'summon_card',
+          side: owner,
+          lane: targetLane,
+          card: unionCard,
+          source: 'union',
+          keepSkillResolving: true,
+        },
+      ];
+      await playEvents(callEvents);
 
-    // 相手の誘発スキルチェック
-    await checkAndTriggerCounter(owner, unionCard, targetLane);
+      // 相手の誘発スキルチェック
+      await checkAndTriggerCounter(owner, unionCard, targetLane);
 
-    if (hasActiveSkill(unionCard)) {
-      await resolveOnPlaySkill(owner, targetLane, unionCard);
-    } else {
-      unionCard.isSkillResolving = false;
-      releaseSkillResolvingSpawns(unionCard);
-      unionCard.skillTriggered = true;
+      if (hasActiveSkill(unionCard)) {
+        await resolveOnPlaySkill(owner, targetLane, unionCard);
+      } else {
+        unionCard.skillTriggered = true;
+      }
+    } finally {
+      if (unionCard.isSkillResolving) {
+        unionCard.isSkillResolving = false;
+        releaseSkillResolvingSpawns(unionCard);
+      }
     }
     await cleanupDestroyedCards(sourceCardForCleanup);
   } else if (canEquipCard(restoredCard, board[targetLane])) {
     const targetCard = board[targetLane];
     const prevResolving = Boolean(targetCard.isSkillResolving);
     targetCard.isSkillResolving = true;
-    const { equipSkills } = applyEquipment(targetCard, restoredCard);
 
     try {
+      const { equipSkills } = applyEquipment(targetCard, restoredCard);
       const callEvents = [
         {
           type: 'summon_card',
@@ -291,7 +316,7 @@ export async function executeSummonRestoredCardFromDeck(
     restoredCard.uid = `${owner}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
     restoredCard.owner = owner;
 
-    // 配置の瞬間に既存カードを安全に墓地へ送る
+    // 配置の瞬間に既存カードを安全に墓地へ送る（直前で非封印を確認済み）
     if (board[targetLane]) {
       if (!(await discardCard(owner, board[targetLane], targetLane, false))) {
         board[targetLane] = null;
@@ -299,30 +324,35 @@ export async function executeSummonRestoredCardFromDeck(
     }
     board[targetLane] = restoredCard;
 
-    // 登場演出および相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを立てる
+    // 登場演出および相手の「誘発」解決中も自身の召喚処理完了まで保護フラグを立て、例外中断時も確実に解除する
     restoredCard.isSkillResolving = true;
 
-    const callEvents = [
-      {
-        type: 'summon_card',
-        side: owner,
-        lane: targetLane,
-        card: restoredCard,
-        source: eventSource,
-        keepSkillResolving: true,
-      },
-    ];
-    await playEvents(callEvents);
+    try {
+      const callEvents = [
+        {
+          type: 'summon_card',
+          side: owner,
+          lane: targetLane,
+          card: restoredCard,
+          source: eventSource,
+          keepSkillResolving: true,
+        },
+      ];
+      await playEvents(callEvents);
 
-    // 相手の誘発スキルチェック
-    await checkAndTriggerCounter(owner, restoredCard, targetLane);
+      // 相手の誘発スキルチェック
+      await checkAndTriggerCounter(owner, restoredCard, targetLane);
 
-    if (hasActiveSkill(restoredCard)) {
-      await resolveOnPlaySkill(owner, targetLane, restoredCard);
-    } else {
-      restoredCard.isSkillResolving = false;
-      releaseSkillResolvingSpawns(restoredCard);
-      restoredCard.skillTriggered = true;
+      if (hasActiveSkill(restoredCard)) {
+        await resolveOnPlaySkill(owner, targetLane, restoredCard);
+      } else {
+        restoredCard.skillTriggered = true;
+      }
+    } finally {
+      if (restoredCard.isSkillResolving) {
+        restoredCard.isSkillResolving = false;
+        releaseSkillResolvingSpawns(restoredCard);
+      }
     }
     await cleanupDestroyedCards(sourceCardForCleanup);
   }
@@ -331,6 +361,7 @@ export async function executeSummonRestoredCardFromDeck(
   shuffleArray(deck);
   updateDeckDisplay(owner);
   await sleep(300);
+  return true;
 }
 
 /**
@@ -1284,6 +1315,9 @@ export async function resolveActiveSkillEffect(
         if (rawDeckCard.isPremium !== undefined) {
           restoredCard.isPremium = rawDeckCard.isPremium;
         }
+        if (rawDeckCard.isShine !== undefined) {
+          restoredCard.isShine = rawDeckCard.isShine;
+        }
 
         const legalLanes = getValidSummonLanes(o, restoredCard);
         if (legalLanes.length === 0) return;
@@ -1292,15 +1326,27 @@ export async function resolveActiveSkillEffect(
           : legalLanes[0];
 
         deck.splice(targetDeckIdx, 1);
-        await sleep(300);
-        await executeSummonRestoredCardFromDeck(
-          o,
-          deck,
-          restoredCard,
-          finalLane,
-          c,
-          'invoke'
-        );
+        let shouldRestoreDeckCard = true;
+        try {
+          await sleep(300);
+          await executeSummonRestoredCardFromDeck(
+            o,
+            deck,
+            restoredCard,
+            finalLane,
+            c,
+            'invoke',
+            null,
+            () => {
+              shouldRestoreDeckCard = false;
+            }
+          );
+        } finally {
+          if (shouldRestoreDeckCard) {
+            deck.splice(targetDeckIdx, 0, rawDeckCard);
+            updateDeckDisplay(o);
+          }
+        }
       }
       return;
     }
@@ -1325,18 +1371,22 @@ export async function resolveActiveSkillEffect(
       let targetLane = -1;
       while (!successSummon) {
         GameState.placementMessage = `招来: 「${pickedHandCard.name}」を召喚するレーンを選んでください`;
-        const selectedLanes = await waitPlayerLaneSelection(
-          1,
-          o,
-          pickedHandCard,
-          false,
-          legalLanes,
-          true,
-          true,
-          '召喚を完了',
-          true
-        );
-        GameState.placementMessage = null;
+        let selectedLanes = null;
+        try {
+          selectedLanes = await waitPlayerLaneSelection(
+            1,
+            o,
+            pickedHandCard,
+            false,
+            legalLanes,
+            true,
+            true,
+            '召喚を完了',
+            true
+          );
+        } finally {
+          GameState.placementMessage = null;
+        }
 
         if (!selectedLanes || selectedLanes.length === 0) {
           return;
@@ -1355,16 +1405,7 @@ export async function resolveActiveSkillEffect(
         successSummon = true;
       }
 
-      let finalHandIdx = h.indexOf(pickedHandCard);
-      if (finalHandIdx === -1) {
-        finalHandIdx = h.findIndex(
-          (cand) =>
-            cand &&
-            ((pickedHandCard.uid && cand.uid === pickedHandCard.uid) ||
-              (cand.baseId || cand.id) ===
-                (pickedHandCard.baseId || pickedHandCard.id))
-        );
-      }
+      const finalHandIdx = findCardIndexInZone(h, pickedHandCard);
       if (finalHandIdx !== -1 && targetLane !== -1) {
         // 手札から「降臨」カードを召喚して減る1枚分の「虚空」を playCard 前に手札へ補填する
         h.push(createInvokeVoidToken('summon'));
@@ -1378,87 +1419,91 @@ export async function resolveActiveSkillEffect(
 
     if (invokeSelection.zone === 'deck') {
       const selectedDeckCard = invokeSelection.card;
-      let removedDeckIdx = deck.indexOf(selectedDeckCard);
-      if (removedDeckIdx === -1) {
-        removedDeckIdx = deck.findIndex(
-          (cand) =>
-            cand &&
-            ((selectedDeckCard.uid && cand.uid === selectedDeckCard.uid) ||
-              cand.id === selectedDeckCard.id ||
-              (Boolean(selectedDeckCard.baseId) &&
-                (cand.baseId === selectedDeckCard.baseId ||
-                  cand.id === selectedDeckCard.baseId)))
-        );
-      }
+      const removedDeckIdx = findCardIndexInZone(deck, selectedDeckCard);
       if (removedDeckIdx === -1) return;
       deck.splice(removedDeckIdx, 1);
 
-      const masterData = CARD_MASTER.find(
-        (m) => m.id === (selectedDeckCard.baseId || selectedDeckCard.id)
-      );
-      const restoredCard = masterData
-        ? JSON.parse(JSON.stringify(masterData))
-        : { ...selectedDeckCard };
-      restoredCard.baseId = selectedDeckCard.baseId || selectedDeckCard.id;
-      restoredCard.basePower = restoredCard.power;
-      restoredCard.currentPower = restoredCard.power;
-      if (selectedDeckCard.isPremium !== undefined) {
-        restoredCard.isPremium = selectedDeckCard.isPremium;
-      }
-
-      const legalLanes = getValidSummonLanes(o, restoredCard);
-      if (legalLanes.length === 0) {
-        deck.splice(removedDeckIdx, 0, selectedDeckCard);
-        updateDeckDisplay(o);
-        return;
-      }
-
-      let successSummon = false;
-      let targetLane = -1;
-      while (!successSummon) {
-        GameState.placementMessage = `招来: 「${restoredCard.name}」を召喚するレーンを選んでください`;
-        const selectedLanes = await waitPlayerLaneSelection(
-          1,
-          o,
-          restoredCard,
-          true,
-          legalLanes,
-          true,
-          true,
-          '召喚を完了',
-          true
+      let shouldRestoreDeckCard = true;
+      try {
+        const masterData = CARD_MASTER.find(
+          (m) => m.id === (selectedDeckCard.baseId || selectedDeckCard.id)
         );
-        GameState.placementMessage = null;
+        const restoredCard = masterData
+          ? JSON.parse(JSON.stringify(masterData))
+          : { ...selectedDeckCard };
+        restoredCard.baseId = selectedDeckCard.baseId || selectedDeckCard.id;
+        restoredCard.basePower = restoredCard.power;
+        restoredCard.currentPower = restoredCard.power;
+        if (selectedDeckCard.isPremium !== undefined) {
+          restoredCard.isPremium = selectedDeckCard.isPremium;
+        }
+        if (selectedDeckCard.isShine !== undefined) {
+          restoredCard.isShine = selectedDeckCard.isShine;
+        }
 
-        if (!selectedLanes || selectedLanes.length === 0) {
-          // レーン選択キャンセル時は山札の元の位置へ戻し、デッキ順序の改変を防ぐ
-          deck.splice(removedDeckIdx, 0, selectedDeckCard);
-          updateDeckDisplay(o);
+        const legalLanes = getValidSummonLanes(o, restoredCard);
+        if (legalLanes.length === 0) {
           return;
         }
-        targetLane = selectedLanes[0];
 
-        const proceed = await confirmOverwrittenLane(
-          o,
-          restoredCard,
-          targetLane
-        );
-        if (!proceed) {
-          await sleep(200);
-          continue;
+        let successSummon = false;
+        let targetLane = -1;
+        while (!successSummon) {
+          GameState.placementMessage = `招来: 「${restoredCard.name}」を召喚するレーンを選んでください`;
+          let selectedLanes = null;
+          try {
+            selectedLanes = await waitPlayerLaneSelection(
+              1,
+              o,
+              restoredCard,
+              true,
+              legalLanes,
+              true,
+              true,
+              '召喚を完了',
+              true
+            );
+          } finally {
+            GameState.placementMessage = null;
+          }
+
+          if (!selectedLanes || selectedLanes.length === 0) {
+            return;
+          }
+          targetLane = selectedLanes[0];
+
+          const proceed = await confirmOverwrittenLane(
+            o,
+            restoredCard,
+            targetLane
+          );
+          if (!proceed) {
+            await sleep(200);
+            continue;
+          }
+          successSummon = true;
         }
-        successSummon = true;
-      }
 
-      if (targetLane !== -1) {
-        await executeSummonRestoredCardFromDeck(
-          o,
-          deck,
-          restoredCard,
-          targetLane,
-          c,
-          'invoke'
-        );
+        if (targetLane !== -1) {
+          await executeSummonRestoredCardFromDeck(
+            o,
+            deck,
+            restoredCard,
+            targetLane,
+            c,
+            'invoke',
+            null,
+            () => {
+              shouldRestoreDeckCard = false;
+            }
+          );
+        }
+      } finally {
+        if (shouldRestoreDeckCard) {
+          // レーン選択キャンセル・封印拒否・確定前例外時は山札の元の位置へ戻し、デッキ順序の改変・消失を防ぐ
+          deck.splice(removedDeckIdx, 0, selectedDeckCard);
+          updateDeckDisplay(o);
+        }
       }
     }
     return;
@@ -3531,95 +3576,96 @@ export async function resolveActiveSkillEffect(
       }
 
       if (selectedCard) {
-        // デッキから対象カードを取り除く（キャンセル時の復元用にインデックスを保持）
-        const removedDeckIdx = deck.findIndex(
-          (card) =>
-            (selectedCard.uid && card.uid === selectedCard.uid) ||
-            card === selectedCard ||
-            card.id === selectedCard.id ||
-            (Boolean(selectedCard.baseId) &&
-              (card.baseId === selectedCard.baseId ||
-                card.id === selectedCard.baseId))
-        );
+        // デッキから対象カードを取り除く（キャンセル・封印拒否・例外時の復元用にインデックスを保持）
+        const removedDeckIdx = findCardIndexInZone(deck, selectedCard);
         if (removedDeckIdx !== -1) deck.splice(removedDeckIdx, 1);
 
-        // カードのステータスを初期状態にリセット
-        const masterData = CARD_MASTER.find(
-          (m) => m.id === (selectedCard.baseId || selectedCard.id)
-        );
-        const restoredCard = masterData
-          ? JSON.parse(JSON.stringify(masterData))
-          : { ...selectedCard };
-        restoredCard.baseId = selectedCard.baseId || selectedCard.id;
-        restoredCard.basePower = restoredCard.power;
-        restoredCard.currentPower = restoredCard.power;
-        if (selectedCard.isPremium !== undefined) {
-          restoredCard.isPremium = selectedCard.isPremium;
-        }
-
-        // キャンセル可能なレーン選択（ループによるやり直しに対応）
-        let successCall = false;
-        let targetLane = -1;
-        while (!successCall) {
-          GameState.placementMessage = `召集: 「${restoredCard.name}」を召喚するレーンを選んでください`;
-          const selectedLanes = await waitPlayerLaneSelection(
-            1,
-            o,
-            restoredCard,
-            true, // isLeaderSkill（手札外からの召喚モード）
-            null, // 全レーン候補
-            true, // checkConstraints（召喚ルール制約チェック有効）
-            true, // canCancel（キャンセル可能）
-            '召喚完了'
+        let shouldRestoreDeckCard = true;
+        try {
+          // カードのステータスを初期状態にリセット
+          const masterData = CARD_MASTER.find(
+            (m) => m.id === (selectedCard.baseId || selectedCard.id)
           );
-          GameState.placementMessage = null;
-
-          if (GameState.gameMode !== 'online' && o !== 'blue') {
-            await sleep(600); // 敵AIの場合のみ間を空ける
+          const restoredCard = masterData
+            ? JSON.parse(JSON.stringify(masterData))
+            : { ...selectedCard };
+          restoredCard.baseId = selectedCard.baseId || selectedCard.id;
+          restoredCard.basePower = restoredCard.power;
+          restoredCard.currentPower = restoredCard.power;
+          if (selectedCard.isPremium !== undefined) {
+            restoredCard.isPremium = selectedCard.isPremium;
+          }
+          if (selectedCard.isShine !== undefined) {
+            restoredCard.isShine = selectedCard.isShine;
           }
 
-          if (!selectedLanes || selectedLanes.length === 0) {
-            // レーン選択キャンセル時は、デッキの元の位置へ戻して終了（デッキ順序の改変を防止）
+          // キャンセル可能なレーン選択（ループによるやり直しに対応）
+          let successCall = false;
+          let targetLane = -1;
+          while (!successCall) {
+            GameState.placementMessage = `召集: 「${restoredCard.name}」を召喚するレーンを選んでください`;
+            let selectedLanes = null;
+            try {
+              selectedLanes = await waitPlayerLaneSelection(
+                1,
+                o,
+                restoredCard,
+                true, // isLeaderSkill（手札外からの召喚モード）
+                null, // 全レーン候補
+                true, // checkConstraints（召喚ルール制約チェック有効）
+                true, // canCancel（キャンセル可能）
+                '召喚完了'
+              );
+            } finally {
+              GameState.placementMessage = null;
+            }
+
+            if (GameState.gameMode !== 'online' && o !== 'blue') {
+              await sleep(600); // 敵AIの場合のみ間を空ける
+            }
+
+            if (!selectedLanes || selectedLanes.length === 0) {
+              return;
+            }
+            targetLane = selectedLanes[0];
+
+            // 上書き確認
+            const proceed = await confirmOverwrittenLane(
+              o,
+              restoredCard,
+              targetLane
+            );
+            if (!proceed) {
+              await sleep(200);
+              continue; // キャンセル時はレーン選択からやり直す
+            }
+            successCall = true;
+          }
+
+          if (targetLane !== -1) {
+            await executeSummonRestoredCardFromDeck(
+              o,
+              deck,
+              restoredCard,
+              targetLane,
+              c,
+              'assemble',
+              null,
+              () => {
+                shouldRestoreDeckCard = false;
+              }
+            );
+          }
+        } finally {
+          if (shouldRestoreDeckCard) {
+            // レーン選択キャンセル・封印拒否・確定前例外時は、デッキの元の位置へ戻して終了（デッキ順序の改変を防止）
             if (removedDeckIdx !== -1) {
               deck.splice(removedDeckIdx, 0, selectedCard);
             } else {
               deck.push(selectedCard);
             }
             updateDeckDisplay(o);
-            return;
           }
-          targetLane = selectedLanes[0];
-
-          // 上書き確認
-          const proceed = await confirmOverwrittenLane(
-            o,
-            restoredCard,
-            targetLane
-          );
-          if (!proceed) {
-            await sleep(200);
-            continue; // キャンセル時はレーン選択からやり直す
-          }
-          successCall = true;
-        }
-
-        if (targetLane !== -1) {
-          await executeSummonRestoredCardFromDeck(
-            o,
-            deck,
-            restoredCard,
-            targetLane,
-            c,
-            'assemble'
-          );
-        } else {
-          // 万一レーン未選択のまま抜けた場合の安全復元（元の位置へ戻す）
-          if (removedDeckIdx !== -1) {
-            deck.splice(removedDeckIdx, 0, selectedCard);
-          } else {
-            deck.push(selectedCard);
-          }
-          updateDeckDisplay(o);
         }
       }
     } else {

@@ -289,28 +289,21 @@ export default function BattlePassMenuScreen() {
               return (
                 <div
                   key={pass.id}
+                  className="battle-pass-menu-card"
                   onClick={() => handleSelectPass(pass.id)}
                   style={{
                     width: '100%',
                     background:
                       'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
                     border: `2px solid ${borderColor}`,
-                    boxShadow: baseShadow,
+                    '--bp-base-shadow': baseShadow,
+                    '--bp-hover-shadow': hoverShadow,
                     borderRadius: '12px',
                     padding: '14px 16px',
                     cursor: 'pointer',
                     boxSizing: 'border-box',
-                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                     position: 'relative',
                     overflow: 'hidden',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = hoverShadow;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.boxShadow = baseShadow;
                   }}
                 >
                   <div

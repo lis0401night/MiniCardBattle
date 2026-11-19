@@ -926,29 +926,59 @@ export default function GlobalModals() {
   };
 
   useEffect(() => {
-    setShowConfirmModalHook(
-      (message, onConfirm, onCancel, isAlert = false, options = {}) => {
-        playSound?.(SOUNDS?.seClick);
-        confirmModalSeqRef.current += 1;
-        setConfirmData({
-          modalKey: confirmModalSeqRef.current,
-          message,
-          onConfirm,
-          onCancel,
-          isAlert,
-          title: options?.title || null,
-          confirmLabel: options?.confirmLabel || null,
-          isDanger: Boolean(options?.isDanger),
-        });
-      }
-    );
+    /**
+     * 確認モーダルを表示し、ユーザーの確定・キャンセル操作をコールバックへ通知する。
+     *
+     * @param {string} message - 表示する確認メッセージ本文
+     * @param {Function|null} onConfirm - 確定ボタン押下時のコールバック
+     * @param {Function|null} onCancel - キャンセルボタン押下時のコールバック
+     * @param {boolean} [isAlert=false] - 単一ボタンのお知らせ表示にする場合は true
+     * @param {object} [options={}] - 表示カスタマイズ設定（公開契約）
+     * @param {string} [options.title] - モーダル見出しタイトル（省略時は「確認」または「お知らせ」）
+     * @param {string} [options.confirmLabel] - 確定ボタンの表示ラベル（省略時は「OK」または「閉じる」）
+     * @param {boolean} [options.isDanger=false] - 危険な操作として赤色強調表示にする場合は true
+     * @returns {void}
+     */
+    const handleShowConfirmModal = (
+      message,
+      onConfirm,
+      onCancel,
+      isAlert = false,
+      options = {}
+    ) => {
+      playSound?.(SOUNDS?.seClick);
+      confirmModalSeqRef.current += 1;
+      setConfirmData({
+        modalKey: confirmModalSeqRef.current,
+        message,
+        onConfirm,
+        onCancel,
+        isAlert,
+        title: options?.title || null,
+        confirmLabel: options?.confirmLabel || null,
+        isDanger: Boolean(options?.isDanger),
+      });
+    };
+    setShowConfirmModalHook(handleShowConfirmModal);
 
-    // オンライン対戦の制限時間切れ時に、確認ダイアログをコールバックを呼ばずに閉じる
-    setCloseConfirmModalHook(() => {
+    /**
+     * オンライン対戦の制限時間切れ時などに、確認ダイアログをコールバックを呼ばずに強制クローズする。
+     *
+     * @returns {void}
+     */
+    const handleCloseConfirmModal = () => {
       setConfirmData(null);
-    });
+    };
+    setCloseConfirmModalHook(handleCloseConfirmModal);
 
-    setShowAlertModalHook((message, onClose) => {
+    /**
+     * 単一ボタンのお知らせ（警告・通知）モーダルを表示し、閉じた際にコールバックを実行する。
+     *
+     * @param {string} message - 表示する通知メッセージ本文
+     * @param {Function|null} [onClose] - モーダルを閉じた際のコールバック
+     * @returns {void}
+     */
+    const handleShowAlertModal = (message, onClose) => {
       playSound?.(SOUNDS?.seClick);
       confirmModalSeqRef.current += 1;
       setConfirmData({
@@ -961,7 +991,8 @@ export default function GlobalModals() {
         confirmLabel: null,
         isDanger: false,
       });
-    });
+    };
+    setShowAlertModalHook(handleShowAlertModal);
 
     setShowErrorModalHook((message) => {
       if (typeof stopAllBGM === 'function') stopAllBGM();
@@ -4278,6 +4309,78 @@ export default function GlobalModals() {
                       ? cardItem.currentPower
                       : cardItem.power;
 
+                  /**
+                   * カード要素の長押しによる詳細プレビュー表示タイマーを開始する。
+                   * @param {import('react').PointerEvent<HTMLDivElement>} e - ポインタイベント
+                   * @returns {void}
+                   */
+                  const handleCardPointerDown = (e) => {
+                    if (e.pointerType === 'mouse' && e.button !== 0) return;
+                    discardHasLongPressedRef.current = false;
+                    discardLongPressTimerRef.current = setTimeout(() => {
+                      discardHasLongPressedRef.current = true;
+                      setCardPreviewData({ card: cardItem });
+                    }, 600);
+                  };
+
+                  /**
+                   * 進行中のカード長押しプレビュー用タイマーを解除する。
+                   * @returns {void}
+                   */
+                  const clearCardLongPressTimer = () => {
+                    if (discardLongPressTimerRef.current) {
+                      clearTimeout(discardLongPressTimerRef.current);
+                    }
+                  };
+
+                  /**
+                   * カードのクリック操作に応じてプレビュー表示または選択状態の更新を行う。
+                   * @returns {void}
+                   */
+                  const handleCardClick = () => {
+                    if (discardHasLongPressedRef.current) return;
+                    playSound?.(SOUNDS?.seClick);
+                    if (discardSelectionData.isViewOnly) {
+                      setCardPreviewData({ card: cardItem });
+                      return;
+                    }
+                    // 選択状態をセットする
+                    if (sectionKey !== null) {
+                      setDiscardSelectionData((prev) => ({
+                        ...prev,
+                        selectedSectionKey: sectionKey,
+                        selectedSectionIndex: idx,
+                      }));
+                    } else if (isMulti) {
+                      const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
+                      setDiscardSelectionData((prev) => {
+                        let newSelected = [...prev.selectedItems];
+                        const existingIdx = newSelected.findIndex(
+                          (item) => item.key === itemKey
+                        );
+                        if (existingIdx >= 0) {
+                          newSelected.splice(existingIdx, 1);
+                        } else if (newSelected.length < prev.maxChoices) {
+                          newSelected.push({
+                            key: itemKey,
+                            tab: prev.currentTab,
+                            card: cardItem,
+                            idx,
+                          });
+                        }
+                        return {
+                          ...prev,
+                          selectedItems: newSelected,
+                        };
+                      });
+                    } else {
+                      setDiscardSelectionData((prev) => ({
+                        ...prev,
+                        selectedIndex: idx,
+                      }));
+                    }
+                  };
+
                   return (
                     <div
                       key={
@@ -4285,83 +4388,13 @@ export default function GlobalModals() {
                           ? `${sectionKey}_${cardItem.uid || cardItem.id}_${idx}`
                           : idx
                       }
-                      className="deck-card-item gallery-card-wrapper"
-                      onPointerDown={(e) => {
-                        if (e.pointerType === 'mouse' && e.button !== 0) return;
-                        discardHasLongPressedRef.current = false;
-                        discardLongPressTimerRef.current = setTimeout(() => {
-                          discardHasLongPressedRef.current = true;
-                          setCardPreviewData({ card: cardItem });
-                        }, 600);
-                      }}
-                      onPointerUp={() => {
-                        if (discardLongPressTimerRef.current)
-                          clearTimeout(discardLongPressTimerRef.current);
-                      }}
-                      onPointerLeave={() => {
-                        if (discardLongPressTimerRef.current)
-                          clearTimeout(discardLongPressTimerRef.current);
-                      }}
-                      onPointerCancel={() => {
-                        if (discardLongPressTimerRef.current)
-                          clearTimeout(discardLongPressTimerRef.current);
-                      }}
+                      className="deck-card-item gallery-card-wrapper discard-selection-card"
+                      onPointerDown={handleCardPointerDown}
+                      onPointerUp={clearCardLongPressTimer}
+                      onPointerLeave={clearCardLongPressTimer}
+                      onPointerCancel={clearCardLongPressTimer}
                       onContextMenu={(e) => e.preventDefault()}
-                      onClick={() => {
-                        if (discardHasLongPressedRef.current) return;
-                        playSound?.(SOUNDS?.seClick);
-                        if (discardSelectionData.isViewOnly) {
-                          setCardPreviewData({ card: cardItem });
-                          return;
-                        }
-                        // 選択状態をセットする
-                        if (sectionKey !== null) {
-                          setDiscardSelectionData((prev) => ({
-                            ...prev,
-                            selectedSectionKey: sectionKey,
-                            selectedSectionIndex: idx,
-                          }));
-                        } else if (isMulti) {
-                          const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
-                          setDiscardSelectionData((prev) => {
-                            let newSelected = [...prev.selectedItems];
-                            const existingIdx = newSelected.findIndex(
-                              (item) => item.key === itemKey
-                            );
-                            if (existingIdx >= 0) {
-                              newSelected.splice(existingIdx, 1);
-                            } else if (newSelected.length < prev.maxChoices) {
-                              newSelected.push({
-                                key: itemKey,
-                                tab: prev.currentTab,
-                                card: cardItem,
-                                idx,
-                              });
-                            }
-                            return {
-                              ...prev,
-                              selectedItems: newSelected,
-                            };
-                          });
-                        } else {
-                          setDiscardSelectionData((prev) => ({
-                            ...prev,
-                            selectedIndex: idx,
-                          }));
-                        }
-                      }}
-                      style={{
-                        cursor: 'pointer',
-                        transition: 'transform 0.2s',
-                        flexShrink: 0,
-                        minWidth: '90px',
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
+                      onClick={handleCardClick}
                     >
                       <div
                         className={`card ${discardSelectionData.isDual && discardSelectionData.currentTab === 'red' ? 'red' : 'blue'}${rarityClass}`}
