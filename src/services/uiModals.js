@@ -7,14 +7,32 @@ import { COMMON_POINTS_KEY } from '../utils/constants/config.js';
 // ==========================================
 
 export let showConfirmModalHook = null;
+/**
+ * 確認ダイアログ表示フックを登録する（GlobalModals.jsx から登録される）
+ * @param {Function|null} h - 確認ダイアログを表示する関数
+ * @returns {void}
+ */
 export function setShowConfirmModalHook(h) {
   showConfirmModalHook = h;
 }
+/**
+ * 確認（またはアラート）ダイアログを表示する
+ * @param {string} message - ダイアログ本文メッセージ
+ * @param {Function} [onConfirm] - 確定ボタン押下時のコールバック
+ * @param {Function|null} [onCancel=null] - キャンセルボタン押下時のコールバック
+ * @param {boolean} [isAlert=false] - アラートモード（単一ボタン表示）とするか
+ * @param {Object} [options={}] - 表示オプション
+ * @param {string} [options.title] - カスタム見出し文字列（省略時は「確認」または「お知らせ」）
+ * @param {string} [options.confirmLabel] - 確定ボタンのラベル文字列（省略時は「OK」または「閉じる」）
+ * @param {boolean} [options.isDanger=false] - 破壊的・危険操作向けの赤色警告スタイルを適用するか
+ * @returns {void}
+ */
 export function showConfirmModal(
   message,
   onConfirm,
   onCancel = null,
-  isAlert = false
+  isAlert = false,
+  options = {}
 ) {
   // 【デバッグ用】更新またはアップデート関連の確認の際、現在の localStorage データを全送信する
   if (
@@ -52,7 +70,7 @@ export function showConfirmModal(
   }
 
   if (showConfirmModalHook)
-    return showConfirmModalHook(message, onConfirm, onCancel, isAlert);
+    return showConfirmModalHook(message, onConfirm, onCancel, isAlert, options);
   console.warn('GlobalModals not mounted: using window.confirm/alert fallback');
   if (isAlert) {
     window.alert(message);
@@ -162,6 +180,44 @@ export function showCommonPointsAcquisitionModal(points, options = {}) {
     darkColor: '#0284c7',
     onClose: options.onClose,
   });
+}
+
+/**
+ * バトルパス進行中設定および未同期レート同期結果ダイアログを表示する
+ *
+ * 未反映のクイックマッチレートから同期されたポイントがある場合（syncedPoints > 0）は
+ * 同期ポイント数を強調したダイアログを表示し、0 Pt の場合は進行中設定の説明ダイアログを表示する。
+ *
+ * @param {string} passName - 設定したバトルパス表示名（例: 'バトルパス S1'）
+ * @param {number} syncedPoints - 今回レートから同期されたポイント数
+ * @param {number} currentPassPoints - 同期後の当該バトルパスの現在ポイント数
+ * @param {Function|null} [onClose=null] - ダイアログ閉鎖時コールバック
+ * @returns {void}
+ */
+export function showBattlePassSyncModal(
+  passName,
+  syncedPoints,
+  currentPassPoints,
+  onClose = null
+) {
+  if (syncedPoints > 0) {
+    showPointAcquisitionModal({
+      title: 'バトルパス レート同期！',
+      message: `【${passName}】を進行中に設定しました。\nクイックマッチレートから ${syncedPoints} Pt が同期されました！`,
+      points: syncedPoints,
+      totalPoints: currentPassPoints,
+      totalLabel: `${passName} 現在のポイント`,
+      iconEmoji: '🎟️',
+      color: '#f59e0b',
+      darkColor: '#d97706',
+      onClose,
+    });
+  } else {
+    showAlertModal(
+      `【${passName}】を進行中に設定しました！\n今後のクイックマッチ勝利ポイントがこのバトルパスに同期・加算されます。`,
+      onClose
+    );
+  }
 }
 
 export let showProfileModalHook = null;

@@ -39,8 +39,10 @@ if (strlen($uuid) < 10) {
 
 $defaultName = sanitizePlayerDisplayName($data['name'] ?? null);
 
-$updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($rating) {
-    $playerData['quick_rating'] = max(0, $rating);
+$safeRating = max(0, min(MAX_QUICK_RATING, $rating));
+
+$updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) use ($safeRating) {
+    $playerData['quick_rating'] = $safeRating;
     $playerData['lastAccessAt'] = time();
     return true;
 }, $defaultName);
@@ -48,7 +50,7 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
 if (!empty($updateResult['success'])) {
     echo json_encode([
         'success' => true,
-        'quick_rating' => max(0, $rating),
+        'quick_rating' => $safeRating,
     ]);
 } else {
     echo json_encode([

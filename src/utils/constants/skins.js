@@ -5,7 +5,7 @@
  * 一元管理する唯一の信頼源（Single Source of Truth）。
  *
  * 構造: SKIN_MASTER[skinType][charId]
- * - skinType: 'summer' | 'school' | 'high'
+ * - skinType: 'summer' | 'school' | 'high' | 'assassin' | 'empress'
  * - charId: キャラクターID
  *
  * 新しいスキンを追加する際はこのファイルのみを更新してください。
@@ -22,7 +22,7 @@ import { LEADER_SKILLS } from './leaderSkills.js';
 /**
  * キャラクター画像パスを生成する
  * @param {string} charId - キャラクターID
- * @param {string} skinType - スキンタイプ ('summer', 'school', 'high')
+ * @param {string} skinType - スキンタイプ ('summer', 'school', 'high', 'assassin', 'empress')
  * @returns {string} 画像パス
  */
 const charImg = (charId, skinType) =>
@@ -31,7 +31,7 @@ const charImg = (charId, skinType) =>
 /**
  * キャラクター敗北時画像パスを生成する
  * @param {string} charId - キャラクターID
- * @param {string} skinType - スキンタイプ ('summer', 'school', 'high')
+ * @param {string} skinType - スキンタイプ ('summer', 'school', 'high', 'assassin', 'empress')
  * @returns {string} 画像パス
  */
 const charImgLose = (charId, skinType) =>
@@ -40,7 +40,7 @@ const charImgLose = (charId, skinType) =>
 /**
  * アイコン画像パスを生成する
  * @param {string} charId - キャラクターID
- * @param {string} skinType - スキンタイプ ('summer', 'school', 'high')
+ * @param {string} skinType - スキンタイプ ('summer', 'school', 'high', 'assassin', 'empress')
  * @returns {string} 画像パス
  */
 const iconImg = (charId, skinType) =>
@@ -49,7 +49,7 @@ const iconImg = (charId, skinType) =>
 /**
  * アイコンダメージ画像パスを生成する
  * @param {string} charId - キャラクターID
- * @param {string} skinType - スキンタイプ ('summer', 'school', 'high')
+ * @param {string} skinType - スキンタイプ ('summer', 'school', 'high', 'assassin', 'empress')
  * @returns {string} 画像パス
  */
 const iconDmg = (charId, skinType) =>
@@ -58,7 +58,7 @@ const iconDmg = (charId, skinType) =>
 /**
  * プレイマット画像パスを生成する
  * @param {string} charId - キャラクターID
- * @param {string} skinType - スキンタイプ ('summer', 'school', 'high')
+ * @param {string} skinType - スキンタイプ ('summer', 'school', 'high', 'assassin', 'empress')
  * @returns {string} 画像パス
  */
 const boardImg = (charId, skinType) =>
@@ -145,6 +145,7 @@ const SUMMER_SKINS = {
     description:
       'アグニカの神より賜った特別休暇。水着姿になっても、エリート戦乙女の威厳は崩さない。',
   }),
+  // TODO: 魔皇女 ベルカ（daughter）の水着スキンを今後追加予定（追加時は skinDialogues.js の SUMMER_DIALOGUES にも台詞を追加すること）
 };
 
 // ---------------------------------------------------------------------------
@@ -191,6 +192,7 @@ const SCHOOL_SKINS = {
   valkyria: makeSkinEntry('valkyria', 'school', '陸上部のエース', {
     description: '誰よりも速く、誰よりも高くを目指す。自称「エリートランナー」',
   }),
+  // TODO: 魔皇女 ベルカ（daughter）を今後「夢幻の闘技祭（tournament）」に参戦させる場合は、学園スキンもここに追加すること
 };
 
 // ---------------------------------------------------------------------------
@@ -222,8 +224,23 @@ const ASSASSIN_SKINS = {
     fullName: 'ギルドの暗殺者 レダ',
     description:
       '2本の短剣を持つ女暗殺者。一瞬の隙も逃さず、死の影から獲物を屠る。',
-    unlockCondition: '未定',
+    unlockCondition: 'バトルパス S1 で入手',
     leaderSkill: LEADER_SKILLS.death_target,
+  }),
+};
+
+// ---------------------------------------------------------------------------
+// 蒼穹の審判者スキン（エリシア専用新スキン）
+// ---------------------------------------------------------------------------
+
+/** @type {Record<string, Object>} 蒼穹の審判者スキンマスタ */
+const EMPRESS_SKINS = {
+  cleric: makeSkinEntry('cleric', 'empress', '蒼穹の審判者', {
+    characterName: 'アストレア',
+    fullName: '蒼穹の審判者 アストレア',
+    description: '宇宙の理を掌るオーブを掲げ、全ての魂に等しく審判を下す聖女。',
+    unlockCondition: 'バトルパス S2 で入手',
+    leaderSkill: LEADER_SKILLS.astral_order,
   }),
 };
 
@@ -243,6 +260,7 @@ export const SKIN_MASTER = {
   school: SCHOOL_SKINS,
   high: HIGH_SKINS,
   assassin: ASSASSIN_SKINS,
+  empress: EMPRESS_SKINS,
 };
 
 /**
@@ -254,6 +272,7 @@ export const SKIN_TYPE_INFO = {
   school: { label: '学園' },
   high: { label: '高難易度' },
   assassin: { label: '暗殺者' },
+  empress: { label: '審判者' },
 };
 
 /**
@@ -268,6 +287,7 @@ export const SKIN_KEY_MAP = {
   school: (_charId) => ({ key: 'school', id: 'school' }),
   high: (charId) => ({ key: `${charId}_high`, id: `${charId}_high` }),
   assassin: (_charId) => ({ key: 'assassin', id: 'assassin' }),
+  empress: (_charId) => ({ key: 'empress', id: 'empress' }),
 };
 
 /**

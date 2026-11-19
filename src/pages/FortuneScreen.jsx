@@ -13,7 +13,7 @@ import {
 } from '../utils/constants/config.js';
 
 /** 運命の邂逅イベントの表示順定義 */
-const FORTUNE_DISPLAY_ORDER = ['automata', 'valkyria'];
+const FORTUNE_DISPLAY_ORDER = ['automata', 'valkyria', 'daughter'];
 
 /**
  * キャラクターの運命の邂逅表示順ランクを取得する

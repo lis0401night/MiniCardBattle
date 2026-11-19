@@ -85,6 +85,12 @@ const FORTUNE_REWARDS = {
     stageName: '約束の丘',
     premiumCardId: 'dwarf',
   },
+  daughter: {
+    charName: '魔皇女 ベルカ',
+    shortName: 'ベルカ',
+    stageName: '次元の裂け目',
+    premiumCardId: 'follower',
+  },
 };
 
 export default function FortuneAchievementScreen() {

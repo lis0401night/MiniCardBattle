@@ -439,6 +439,9 @@ function sanitizeBattlePassPoints($pointsMap): array {
     return $sanitized;
 }
 
+/** クイックマッチレートの上限値（現在実装中の全バトルパスの maxPoints 合計: S1(150) + S2(150) = 300 と同期すること） */
+const MAX_QUICK_RATING = 300;
+
 /**
  * プレイヤーデータに対して、リクエストから渡されたインベントリ、プレミアム解放カード、解放済みアイコン、解放済みスキン、所持プレイマット、バトルパス、登録デッキの更新を適用します。
  * キャメルケース・スネークケースの別名キー解決を一元化します。
@@ -448,7 +451,7 @@ function sanitizeBattlePassPoints($pointsMap): array {
  */
 function applyPlayerCollectionUpdates(array &$player_data, array $data): void {
     if (isset($data['quick_rating'])) {
-        $player_data['quick_rating'] = max(0, intval($data['quick_rating']));
+        $player_data['quick_rating'] = max(0, min(MAX_QUICK_RATING, intval($data['quick_rating'])));
     }
     if (isset($data['inventory'])) {
         $player_data['inventory'] = sanitizeInventory($data['inventory']);

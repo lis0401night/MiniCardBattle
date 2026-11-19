@@ -2,6 +2,7 @@ import { SKILLS } from '../utils/constants/skills.js';
 import { STATUSES } from '../utils/constants/statuses.js';
 import {
   getCardActiveStatuses,
+  getCardCurrentPower,
   getDialogue,
   getSkillBadgeInfo,
   isSkillMergeExcluded,
@@ -90,6 +91,20 @@ export function updateCardDetail(c) {
       textColor = '#facc15';
     } else if (GameState.isAlliedTargetMode) {
       html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">自分のカードを${GameState.targetMaxCount}枚選んでください</div>`;
+      textColor = '#facc15';
+    } else if (GameState.isInvokeSelectMode) {
+      const selectedHandPower = (GameState.discardSelectedIndices || []).reduce(
+        (sum, hIdx) =>
+          sum + getCardCurrentPower(GameState.playerHand?.[hIdx] || null),
+        0
+      );
+      const selectedBoardPower = (GameState.targetSelectedLanes || []).reduce(
+        (sum, lIdx) =>
+          sum + getCardCurrentPower(GameState.playerBoard?.[lIdx] || null),
+        0
+      );
+      const totalSelectedPower = selectedHandPower + selectedBoardPower;
+      html = `<div class="skill-info" style="color:#facc15; font-weight:bold;">招来: 捨てる手札・場のカードを選んでください（合計パワー: ${totalSelectedPower}）</div>`;
       textColor = '#facc15';
     }
   } else {
@@ -483,15 +498,33 @@ export function showSkillConfirm() {
     color = '#4ade80';
     canExecute = false;
   } else if (GameState.playerSP >= s.cost) {
+    const isDaemonCallBlocked =
+      (s.action === 'daemon_call' &&
+        ((GameState.playerDeck || []).length === 0 ||
+          (GameState.playerSealedLanes || [0, 0, 0]).every((t) => t > 0))) ||
+      (s.action === 'demonic_call' &&
+        ![
+          ...(GameState.playerDeck || []),
+          ...(GameState.playerHand || []),
+          ...(GameState.playerDiscard || []),
+        ].some((c) => c && !c.isToken && !c.id?.startsWith('token_')));
     if (
       !GameState.isProcessing &&
       !GameState.isBattleEnded &&
       GameState.currentTurn === 'player' &&
-      !GameState.isPlacementMode
+      !GameState.isPlacementMode &&
+      !isDaemonCallBlocked
     ) {
       statusText = '発動可能です！';
       color = '#4ade80';
       canExecute = true;
+    } else if (isDaemonCallBlocked) {
+      statusText =
+        (GameState.playerDeck || []).length === 0
+          ? '現在発動できません（山札がありません）'
+          : '現在発動できません（召喚可能なレーンがありません）';
+      color = '#facc15';
+      canExecute = false;
     } else {
       statusText = '現在発動できません（自分のターン待機中のみ）';
       color = '#facc15';

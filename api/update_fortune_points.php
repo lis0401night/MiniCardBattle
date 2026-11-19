@@ -37,6 +37,7 @@ $fortune_cleared = isset($data['fortune_cleared']) ? $data['fortune_cleared'] : 
 $fortune_max_total_cost = isset($data['fortune_max_total_cost']) ? intval($data['fortune_max_total_cost']) : 0;
 $fortune_max_total_cost_automata = isset($data['fortune_max_total_cost_automata']) ? intval($data['fortune_max_total_cost_automata']) : 0;
 $fortune_max_total_cost_valkyria = isset($data['fortune_max_total_cost_valkyria']) ? intval($data['fortune_max_total_cost_valkyria']) : 0;
+$fortune_max_total_cost_daughter = isset($data['fortune_max_total_cost_daughter']) ? intval($data['fortune_max_total_cost_daughter']) : 0;
 $character = isset($data['character']) ? preg_replace('/[^a-z0-9_]/', '', (string)$data['character']) : '';
 
 
@@ -60,6 +61,7 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
     $clearedDecoded,
     $fortune_max_total_cost_automata,
     $fortune_max_total_cost_valkyria,
+    $fortune_max_total_cost_daughter,
     $fortune_max_total_cost,
     $character
 ) {
@@ -72,24 +74,34 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
         $playerData['fortune_max_grade'] = $fortune_max_grade;
     }
 
-    // 達成済み情報のマージ（キャラクター別構造: {"automata": {...}, "valkyria": {...}} を完全サポート）
+    // 達成済み情報のマージ（キャラクター別構造: {"automata": {...}, "valkyria": {...}, "daughter": {...}} を完全サポート）
     $existingCleared = isset($playerData['fortune_cleared']) ? json_decode($playerData['fortune_cleared'], true) : [];
     if (!is_array($existingCleared)) $existingCleared = [];
 
-    // 既存データからマキナ・アンジェの各データを抽出（フラット旧形式の場合はそれぞれの初期値として扱う）
+    // 既存データから各キャラのデータを抽出（フラット旧形式の場合はマキナ・アンジェのみ互換復元し、新規追加キャラの汚染を防ぐ）
     $mergedAutomata = [];
     $mergedValkyria = [];
-    if (isset($existingCleared['automata']) || isset($existingCleared['valkyria'])) {
+    $mergedDaughter = [];
+    if (
+        isset($existingCleared['automata']) ||
+        isset($existingCleared['valkyria']) ||
+        isset($existingCleared['daughter'])
+    ) {
         $mergedAutomata = is_array($existingCleared['automata'] ?? null) ? $existingCleared['automata'] : [];
         $mergedValkyria = is_array($existingCleared['valkyria'] ?? null) ? $existingCleared['valkyria'] : [];
+        $mergedDaughter = is_array($existingCleared['daughter'] ?? null) ? $existingCleared['daughter'] : [];
     } else {
-        // 旧形式（フラット）の場合、マキナ達成上限があるならマキナに、アンジェ達成上限があるならアンジェに割り振る
+        // 旧形式（フラット）の場合、マキナ・アンジェの初期値として割り振る
         $mergedAutomata = $existingCleared;
         $mergedValkyria = $existingCleared;
     }
 
     $newCleared = is_array($clearedDecoded) ? $clearedDecoded : [];
-    if (isset($newCleared['automata']) || isset($newCleared['valkyria'])) {
+    if (
+        isset($newCleared['automata']) ||
+        isset($newCleared['valkyria']) ||
+        isset($newCleared['daughter'])
+    ) {
         if (isset($newCleared['automata']) && is_array($newCleared['automata'])) {
             foreach ($newCleared['automata'] as $k => $v) {
                 $mergedAutomata[$k] = ($mergedAutomata[$k] ?? false) || (bool)$v;
@@ -100,8 +112,13 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
                 $mergedValkyria[$k] = ($mergedValkyria[$k] ?? false) || (bool)$v;
             }
         }
+        if (isset($newCleared['daughter']) && is_array($newCleared['daughter'])) {
+            foreach ($newCleared['daughter'] as $k => $v) {
+                $mergedDaughter[$k] = ($mergedDaughter[$k] ?? false) || (bool)$v;
+            }
+        }
     } else {
-        // 新リクエストがフラット形式の場合は両方にマージ（互換性）
+        // 新リクエストがフラット形式の場合はマキナ・アンジェにマージ（旧クライアント互換性）
         foreach ($newCleared as $k => $v) {
             $mergedAutomata[$k] = ($mergedAutomata[$k] ?? false) || (bool)$v;
             $mergedValkyria[$k] = ($mergedValkyria[$k] ?? false) || (bool)$v;
@@ -110,7 +127,8 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
 
     $playerData['fortune_cleared'] = json_encode([
         'automata' => $mergedAutomata,
-        'valkyria' => $mergedValkyria
+        'valkyria' => $mergedValkyria,
+        'daughter' => $mergedDaughter,
     ]);
 
     // キャラクター別目標コスト（個別レコードを保持）
@@ -119,6 +137,9 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
     }
     if (!isset($playerData['fortune_max_total_cost_valkyria'])) {
         $playerData['fortune_max_total_cost_valkyria'] = 0;
+    }
+    if (!isset($playerData['fortune_max_total_cost_daughter'])) {
+        $playerData['fortune_max_total_cost_daughter'] = 0;
     }
 
     // クライアントから明示的に送信されたキャラクター別コストは常に最大値マージ（実績消失防止）
@@ -129,6 +150,10 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
     $playerData['fortune_max_total_cost_valkyria'] = max(
         intval($playerData['fortune_max_total_cost_valkyria']),
         $fortune_max_total_cost_valkyria
+    );
+    $playerData['fortune_max_total_cost_daughter'] = max(
+        intval($playerData['fortune_max_total_cost_daughter']),
+        $fortune_max_total_cost_daughter
     );
 
     // 今回のプレイ結果（fortune_max_total_cost）をプレイ対象キャラクターへ反映（ホワイトリスト判定）
@@ -142,12 +167,18 @@ $updateResult = modifyPlayerDataWithLock($uuid, function (array &$playerData) us
             intval($playerData['fortune_max_total_cost_automata']),
             $fortune_max_total_cost
         );
+    } elseif ($character === 'daughter') {
+        $playerData['fortune_max_total_cost_daughter'] = max(
+            intval($playerData['fortune_max_total_cost_daughter']),
+            $fortune_max_total_cost
+        );
     }
 
     // 総合合計目標値（キャラクター別記録および今回の結果のうち最大値を保持）
     $autoCost = intval($playerData['fortune_max_total_cost_automata']);
     $valkCost = intval($playerData['fortune_max_total_cost_valkyria']);
-    $playerData['fortune_max_total_cost'] = max($fortune_max_total_cost, $autoCost, $valkCost);
+    $daugCost = intval($playerData['fortune_max_total_cost_daughter']);
+    $playerData['fortune_max_total_cost'] = max($fortune_max_total_cost, $autoCost, $valkCost, $daugCost);
 
     $playerData['timestamp'] = time();
 }, $defaultName);
@@ -161,6 +192,7 @@ if ($updateResult['success']) {
         'fortune_max_grade' => $playerData['fortune_max_grade'] ?? -1,
         'fortune_max_total_cost_automata' => $playerData['fortune_max_total_cost_automata'] ?? 0,
         'fortune_max_total_cost_valkyria' => $playerData['fortune_max_total_cost_valkyria'] ?? 0,
+        'fortune_max_total_cost_daughter' => $playerData['fortune_max_total_cost_daughter'] ?? 0,
     ]);
     exit;
 } else {

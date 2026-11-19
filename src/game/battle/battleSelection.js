@@ -387,6 +387,8 @@ export async function waitPlayerLaneSelection(
       } else {
         consumeAIAction([
           'devilhunter_resurrect',
+          'daemon_call',
+          'demonic_call',
           'servant',
           'call',
           'assemble',
@@ -1229,6 +1231,8 @@ export async function waitPlayerAlliedLaneSelection(
      */
     const onAlliedLaneClick = (laneIndex) => {
       if (isCleanedUp) return;
+      // 連打防止: 目標数のレーンが既に選択済みなら追加クリックを無視
+      if (GameState.targetSelectedLanes.length >= count) return;
       // 対象レーンにカードがない、または範囲外・不正なレーンの場合は処理をスキップ
       if (!occupiedLanes.includes(laneIndex)) return;
       playSound(SOUNDS.seClick);
@@ -1601,6 +1605,8 @@ export async function waitPlayerDiscardSelection(
     const aiAction = consumeAIAction([
       'resurrect',
       'devilhunter_resurrect',
+      'daemon_call',
+      'demonic_call',
       'overdrive',
       'call',
       'assemble',
@@ -1640,8 +1646,13 @@ export async function waitPlayerDiscardSelection(
       const shuffled = shuffleArray([...validCards]);
       return shuffled.slice(0, maxChoices);
     } else {
-      // 探索（explore）や召集（assemble）のフォールバック時は、選べる中で最大パワーのカードからランダムに選ぶ
-      if (skillId === 'explore' || skillId === 'assemble') {
+      // 探索（explore）・召集（assemble）・次元斬（daemon_call）・万魔の招来（demonic_call）のフォールバック時は、選べる中で最大パワーのカードからランダムに選ぶ
+      if (
+        skillId === 'explore' ||
+        skillId === 'assemble' ||
+        skillId === 'daemon_call' ||
+        skillId === 'demonic_call'
+      ) {
         const maxP = Math.max(...validCards.map((c) => c.power || 0));
         const bestCards = validCards.filter((c) => (c.power || 0) === maxP);
         return bestCards[Math.floor(getSeededRandom() * bestCards.length)];
@@ -2208,4 +2219,286 @@ export async function waitSkillChoice(
       handleSelect(shuffled.slice(0, Math.min(maxChoices, choices.length)));
     }
   });
+}
+
+/**
+ * 「招来（invoke）」スキル発動時に、自分の手札および自分の場のカードから
+ * 望む枚数（0枚〜任意枚数）選択して捨てる入力を待機する。
+ *
+ * @param {'blue' | 'red'} owner - 選択を行う陣営
+ * @returns {Promise<{ handIndices: number[], boardLanes: number[] }>} 選択された手札インデックス配列と自陣レーン番号配列
+ */
+export async function waitPlayerInvokeSacrificeSelection(owner) {
+  const hand = owner === 'blue' ? GameState.playerHand : GameState.enemyHand;
+  const board = owner === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
+  const occupiedLanes = [0, 1, 2].filter((idx) => board[idx] !== null);
+
+  if (hand.length === 0 && occupiedLanes.length === 0) {
+    return { handIndices: [], boardLanes: [] };
+  }
+
+  // 【オンライン対戦】相手（red）の選択完了をリモートから待機する場合
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
+    startOnlineTimer({
+      type: 'choice',
+      owner: 'red',
+      onFailsafeTimeout: () => {
+        resolveRemoteChoiceWait({ totalCount: 0 });
+      },
+    });
+
+    const rawChoice = await waitRemoteChoice(CHOICE_KIND.INVOKE_SACRIFICE);
+    stopOnlineTimer();
+
+    if (!rawChoice || typeof rawChoice !== 'object') {
+      return { handIndices: [], boardLanes: [] };
+    }
+
+    const handIndices = normalizeRemoteChoiceIndices(
+      rawChoice.handIndices
+    ).filter((idx) => idx >= 0 && idx < hand.length);
+    const boardLanes = normalizeRemoteChoiceIndices(
+      rawChoice.boardLanes
+    ).filter((lane) => occupiedLanes.includes(lane));
+
+    return { handIndices, boardLanes };
+  }
+
+  // 【プレイヤー操作】手札と自分の場のカードを同時にトグル選択できるモードを開始
+  return new Promise((resolve) => {
+    GameState.selectedCardIndex = null;
+    GameState.selectedBoardLaneIndex = null;
+    GameState.selectedBoardSide = null;
+    GameState.isInvokeSelectMode = true;
+    GameState.discardSelectedIndices = [];
+    GameState.targetSelectedLanes = [];
+
+    updateCardDetail(null);
+    renderHand();
+    if (updateBattleUIHook) updateBattleUIHook();
+
+    let isCleanedUp = false;
+
+    /**
+     * 選択モードのUI状態・タイマー・グローバルハンドラを一括解除し、確定した選択内容を返す。
+     * @returns {{ handIndices: number[], boardLanes: number[] }} 確定した選択結果
+     */
+    const cleanUp = () => {
+      if (isCleanedUp) {
+        return { handIndices: [], boardLanes: [] };
+      }
+      isCleanedUp = true;
+      if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+        stopOnlineTimer();
+      }
+      const handIndices = [...GameState.discardSelectedIndices];
+      const boardLanes = [...GameState.targetSelectedLanes];
+      GameState.isInvokeSelectMode = false;
+      GameState.discardSelectedIndices = [];
+      GameState.targetSelectedLanes = [];
+      window.handleInvokeHandClick = null;
+      window.handleInvokeBoardClick = null;
+      window.finishInvokeSelection = null;
+      updateCardDetail(null);
+      renderHand();
+      if (updateBattleUIHook) updateBattleUIHook();
+      return { handIndices, boardLanes };
+    };
+
+    if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+      startOnlineTimer({
+        type: 'choice',
+        owner: 'blue',
+        onTimeout: () => {
+          if (isCleanedUp) return;
+          if (typeof window.finishInvokeSelection === 'function') {
+            window.finishInvokeSelection();
+          }
+        },
+      });
+    }
+
+    /**
+     * 「招来」破棄選択モード中に手札のカードがクリックされた際のトグル処理。
+     * @param {number} idx - クリックされた手札インデックス
+     * @returns {void}
+     */
+    window.handleInvokeHandClick = (idx) => {
+      if (isCleanedUp) return;
+      if (idx < 0 || idx >= hand.length) return;
+      const existingPos = GameState.discardSelectedIndices.indexOf(idx);
+      if (existingPos >= 0) {
+        GameState.discardSelectedIndices.splice(existingPos, 1);
+      } else {
+        GameState.discardSelectedIndices.push(idx);
+      }
+      updateCardDetail(null);
+      renderHand();
+      if (updateBattleUIHook) updateBattleUIHook();
+    };
+
+    /**
+     * 「招来」破棄選択モード中に自陣レーンがクリックされた際のトグル処理。
+     * @param {number} laneIndex - クリックされた自陣レーン番号 (0〜2)
+     * @returns {void}
+     */
+    window.handleInvokeBoardClick = (laneIndex) => {
+      if (isCleanedUp) return;
+      if (!occupiedLanes.includes(laneIndex)) return;
+      playSound(SOUNDS.seClick);
+      const existingPos = GameState.targetSelectedLanes.indexOf(laneIndex);
+      if (existingPos >= 0) {
+        GameState.targetSelectedLanes.splice(existingPos, 1);
+      } else {
+        GameState.targetSelectedLanes.push(laneIndex);
+      }
+      updateCardDetail(null);
+      if (updateBattleUIHook) updateBattleUIHook();
+    };
+
+    /**
+     * 「招来」破棄選択モードの「選択完了」ボタン押下時ハンドラ。
+     * @returns {Promise<void>}
+     */
+    window.finishInvokeSelection = async () => {
+      if (isCleanedUp) return;
+      const selected = cleanUp();
+      // Firebase RTDB は空配列を保存しないため、totalCount を同梱して確実にオブジェクトを同期する
+      await submitLocalChoice(CHOICE_KIND.INVOKE_SACRIFICE, {
+        handIndices: selected.handIndices,
+        boardLanes: selected.boardLanes,
+        totalCount: selected.handIndices.length + selected.boardLanes.length,
+      });
+      resolve(selected);
+    };
+  });
+}
+
+/**
+ * 「招来（invoke）」スキルでカードを捨てた後、条件（合計パワー以下の降臨値）を満たす
+ * 手札または山札の「降臨」カードから召喚する1枚を段分けモーダルで選択待機する。
+ *
+ * @param {Array<object>} handCards - 手札内の召喚対象候補カード配列
+ * @param {Array<object>} deckCards - 山札内の召喚対象候補カード配列
+ * @param {number} maxAdventVal - 召喚可能な「降臨」の最大値（捨てたカードのパワー合計）
+ * @param {'blue' | 'red'} owner - 選択を行う陣営
+ * @returns {Promise<{ card: object, zone: 'hand' | 'deck' } | null>} 選択されたカードと元ゾーン（キャンセル時は null）
+ */
+export async function waitPlayerInvokeCardSelection(
+  handCards,
+  deckCards,
+  maxAdventVal,
+  owner
+) {
+  const safeHandCards = Array.isArray(handCards) ? handCards : [];
+  const safeDeckCards = Array.isArray(deckCards) ? deckCards : [];
+
+  if (safeHandCards.length === 0 && safeDeckCards.length === 0) {
+    return null;
+  }
+
+  // 【オンライン対戦】相手（red）の選択完了をリモートから待機する場合
+  if (checkIsOnlineMode(GameState.gameMode) && owner === 'red') {
+    startOnlineTimer({
+      type: 'choice',
+      owner: 'red',
+      onFailsafeTimeout: () => {
+        resolveRemoteChoiceWait('cancel');
+      },
+    });
+
+    const rawChoice = await waitRemoteChoice(CHOICE_KIND.INVOKE_TARGET);
+    stopOnlineTimer();
+
+    if (
+      !rawChoice ||
+      rawChoice === 'cancel' ||
+      rawChoice === -1 ||
+      typeof rawChoice !== 'object'
+    ) {
+      return null;
+    }
+
+    const zone = rawChoice.zone === 'hand' ? 'hand' : 'deck';
+    const pool = zone === 'hand' ? safeHandCards : safeDeckCards;
+    const matched =
+      (rawChoice.uid && pool.find((c) => c.uid === rawChoice.uid)) ||
+      pool.find(
+        (c) => (c.baseId || c.id) === rawChoice.id || c.id === rawChoice.id
+      ) ||
+      null;
+
+    return matched ? { card: matched, zone } : null;
+  }
+
+  if (!window.showDiscardSelectionModalReact) {
+    return null;
+  }
+
+  let isDone = false;
+  let modalResolve = null;
+
+  if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+    startOnlineTimer({
+      type: 'choice',
+      owner: 'blue',
+      onTimeout: () => {
+        if (isDone) return;
+        isDone = true;
+        if (window.closeDiscardSelectionModalReact) {
+          window.closeDiscardSelectionModalReact();
+        }
+        if (modalResolve) modalResolve(null);
+      },
+    });
+  }
+
+  const selected = await new Promise((resolve) => {
+    modalResolve = resolve;
+    window.showDiscardSelectionModalReact(
+      [],
+      maxAdventVal,
+      (res) => {
+        if (isDone) return;
+        isDone = true;
+        resolve(res || null);
+      },
+      {
+        title: '招来するカードを選択',
+        desc: `降臨${maxAdventVal}以下のカードを1枚選び、自分のレーンに召喚します。`,
+        canCancel: true,
+        sections: [
+          {
+            key: 'hand',
+            label: '手札',
+            cards: safeHandCards,
+            emptyText: '手札に対象カードがありません',
+          },
+          {
+            key: 'deck',
+            label: '山札',
+            cards: safeDeckCards,
+            emptyText: '山札に対象カードがありません',
+          },
+        ],
+      }
+    );
+  });
+
+  if (checkIsOnlineTimerEnabled(GameState.gameMode)) {
+    stopOnlineTimer();
+  }
+
+  await submitLocalChoice(
+    CHOICE_KIND.INVOKE_TARGET,
+    selected && selected.card
+      ? {
+          zone: selected.zone,
+          uid: selected.card.uid || null,
+          id: selected.card.baseId || selected.card.id,
+        }
+      : 'cancel'
+  );
+
+  return selected || null;
 }

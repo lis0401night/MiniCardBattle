@@ -362,21 +362,24 @@ export function calculateSpentPoints(lineup, ownership = null) {
 
 /**
  * 運命の邂逅（Fortuneモード）の特級目標クリアデータから累計獲得ポイントの理論値を算出します。
- * @param {Object|string|null} [clearedAutomata=null] - マキナのクリアデータ、または { automata: {...}, valkyria: {...} } を含む全体オブジェクト/JSON文字列
+ * @param {Object|string|null} [clearedAutomata=null] - マキナのクリアデータ、または { automata: {...}, valkyria: {...}, daughter: {...} } を含む全体オブジェクト/JSON文字列
  * @param {Object|null} [clearedValkyria=null] - アンジェのクリアデータ
+ * @param {Object|null} [clearedDaughter=null] - ベルカのクリアデータ
  * @returns {number} 特級目標達成による累計獲得ポイント
  */
 export function calculateFortuneTotalPointsFromCleared(
   clearedAutomata = null,
-  clearedValkyria = null
+  clearedValkyria = null,
+  clearedDaughter = null
 ) {
-  // 第1引数に { automata: {...}, valkyria: {...} } または JSON文字列が渡された場合
+  // 第1引数に { automata: {...}, valkyria: {...}, daughter: {...} } または JSON文字列が渡された場合
   if (
     clearedAutomata &&
     (typeof clearedAutomata === 'string' ||
       (typeof clearedAutomata === 'object' &&
         (clearedAutomata.automata ||
           clearedAutomata.valkyria ||
+          clearedAutomata.daughter ||
           clearedAutomata.fortune_cleared)))
   ) {
     let raw = clearedAutomata;
@@ -392,13 +395,16 @@ export function calculateFortuneTotalPointsFromCleared(
       }
     }
     if (parsed && typeof parsed === 'object') {
-      if (parsed.automata || parsed.valkyria) {
+      if (parsed.automata || parsed.valkyria || parsed.daughter) {
         let total = 0;
         total += calculateHandicapPointsFromMap(
           parsed.automata?.clearedHandicaps || parsed.automata
         );
         total += calculateHandicapPointsFromMap(
           parsed.valkyria?.clearedHandicaps || parsed.valkyria
+        );
+        total += calculateHandicapPointsFromMap(
+          parsed.daughter?.clearedHandicaps || parsed.daughter
         );
         return total;
       }
@@ -407,10 +413,12 @@ export function calculateFortuneTotalPointsFromCleared(
 
   const autoData = clearedAutomata || loadFortuneClearedData('automata');
   const valkData = clearedValkyria || loadFortuneClearedData('valkyria');
+  const daugData = clearedDaughter || loadFortuneClearedData('daughter');
 
   let totalEarned = 0;
   totalEarned += calculateHandicapPointsFromMap(autoData?.clearedHandicaps);
   totalEarned += calculateHandicapPointsFromMap(valkData?.clearedHandicaps);
+  totalEarned += calculateHandicapPointsFromMap(daugData?.clearedHandicaps);
 
   return totalEarned;
 }
@@ -597,17 +605,20 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         parseInt(localStorage.getItem(FORTUNE_TOTAL_POINTS_KEY), 10) || 0;
       const clearedAutomata = loadFortuneClearedData('automata');
       const clearedValkyria = loadFortuneClearedData('valkyria');
+      const clearedDaughter = loadFortuneClearedData('daughter');
 
       // クリア済み特級目標から理論上の累計ポイントを算出し、正規の総ポイントとして確定
       const minFortuneTotal = calculateFortuneTotalPointsFromCleared(
         clearedAutomata,
-        clearedValkyria
+        clearedValkyria,
+        clearedDaughter
       );
       localTotal = minFortuneTotal;
 
       const maxGrade = Math.max(
         clearedAutomata.maxGradeLevel || 0,
         clearedValkyria.maxGradeLevel || 0,
+        clearedDaughter.maxGradeLevel || 0,
         0
       );
 
@@ -616,9 +627,11 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         fortune_max_grade: maxGrade,
         fortune_max_total_cost_automata: clearedAutomata.maxTotalCost || 0,
         fortune_max_total_cost_valkyria: clearedValkyria.maxTotalCost || 0,
+        fortune_max_total_cost_daughter: clearedDaughter.maxTotalCost || 0,
         fortune_cleared: JSON.stringify({
           automata: clearedAutomata.clearedHandicaps || {},
           valkyria: clearedValkyria.clearedHandicaps || {},
+          daughter: clearedDaughter.clearedHandicaps || {},
         }),
       };
 
@@ -711,6 +724,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         resolveFortuneMaxCostAutomata(serverPlayerData);
       const serverValkyriaMaxCost =
         serverPlayerData.fortune_max_total_cost_valkyria ?? 0;
+      const serverDaughterMaxCost =
+        serverPlayerData.fortune_max_total_cost_daughter ?? 0;
 
       // Fortuneモードにおいて、ローカル側の進行情報（最大グレードや最大累計コスト）がサーバーを上回っているか判定
       const shouldSyncFortuneProgress =
@@ -720,7 +735,9 @@ export async function syncModePoints(mode, serverPlayerData = null) {
           (extraData.fortune_max_total_cost_automata || 0) >
             serverAutomataMaxCost ||
           (extraData.fortune_max_total_cost_valkyria || 0) >
-            serverValkyriaMaxCost);
+            serverValkyriaMaxCost ||
+          (extraData.fortune_max_total_cost_daughter || 0) >
+            serverDaughterMaxCost);
 
       // High Difficultyモードにおいて、ローカルにサーバー未送信のクリア済みボスが存在するか判定
       const localCleared = loadHighDifficultyClearedData();
@@ -761,6 +778,10 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         extraData.fortune_max_total_cost_valkyria || 0,
         serverValkyriaMaxCost || 0
       );
+      const mergedDaughterMaxCost = Math.max(
+        extraData.fortune_max_total_cost_daughter || 0,
+        serverDaughterMaxCost || 0
+      );
 
       const syncExtraData =
         mode === 'fortune'
@@ -772,11 +793,13 @@ export async function syncModePoints(mode, serverPlayerData = null) {
               ),
               fortune_max_total_cost_automata: mergedAutomataMaxCost,
               fortune_max_total_cost_valkyria: mergedValkyriaMaxCost,
+              fortune_max_total_cost_daughter: mergedDaughterMaxCost,
               fortune_max_total_cost: Math.max(
                 extraData.fortune_max_total_cost || 0,
                 serverPlayerData.fortune_max_total_cost || 0,
                 mergedAutomataMaxCost,
-                mergedValkyriaMaxCost
+                mergedValkyriaMaxCost,
+                mergedDaughterMaxCost
               ),
             }
           : extraData;
@@ -822,7 +845,8 @@ export async function syncModePoints(mode, serverPlayerData = null) {
         mode === 'fortune' &&
         (extraData.fortune_max_grade > 0 ||
           extraData.fortune_max_total_cost_automata > 0 ||
-          extraData.fortune_max_total_cost_valkyria > 0);
+          extraData.fortune_max_total_cost_valkyria > 0 ||
+          extraData.fortune_max_total_cost_daughter > 0);
 
       const hasHighDiffProgress =
         mode === 'high_difficulty' &&

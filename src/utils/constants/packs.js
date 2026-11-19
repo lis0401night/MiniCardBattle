@@ -11,11 +11,11 @@ import {
 } from './config.js';
 
 /**
- * 第1弾拡張パック（vol01:ビギニング）の封入カードID一覧（全45種類）
+ * 第1弾拡張パック（vol01:ビギニング）の封入カードID一覧（全48種類）
  * @type {ReadonlyArray<string>}
  */
 export const PACK_VOL01_CARD_IDS = Object.freeze([
-  // ★2: シルバーカード（27枚）
+  // ★2: シルバーカード（29枚）
   'laser',
   'gunship',
   'royalguard',
@@ -40,10 +40,12 @@ export const PACK_VOL01_CARD_IDS = Object.freeze([
   'sisters',
   'maiden',
   'gleipnir',
+  'tombrobber',
+  'orthrus',
   'firstlight',
   'elementalburst',
   'mimic',
-  // ★3: ゴールドカード（15枚）
+  // ★3: ゴールドカード（16枚）
   'factory',
   'enlisteddragon',
   'mercenarycamp',
@@ -56,6 +58,7 @@ export const PACK_VOL01_CARD_IDS = Object.freeze([
   'falconpriest',
   'prototype',
   'thor',
+  'archangel',
   'catastrophe',
   'elementalguide',
   'hameln',
@@ -132,7 +135,7 @@ export const PACK_MASTER = Object.freeze([
     packId: 1,
     type: 'pack',
     name: 'vol01:ビギニング',
-    description: '全45種類のカードが封入された拡張パック。',
+    description: `全${PACK_VOL01_CARD_IDS.length}種類のカードが封入された拡張パック。`,
     cost: PACK_EXCHANGE_COST,
     pointsKey: 'common',
     cardsPerPack: 1,

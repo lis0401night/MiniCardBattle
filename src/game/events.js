@@ -192,7 +192,12 @@ export function handleEventProgression() {
 }
 
 /**
- * すべてのイベント共通の対峙ダイアログ（コンテニュー時などにも使用）を設定
+ * 高難易度イベントおよび運命の邂逅イベント共通の対峙ダイアログを設定する。
+ * ダイアログ定義配列のインデックス [3] 以降を対峙パートとして抽出し、
+ * 6要素を超える場合は [3] 以降の全掛け合いを順番にキューへ積み、
+ * 従来形式（6要素以下）で [5] が省略されている場合は preBattleLine で補完する。
+ *
+ * @returns {void}
  */
 export function setupEventConfrontation() {
   GameState.appState = 'pre_dialogue';
@@ -217,33 +222,38 @@ export function setupEventConfrontation() {
     [];
 
   let confrontationLines = [];
-  // 3:対峙描写, 4:敵ボス台詞
-  if (dialogs[3]) confrontationLines.push({ ...dialogs[3] });
-  if (dialogs[4]) confrontationLines.push({ ...dialogs[4] });
-
-  // 5:プレイヤーの返し台詞
-  // ミラーマッチ等で [5] に専用台詞が手動設定されている場合はそれを使う。
-  // 無い場合でも、キャラクターの preBattleLine があれば動的にそれを第三の台詞として表示する。
-  if (dialogs[5]) {
-    confrontationLines.push({ ...dialogs[5] });
+  if (dialogs.length > 6) {
+    // [3] 以降に複数ターンの掛け合いが定義されている場合は全要素を順番に展開する
+    confrontationLines = dialogs.slice(3).map((line) => ({ ...line }));
   } else {
-    const baseChar = CHARACTERS[charId] || GameState.playerConfig;
-    const skinsObj = GameState.playerConfig?.skins || baseChar?.skins;
-    const skinDef =
-      confrontationSkinId !== 'default' &&
-      skinsObj &&
-      (skinsObj[confrontationSkinId] ||
-        skinsObj[`${charId}_${confrontationSkinId}`] ||
-        (confrontationSkinId.includes('_')
-          ? skinsObj[confrontationSkinId.split('_').slice(1).join('_')]
-          : null));
-    const fallbackLine =
-      skinDef?.preBattleLine || GameState.playerConfig?.preBattleLine;
-    if (fallbackLine) {
-      confrontationLines.push({
-        speaker: 'player',
-        text: fallbackLine,
-      });
+    // 3:対峙描写, 4:敵ボス台詞
+    if (dialogs[3]) confrontationLines.push({ ...dialogs[3] });
+    if (dialogs[4]) confrontationLines.push({ ...dialogs[4] });
+
+    // 5:プレイヤーの返し台詞
+    // ミラーマッチ等で [5] に専用台詞が手動設定されている場合はそれを使う。
+    // 無い場合でも、キャラクターの preBattleLine があれば動的にそれを第三の台詞として表示する。
+    if (dialogs[5]) {
+      confrontationLines.push({ ...dialogs[5] });
+    } else {
+      const baseChar = CHARACTERS[charId] || GameState.playerConfig;
+      const skinsObj = GameState.playerConfig?.skins || baseChar?.skins;
+      const skinDef =
+        confrontationSkinId !== 'default' &&
+        skinsObj &&
+        (skinsObj[confrontationSkinId] ||
+          skinsObj[`${charId}_${confrontationSkinId}`] ||
+          (confrontationSkinId.includes('_')
+            ? skinsObj[confrontationSkinId.split('_').slice(1).join('_')]
+            : null));
+      const fallbackLine =
+        skinDef?.preBattleLine || GameState.playerConfig?.preBattleLine;
+      if (fallbackLine) {
+        confrontationLines.push({
+          speaker: 'player',
+          text: fallbackLine,
+        });
+      }
     }
   }
 

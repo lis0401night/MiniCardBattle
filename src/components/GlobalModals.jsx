@@ -45,12 +45,15 @@ import {
   BATTLE_PASS_MASTER,
   getBattlePassById,
 } from '../utils/constants/battlePass.js';
+import { DUNGEON_EXCLUDED_LEADER_IDS } from '../utils/constants/battleDungeon.js';
 import {
   appendVersionQuery,
   DEFAULT_PLAYER_ICON,
   DEFAULT_PLAYER_NAME,
   OWNED_PLAYMATS_KEY,
   PROFILE_NAME_KEY,
+  STORY_BANNED_LEADER_IDS,
+  TOURNAMENT_BANNED_LEADER_IDS,
 } from '../utils/constants/config.js';
 import { DEFAULT_PACK_COVER_CARD_ID } from '../utils/constants/packs.js';
 
@@ -849,6 +852,7 @@ export default function GlobalModals() {
     };
   }, []);
 
+  const confirmModalSeqRef = useRef(0);
   const [confirmData, setConfirmData] = useState(null);
   const [errorData, setErrorData] = useState(null);
   const [enemyDeckData, setEnemyDeckData] = useState(null);
@@ -922,10 +926,22 @@ export default function GlobalModals() {
   };
 
   useEffect(() => {
-    setShowConfirmModalHook((message, onConfirm, onCancel, isAlert = false) => {
-      playSound?.(SOUNDS?.seClick);
-      setConfirmData({ message, onConfirm, onCancel, isAlert });
-    });
+    setShowConfirmModalHook(
+      (message, onConfirm, onCancel, isAlert = false, options = {}) => {
+        playSound?.(SOUNDS?.seClick);
+        confirmModalSeqRef.current += 1;
+        setConfirmData({
+          modalKey: confirmModalSeqRef.current,
+          message,
+          onConfirm,
+          onCancel,
+          isAlert,
+          title: options?.title || null,
+          confirmLabel: options?.confirmLabel || null,
+          isDanger: Boolean(options?.isDanger),
+        });
+      }
+    );
 
     // オンライン対戦の制限時間切れ時に、確認ダイアログをコールバックを呼ばずに閉じる
     setCloseConfirmModalHook(() => {
@@ -934,11 +950,16 @@ export default function GlobalModals() {
 
     setShowAlertModalHook((message, onClose) => {
       playSound?.(SOUNDS?.seClick);
+      confirmModalSeqRef.current += 1;
       setConfirmData({
+        modalKey: confirmModalSeqRef.current,
         message,
         onConfirm: onClose,
         onCancel: null,
         isAlert: true,
+        title: null,
+        confirmLabel: null,
+        isDanger: false,
       });
     });
 
@@ -1301,6 +1322,16 @@ export default function GlobalModals() {
       setSkillChoiceData(null);
     };
 
+    /**
+     * 墓地・デッキ・手札等のカード選択モーダルを表示するグローバルフック。
+     * options.sections が指定された場合（「招来」の召喚対象選択など）はセクション単位で上下に段分け表示する。
+     *
+     * @param {Array<object>} cards - 表示対象のカード配列
+     * @param {number} maxPow - 最大パワー条件
+     * @param {Function|null} onSelect - 選択確定またはキャンセル時のコールバック
+     * @param {object|boolean} [options={}] - 表示オプション（boolean指定時は isViewOnly として解釈）
+     * @returns {void}
+     */
     window.showDiscardSelectionModalReact = (
       cards,
       maxPow,
@@ -1316,6 +1347,8 @@ export default function GlobalModals() {
         onSelect,
         selectedIndex: null,
         selectedItems: [],
+        selectedSectionKey: null,
+        selectedSectionIndex: null,
         currentTab: 'blue',
         ...optArgs,
       });
@@ -1719,9 +1752,20 @@ export default function GlobalModals() {
             boxSizing: 'border-box',
           }}
         >
-          <div className="skill-modal-box modal-pop-animation">
-            <h2 style={{ color: '#facc15', marginBottom: '10px' }}>
-              {confirmData.isAlert ? 'お知らせ' : '確認'}
+          <div
+            key={confirmData.modalKey}
+            className="skill-modal-box modal-pop-animation"
+            style={
+              confirmData.isDanger ? { borderColor: '#ef4444' } : undefined
+            }
+          >
+            <h2
+              style={{
+                color: confirmData.isDanger ? '#f87171' : '#facc15',
+                marginBottom: '10px',
+              }}
+            >
+              {confirmData.title || (confirmData.isAlert ? 'お知らせ' : '確認')}
             </h2>
             <p
               style={{
@@ -1749,12 +1793,15 @@ export default function GlobalModals() {
                 className="btn"
                 style={{
                   flex: 1,
-                  background: 'linear-gradient(45deg, #0ea5e9, #0284c7)',
+                  background: confirmData.isDanger
+                    ? 'linear-gradient(45deg, #ef4444, #b91c1c)'
+                    : 'linear-gradient(45deg, #0ea5e9, #0284c7)',
                   margin: 0,
                 }}
                 onClick={handleConfirmOk}
               >
-                {confirmData.isAlert ? '閉じる' : 'OK'}
+                {confirmData.confirmLabel ||
+                  (confirmData.isAlert ? '閉じる' : 'OK')}
               </button>
             </div>
           </div>
@@ -2399,6 +2446,7 @@ export default function GlobalModals() {
               }}
               itemName={acquisitionData.name}
               itemTypeName="バトルパス"
+              description="バトルパス画面で「進行中に設定」するとポイントが同期・加算されます。"
               btnBg="linear-gradient(45deg, #eab308, #ca8a04)"
               btnColor="#fff"
               canClose={acquisitionData.canClose}
@@ -3565,16 +3613,41 @@ export default function GlobalModals() {
             >
               {(() => {
                 /**
-                 * リーダー変更候補のキャラクター一覧を生成する
-                 * ボスキャラクターは除外し、automataは解放済みの場合のみ表示する
+                 * リーダー変更候補のキャラクター一覧を生成する。
+                 * ボスキャラクターおよび現在モードでの禁止リーダー（ストーリー・夢幻の闘技祭・試練の宮殿）を除外し、
+                 * 解放制キャラクター（マキナ、アンジェ、ベルカ等）は解放済みの場合のみ表示する。
+                 *
                  * @returns {Array<Object>} フィルタリング済みのキャラクターオブジェクト配列
                  */
                 const getLeaderCandidates = () => {
                   const charsObj = CHARACTERS || {};
+                  const activeMode =
+                    GameState.gameMode === 'create_deck'
+                      ? GameState.prevGameModeForCreate || 'free'
+                      : GameState.gameMode;
                   return Object.values(charsObj).filter((c) => {
                     // ボスキャラクターは選択不可
                     if (BOSS_CHARACTER_IDS.includes(c.id)) return false;
-                    // 解放制キャラクター（automata, valkyria等）は解放済みの場合のみ表示
+                    // モード別のリーダー使用制限を適用
+                    if (
+                      activeMode === 'story' &&
+                      STORY_BANNED_LEADER_IDS.includes(c.id)
+                    ) {
+                      return false;
+                    }
+                    if (
+                      activeMode === 'tournament' &&
+                      TOURNAMENT_BANNED_LEADER_IDS.includes(c.id)
+                    ) {
+                      return false;
+                    }
+                    if (
+                      activeMode === 'battle_dungeon' &&
+                      DUNGEON_EXCLUDED_LEADER_IDS.has(c.id)
+                    ) {
+                      return false;
+                    }
+                    // 解放制キャラクター（automata, valkyria, daughter等）は解放済みの場合のみ表示
                     if (!canShowUnlockableCharacter(c.id)) return false;
                     return true;
                   });
@@ -4153,186 +4226,280 @@ export default function GlobalModals() {
               className="card-list-container"
               style={{ maxHeight: '50vh', overflowY: 'auto' }}
             >
-              <div id="gallery-card-grid" className="card-list-grid-3col">
-                {(() => {
-                  const currentCards =
-                    discardSelectionData.isDual &&
-                    discardSelectionData.currentTab === 'red'
-                      ? discardSelectionData.redCards
-                      : discardSelectionData.cards;
-                  const isMulti = discardSelectionData.maxChoices > 1;
+              {(() => {
+                const hasSections = Array.isArray(
+                  discardSelectionData.sections
+                );
+                const isMulti =
+                  !hasSections && discardSelectionData.maxChoices > 1;
+
+                /**
+                 * 選択モーダル内のカード1枚分のDOMを描画する共通ヘルパー。
+                 * タップで選択状態を更新し、長押しで詳細プレビューを開く。
+                 *
+                 * @param {object} cardItem - 描画対象カードオブジェクト
+                 * @param {number} idx - リストまたはセクション内のインデックス
+                 * @param {string|null} [sectionKey=null] - 段分け表示時のセクション識別子（'hand' | 'deck' 等）
+                 * @returns {import('react').ReactElement} カードアイテム要素
+                 */
+                const renderSelectionCardItem = (
+                  cardItem,
+                  idx,
+                  sectionKey = null
+                ) => {
+                  const imgUrl = getCardImgUrl ? getCardImgUrl(cardItem) : '';
+                  const rarityClass = cardItem.isToken
+                    ? ' rarity-0'
+                    : cardItem.rarity
+                      ? ` rarity-${cardItem.rarity}`
+                      : '';
+
+                  let isSelected = false;
+                  if (sectionKey !== null) {
+                    isSelected =
+                      discardSelectionData.selectedSectionKey === sectionKey &&
+                      discardSelectionData.selectedSectionIndex === idx;
+                  } else if (isMulti) {
+                    const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
+                    isSelected = discardSelectionData.selectedItems.some(
+                      (item) => item.key === itemKey
+                    );
+                  } else {
+                    isSelected =
+                      discardSelectionData.selectedIndex === idx &&
+                      (!discardSelectionData.isDual ||
+                        discardSelectionData.currentTab === 'blue');
+                  }
+
+                  const displayPower =
+                    sectionKey === 'hand' &&
+                    cardItem.currentPower !== undefined &&
+                    cardItem.currentPower !== null
+                      ? cardItem.currentPower
+                      : cardItem.power;
 
                   return (
-                    <>
-                      {currentCards.map((cardItem, idx) => {
-                        const imgUrl = getCardImgUrl
-                          ? getCardImgUrl(cardItem)
-                          : '';
-                        const rarityClass = cardItem.rarity
-                          ? ` rarity-${cardItem.rarity}`
-                          : '';
-
-                        let isSelected = false;
-                        if (isMulti) {
-                          const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
-                          isSelected = discardSelectionData.selectedItems.some(
-                            (item) => item.key === itemKey
-                          );
-                        } else {
-                          isSelected =
-                            discardSelectionData.selectedIndex === idx &&
-                            (!discardSelectionData.isDual ||
-                              discardSelectionData.currentTab === 'blue');
+                    <div
+                      key={
+                        sectionKey !== null
+                          ? `${sectionKey}_${cardItem.uid || cardItem.id}_${idx}`
+                          : idx
+                      }
+                      className="deck-card-item gallery-card-wrapper"
+                      onPointerDown={(e) => {
+                        if (e.pointerType === 'mouse' && e.button !== 0) return;
+                        discardHasLongPressedRef.current = false;
+                        discardLongPressTimerRef.current = setTimeout(() => {
+                          discardHasLongPressedRef.current = true;
+                          setCardPreviewData({ card: cardItem });
+                        }, 600);
+                      }}
+                      onPointerUp={() => {
+                        if (discardLongPressTimerRef.current)
+                          clearTimeout(discardLongPressTimerRef.current);
+                      }}
+                      onPointerLeave={() => {
+                        if (discardLongPressTimerRef.current)
+                          clearTimeout(discardLongPressTimerRef.current);
+                      }}
+                      onPointerCancel={() => {
+                        if (discardLongPressTimerRef.current)
+                          clearTimeout(discardLongPressTimerRef.current);
+                      }}
+                      onContextMenu={(e) => e.preventDefault()}
+                      onClick={() => {
+                        if (discardHasLongPressedRef.current) return;
+                        playSound?.(SOUNDS?.seClick);
+                        if (discardSelectionData.isViewOnly) {
+                          setCardPreviewData({ card: cardItem });
+                          return;
                         }
-
-                        return (
-                          <div
-                            key={idx}
-                            className="deck-card-item gallery-card-wrapper"
-                            onPointerDown={(e) => {
-                              if (e.pointerType === 'mouse' && e.button !== 0)
-                                return;
-                              discardHasLongPressedRef.current = false;
-                              discardLongPressTimerRef.current = setTimeout(
-                                () => {
-                                  discardHasLongPressedRef.current = true;
-                                  setCardPreviewData({ card: cardItem });
-                                },
-                                600
-                              );
-                            }}
-                            onPointerUp={() => {
-                              if (discardLongPressTimerRef.current)
-                                clearTimeout(discardLongPressTimerRef.current);
-                            }}
-                            onPointerLeave={() => {
-                              if (discardLongPressTimerRef.current)
-                                clearTimeout(discardLongPressTimerRef.current);
-                            }}
-                            onPointerCancel={() => {
-                              if (discardLongPressTimerRef.current)
-                                clearTimeout(discardLongPressTimerRef.current);
-                            }}
-                            onContextMenu={(e) => e.preventDefault()}
-                            onClick={() => {
-                              if (discardHasLongPressedRef.current) return;
-                              playSound?.(SOUNDS?.seClick);
-                              if (discardSelectionData.isViewOnly) {
-                                setCardPreviewData({ card: cardItem });
-                                return;
-                              }
-                              // 選択状態をセットする
-                              if (isMulti) {
-                                const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
-                                setDiscardSelectionData((prev) => {
-                                  let newSelected = [...prev.selectedItems];
-                                  const existingIdx = newSelected.findIndex(
-                                    (item) => item.key === itemKey
-                                  );
-                                  if (existingIdx >= 0) {
-                                    newSelected.splice(existingIdx, 1);
-                                  } else if (
-                                    newSelected.length < prev.maxChoices
-                                  ) {
-                                    newSelected.push({
-                                      key: itemKey,
-                                      tab: prev.currentTab,
-                                      card: cardItem,
-                                      idx,
-                                    });
-                                  }
-                                  return {
-                                    ...prev,
-                                    selectedItems: newSelected,
-                                  };
-                                });
-                              } else {
-                                setDiscardSelectionData((prev) => ({
-                                  ...prev,
-                                  selectedIndex: idx,
-                                }));
-                              }
-                            }}
-                            style={{
-                              cursor: 'pointer',
-                              transition: 'transform 0.2s',
-                              flexShrink: 0,
-                              minWidth: '90px',
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.transform = 'scale(1.05)';
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.transform = 'scale(1)';
-                            }}
-                          >
-                            <div
-                              className={`card ${discardSelectionData.isDual && discardSelectionData.currentTab === 'red' ? 'red' : 'blue'}${rarityClass}`}
-                              style={{
-                                transition: 'box-shadow 0.2s',
-                                boxShadow: isSelected
-                                  ? '0 0 15px 5px #facc15'
-                                  : cardItem.rarity >= 3
-                                    ? '0 0 10px rgba(255, 215, 0, 0.5)'
-                                    : 'none',
-                              }}
-                            >
-                              <div
-                                className="card-bg"
-                                style={{ backgroundImage: `url('${imgUrl}')` }}
-                              ></div>
-                              <div
-                                className="card-power"
-                                style={{
-                                  fontSize: '1.4rem',
-                                  bottom: 0,
-                                  right: '4px',
-                                }}
-                              >
-                                {cardItem.power}
-                              </div>
-                              {renderSkillTagReact(cardItem)}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: '0.7rem',
-                                color: '#fff',
-                                textAlign: 'center',
-                                marginTop: '4px',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
-                              {cardItem.name}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {currentCards.length === 0 && (
+                        // 選択状態をセットする
+                        if (sectionKey !== null) {
+                          setDiscardSelectionData((prev) => ({
+                            ...prev,
+                            selectedSectionKey: sectionKey,
+                            selectedSectionIndex: idx,
+                          }));
+                        } else if (isMulti) {
+                          const itemKey = `${discardSelectionData.currentTab}_${cardItem.uid || cardItem.id}_${idx}`;
+                          setDiscardSelectionData((prev) => {
+                            let newSelected = [...prev.selectedItems];
+                            const existingIdx = newSelected.findIndex(
+                              (item) => item.key === itemKey
+                            );
+                            if (existingIdx >= 0) {
+                              newSelected.splice(existingIdx, 1);
+                            } else if (newSelected.length < prev.maxChoices) {
+                              newSelected.push({
+                                key: itemKey,
+                                tab: prev.currentTab,
+                                card: cardItem,
+                                idx,
+                              });
+                            }
+                            return {
+                              ...prev,
+                              selectedItems: newSelected,
+                            };
+                          });
+                        } else {
+                          setDiscardSelectionData((prev) => ({
+                            ...prev,
+                            selectedIndex: idx,
+                          }));
+                        }
+                      }}
+                      style={{
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                        flexShrink: 0,
+                        minWidth: '90px',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <div
+                        className={`card ${discardSelectionData.isDual && discardSelectionData.currentTab === 'red' ? 'red' : 'blue'}${rarityClass}`}
+                        style={{
+                          transition: 'box-shadow 0.2s',
+                          boxShadow: isSelected
+                            ? '0 0 15px 5px #facc15'
+                            : cardItem.rarity >= 3
+                              ? '0 0 10px rgba(255, 215, 0, 0.5)'
+                              : 'none',
+                        }}
+                      >
                         <div
+                          className="card-bg"
                           style={{
-                            gridColumn: '1 / -1',
-                            color: '#94a3b8',
-                            textAlign: 'center',
-                            padding: '20px',
+                            backgroundImage: `url('${imgUrl}')`,
+                            filter: cardItem.filter || 'none',
+                          }}
+                        ></div>
+                        <div
+                          className="card-power"
+                          style={{
+                            fontSize: '1.4rem',
+                            bottom: 0,
+                            right: '4px',
                           }}
                         >
-                          墓地にはカードがありません
+                          {displayPower}
                         </div>
-                      )}
-                    </>
+                        {renderSkillTagReact(cardItem)}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.7rem',
+                          color: '#fff',
+                          textAlign: 'center',
+                          marginTop: '4px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {cardItem.name}
+                      </div>
+                    </div>
                   );
-                })()}
-              </div>
+                };
+
+                if (hasSections) {
+                  return (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px',
+                      }}
+                    >
+                      {discardSelectionData.sections.map((sec) => (
+                        <div key={sec.key}>
+                          <div
+                            style={{
+                              fontSize: '0.85rem',
+                              fontWeight: 'bold',
+                              color: '#facc15',
+                              borderBottom: '1px solid #475569',
+                              paddingBottom: '4px',
+                              marginBottom: '10px',
+                              textAlign: 'left',
+                            }}
+                          >
+                            {sec.label}（{sec.cards.length}枚）
+                          </div>
+                          <div className="card-list-grid-3col">
+                            {sec.cards.map((cardItem, idx) =>
+                              renderSelectionCardItem(cardItem, idx, sec.key)
+                            )}
+                            {sec.cards.length === 0 && (
+                              <div
+                                style={{
+                                  gridColumn: '1 / -1',
+                                  color: '#94a3b8',
+                                  textAlign: 'center',
+                                  padding: '12px 8px',
+                                  fontSize: '0.8rem',
+                                }}
+                              >
+                                {sec.emptyText ||
+                                  `${sec.label}に対象カードがありません`}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+
+                const currentCards =
+                  discardSelectionData.isDual &&
+                  discardSelectionData.currentTab === 'red'
+                    ? discardSelectionData.redCards
+                    : discardSelectionData.cards;
+
+                return (
+                  <div id="gallery-card-grid" className="card-list-grid-3col">
+                    {currentCards.map((cardItem, idx) =>
+                      renderSelectionCardItem(cardItem, idx, null)
+                    )}
+                    {currentCards.length === 0 && (
+                      <div
+                        style={{
+                          gridColumn: '1 / -1',
+                          color: '#94a3b8',
+                          textAlign: 'center',
+                          padding: '20px',
+                        }}
+                      >
+                        墓地にはカードがありません
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             {/* 閲覧モーダルでない場合は決定ボタンを表示 */}
             {!discardSelectionData.isViewOnly &&
               (() => {
-                const isMulti = discardSelectionData.maxChoices > 1;
-                const canSubmit = isMulti
-                  ? true
-                  : discardSelectionData.selectedIndex != null;
+                const hasSections = Array.isArray(
+                  discardSelectionData.sections
+                );
+                const isMulti =
+                  !hasSections && discardSelectionData.maxChoices > 1;
+                const canSubmit = hasSections
+                  ? discardSelectionData.selectedSectionKey !== null &&
+                    discardSelectionData.selectedSectionIndex !== null
+                  : isMulti
+                    ? true
+                    : discardSelectionData.selectedIndex != null;
                 const btnColor = canSubmit
                   ? 'linear-gradient(45deg, #10b981, #059669)'
                   : '#475569';
@@ -4352,8 +4519,23 @@ export default function GlobalModals() {
                       playSound?.(SOUNDS?.seClick);
 
                       let result = null;
-                      const isMulti = discardSelectionData.maxChoices > 1;
-                      if (isMulti) {
+                      if (hasSections) {
+                        const targetSec = discardSelectionData.sections.find(
+                          (s) =>
+                            s.key === discardSelectionData.selectedSectionKey
+                        );
+                        const pickedCard = targetSec
+                          ? targetSec.cards[
+                              discardSelectionData.selectedSectionIndex
+                            ]
+                          : null;
+                        result = pickedCard
+                          ? {
+                              card: pickedCard,
+                              zone: discardSelectionData.selectedSectionKey,
+                            }
+                          : null;
+                      } else if (isMulti) {
                         result = discardSelectionData.selectedItems.map(
                           (item) => ({ ...item.card, fromTab: item.tab })
                         );
@@ -4365,10 +4547,15 @@ export default function GlobalModals() {
                       }
 
                       // チュートリアルのフィルタリング
+                      const filterTargetCard = hasSections
+                        ? result?.card
+                        : result;
                       if (
                         !isMulti &&
-                        result &&
-                        filterDiscardSelectionSubmit(result.baseId || result.id)
+                        filterTargetCard &&
+                        filterDiscardSelectionSubmit(
+                          filterTargetCard.baseId || filterTargetCard.id
+                        )
                       ) {
                         return;
                       }

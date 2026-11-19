@@ -7,6 +7,7 @@
 
 import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
 import { CARD_MASTER } from '../../utils/constants/cards.js';
+import { MAX_HAND_CAPACITY } from '../../utils/constants/config.js';
 import { ACTIVE_SKILLS } from '../../utils/constants/skills.js';
 import {
   applyEquipment,
@@ -127,9 +128,9 @@ function tryEquipToken(
 }
 
 /**
- * ダメージ＋回復系リーダースキル（神炎 god_flame / 断罪のクロス condemnation）の共通実行ヘルパー
+ * ダメージ＋回復系リーダースキル（神炎の審判 god_flame / 星界の秩序 astral_order / ギロチンクロス condemnation）の共通実行ヘルパー
  * @param {Object} state - バトル状態オブジェクト
- * @param {string} action - スキルID ('god_flame' | 'condemnation')
+ * @param {string} action - スキルID ('god_flame' | 'astral_order' | 'condemnation')
  * @param {string} owner - スキル発動者 ('blue' | 'red')
  * @param {number} damageAmount - 与えるダメージ量および回復量
  * @param {Array} events - イベントログ配列
@@ -1397,7 +1398,7 @@ export function applyLeaderSkillLogic(
         laneIdx: lane2,
       });
     }
-  } else if (action === 'warlock_place_demons') {
+  } else if (action === 'warlock_place_daemons') {
     events.push({ type: 'leader_skill', skill: action, side: owner });
 
     const sealedLanes = isBlue
@@ -1476,7 +1477,7 @@ export function applyLeaderSkillLogic(
           side: owner,
           lane: targetLane,
           card: JSON.parse(JSON.stringify(newSkeleton)),
-          source: 'warlock_place_demons',
+          source: 'warlock_place_daemons',
         });
       }
     }
@@ -1522,7 +1523,7 @@ export function applyLeaderSkillLogic(
             side: owner,
             lane: l,
             card: JSON.parse(JSON.stringify(newDaemon)),
-            source: 'warlock_place_demons',
+            source: 'warlock_place_daemons',
           });
         }
       }
@@ -1856,7 +1857,7 @@ export function applyLeaderSkillLogic(
         });
       }
     }
-  } else if (action === 'god_flame') {
+  } else if (action === 'god_flame' || action === 'astral_order') {
     executeFlameHealLeaderSkill(state, action, owner, GOD_FLAME_AMOUNT, events);
   } else if (action === 'condemnation') {
     executeFlameHealLeaderSkill(
@@ -1949,6 +1950,436 @@ export function applyLeaderSkillLogic(
     }
     // 戦乙女の加護を自分に付与
     grantValkyriaGuard(state, owner, events);
+  } else if (action === 'daemon_call') {
+    // 次元斬: 自分のデッキからカードを1枚選び、召喚ルール制約に従って自分のレーンに「召喚」する
+    const deck = isBlue ? state.playerDeck : state.enemyDeck;
+    if (!Array.isArray(deck) || deck.length === 0) return events;
+
+    const sealedLanes = isBlue
+      ? state.playerSealedLanes
+      : state.enemySealedLanes;
+    const baseCandidates =
+      state.turnCount === 1 && state.firstPlayer === owner ? [1] : [0, 1, 2];
+
+    const getLegalLanesForDeckCard = (cardObj) =>
+      baseCandidates.filter((laneIdx) => {
+        if (sealedLanes && sealedLanes[laneIdx] > 0) return false;
+        if (hasSkill(cardObj, 'legendary') && laneIdx !== 1) return false;
+        if (hasSkill(cardObj, 'takeover') && board[laneIdx] === null)
+          return false;
+        if (hasSkill(cardObj, 'challenge') && eBoard[laneIdx] === null)
+          return false;
+        if (
+          hasSkill(cardObj, 'apex') &&
+          (!board[laneIdx] || !hasSkill(board[laneIdx], 'legendary'))
+        ) {
+          return false;
+        }
+        return true;
+      });
+
+    let selectedDeckIdx = -1;
+    if (forcedTargetUid) {
+      selectedDeckIdx = deck.findIndex(
+        (c) =>
+          c &&
+          (c.uid === forcedTargetUid ||
+            c.id === forcedTargetUid ||
+            c.baseId === forcedTargetUid)
+      );
+    }
+    if (
+      selectedDeckIdx === -1 &&
+      forcedTargetIdx !== null &&
+      forcedTargetIdx >= 0 &&
+      deck[forcedTargetIdx]
+    ) {
+      selectedDeckIdx = forcedTargetIdx;
+    }
+    if (selectedDeckIdx === -1) {
+      let bestPow = -1;
+      for (let idx = 0; idx < deck.length; idx++) {
+        const cand = deck[idx];
+        if (!cand) continue;
+        const mData = CARD_MASTER.find(
+          (m) => m.id === (cand.baseId || cand.id)
+        );
+        const checkCard = mData || cand;
+        if (getLegalLanesForDeckCard(checkCard).length === 0) continue;
+        const p = checkCard.power || 0;
+        if (p > bestPow) {
+          bestPow = p;
+          selectedDeckIdx = idx;
+        }
+      }
+    }
+
+    if (selectedDeckIdx === -1 || !deck[selectedDeckIdx]) return events;
+
+    const rawDeckCard = deck[selectedDeckIdx];
+    const masterData = CARD_MASTER.find(
+      (m) => m.id === (rawDeckCard.baseId || rawDeckCard.id)
+    );
+    const restoredCard = masterData
+      ? JSON.parse(JSON.stringify(masterData))
+      : JSON.parse(JSON.stringify(rawDeckCard));
+    restoredCard.uid = `${owner}_ls_dc_${Math.floor(getSeededRandom() * 1000000000)}`;
+    restoredCard.baseId = rawDeckCard.baseId || rawDeckCard.id;
+    restoredCard.owner = owner;
+    restoredCard.basePower = restoredCard.power;
+    restoredCard.currentPower = restoredCard.power;
+    restoredCard.rarity = restoredCard.rarity || 1;
+
+    const legalLanes = getLegalLanesForDeckCard(restoredCard);
+    if (legalLanes.length === 0) return events;
+
+    let l = -1;
+    if (tokenLanes && tokenLanes.length > 0) {
+      l = legalLanes.includes(tokenLanes[0]) ? tokenLanes[0] : -1;
+    } else {
+      l = getBestSimulatedPlacementLane(
+        state,
+        owner,
+        restoredCard,
+        baseCandidates,
+        true
+      );
+    }
+    if (l === -1) return events;
+
+    // 山札から取り除いてシャッフル
+    deck.splice(selectedDeckIdx, 1);
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(getSeededRandom() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+
+    const existingCard = board[l];
+    const unionSkill =
+      restoredCard.skills && restoredCard.skills.find((s) => s.id === 'union');
+    const unionMaster =
+      existingCard &&
+      unionSkill &&
+      matchesUnionMaterial(existingCard, unionSkill)
+        ? CARD_MASTER.find((c) => c.id === unionSkill.summonId)
+        : null;
+
+    if (existingCard && hasSkill(existingCard, 'startup')) {
+      resolveStartupFade(
+        owner,
+        existingCard,
+        l,
+        JSON.parse(JSON.stringify(restoredCard)),
+        events
+      );
+    } else if (existingCard && unionMaster) {
+      const unionCard = JSON.parse(JSON.stringify(unionMaster));
+      unionCard.uid = `${owner}_ls_dc_un_${Math.floor(getSeededRandom() * 1000000000)}`;
+      unionCard.owner = owner;
+      unionCard.baseId = unionCard.id;
+      unionCard.basePower = unionCard.power;
+      unionCard.currentPower = unionCard.power;
+      unionCard.unionMaterials = [
+        JSON.parse(JSON.stringify(existingCard)),
+        JSON.parse(JSON.stringify(restoredCard)),
+      ];
+      unionCard.stunTurns = 0;
+      unionCard.stunAppliedThisTurn = false;
+      board[l] = unionCard;
+      events.push({
+        type: 'summon_card',
+        side: owner,
+        lane: l,
+        card: JSON.parse(JSON.stringify(unionCard)),
+        source: 'union',
+      });
+      if (!state._deferDaemonCallOnPlay) {
+        if (Array.isArray(unionCard.skills)) {
+          unionCard.skills.forEach((sk) => {
+            if (ACTIVE_SKILLS.includes(sk.id) && board[l] === unionCard) {
+              applyActiveSkillLogic(state, owner, l, sk.id, sk.value, events);
+            }
+          });
+        }
+        unionCard.skillTriggered = true;
+      } else {
+        unionCard.skillTriggered = false;
+      }
+    } else if (
+      !tryEquipToken(state, board, l, restoredCard, owner, events, true)
+    ) {
+      if (existingCard) {
+        quietDiscardFromBoard(state, owner, l);
+      }
+      board[l] = restoredCard;
+      events.push({
+        type: 'summon_card',
+        side: owner,
+        lane: l,
+        card: JSON.parse(JSON.stringify(restoredCard)),
+        source: 'daemon_call',
+      });
+      if (!state._deferDaemonCallOnPlay) {
+        if (Array.isArray(restoredCard.skills)) {
+          restoredCard.skills.forEach((sk) => {
+            if (ACTIVE_SKILLS.includes(sk.id) && board[l] === restoredCard) {
+              applyActiveSkillLogic(state, owner, l, sk.id, sk.value, events);
+            }
+          });
+        }
+        restoredCard.skillTriggered = true;
+      } else {
+        restoredCard.skillTriggered = false;
+      }
+    }
+  } else if (action === 'demonic_call') {
+    // 万魔の招来: 自分の手札と墓地を全てデッキに戻し、デッキから1枚召喚してからカードを4枚引く
+    const deck = isBlue ? state.playerDeck : state.enemyDeck;
+    const hand = isBlue ? state.playerHand : state.enemyHand;
+    const discard = isBlue ? state.playerDiscard : state.enemyDiscard;
+
+    const restoreForSimDeck = (card) => {
+      if (!card || card.isToken || card.id?.startsWith('token_')) return null;
+      const lookupId = card.baseId || card.id;
+      const masterData = CARD_MASTER.find((m) => m.id === lookupId);
+      const restored = masterData
+        ? JSON.parse(JSON.stringify(masterData))
+        : JSON.parse(JSON.stringify(card));
+      restored.baseId = lookupId;
+      restored.owner = owner;
+      restored.basePower = restored.power;
+      restored.currentPower = restored.power;
+      restored.uid = `${owner}_sim_dk_${Math.floor(getSeededRandom() * 1000000000)}`;
+      return restored;
+    };
+
+    if (Array.isArray(hand)) {
+      while (hand.length > 0) {
+        const c = restoreForSimDeck(hand.pop());
+        if (c && Array.isArray(deck)) deck.push(c);
+      }
+    }
+    if (Array.isArray(discard)) {
+      while (discard.length > 0) {
+        const c = restoreForSimDeck(discard.pop());
+        if (c && Array.isArray(deck)) deck.push(c);
+      }
+    }
+
+    if (Array.isArray(deck)) {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(getSeededRandom() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+    }
+
+    events.push({ type: 'leader_skill', skill: action, side: owner });
+
+    if (Array.isArray(deck) && deck.length > 0) {
+      const sealedLanes = isBlue
+        ? state.playerSealedLanes
+        : state.enemySealedLanes;
+      const baseCandidates =
+        state.turnCount === 1 && state.firstPlayer === owner ? [1] : [0, 1, 2];
+
+      const getLegalLanesForDeckCard = (cardObj) =>
+        baseCandidates.filter((laneIdx) => {
+          if (sealedLanes && sealedLanes[laneIdx] > 0) return false;
+          if (hasSkill(cardObj, 'legendary') && laneIdx !== 1) return false;
+          if (hasSkill(cardObj, 'takeover') && board[laneIdx] === null)
+            return false;
+          if (hasSkill(cardObj, 'challenge') && eBoard[laneIdx] === null)
+            return false;
+          if (
+            hasSkill(cardObj, 'apex') &&
+            (!board[laneIdx] || !hasSkill(board[laneIdx], 'legendary'))
+          ) {
+            return false;
+          }
+          return true;
+        });
+
+      let selectedDeckIdx = -1;
+      if (forcedTargetUid) {
+        selectedDeckIdx = deck.findIndex(
+          (c) =>
+            c &&
+            (c.uid === forcedTargetUid ||
+              c.id === forcedTargetUid ||
+              c.baseId === forcedTargetUid)
+        );
+      }
+      if (
+        selectedDeckIdx === -1 &&
+        forcedTargetIdx !== null &&
+        forcedTargetIdx >= 0 &&
+        deck[forcedTargetIdx]
+      ) {
+        selectedDeckIdx = forcedTargetIdx;
+      }
+      if (selectedDeckIdx === -1) {
+        let bestPow = -1;
+        for (let idx = 0; idx < deck.length; idx++) {
+          const cand = deck[idx];
+          if (!cand) continue;
+          const mData = CARD_MASTER.find(
+            (m) => m.id === (cand.baseId || cand.id)
+          );
+          const checkCard = mData || cand;
+          if (getLegalLanesForDeckCard(checkCard).length === 0) continue;
+          const p = checkCard.power || 0;
+          if (p > bestPow) {
+            bestPow = p;
+            selectedDeckIdx = idx;
+          }
+        }
+      }
+
+      if (selectedDeckIdx !== -1 && deck[selectedDeckIdx]) {
+        const rawDeckCard = deck[selectedDeckIdx];
+        const masterData = CARD_MASTER.find(
+          (m) => m.id === (rawDeckCard.baseId || rawDeckCard.id)
+        );
+        const restoredCard = masterData
+          ? JSON.parse(JSON.stringify(masterData))
+          : JSON.parse(JSON.stringify(rawDeckCard));
+        restoredCard.uid = `${owner}_ls_dmc_${Math.floor(getSeededRandom() * 1000000000)}`;
+        restoredCard.baseId = rawDeckCard.baseId || rawDeckCard.id;
+        restoredCard.owner = owner;
+        restoredCard.basePower = restoredCard.power;
+        restoredCard.currentPower = restoredCard.power;
+        restoredCard.rarity = restoredCard.rarity || 1;
+
+        const legalLanes = getLegalLanesForDeckCard(restoredCard);
+        if (legalLanes.length > 0) {
+          const l =
+            tokenLanes && tokenLanes.length > 0
+              ? legalLanes.includes(tokenLanes[0])
+                ? tokenLanes[0]
+                : -1
+              : getBestSimulatedPlacementLane(
+                  state,
+                  owner,
+                  restoredCard,
+                  baseCandidates,
+                  true
+                );
+          if (l !== -1) {
+            deck.splice(selectedDeckIdx, 1);
+            for (let i = deck.length - 1; i > 0; i--) {
+              const j = Math.floor(getSeededRandom() * (i + 1));
+              [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            const existingCard = board[l];
+            const unionSkill =
+              restoredCard.skills &&
+              restoredCard.skills.find((s) => s.id === 'union');
+            const unionMaster =
+              existingCard &&
+              unionSkill &&
+              matchesUnionMaterial(existingCard, unionSkill)
+                ? CARD_MASTER.find((c) => c.id === unionSkill.summonId)
+                : null;
+
+            if (existingCard && hasSkill(existingCard, 'startup')) {
+              resolveStartupFade(
+                owner,
+                existingCard,
+                l,
+                JSON.parse(JSON.stringify(restoredCard)),
+                events
+              );
+            } else if (existingCard && unionMaster) {
+              const unionCard = JSON.parse(JSON.stringify(unionMaster));
+              unionCard.uid = `${owner}_ls_dmc_un_${Math.floor(getSeededRandom() * 1000000000)}`;
+              unionCard.owner = owner;
+              unionCard.baseId = unionCard.id;
+              unionCard.basePower = unionCard.power;
+              unionCard.currentPower = unionCard.power;
+              unionCard.unionMaterials = [
+                JSON.parse(JSON.stringify(existingCard)),
+                JSON.parse(JSON.stringify(restoredCard)),
+              ];
+              unionCard.stunTurns = 0;
+              unionCard.stunAppliedThisTurn = false;
+              board[l] = unionCard;
+              events.push({
+                type: 'summon_card',
+                side: owner,
+                lane: l,
+                card: JSON.parse(JSON.stringify(unionCard)),
+                source: 'union',
+              });
+              if (Array.isArray(unionCard.skills)) {
+                unionCard.skills.forEach((sk) => {
+                  if (ACTIVE_SKILLS.includes(sk.id) && board[l] === unionCard) {
+                    applyActiveSkillLogic(
+                      state,
+                      owner,
+                      l,
+                      sk.id,
+                      sk.value,
+                      events
+                    );
+                  }
+                });
+              }
+              unionCard.skillTriggered = true;
+            } else if (
+              !tryEquipToken(state, board, l, restoredCard, owner, events, true)
+            ) {
+              if (existingCard) {
+                quietDiscardFromBoard(state, owner, l);
+              }
+              board[l] = restoredCard;
+              events.push({
+                type: 'summon_card',
+                side: owner,
+                lane: l,
+                card: JSON.parse(JSON.stringify(restoredCard)),
+                source: 'demonic_call',
+              });
+              if (Array.isArray(restoredCard.skills)) {
+                restoredCard.skills.forEach((sk) => {
+                  if (
+                    ACTIVE_SKILLS.includes(sk.id) &&
+                    board[l] === restoredCard
+                  ) {
+                    applyActiveSkillLogic(
+                      state,
+                      owner,
+                      l,
+                      sk.id,
+                      sk.value,
+                      events
+                    );
+                  }
+                });
+              }
+              restoredCard.skillTriggered = true;
+            }
+          }
+        }
+      }
+
+      // その後、カードを4枚引く
+      if (Array.isArray(hand)) {
+        for (
+          let i = 0;
+          i < 4 && deck.length > 0 && hand.length < MAX_HAND_CAPACITY;
+          i++
+        ) {
+          const drawn = deck.shift();
+          if (drawn) {
+            drawn.uid = `${owner}_sim_dr_${Math.floor(getSeededRandom() * 1000000000)}`;
+            hand.push(drawn);
+          }
+        }
+      }
+    }
   }
 
   processDestructionTriggers(state, events);

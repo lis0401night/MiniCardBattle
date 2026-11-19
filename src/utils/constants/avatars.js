@@ -52,6 +52,11 @@ const STANDALONE_EXTRA_ICONS = [
     name: 'アンジェ',
     path: iconPath('valkyria'),
   },
+  {
+    id: 'daughter',
+    name: 'ベルカ',
+    path: iconPath('daughter'),
+  },
   // 高難易度
   {
     id: 'satan',

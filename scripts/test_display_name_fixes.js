@@ -117,7 +117,9 @@ test('getLeaderNameStyle: 14文字以上の非常に長いプレイヤー名の�
   // 15文字: 1 - (15 - 13.5)*0.03 = 0.955 -> 約 0.96em（過度に小さくならない）
   assert.ok(longNum >= 0.8 && longNum <= 0.98);
 
-  const veryLongStyle = getLeaderNameStyle('あいうえおかきくけこさしすせそたちつてとなにぬねの'); // 25文字
+  const veryLongStyle = getLeaderNameStyle(
+    'あいうえおかきくけこさしすせそたちつてとなにぬねの'
+  ); // 25文字
   assert.ok(veryLongStyle.fontSize);
   const veryLongNum = parseFloat(veryLongStyle.fontSize);
   assert.strictEqual(veryLongNum, 0.8); // 下限 0.80em 保証

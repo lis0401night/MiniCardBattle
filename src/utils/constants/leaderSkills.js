@@ -50,6 +50,12 @@ export const LEADER_SKILLS = {
     cost: 4,
     action: 'god_flame',
   },
+  astral_order: {
+    name: '星界の秩序',
+    desc: '(SP:4) 相手リーダーに3ダメージを与え、自身のHPを3回復する。',
+    cost: 4,
+    action: 'astral_order',
+  },
   devilhunter_resurrect: {
     name: '棺の解放',
     desc: '(SP:4) 自分の墓地からカードを1枚選び、自分のレーンに配置する。',
@@ -86,11 +92,11 @@ export const LEADER_SKILLS = {
     cost: 5,
     action: 'viola_domination',
   },
-  warlock_place_demons: {
+  warlock_place_daemons: {
     name: '魔宴の儀',
     desc: '(SP:5) 自分のレーンに「スケルトン(P:3)」を1体配置する。その後、自分のカードが配置されている全てのレーンに「デーモン(P:7)」を配置する。',
     cost: 5,
-    action: 'warlock_place_demons',
+    action: 'warlock_place_daemons',
   },
   satan_avatar: {
     name: '魔王の化身',
@@ -109,6 +115,12 @@ export const LEADER_SKILLS = {
     desc: '(SP:4) 次の自分のターン開始時まで、自分のカードは破壊されず、リーダーとカードが受ける全てのダメージを0にする。',
     cost: 4,
     action: 'valkyria_guard',
+  },
+  daemon_call: {
+    name: '次元斬',
+    desc: '(SP:5) 自分のデッキからカードを1枚選び、自分のレーンに召喚する。',
+    cost: 5,
+    action: 'daemon_call',
   },
   // --- 高難易度用リーダースキル ---
   android_high_volley: {
@@ -183,6 +195,12 @@ export const LEADER_SKILLS = {
     cost: 4,
     action: 'ragnarok',
   },
+  demonic_call: {
+    name: '万魔の招来',
+    desc: '(SP:5) 自分の手札と墓地を全てデッキに戻す。その後、自分のデッキからカードを1枚選び自分のレーンに召喚し、カードを4枚引く。',
+    cost: 5,
+    action: 'demonic_call',
+  },
 };
 
 /**
@@ -191,6 +209,7 @@ export const LEADER_SKILLS = {
  */
 export const DAMAGE_PLAYER_LEADER_SKILL_ACTIONS = [
   'god_flame',
+  'astral_order',
   'condemnation',
   'void_purge',
   'android_high_volley',

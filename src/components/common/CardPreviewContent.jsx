@@ -191,11 +191,15 @@ function CardPreviewContent({
   const isDeckEditContext =
     Boolean(styleProps.fromDeckEdit) ||
     (typeof document !== 'undefined' &&
-      !!document.getElementById('screen-deck-edit')?.classList.contains('active'));
+      !!document
+        .getElementById('screen-deck-edit')
+        ?.classList.contains('active'));
   const isCardListContext =
     Boolean(styleProps.fromCardList) ||
     (typeof document !== 'undefined' &&
-      !!document.getElementById('screen-card-list')?.classList.contains('active'));
+      !!document
+        .getElementById('screen-card-list')
+        ?.classList.contains('active'));
   const isBattleContext =
     GameState.isInBattle ||
     styleProps.isBoard !== undefined ||
@@ -205,9 +209,7 @@ function CardPreviewContent({
       !!document.getElementById('screen-battle')?.classList.contains('active'));
 
   const canToggleCustomization =
-    (isDeckEditContext || isCardListContext) &&
-    !isBattleContext &&
-    !card.owner;
+    (isDeckEditContext || isCardListContext) && !isBattleContext && !card.owner;
 
   /**
    * カードのスキルタグ要素を安全にレンダリングする。
@@ -343,13 +345,13 @@ function CardPreviewContent({
                       overflow: 'hidden',
                       cursor: 'pointer',
                       border: isBattlePass
-                        ? '2px solid rgba(245, 158, 11, 0.6)'
+                        ? '2px solid #facc15'
                         : isShineTicket
                           ? '2px solid rgba(234, 179, 8, 0.6)'
                           : '2px solid rgba(250, 204, 21, 0.6)',
                       borderRadius: '8px',
                       boxShadow: isBattlePass
-                        ? '0 4px 15px rgba(245, 158, 11, 0.3)'
+                        ? '0 0 15px rgba(250, 204, 21, 0.7)'
                         : isShineTicket
                           ? '0 4px 15px rgba(234, 179, 8, 0.3)'
                           : '0 4px 15px rgba(250, 204, 21, 0.3)',
@@ -890,7 +892,7 @@ function CardPreviewContent({
                 <div
                   style={{
                     background: 'rgba(15, 23, 42, 0.7)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    border: '1px solid rgba(250, 204, 21, 0.3)',
                     borderRadius: '8px',
                     padding: '8px 12px',
                   }}
@@ -899,7 +901,7 @@ function CardPreviewContent({
                     style={{
                       fontSize: '0.85rem',
                       fontWeight: 'bold',
-                      color: '#f59e0b',
+                      color: '#facc15',
                       marginBottom: '6px',
                     }}
                   >
@@ -923,7 +925,7 @@ function CardPreviewContent({
                       <span style={{ color: '#e2e8f0', fontWeight: 'bold' }}>
                         最大レベル
                       </span>
-                      <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                      <span style={{ color: '#facc15', fontWeight: 'bold' }}>
                         {card?.levels?.length
                           ? `Lv.${card.levels.length}`
                           : 'Lv.15'}

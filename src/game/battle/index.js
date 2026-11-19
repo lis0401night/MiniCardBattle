@@ -60,6 +60,8 @@ export {
   waitPlayerDiscardSelection,
   waitPlayerDualDiscardSelection,
   waitSkillChoice,
+  waitPlayerInvokeSacrificeSelection,
+  waitPlayerInvokeCardSelection,
 } from './battleSelection.js';
 
 // --- battleCombat.js: カードプレイ・戦闘・墓地処理 ---

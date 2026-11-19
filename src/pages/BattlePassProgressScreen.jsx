@@ -1,7 +1,7 @@
 /**
  * Mini Card Battle - バトルパス達成状況画面
  *
- * 選択されたバトルパスの蓄積ポイント、および10段階の達成レベル進捗を表示します。
+ * 選択されたバトルパスの蓄積ポイント、進行中設定、および15段階の達成レベル進捗を表示します。
  * 「運命の邂逅」の達成状況画面のUIデザインを踏襲しています。
  */
 
@@ -17,15 +17,23 @@ import {
   showSkinAcquisitionModal,
 } from '../services/uiGallery.js';
 import { showBattlePassMenu } from '../services/uiMainCore.js';
-import { showAlertModal, showConfirmModal } from '../services/uiModals.js';
+import {
+  showAlertModal,
+  showBattlePassSyncModal,
+  showConfirmModal,
+} from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import {
   BATTLE_PASS_MASTER,
+  checkIsBattlePassUnlocked,
   claimLevelReward,
   getBattlePassById,
   getBattlePassClaimedLevels,
   getBattlePassPoints,
+  getSelectedBattlePassId,
+  getUnallocatedQuickRating,
   setBattlePassLevelClaimed,
+  setSelectedBattlePass,
   unlockAllBattlePass,
 } from '../utils/constants/battlePass.js';
 import { playSound } from '../utils/gameUtils.js';
@@ -36,23 +44,34 @@ import { SOUNDS } from '../utils/sounds.js';
  * @returns {import('react').ReactElement} バトルパス達成状況画面
  */
 export default function BattlePassProgressScreen() {
-  // 現在選択中のバトルパスID（未設定の場合はvol1）
-  const passId = GameState?.activeBattlePassId || 'battle_pass_vol1';
-  const passData = getBattlePassById(passId) || BATTLE_PASS_MASTER[0];
+  // 現在閲覧中のバトルパスID（未設定の場合はvol1）
+  const [activePassId, setActivePassId] = useState(
+    () => GameState?.activeBattlePassId || 'battle_pass_vol1'
+  );
+  const passData = getBattlePassById(activePassId) || BATTLE_PASS_MASTER[0];
 
   const [currentPoints, setCurrentPoints] = useState(() =>
-    getBattlePassPoints(passId)
+    getBattlePassPoints(activePassId)
   );
   const [claimedLevels, setClaimedLevels] = useState(() =>
-    getBattlePassClaimedLevels(passId)
+    getBattlePassClaimedLevels(activePassId)
+  );
+  const [selectedPassId, setSelectedPassId] = useState(() =>
+    getSelectedBattlePassId()
   );
 
-  // 画面アクティブ時などに最新ポイントおよび受取済み状況を再取得
+  // 画面アクティブ時などに表示対象パスID・最新ポイント・進行中設定・受取済み状況を再取得
   useEffect(() => {
+    /**
+     * 表示中のバトルパス状態を最新化する内部ハンドラ
+     * @returns {void}
+     */
     const handleRefresh = () => {
-      const activeId = GameState?.activeBattlePassId || 'battle_pass_vol1';
-      setCurrentPoints(getBattlePassPoints(activeId));
-      setClaimedLevels(getBattlePassClaimedLevels(activeId));
+      const nextPassId = GameState?.activeBattlePassId || 'battle_pass_vol1';
+      setActivePassId(nextPassId);
+      setSelectedPassId(getSelectedBattlePassId());
+      setCurrentPoints(getBattlePassPoints(nextPassId));
+      setClaimedLevels(getBattlePassClaimedLevels(nextPassId));
     };
 
     window.addEventListener('focus', handleRefresh);
@@ -86,9 +105,10 @@ export default function BattlePassProgressScreen() {
    * @returns {void}
    */
   const executeUnlockAll = () => {
-    const res = unlockAllBattlePass(passId);
+    const res = unlockAllBattlePass(activePassId);
     setCurrentPoints(res.currentPoints);
     setClaimedLevels(res.claimedLevels);
+    setSelectedPassId(getSelectedBattlePassId());
     playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seClick);
     showAlertModal?.(
       '【全レベル達成】\nバトルパスの全レベルを達成しました！\n各レベルの「受取」ボタンを押して報酬をお受け取りください。'
@@ -117,15 +137,35 @@ export default function BattlePassProgressScreen() {
   const handleTitleClick = useEasterEgg(handleDebugUnlockAll);
 
   /**
+   * 閲覧中のバトルパスを「進行中」に設定し、未同期レートを同期して説明モーダルを表示するハンドラ
+   * @returns {void}
+   */
+  const handleSetActivePass = () => {
+    const res = setSelectedBattlePass(activePassId);
+    if (!res.success) return;
+
+    playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seClick);
+    setSelectedPassId(res.passId);
+    setCurrentPoints(res.newPoints);
+
+    showBattlePassSyncModal(
+      passData?.name || 'バトルパス',
+      res.syncedPoints,
+      res.newPoints
+    );
+  };
+
+  /**
    * 個別達成レベルの報酬受取処理
    * @param {Object} threshold - 達成レベル定義オブジェクト
+   * @returns {void}
    */
   const handleClaimReward = (threshold) => {
     if (!threshold.rewardType || claimedLevels.includes(threshold.level))
       return;
 
     claimLevelReward(threshold);
-    const next = setBattlePassLevelClaimed(passId, threshold.level);
+    const next = setBattlePassLevelClaimed(activePassId, threshold.level);
     setClaimedLevels(next);
     playSound?.(SOUNDS?.sePowerUp || SOUNDS?.seClick);
 
@@ -165,6 +205,10 @@ export default function BattlePassProgressScreen() {
   };
 
   const maxPoints = passData?.maxPoints || 150;
+  const isCompleted = currentPoints >= maxPoints;
+  const isSelected = selectedPassId === activePassId;
+  const isUnlocked = checkIsBattlePassUnlocked(activePassId);
+  const unallocatedRating = getUnallocatedQuickRating();
   const overallPercentage = Math.min(
     100,
     Math.round((currentPoints / maxPoints) * 100)
@@ -274,6 +318,73 @@ export default function BattlePassProgressScreen() {
           >
             クイックマッチ勝利でポイント獲得（対人: +3Pt / CPU: +1Pt）
           </p>
+
+          {isUnlocked && (
+            <div
+              style={{
+                marginTop: '10px',
+                paddingTop: '10px',
+                borderTop: '1px solid #1e293b',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '8px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
+                未同期レート:{' '}
+                <strong
+                  style={{
+                    color: unallocatedRating > 0 ? '#facc15' : '#94a3b8',
+                  }}
+                >
+                  {unallocatedRating} Pt
+                </strong>
+              </span>
+
+              {isSelected ? (
+                <span
+                  style={{
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    color: '#34d399',
+                  }}
+                >
+                  ✓ 現在進行中に設定されています
+                </span>
+              ) : isCompleted ? (
+                <span
+                  style={{
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    color: '#10b981',
+                  }}
+                >
+                  全レベル達成済み
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleSetActivePass}
+                  style={{
+                    padding: '5px 14px',
+                    fontSize: '0.78rem',
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: '#000000',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(245, 158, 11, 0.35)',
+                  }}
+                >
+                  進行中に設定
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 達成レベル一覧（15段階） */}

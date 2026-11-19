@@ -122,7 +122,7 @@ export function saveDailyMissionsProgress(data) {
 }
 
 /**
- * パックvol01（vol01:ビギニング）の全封入カード（45種類）がすべて所持上限（MAX_CARD_COPIES = 4）
+ * パックvol01（vol01:ビギニング）の全封入カード（48種類）がすべて所持上限（MAX_CARD_COPIES = 4）
  * に達しているか（コンプリート済みか）を判定します。
  *
  * @param {Record<string, number>} [playerInventory] - プレイヤーの所持インベントリ辞書（省略時は GameState.playerInventory）

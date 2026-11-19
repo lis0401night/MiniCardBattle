@@ -71,8 +71,8 @@ import {
 } from '../../services/uiModals.js';
 import { recordDailyMissionWin } from '../../services/dailyMissions.js';
 import {
+  getQuickRating,
   recordQuickMatchWin,
-  QUICK_RATING_KEY,
 } from '../../utils/constants/battlePass.js';
 import { showDefenseBattleList } from '../../services/uiMainCore.js';
 import {
@@ -193,7 +193,9 @@ function playPostBattleBGM() {
 }
 
 /**
- * 勝敗やゲームモードに応じた会話ダイアログキューを構築する
+ * 勝敗やゲームモードに応じた戦闘後会話ダイアログキューを構築し、`GameState.dialogueQueue` に設定する。
+ *
+ * @returns {void}
  */
 function buildResultDialogueQueue() {
   if (GameState.gameMode === 'story' && GameState.lastBattleResult === 'win') {
@@ -542,14 +544,16 @@ function resolveFortuneRewards() {
     result.newMaxTotalCost
   );
 
-  // マキナおよびアンジェの両方の最新クリアデータを取得
+  // マキナ・アンジェ・ベルカの最新クリアデータを取得
   const currentClearedAuto = loadFortuneClearedData('automata');
   const currentClearedValk = loadFortuneClearedData('valkyria');
+  const currentClearedDaug = loadFortuneClearedData('daughter');
 
-  // クリア済み実績から理論上の正規総ポイントを再計算（最大144Pt）
+  // クリア済み実績から理論上の正規総ポイントを再計算（最大216Pt）
   const finalTotalPts = calculateFortuneTotalPointsFromCleared(
     currentClearedAuto,
-    currentClearedValk
+    currentClearedValk,
+    currentClearedDaug
   );
 
   let rawCurrentPts =
@@ -575,6 +579,7 @@ function resolveFortuneRewards() {
   const overallMaxGrade = Math.max(
     currentClearedAuto.maxGradeLevel || 0,
     currentClearedValk.maxGradeLevel || 0,
+    currentClearedDaug.maxGradeLevel || 0,
     0
   );
 
@@ -583,13 +588,16 @@ function resolveFortuneRewards() {
     fortune_cleared: JSON.stringify({
       automata: currentClearedAuto.clearedHandicaps || {},
       valkyria: currentClearedValk.clearedHandicaps || {},
+      daughter: currentClearedDaug.clearedHandicaps || {},
     }),
     fortune_max_total_cost: Math.max(
       currentClearedAuto.maxTotalCost || 0,
-      currentClearedValk.maxTotalCost || 0
+      currentClearedValk.maxTotalCost || 0,
+      currentClearedDaug.maxTotalCost || 0
     ),
     fortune_max_total_cost_automata: currentClearedAuto.maxTotalCost || 0,
     fortune_max_total_cost_valkyria: currentClearedValk.maxTotalCost || 0,
+    fortune_max_total_cost_daughter: currentClearedDaug.maxTotalCost || 0,
   };
 
   savePointsToServer(
@@ -873,8 +881,7 @@ export function endBattle() {
   ) {
     incrementStat('quickWins');
     // 対戦前の正規レートを取得（サーバーログ送信時、敗者の対戦前レートと基準時点を揃えるため）
-    const preBattleRating =
-      parseInt(localStorage.getItem(QUICK_RATING_KEY), 10) || 0;
+    const preBattleRating = getQuickRating();
 
     // クイックマッチ勝利時のバトルパスポイント加算およびレート加算
     try {
@@ -1101,6 +1108,7 @@ export function cleanupBattleState() {
   GameState.placementSelectedLanes = [];
   GameState.isEnemyTargetMode = false;
   GameState.isAlliedTargetMode = false;
+  GameState.isInvokeSelectMode = false;
   GameState.enemyTargetSkillId = null;
   GameState.targetSelectResolve = null;
   GameState.isDiscardingMode = false;
@@ -1119,6 +1127,9 @@ export function cleanupBattleState() {
   window.finishEnemyTargetSelection = null;
   window.handleAlliedLaneClick = null;
   window.finishAlliedSelection = null;
+  window.handleInvokeBoardClick = null;
+  window.handleInvokeHandClick = null;
+  window.finishInvokeSelection = null;
 
   // 4. 長押しやタイマーのクリア
   if (GameState.longPressTimer) {

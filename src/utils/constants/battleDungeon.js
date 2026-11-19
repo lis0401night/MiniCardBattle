@@ -13,10 +13,11 @@ import { ENEMY_DECKS } from './enemy_decks.js';
 import { resolveLeaderSkill } from '../leaderSkillUtils.js';
 
 // 試練の宮殿の敵・レンタル候補から除外するリーダーID
-const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
+export const DUNGEON_EXCLUDED_LEADER_IDS = new Set([
   'player_defense',
   'automata',
   'valkyria',
+  'daughter',
   'automata_high',
   'satan_high',
   'satan',
@@ -465,7 +466,9 @@ export const hydrateDungeonOpponent = (opp) => {
         displayInfo.fullName ||
         charMaster.name,
       displayName:
-        (highConfig && highConfig.name) || displayInfo.fullName || charMaster.name,
+        (highConfig && highConfig.name) ||
+        displayInfo.fullName ||
+        charMaster.name,
       leaderSkill: resolveLeaderSkill({
         charId: opp.charId || leaderId,
         skinId: skinId,

@@ -21,6 +21,9 @@ import { GameState } from '../../state/gameState.js';
 export const UNLOCKED_BATTLE_PASSES_KEY =
   'mini_card_battle_unlocked_battle_passes';
 
+/** 現在「進行中」に設定されているバトルパスIDのLocalStorage保存キー */
+export const SELECTED_BATTLE_PASS_KEY = 'mini_card_battle_selected_battle_pass';
+
 /** クイックマッチレートのLocalStorage保存キー */
 export const QUICK_RATING_KEY = 'mini_card_battle_quick_rating';
 
@@ -168,12 +171,142 @@ export const BATTLE_PASS_S1_LEVEL_THRESHOLDS = Object.freeze([
   },
 ]);
 
+/** バトルパスS2の達成段階（15段階: 10, 20, 30, ..., 150） */
+export const BATTLE_PASS_S2_LEVEL_THRESHOLDS = Object.freeze([
+  {
+    level: 1,
+    points: 10,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'laser',
+    rewardDisplayName: '航空支援',
+  },
+  {
+    level: 2,
+    points: 20,
+    rewardName: '共通ポイント20Pt',
+    rewardType: 'common_points',
+    rewardId: 'common_points',
+    rewardDisplayName: '共通ポイント 20Pt',
+    count: 20,
+  },
+  {
+    level: 3,
+    points: 30,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'gammaray',
+    rewardDisplayName: '眼魔の霊',
+  },
+  {
+    level: 4,
+    points: 40,
+    rewardName: 'シャインチケット',
+    rewardType: 'shine_ticket',
+    rewardId: 'shine_ticket',
+    rewardDisplayName: 'シャインチケット',
+    count: 1,
+  },
+  {
+    level: 5,
+    points: 50,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'mercenaryleader',
+    rewardDisplayName: '傭兵隊長',
+  },
+  {
+    level: 6,
+    points: 60,
+    rewardName: '共通ポイント20Pt',
+    rewardType: 'common_points',
+    rewardId: 'common_points',
+    rewardDisplayName: '共通ポイント 20Pt',
+    count: 20,
+  },
+  {
+    level: 7,
+    points: 70,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'prototype',
+    rewardDisplayName: '革命派の試作機',
+  },
+  {
+    level: 8,
+    points: 80,
+    rewardName: 'シャインチケット',
+    rewardType: 'shine_ticket',
+    rewardId: 'shine_ticket',
+    rewardDisplayName: 'シャインチケット',
+    count: 1,
+  },
+  {
+    level: 9,
+    points: 90,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'predator',
+    rewardDisplayName: 'クロコダイル',
+  },
+  {
+    level: 10,
+    points: 100,
+    rewardName: '共通ポイント20Pt',
+    rewardType: 'common_points',
+    rewardId: 'common_points',
+    rewardDisplayName: '共通ポイント 20Pt',
+    count: 20,
+  },
+  {
+    level: 11,
+    points: 110,
+    rewardName: 'プレミアム',
+    rewardType: 'premium',
+    rewardId: 'archangel',
+    rewardDisplayName: '再誕のアークエンジェル',
+  },
+  {
+    level: 12,
+    points: 120,
+    rewardName: 'シャインチケット',
+    rewardType: 'shine_ticket',
+    rewardId: 'shine_ticket',
+    rewardDisplayName: 'シャインチケット',
+    count: 1,
+  },
+  {
+    level: 13,
+    points: 130,
+    rewardName: 'スキン',
+    rewardType: 'skin',
+    rewardId: 'cleric_empress',
+    rewardDisplayName: '蒼穹の審判者 アストレア',
+  },
+  {
+    level: 14,
+    points: 140,
+    rewardName: 'プレイマット',
+    rewardType: 'playmat',
+    rewardId: 'pm_cleric_empress',
+    rewardDisplayName: 'アストレア',
+  },
+  {
+    level: 15,
+    points: 150,
+    rewardName: 'アイコン',
+    rewardType: 'icon',
+    rewardId: 'cleric_empress',
+    rewardDisplayName: 'アストレア',
+  },
+]);
+
 /** 既存コード・互換用エイリアス（デフォルトはS1の達成段階） */
 export const BATTLE_PASS_LEVEL_THRESHOLDS = BATTLE_PASS_S1_LEVEL_THRESHOLDS;
 
 /**
  * バトルパスマスターデータ定義一覧
- * 各シーズン（S1, 将来のS2等）ごとに固有のID・最大ポイント・報酬段階リストを保持します。
+ * 各シーズン（S1, S2等）ごとに固有のID・最大ポイント・報酬段階リストを保持します。
  *
  * @type {ReadonlyArray<{
  *   id: string,
@@ -181,7 +314,9 @@ export const BATTLE_PASS_LEVEL_THRESHOLDS = BATTLE_PASS_S1_LEVEL_THRESHOLDS;
  *   description: string,
  *   cost: number,
  *   maxPoints: number,
- *   levels: typeof BATTLE_PASS_S1_LEVEL_THRESHOLDS
+ *   imgUrl: string,
+ *   thumbUrl: string,
+ *   levels: ReadonlyArray<Object>
  * }>}
  */
 export const BATTLE_PASS_MASTER = Object.freeze([
@@ -196,7 +331,31 @@ export const BATTLE_PASS_MASTER = Object.freeze([
     thumbUrl: 'assets/characters/char_knight_assassin_thumb.webp',
     levels: BATTLE_PASS_S1_LEVEL_THRESHOLDS,
   },
+  {
+    id: 'battle_pass_vol2',
+    name: 'バトルパス S2',
+    description:
+      'クイックマッチで勝利してポイントを貯め、様々な報酬を獲得できるバトルパス。',
+    cost: 30,
+    maxPoints: 150,
+    imgUrl: 'assets/characters/char_cleric_empress.webp',
+    thumbUrl: 'assets/characters/char_cleric_empress_thumb.webp',
+    levels: BATTLE_PASS_S2_LEVEL_THRESHOLDS,
+  },
 ]);
+
+/**
+ * 現在実装されている全バトルパスの最大ポイント合計（クイックマッチレートの上限キャップ）を取得する。
+ * 次シーズン分の過剰な先回り貯金を防ぐため、全パスの maxPoints 合計をレートの上限とします。
+ *
+ * @returns {number} クイックマッチレートの上限値（S1+S2時は300）
+ */
+export function getMaxQuickRatingCap() {
+  return BATTLE_PASS_MASTER.reduce(
+    (sum, pass) => sum + (pass.maxPoints || 0),
+    0
+  );
+}
 
 /**
  * 指定したIDのバトルパスマスターデータを取得する
@@ -232,26 +391,51 @@ export function checkIsBattlePassUnlocked(passId) {
 }
 
 /**
- * 現在のクイックマッチレートを取得する
+ * 現在のクイックマッチレートを取得する（全バトルパス合計ポイントの上限キャップ適用済み）
  * @returns {number} 現在のレート数値
  */
 export function getQuickRating() {
   try {
     const raw = localStorage.getItem(QUICK_RATING_KEY);
-    return raw !== null ? parseInt(raw, 10) || 0 : 0;
+    const val = raw !== null ? parseInt(raw, 10) || 0 : 0;
+    return Math.max(0, Math.min(getMaxQuickRatingCap(), val));
   } catch {
     return 0;
   }
 }
 
 /**
- * クイックマッチレートを設定・保存する
+ * クイックマッチレートを設定・保存する（全バトルパス合計ポイントの上限キャップ適用）
  * @param {number} rating - 設定するレート数値
  * @returns {void}
  */
 export function setQuickRating(rating) {
-  const safeRating = Math.max(0, Math.floor(Number(rating) || 0));
+  const cap = getMaxQuickRatingCap();
+  const safeRating = Math.max(
+    0,
+    Math.min(cap, Math.floor(Number(rating) || 0))
+  );
   localStorage.setItem(QUICK_RATING_KEY, String(safeRating));
+}
+
+/**
+ * 指定したバトルパスの保存済みポイントを同期処理なしで直接取得する
+ * @param {string} passId - バトルパスID
+ * @returns {number} 保存済みのバトルパスポイント（0〜maxPoints）
+ */
+export function getRawBattlePassPoints(passId) {
+  if (!passId) return 0;
+  try {
+    const raw = localStorage.getItem(
+      `${BATTLE_PASS_POINTS_KEY_PREFIX}${passId}`
+    );
+    const val = raw !== null ? parseInt(raw, 10) || 0 : 0;
+    const pass = getBattlePassById(passId);
+    const maxPts = pass?.maxPoints ?? Infinity;
+    return Math.max(0, Math.min(maxPts, val));
+  } catch {
+    return 0;
+  }
 }
 
 /**
@@ -275,61 +459,161 @@ export function setBattlePassPoints(passId, points) {
 }
 
 /**
- * 指定したバトルパスのポイントを現在のクイックマッチレートと比較し、
- * レートの値がバトルパスのポイントを上回っている場合のみ、バトルパスの値をレートに合わせて引き上げて保存します。
- * 【絶対厳守】現在のレートがバトルパスポイントを下回っている場合、バトルパスの値を減らす処理は一切行いません。
+ * 全バトルパスに既に割り当て済みのポイント合計を取得する
+ * @returns {number} 全パスの現在ポイント合計
+ */
+export function getTotalAllocatedBattlePassPoints() {
+  return BATTLE_PASS_MASTER.reduce(
+    (sum, pass) => sum + getRawBattlePassPoints(pass.id),
+    0
+  );
+}
+
+/**
+ * まだどのバトルパスにも同期・割り当てされていない未同期のクイックマッチレートを取得する
+ * @returns {number} 未同期レートポイント（0以上）
+ */
+export function getUnallocatedQuickRating() {
+  return Math.max(0, getQuickRating() - getTotalAllocatedBattlePassPoints());
+}
+
+/**
+ * 現在「進行中」に設定されている有効なバトルパスIDを取得する。
+ * 未設定、または未解放・存在しないパスIDが保存されている場合は null を返します。
  *
- * 【注意：新シーズン（S2等）追加時】
- * レートは対戦開始以来の累計値であり、本同期は解放済みの全バトルパスに一律で適用される。
- * そのまま新シーズンのバトルパスを追加すると、解放した瞬間に累計レート分（maxPoints上限）が付与されてしまうため、
- * 新シーズン追加と同時に「解放時点のレートを基準値として保存し、差分をポイントとする」等のリセット方式を実装すること。
+ * @returns {string|null} 進行中のバトルパスID（未設定時はnull）
+ */
+export function getSelectedBattlePassId() {
+  try {
+    const raw = localStorage.getItem(SELECTED_BATTLE_PASS_KEY);
+    if (!raw) return null;
+    if (!getBattlePassById(raw)) return null;
+    if (!checkIsBattlePassUnlocked(raw)) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 現在「進行中」に設定されているバトルパスに対し、未同期のクイックマッチレート分を充当・同期する。
+ * 進行中パスが未設定の場合は同期を行いません。
+ *
+ * @returns {{
+ *   passId: string|null,
+ *   previousPoints: number,
+ *   syncedPoints: number,
+ *   newPoints: number,
+ *   remainingUnallocated: number
+ * }} 同期結果オブジェクト
+ */
+export function syncSelectedBattlePassWithRating() {
+  const selectedId = getSelectedBattlePassId();
+  const unallocated = getUnallocatedQuickRating();
+
+  if (!selectedId) {
+    return {
+      passId: null,
+      previousPoints: 0,
+      syncedPoints: 0,
+      newPoints: 0,
+      remainingUnallocated: unallocated,
+    };
+  }
+
+  const pass = getBattlePassById(selectedId);
+  const maxPts = pass?.maxPoints ?? 150;
+  const prevPts = getRawBattlePassPoints(selectedId);
+  const capacity = Math.max(0, maxPts - prevPts);
+  const syncedDelta = Math.min(capacity, unallocated);
+  const newPts = prevPts + syncedDelta;
+
+  if (syncedDelta > 0) {
+    setBattlePassPoints(selectedId, newPts);
+  }
+
+  return {
+    passId: selectedId,
+    previousPoints: prevPts,
+    syncedPoints: syncedDelta,
+    newPoints: newPts,
+    remainingUnallocated: Math.max(0, unallocated - syncedDelta),
+  };
+}
+
+/**
+ * 指定した解放済みバトルパスを「進行中」に設定し、未同期レート分を即座に同期する。
+ *
+ * @param {string} passId - 進行中に設定するバトルパスID
+ * @returns {{
+ *   success: boolean,
+ *   passId: string|null,
+ *   previousPoints: number,
+ *   syncedPoints: number,
+ *   newPoints: number,
+ *   remainingUnallocated: number
+ * }} 設定および同期結果オブジェクト
+ */
+export function setSelectedBattlePass(passId) {
+  if (
+    !passId ||
+    !getBattlePassById(passId) ||
+    !checkIsBattlePassUnlocked(passId)
+  ) {
+    return {
+      success: false,
+      passId: null,
+      previousPoints: 0,
+      syncedPoints: 0,
+      newPoints: 0,
+      remainingUnallocated: getUnallocatedQuickRating(),
+    };
+  }
+
+  localStorage.setItem(SELECTED_BATTLE_PASS_KEY, passId);
+  const syncRes = syncSelectedBattlePassWithRating();
+
+  return {
+    success: true,
+    ...syncRes,
+  };
+}
+
+/**
+ * 指定したバトルパスのポイントをレートと同期する（進行中に設定されているパスのみ未同期分を反映）。
+ * 進行中でないパスに対しては勝手なレート充当を行わず、保存済みポイントをそのまま返します。
  *
  * @param {string} passId - 対象のバトルパスID
  * @returns {number} 同期後のバトルパスポイント
  */
 export function syncBattlePassPointsWithRating(passId) {
   if (!passId) return 0;
-  try {
-    const raw = localStorage.getItem(
-      `${BATTLE_PASS_POINTS_KEY_PREFIX}${passId}`
-    );
-    const curPts = raw !== null ? parseInt(raw, 10) || 0 : 0;
-    const rating = getQuickRating();
-
-    // レートがバトルパスの値を上回っている場合のみ引き上げる（下回っていても減算しない）
-    if (rating > curPts) {
-      const pass = getBattlePassById(passId);
-      const maxPts = pass?.maxPoints ?? Infinity;
-      const syncedPts = Math.min(maxPts, rating);
-      localStorage.setItem(
-        `${BATTLE_PASS_POINTS_KEY_PREFIX}${passId}`,
-        String(syncedPts)
-      );
-      return syncedPts;
-    }
-    return curPts;
-  } catch {
-    return 0;
+  if (passId === getSelectedBattlePassId()) {
+    return syncSelectedBattlePassWithRating().newPoints;
   }
+  return getRawBattlePassPoints(passId);
 }
 
 /**
- * 解放済みのすべてのバトルパスについて、現在のレート値と比較してポイントを引き上げ・同期します。
- * レートが下回っているバトルパスのポイントを減らす処理は行いません。
+ * 現在「進行中」に設定されているバトルパスのみ未同期レートを反映し、
+ * 解放済み全バトルパスの最新ポイント一覧を返します。
  *
- * @returns {Array<{ id: string, points: number }>} 同期後の各バトルパスIDとポイント配列
+ * @returns {Array<{ id: string, points: number }>} 各バトルパスIDとポイント配列
  */
 export function syncAllBattlePassesWithRating() {
+  syncSelectedBattlePassWithRating();
   const unlockedPassIds = getUnlockedBattlePasses();
   return unlockedPassIds.map((passId) => ({
     id: passId,
-    points: syncBattlePassPointsWithRating(passId),
+    points: getRawBattlePassPoints(passId),
   }));
 }
 
 /**
  * バトルパスを解放してLocalStorageに保存する。
- * 解放と同時に、蓄積済みのクイックマッチレートが存在する場合はバトルパスポイントへ即座に反映・底上げします。
+ * 意図しないパスへのレート自動消費を防ぐため、解放時点ではレート同期を行わず 0 Pt のままとし、
+ * プレイヤーがバトルパス画面で「進行中に設定」したタイミングでレート同期を実行します。
+ *
  * @param {string} passId - 解放するバトルパスID
  * @returns {boolean} 新規に解放された場合はtrue、既に解放済みの場合はfalse
  */
@@ -340,27 +624,24 @@ export function unlockBattlePass(passId) {
 
   const next = [...current, passId];
   localStorage.setItem(UNLOCKED_BATTLE_PASSES_KEY, JSON.stringify(next));
-
-  // 解放時に現在のレートがバトルパスを上回っていれば自動的に引き上げ・同期
-  syncBattlePassPointsWithRating(passId);
   return true;
 }
 
 /**
  * 指定したバトルパスの現在蓄積ポイントを取得する。
- * 現在のレートがバトルパスポイントを上回っている場合は、自動的にレートの値まで引き上げて同期します。
- * （レートが下回っている場合でも減算処理は行われません）
+ * 現在「進行中」に設定されているパスの場合は、未同期レート分を反映した最新値を返します。
+ *
  * @param {string} passId - バトルパスID
- * @returns {number} 現在のバトルパスポイント（レート底上げ同期済み）
+ * @returns {number} 現在のバトルパスポイント
  */
 export function getBattlePassPoints(passId) {
   return syncBattlePassPointsWithRating(passId);
 }
 
 /**
- * クイックマッチ勝利時のバトルパスポイント加算およびレート加算処理
- * 解放済みのすべてのバトルパスに対してポイントを加算し、
- * レートにも同数を加算した上でサーバーへ非同期送信します。
+ * クイックマッチ勝利時のレート加算および進行中バトルパスへのポイント同期処理。
+ * レートには実装済み全バトルパスの合計上限キャップ（S1+S2時は300Pt）を適用し、
+ * 現在「進行中」に設定されているバトルパスがある場合のみ未同期増分を反映します。
  *
  * @param {boolean} isCpu - CPU対戦での勝利かどうか（CPUなら1pt、人なら3pt）
  * @returns {{ earnedPoints: number, newRating: number, updatedPasses: Array<{ id: string, points: number }> }} 加算結果オブジェクト
@@ -368,21 +649,17 @@ export function getBattlePassPoints(passId) {
 export function recordQuickMatchWin(isCpu) {
   const earnedPoints = isCpu ? QUICK_WIN_POINTS_CPU : QUICK_WIN_POINTS_PVP;
 
-  // 1. 解放済み全バトルパスへポイントを加算
-  const unlockedPassIds = getUnlockedBattlePasses();
-  const updatedPasses = [];
-
-  unlockedPassIds.forEach((passId) => {
-    const curPts = getBattlePassPoints(passId);
-    const newPts = curPts + earnedPoints;
-    setBattlePassPoints(passId, newPts);
-    updatedPasses.push({ id: passId, points: newPts });
-  });
-
-  // 2. レートの加算
+  // 1. レートの加算（全バトルパスの合計ポイントを上限としてキャップ）
   const curRating = getQuickRating();
-  const newRating = curRating + earnedPoints;
+  const newRating = Math.min(getMaxQuickRatingCap(), curRating + earnedPoints);
   setQuickRating(newRating);
+
+  // 2. 現在「進行中」に設定されているバトルパスがあれば未同期分を同期
+  const updatedPasses = [];
+  const syncRes = syncSelectedBattlePassWithRating();
+  if (syncRes.passId) {
+    updatedPasses.push({ id: syncRes.passId, points: syncRes.newPoints });
+  }
 
   // 3. サーバーへレート情報を非同期送信（ランキング用）
   savePointsToServer('update_quick_rating.php', newRating, newRating, {
@@ -556,6 +833,12 @@ export function unlockAllBattlePass(passId = 'battle_pass_vol1') {
   const pass = getBattlePassById(passId);
   const targetMax = pass?.maxPoints || 150;
   setBattlePassPoints(passId, targetMax);
+
+  // デバッグ時の未同期レート計算不整合を防ぐため、全パス合計を下回っていればレートも引き上げる
+  const totalAllocated = getTotalAllocatedBattlePassPoints();
+  if (getQuickRating() < totalAllocated) {
+    setQuickRating(totalAllocated);
+  }
 
   // 3. 受取ボタンを押せるようにするため、受取済みリストを未受取（空配列）にリセット
   localStorage.setItem(

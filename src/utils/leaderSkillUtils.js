@@ -12,6 +12,7 @@ import {
 const FORTUNE_ENEMY_LEADER_SKILLS = {
   automata: LEADER_SKILLS.last_battalion,
   valkyria: LEADER_SKILLS.ragnarok,
+  daughter: LEADER_SKILLS.demonic_call,
 };
 
 /**
@@ -57,7 +58,7 @@ function getSkinDefinition(charObj, skinId) {
  * 【第1段階：どのスキル定義を採用するか（相互排他）】
  *  1. 高難易度イベント（敵側）: event_*_high かつ isEnemy -> CHARACTERS[masterId].event_high.leaderSkill
  *  2. 試練の宮殿 高難易度ボス（敵側）: isHighBoss かつ isEnemy -> CHARACTERS[masterId].event_high.leaderSkill
- *  3. 運命の邂逅（敵側）: event_*_fortune かつ isEnemy かつ enemy_leader_skill_change -> 専用スキル (automata: last_battalion / valkyria: ragnarok)
+ *  3. 運命の邂逅（敵側）: event_*_fortune かつ isEnemy かつ enemy_leader_skill_change -> 専用スキル (automata: last_battalion / valkyria: ragnarok / daughter: demonic_call)
  *  4. 試練の宮殿 モブリーダー: CARD_MASTER 由来のモブ敵/モブプレイヤー -> モブ専用召喚スキル (cost: 4, action: 'dungeon_summon_leader') または渡された customLeaderSkill
  *     ※CARD_MASTER と CHARACTERS に同名キー（cleric, dragon等7体）が存在するため、isMobLeader や leaderCardId で明示判定する
  *  5. スキン固有スキル: skinDef.leaderSkill が存在 -> skinDef.leaderSkill (例: レダスキンの「死の標的」)

@@ -17,6 +17,7 @@ import {
   applyUnleashSkill,
   clearCardAbilities,
   collectPresentBoardTargets,
+  getCardCurrentPower,
   getSeededRandom,
   getSkillValue,
   grantCardStatus,
@@ -25,6 +26,7 @@ import {
   matchesCardId,
   matchesCardIds,
   matchesCardKeyword,
+  matchesInvokeTarget,
   matchesUnionMaterial,
   resolveCardSupremacySkills,
   resolveStartupFade,
@@ -116,6 +118,7 @@ export function applyActiveSkillLogic(
     'assemble',
     'summon',
     'forge',
+    'invoke',
   ];
   if (!c && requiresCard.includes(sid)) return events;
 
@@ -1245,9 +1248,9 @@ export function applyActiveSkillLogic(
     }
     case 'servant':
     case 'ambush': {
-      // 【重要仕様】「使役 X」「奇襲 X」において X (val) はトークンのパワーを指す。
+      // 【重要仕様】「使役 X」「奇襲 X」において X (val) はトークンのパワーを指す（0 も有効値として保持）。
       // 個数は常に 1体 であるため、ループは 1回 固定。
-      const summonTargetPower = val || 1;
+      const summonTargetPower = val ?? 1;
       let tIdEngine = null;
       let tNameEngine = null;
 
@@ -1319,6 +1322,8 @@ export function applyActiveSkillLogic(
             basePower: summonTargetPower,
             currentPower: summonTargetPower,
             skills: [],
+            // 親カードの召喚時能力解決中は、パワー0トークンも後続スキル（処刑等）完了まで保護する
+            isSkillResolving: Boolean(c?.isSkillResolving) && sid !== 'ambush',
           };
           processPlacementOrEquip(
             state,
@@ -1922,7 +1927,7 @@ export function applyActiveSkillLogic(
       break;
     }
     case 'execute': {
-      // 【処刑】自分の場で最もパワーの低いカード1枚を破壊（墓地送り）
+      // 【処刑】自分の場でパワーの低いカードを指定枚数破壊（墓地送り）
       const myOccupiedLanes = b
         .map((bc, i) => (bc !== null ? i : -1))
         .filter((i) => i !== -1);
@@ -1938,9 +1943,18 @@ export function applyActiveSkillLogic(
           if (diff !== 0) return diff;
           return a - ab;
         });
-        const execLane = myOccupiedLanes[0];
-        const execCard = b[execLane];
-        if (execCard) {
+
+        const count = val === undefined || val === null || val === 0 ? 1 : val;
+        const selectCount = Math.min(count, myOccupiedLanes.length);
+        const selectedTargets = myOccupiedLanes
+          .slice(0, selectCount)
+          .map((lane) => ({ lane, card: b[lane] }));
+        const destroyedTargets = [];
+
+        for (const { lane: execLane, card: expectedCard } of selectedTargets) {
+          const execCard = b[execLane];
+          if (!execCard || execCard !== expectedCard) continue;
+
           if (!canCardBeDestroyed(state, execCard, owner)) {
             events.push({
               type: isValkyriaGuardActive(state, owner)
@@ -1951,12 +1965,13 @@ export function applyActiveSkillLogic(
               card: execCard,
             });
           } else {
-            // 分裂(split): 墓地送りの代わりにトークンを配置する
+            // 分裂(split): 本体・付属物を墓地処理した上で、封印でなければトークンを配置する
             if (hasSkill(execCard, 'split')) {
               const sealedLanes =
                 owner === 'blue'
                   ? state.playerSealedLanes
                   : state.enemySealedLanes;
+              quietDiscardFromBoard(state, owner, execLane);
               if (!sealedLanes || sealedLanes[execLane] === 0) {
                 const tokenId =
                   execCard.summonId ||
@@ -1966,16 +1981,18 @@ export function applyActiveSkillLogic(
                   name: 'トークン',
                   power: 1,
                 };
-                const val = getSkillValue(execCard, 'split') || tL.power || 2;
+                const splitVal =
+                  getSkillValue(execCard, 'split') || tL.power || 2;
                 b[execLane] = {
                   ...JSON.parse(JSON.stringify(tL)),
                   id: `sp_${Math.floor(getSeededRandom() * 1000000000)}_${execLane}_${getSeededRandom().toString(36).substr(2, 5)}`,
                   baseId: tokenId,
+                  isToken: true,
                   owner,
                   imgUrl: `assets/cards/card_${tokenId}.webp`,
-                  power: val,
-                  currentPower: val,
-                  basePower: val,
+                  power: splitVal,
+                  currentPower: splitVal,
+                  basePower: splitVal,
                   rarity: tL.rarity || 1,
                 };
                 events.push({
@@ -1985,9 +2002,6 @@ export function applyActiveSkillLogic(
                   card: JSON.parse(JSON.stringify(b[execLane])),
                   source: 'split',
                 });
-              } else {
-                // 封印されたレーンでは分裂できないので通常の墓地送り
-                quietDiscardFromBoard(state, owner, execLane);
               }
             } else {
               quietDiscardFromBoard(state, owner, execLane);
@@ -2001,11 +2015,13 @@ export function applyActiveSkillLogic(
                   damageCard(state, owner, adj, dmg, 'explode', events, true);
                 }
               });
+              processDestructionTriggers(state, events);
             }
 
-            events.push({
-              type: 'destroy_cards',
-              targets: [{ side: owner, lane: execLane, card: execCard }],
+            destroyedTargets.push({
+              side: owner,
+              lane: execLane,
+              card: execCard,
             });
 
             // 報復（retaliate）スキル: 自陣カードが破壊された時、自陣の生存カードのパワーを上昇させる
@@ -2026,6 +2042,13 @@ export function applyActiveSkillLogic(
               }
             });
           }
+        }
+
+        if (destroyedTargets.length > 0) {
+          events.push({
+            type: 'destroy_cards',
+            targets: destroyedTargets,
+          });
         }
       }
       break;
@@ -2212,6 +2235,47 @@ export function applyActiveSkillLogic(
         lane: l,
         amount: forgeBonus,
         source: 'forge',
+      });
+      break;
+    }
+    case 'invoke': {
+      // 【招来(invoke)スキル処理（汎用エンジン近似）】
+      // 手札・自陣カードの現在のパワー合計で召喚可能な「降臨」カードが手札または山札に存在する場合、ボーナスを仮加算する
+      const turnCount = state.turnCount ?? 0;
+      const firstPlayer = state.firstPlayer;
+      if (turnCount === 1 && firstPlayer === owner && l !== 1) break;
+
+      const myHand = owner === 'blue' ? state.playerHand : state.enemyHand;
+      const myDeck = owner === 'blue' ? state.playerDeck : state.enemyDeck;
+      const myBoard = owner === 'blue' ? state.playerBoard : state.enemyBoard;
+
+      let maxSacrificePower = 0;
+      if (Array.isArray(myHand)) {
+        for (const hCard of myHand) {
+          if (hCard) maxSacrificePower += getCardCurrentPower(hCard);
+        }
+      }
+      if (Array.isArray(myBoard)) {
+        for (const bCard of myBoard) {
+          if (bCard) maxSacrificePower += getCardCurrentPower(bCard);
+        }
+      }
+
+      const hasInvokeTarget =
+        (Array.isArray(myHand) &&
+          myHand.some((hc) => matchesInvokeTarget(hc, maxSacrificePower))) ||
+        (Array.isArray(myDeck) &&
+          myDeck.some((dc) => matchesInvokeTarget(dc, maxSacrificePower)));
+      if (!hasInvokeTarget) break;
+
+      const invokeBonus = 4;
+      c.currentPower += invokeBonus;
+      events.push({
+        type: 'power_change',
+        side: owner,
+        lane: l,
+        amount: invokeBonus,
+        source: 'invoke',
       });
       break;
     }

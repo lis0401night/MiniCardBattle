@@ -1,12 +1,13 @@
 import { prepareBattle } from '../game/battle/index.js';
 import { resolveDungeonDeck } from '../game/battleDungeon.js';
-import { hydratePlayerConfig } from '../utils/constants/battleDungeon.js';
 import { GameState, saveUserProfile } from '../state/gameState.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
+import { hydratePlayerConfig } from '../utils/constants/battleDungeon.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   BOSS_CHARACTER_IDS,
   CHARACTERS,
+  UNLOCKABLE_CHARACTER_IDS,
   applySkinToConfig,
   getStoredPlayerSkinId,
 } from '../utils/constants/characters.js';
@@ -21,15 +22,17 @@ import {
   MAX_DECK_SLOTS,
 } from '../utils/constants/config.js';
 import { ENEMY_DECKS } from '../utils/constants/enemy_decks.js';
-import { QUICK_CPU_CONFIGS } from '../utils/constants/enemy_decks/quick_cpu/index.js';
 import { TOURNAMENT_DECKS } from '../utils/constants/enemy_decks/event_tournament/index.js';
+import { QUICK_CPU_CONFIGS } from '../utils/constants/enemy_decks/quick_cpu/index.js';
 import { INITIAL_PLAYER_CARD } from '../utils/constants/initial_cards.js';
 import { INITIAL_PLAYER_DECK } from '../utils/constants/initial_decks.js';
 import {
   ownedPlaymats,
   setOwnedPlaymats,
 } from '../utils/constants/playmats.js';
+import { asyncPost } from '../utils/fetch.js';
 import {
+  VALID_PREMIUM_CARDS,
   checkIsOnlineMode,
   getCardImgUrl,
   getOrCreateUUID,
@@ -38,7 +41,6 @@ import {
   safeParseArray,
   shuffleArray,
   switchScreen,
-  VALID_PREMIUM_CARDS,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -47,7 +49,6 @@ import {
   showOnlineLobby,
 } from './uiMainCore.js';
 import { showAlertModal, showConfirmModal } from './uiModals.js';
-import { asyncPost } from '../utils/fetch.js';
 
 /** 防衛デッキ登録通信のタイムアウト時間 (ms) */
 const DEFENSE_DECK_REGISTRATION_TIMEOUT_MS = 8000;
@@ -241,6 +242,8 @@ export function generateDeck(owner, config, sessionId) {
         recipeId = 'automata_fortune'; // マキナ運命の邂逅
       if (GameState.gameMode === 'event_valkyria_fortune')
         recipeId = 'valkyria_fortune'; // アンジェ運命の邂逅
+      if (GameState.gameMode === 'event_daughter_fortune')
+        recipeId = 'daughter_fortune'; // ベルカ運命の邂逅
       if (GameState.gameMode === 'defense_attack') recipeId = 'player_defense'; // 追加
 
       let recipe;
@@ -364,8 +367,7 @@ export function createDefaultLeaderDecks() {
       id !== 'player' &&
       id !== 'unknown' &&
       id !== 'npc' &&
-      id !== 'automata' && // マキナは初期解放キャラではないため除外
-      id !== 'valkyria' && // アンジェは初期解放キャラではないため除外
+      !UNLOCKABLE_CHARACTER_IDS.includes(id) && // 解放制キャラ（マキナ・アンジェ・ベルカ等）は初期デッキから除外
       !BOSS_CHARACTER_IDS.includes(id)
   );
 
@@ -935,7 +937,7 @@ export function loadDeck() {
   }
 
   // 【運命の邂逅・達成報酬プレイマットの自己修復】
-  // マキナ/アンジェのLv4報酬を受取済みの場合、プレイマット所持リストに自動補填・復元
+  // マキナ/アンジェ/ベルカのLv4報酬を受取済みの場合、プレイマット所持リストに自動補填・復元
   let playmatsRecovered = false;
   const checkAndRecoverFortunePlaymat = (charId) => {
     try {
@@ -957,6 +959,7 @@ export function loadDeck() {
   };
   checkAndRecoverFortunePlaymat('automata');
   checkAndRecoverFortunePlaymat('valkyria');
+  checkAndRecoverFortunePlaymat('daughter');
 
   if (playmatsRecovered) {
     localStorage.setItem(playmatsKey, JSON.stringify(parsedPlaymats));

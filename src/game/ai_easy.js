@@ -1,10 +1,12 @@
 import { GameState } from '../state/gameState.js';
 import {
+  getCardCurrentPower,
   getSeededRandom,
   hasSkill,
   matchesAssembleTarget,
   matchesCardIds,
   matchesCardKeyword,
+  matchesInvokeTarget,
   matchesPuppetTarget,
   matchesResurrectTarget,
   matchesSummonTarget,
@@ -32,6 +34,9 @@ export function getEasyDecision() {
 
     if (idx === -1) {
       possibleLanes.push(-1);
+    } else if (hasSkill(card, 'advent')) {
+      // 「降臨」を持つカードは通常の手札プレイでは召喚不可
+      continue;
     } else {
       const mySealedLanes = GameState.enemySealedLanes || [0, 0, 0];
       const emptyLanes = [0, 1, 2].filter(
@@ -212,6 +217,7 @@ export function isImmediatelySelfDestructiveOnPlay(
     'ambush', // 奇襲（トークン配置＋即攻撃）
     'summon', // 召喚（追加ユニット召喚）
     'assemble', // 召集（デッキからの召喚）
+    'invoke', // 招来（手札・場のカードを捨てて降臨カードを召喚）
     'call', // 号令（デッキトップ召喚）
     'clone', // 分身（隣接分身配置）
     'resurrect', // 復活（自墓地配置）
@@ -372,6 +378,23 @@ export function canResolveStandaloneSkill(
           presentBoardCards,
         });
       });
+    }
+
+    case 'invoke': {
+      // 招来（手札・自陣カードを捨て、合計パワー以下の降臨カードを手札・山札から召喚）
+      const hand = (myHand || []).filter((hCard) => hCard && hCard !== card);
+      const deck = myDeck || [];
+      let maxTotalPower = getCardCurrentPower(card);
+      for (const hCard of hand) {
+        maxTotalPower += getCardCurrentPower(hCard);
+      }
+      for (const bCard of presentBoardCards) {
+        maxTotalPower += getCardCurrentPower(bCard);
+      }
+      return (
+        hand.some((hCard) => matchesInvokeTarget(hCard, maxTotalPower)) ||
+        deck.some((dCard) => matchesInvokeTarget(dCard, maxTotalPower))
+      );
     }
 
     case 'resurrect': {

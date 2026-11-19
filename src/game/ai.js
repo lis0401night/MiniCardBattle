@@ -24,7 +24,12 @@ import {
   advanceCombatPhase,
   evaluateTurnOutcome,
 } from './ai_normal.js';
-import { discardCard, endTurnLogic, playCard } from './battle/index.js';
+import {
+  discardCard,
+  endTurnLogic,
+  getValidSummonLanes,
+  playCard,
+} from './battle/index.js';
 import { isGraveKeeperActive } from './engine.js';
 import { activateLeaderSkill } from './leaderSkills.js';
 
@@ -78,6 +83,27 @@ export async function executeEnemyAI() {
       canUseSkill = myHasCards || oppHasCards;
       if (isGraveKeeperActive(GameState)) canUseSkill = false;
     }
+    // ベルカ（次元斬）の場合、山札に現在召喚可能なカードが1枚もなければ空撃ちしない
+    if (canUseSkill && skill.action === 'daemon_call') {
+      canUseSkill = (GameState.enemyDeck || []).some((cand) => {
+        if (!cand) return false;
+        const master = CARD_MASTER.find(
+          (m) => m.id === (cand.baseId || cand.id)
+        );
+        return getValidSummonLanes('red', master || cand).length > 0;
+      });
+    }
+    // ベルカ（万魔の招来）の場合、山札・手札・墓地に非トークンカードが1枚以上存在するとき発動可能
+    if (canUseSkill && skill.action === 'demonic_call') {
+      const allPool = [
+        ...(GameState.enemyDeck || []),
+        ...(GameState.enemyHand || []),
+        ...(GameState.enemyDiscard || []),
+      ];
+      canUseSkill = allPool.some(
+        (c) => c && !c.isToken && !c.id?.startsWith('token_')
+      );
+    }
 
     // ダンジョン用召喚スキルで、生贄（takeover）の場合、自分の場にカードが1枚もなければ空撃ちしない
     if (
@@ -102,12 +128,14 @@ export async function executeEnemyAI() {
       if (
         [
           'god_flame',
-          'condemnation', // エリシア（通常・高難易度）：ダメージ+回復
+          'astral_order',
+          'condemnation', // エリシア・アストレア（通常・高難易度）：ダメージ+回復
           'abyss_ritual',
           'otherworld_gate', // ナイア（通常・高難易度）：手札入替系
           'void_purge', // ゼノン：お互いの手札を捨てて虚空を加える
           'time_stop',
           'world_reconstruct', // クロエ（通常・高難易度）：追加ターン系
+          'demonic_call', // ベルカ（運命の邂逅）：手札・墓地をデッキに戻して1枚召喚＋4ドロー
         ].includes(skill.action)
       ) {
         shouldForceSkill = true;
@@ -150,7 +178,8 @@ export async function executeEnemyAI() {
     // 思考ルーチン: 難易度に応じた意思決定
     if (
       GameState.enemyHand.length > 0 ||
-      GameState.enemyBoard.some((c) => c !== null)
+      GameState.enemyBoard.some((c) => c !== null) ||
+      (canUseSkill && !shouldForceSkill)
     ) {
       let decision;
 
@@ -169,7 +198,10 @@ export async function executeEnemyAI() {
       if (decision.useSkill) {
         // 【リーダーカードスキルのアクションキュー事前登録】
         // buildSkillBranchで生成された全スキルアクションを一括でactionQueueに登録する
-        if (skill.action === 'dungeon_summon_leader') {
+        if (
+          skill.action === 'dungeon_summon_leader' ||
+          skill.action === 'daemon_call'
+        ) {
           if (!GameState.aiDecision.actionQueue) {
             GameState.aiDecision.actionQueue = [];
           }
@@ -198,6 +230,17 @@ export async function executeEnemyAI() {
         // AIの意思決定オブジェクトを確実に保持し、多段階スキルがアクションキューを辿れるようにする
         GameState.aiDecision = decision;
 
+        // リーダースキル発動中に手札増減（ドロー・召喚・破棄等）があった場合でもUIDで正確な手札位置を解決する
+        let actualHandIndex = decision.index;
+        if (decision.cardUid) {
+          const foundIdx = GameState.enemyHand.findIndex(
+            (c) => c && c.uid === decision.cardUid
+          );
+          if (foundIdx !== -1) {
+            actualHandIndex = foundIdx;
+          }
+        }
+
         if (
           decision.isOverwrite &&
           GameState.enemyBoard[decision.lane] !== null
@@ -206,7 +249,7 @@ export async function executeEnemyAI() {
           // 強いカードを置くために既存のカードを破棄
           await discardCard('red', oldCard, decision.lane, false);
         }
-        await playCard('red', decision.index, decision.lane);
+        await playCard('red', actualHandIndex, decision.lane);
         await sleep(PLACE_ANIMATION_DURATION);
       } else {
         if (!decision.useSkill) console.log('[AI] Pass turn.');

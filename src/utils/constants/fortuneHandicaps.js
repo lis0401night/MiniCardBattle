@@ -53,6 +53,20 @@ export const HANDICAP_MASTER = {
     name: '「速攻」使用禁止',
     cost: 2,
   },
+  ban_bind_freeze: {
+    id: 'ban_bind_freeze',
+    type: HANDICAP_TYPES.BAN_SKILL,
+    skillIds: ['bind', 'freeze'],
+    name: '「拘束」「凍結」使用禁止',
+    cost: 2,
+  },
+  ban_spread: {
+    id: 'ban_spread',
+    type: HANDICAP_TYPES.BAN_SKILL,
+    skillIds: ['spread'],
+    name: '「拡散」使用禁止',
+    cost: 2,
+  },
   hp_minus_3: {
     id: 'hp_minus_3',
     type: HANDICAP_TYPES.PLAYER_HP,
@@ -119,6 +133,14 @@ export const HANDICAP_MASTER = {
     name: '敵の中央レーンに「炎の魔狼(P:4, 初回攻撃不可)」配置',
     cost: 2,
   },
+  enemy_lr_hand: {
+    id: 'enemy_lr_hand',
+    type: HANDICAP_TYPES.SPAWN_ENEMY,
+    lanes: [0, 2],
+    cardId: 'hand',
+    name: '敵の左・右レーンに「悪魔の手(P:2, 初回攻撃不可)」配置',
+    cost: 2,
+  },
   enemy_leader_skill_change: {
     id: 'enemy_leader_skill_change',
     type: HANDICAP_TYPES.ENEMY_LEADER_SKILL_CHANGE,
@@ -157,6 +179,21 @@ export const CHAR_FORTUNE_HANDICAPS = {
     HANDICAP_MASTER.sp_plus_1,
     HANDICAP_MASTER.enemy_sp_minus_1,
     HANDICAP_MASTER.enemy_center_fenrir,
+    HANDICAP_MASTER.enemy_leader_skill_change,
+  ],
+  // ベルカ
+  daughter: [
+    HANDICAP_MASTER.ban_legend,
+    HANDICAP_MASTER.ban_bind_freeze,
+    HANDICAP_MASTER.ban_quick,
+    HANDICAP_MASTER.ban_spread,
+    HANDICAP_MASTER.hp_minus_3,
+    HANDICAP_MASTER.hp_minus_7,
+    HANDICAP_MASTER.enemy_hp_plus_10,
+    HANDICAP_MASTER.enemy_hp_plus_20,
+    HANDICAP_MASTER.sp_plus_1,
+    HANDICAP_MASTER.enemy_sp_minus_1,
+    HANDICAP_MASTER.enemy_lr_hand,
     HANDICAP_MASTER.enemy_leader_skill_change,
   ],
 };

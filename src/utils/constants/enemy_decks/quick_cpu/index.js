@@ -7,6 +7,7 @@ import android from './android.js';
 import automata from './automata.js';
 import cleric from './cleric.js';
 import cthulhu from './cthulhu.js';
+import daughter from './daughter.js';
 import devilhunter from './devilhunter.js';
 import dragon from './dragon.js';
 import elf from './elf.js';
@@ -25,6 +26,7 @@ export const QUICK_CPU_CONFIGS = {
   automata,
   cleric,
   cthulhu,
+  daughter,
   devilhunter,
   dragon,
   elf,

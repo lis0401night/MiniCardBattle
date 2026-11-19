@@ -395,6 +395,7 @@ export async function playEvents(events) {
           ev.source === 'heal' ||
           ev.source === 'absorb' ||
           ev.source === 'god_flame' ||
+          ev.source === 'astral_order' ||
           ev.source === 'condemnation';
 
         if (isHealReversal) {
@@ -563,6 +564,7 @@ export async function playEvents(events) {
             '[eventRenderer] discardCardRef not registered, existing card may not be properly discarded'
           );
         }
+        const wasAlreadyResolving = Boolean(ev.card?.isSkillResolving);
         board[ev.lane] = ev.card;
 
         // 保護フラグを即座に適用
@@ -611,10 +613,9 @@ export async function playEvents(events) {
         }, 50);
 
         await sleep(PLACE_ANIMATION_DURATION);
-        // 召喚時演出終了のためフラグを解除。
-        // 召喚時スキルを持つ場合は、別途 resolveOnPlaySkill 等の中で
-        // 再度フラグが立てられ、適切に管理されることを前提とする。
-        if (ev.card) {
+        // 呼び出し元で事前に isSkillResolving が立てられていた場合（または keepSkillResolving 指定時）は、
+        // 直後の「誘発」チェックおよび自身の召喚時スキル解決が完了するまで保護フラグを維持する。
+        if (ev.card && !wasAlreadyResolving && !ev.keepSkillResolving) {
           ev.card.isSkillResolving = false;
         }
         break;

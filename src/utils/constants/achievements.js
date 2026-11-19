@@ -1185,14 +1185,18 @@ export function checkTutorialAchievements() {
 
 /**
  * 運命の邂逅の合計目標値達成実績を判定します。
- * マキナ/アンジェ等の最高合計目標値を参照して自動更新・解禁します。
+ * マキナ/アンジェ/ベルカ等の最高合計目標値を参照して自動更新・解禁します。
+ *
+ * @returns {void}
  */
 export function checkFortuneAchievements() {
   const clearedAutomata = loadFortuneClearedData('automata');
   const clearedValkyria = loadFortuneClearedData('valkyria');
+  const clearedDaughter = loadFortuneClearedData('daughter');
   const maxTotalCost = Math.max(
     clearedAutomata?.maxTotalCost || 0,
     clearedValkyria?.maxTotalCost || 0,
+    clearedDaughter?.maxTotalCost || 0,
     0
   );
 

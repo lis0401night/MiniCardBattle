@@ -4,7 +4,7 @@
 import { CARD_MASTER } from './cards.js';
 import { SKIN_MASTER, buildPlaymatId, buildSkinId } from './skins.js';
 
-export const GAME_VERSION = '0.5.6.4';
+export const GAME_VERSION = '0.6.0';
 export const GAME_KEY_PREFIX = 'mini_card_battle_';
 export const DEFAULT_PLAYER_NAME = 'プレイヤー';
 export const DEFAULT_PLAYER_ICON = 'player';
@@ -31,8 +31,11 @@ export const MAX_DECK_SLOTS = 50; // デッキ登録の最大上限数
 /** ボスキャラクターのIDリスト */
 export const BOSS_CHARACTER_IDS = ['void', 'succubus', 'warlock', 'satan'];
 
-export const STORY_BANNED_LEADER_IDS = ['automata', 'valkyria']; // ストーリーモードで使用できないリーダーキャラクターID
-export const TOURNAMENT_BANNED_LEADER_IDS = []; // 夢幻の闘技祭で使用できないリーダーキャラクターID
+export const STORY_BANNED_LEADER_IDS = ['automata', 'valkyria', 'daughter']; // ストーリーモードで使用できないリーダーキャラクターID
+// TODO: 魔皇女 ベルカ（daughter）は現状「夢幻の闘技祭（tournament）」で使用不可としている。
+// 今後解禁する際は、学園スキン（skins.js / skinDialogues.js）、大会用NPCデッキ（enemy_decks/event_tournament/daughter.js, index.js）、
+// 大会台詞・高校名（eventTournamentDialogues.js）を追加した上でこのリストから外すこと。
+export const TOURNAMENT_BANNED_LEADER_IDS = ['daughter']; // 夢幻の闘技祭で使用できないリーダーキャラクターID
 
 /** ストーリーモードのランダム対戦相手選出から除外されるキャラクターIDリスト */
 export const STORY_RANDOM_OPPONENT_EXCLUDED_IDS = [
@@ -283,6 +286,7 @@ export const DEFENSE_EXCHANGE_LINEUP = freezeLineup([
   { id: 'darkgeneral', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'motorcycle', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'gungnir', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
+  { id: 'archdaemon', type: 'premium', cost: GOLD_PREMIUM_EXCHANGE_COST },
   { id: 'dreadnought', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'armsuits', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'babydragon', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
@@ -309,6 +313,7 @@ export const DEFENSE_EXCHANGE_LINEUP = freezeLineup([
   { id: 'cavalry', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'employee', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'mjolnir', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
+  { id: 'monument', type: 'premium', cost: SILVER_PREMIUM_EXCHANGE_COST },
   { id: 'badwolf', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
   { id: 'redhood', type: 'card', cost: GOLD_CARD_EXCHANGE_COST },
 ]);
@@ -494,6 +499,13 @@ export const FORTUNE_EXCHANGE_LINEUP = freezeLineup([
   { id: 'berserkir', type: 'card', cost: 3 },
   { id: 'fenrir', type: 'card', cost: 1 },
   { id: 'dwarf', type: 'card', cost: 1 },
+  // ベルカのカード
+  { id: 'archdaemon', type: 'card', cost: 5 },
+  { id: 'eater', type: 'card', cost: 5 },
+  { id: 'colossus', type: 'card', cost: 3 },
+  { id: 'monument', type: 'card', cost: 3 },
+  { id: 'adventchampion', type: 'card', cost: 1 },
+  { id: 'follower', type: 'card', cost: 1 },
 ]);
 
 /**

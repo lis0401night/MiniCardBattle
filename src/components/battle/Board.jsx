@@ -51,6 +51,20 @@ const checkPlacementConstraints = (
   return valid;
 };
 
+/**
+ * バトル盤面（敵陣3レーン・自陣3レーン・プレイマット背景）を描画するコンポーネント。
+ * 通常の手札選択・スキル配置モード・敵/味方ターゲット選択・「招来」破棄選択モードに応じた
+ * レーンハイライトおよびカード選択状態の表示を管理する。
+ *
+ * @param {object} props - コンポーネントプロパティ
+ * @param {Array<object|null>} props.playerBoard - 自陣レーンのカード配列（長さ3）
+ * @param {Array<object|null>} props.enemyBoard - 敵陣レーンのカード配列（長さ3）
+ * @param {number|null} props.selectedBoardLaneIndex - 詳細確認用に選択中の盤面レーン番号
+ * @param {string|null} props.selectedBoardSide - 詳細確認用に選択中の陣営 ('player' | 'enemy')
+ * @param {Function} props.onCellClick - セルまたは盤面カードクリック時のコールバック
+ * @param {Function} props.onCardLongPress - 盤面カード長押し時のコールバック
+ * @returns {JSX.Element} バトル盤面要素
+ */
 export default function Board({
   playerBoard,
   enemyBoard,
@@ -66,6 +80,11 @@ export default function Board({
   const isEnemyGuardActive = isValkyriaGuardActive(GameState, 'red');
   const isPlayerGuardActive = isValkyriaGuardActive(GameState, 'blue');
 
+  /**
+   * プレイマットIDまたは画像パスからCSSの background-image 用URL文字列を生成する。
+   * @param {string|null|undefined} idOrUrl - プレイマットIDまたはアセットパス
+   * @returns {string} CSS url(...) 形式の文字列、または未指定時は 'none'
+   */
   const getPlaymatUrl = (idOrUrl) => {
     if (!idOrUrl) return 'none';
     const pm = PLAYMAT_MASTER.find((p) => p.id === idOrUrl);
@@ -175,7 +194,11 @@ export default function Board({
               ? GameState.playerHand[GameState.selectedCardIndex]
               : null;
 
-          if (isSealed) {
+          if (GameState.isInvokeSelectMode) {
+            // 「招来」の破棄対象選択モード時は、カードが存在し未選択の自陣レーンをハイライトする
+            isHighlight =
+              card !== null && !GameState.targetSelectedLanes?.includes(lane);
+          } else if (isSealed) {
             isHighlight = false; // 封印されていたらハイライトしない
           } else if (GameState.isPlacementMode) {
             const tCard = GameState.placementToken;
@@ -199,14 +222,26 @@ export default function Board({
               isHighlight = true;
             }
           } else if (selectedCard) {
-            // 手札からの「召喚」: 配置制約ルールに従う
-            isHighlight = checkPlacementConstraints(
-              selectedCard,
-              lane,
-              card,
-              enemyBoard[lane]
-            );
+            // 手札からの通常「召喚」: 「降臨」を持たず、かつ配置制約ルールを満たすレーンのみハイライト
+            isHighlight =
+              !hasSkill(selectedCard, 'advent') &&
+              checkPlacementConstraints(
+                selectedCard,
+                lane,
+                card,
+                enemyBoard[lane]
+              );
           }
+
+          const isInvokeBoardSelected =
+            GameState.isInvokeSelectMode &&
+            GameState.targetSelectedLanes?.includes(lane);
+          const cardClassNames = [
+            isSelected ? 'selected' : '',
+            isInvokeBoardSelected ? 'board-selected' : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <div
@@ -235,7 +270,7 @@ export default function Board({
                   cardObj={card}
                   isBoard={true}
                   isValkyriaGuardActive={isPlayerGuardActive}
-                  className={isSelected ? 'selected' : ''}
+                  className={cardClassNames}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (
