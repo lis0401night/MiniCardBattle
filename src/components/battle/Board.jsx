@@ -129,11 +129,14 @@ export default function Board({
             selectedBoardLaneIndex === lane && selectedBoardSide === 'enemy';
           const isSealed =
             GameState.enemySealedLanes && GameState.enemySealedLanes[lane] > 0;
-          const isEnemyTargetSelected =
+          const isEnemyTargetChosen =
             GameState.isEnemyTargetMode &&
             Boolean(GameState.targetSelectedLanes?.includes(lane));
+          // 1個しか選ばない即決定時は青い選択済みハイライトを付けず、複数選択トグル時のみ表示する
+          const isEnemyTargetSelected =
+            isEnemyTargetChosen && (GameState.targetMaxCount || 0) > 1;
           let isEnemyHighlight = false;
-          if (GameState.isEnemyTargetMode && !isEnemyTargetSelected) {
+          if (GameState.isEnemyTargetMode && !isEnemyTargetChosen) {
             if (Array.isArray(GameState.targetValidLanes)) {
               isEnemyHighlight = GameState.targetValidLanes.includes(lane);
             } else if (GameState.isEnemyTargetAllowEmpty || card !== null) {
@@ -198,12 +201,17 @@ export default function Board({
           const isInvokeBoardSelected =
             GameState.isInvokeSelectMode &&
             Boolean(GameState.targetSelectedLanes?.includes(lane));
-          const isAlliedTargetSelected =
+          const isAlliedTargetChosen =
             GameState.isAlliedTargetMode &&
             Boolean(GameState.targetSelectedLanes?.includes(lane));
-          const isPlacementLaneSelected =
+          // 1個しか選ばない即決定時は青い選択済みハイライトを付けず、複数選択トグル時のみ表示する
+          const isAlliedTargetSelected =
+            isAlliedTargetChosen && (GameState.targetMaxCount || 0) > 1;
+          const isPlacementLaneChosen =
             GameState.isPlacementMode &&
             Boolean(GameState.placementSelectedLanes?.includes(lane));
+          const isPlacementLaneSelected =
+            isPlacementLaneChosen && (GameState.placementCount || 0) > 1;
           // ターン開始時の「移動（move）」発動中、現在移動させようとしている移動元カード（レーン）を青枠ハイライトする
           const isMoveSourceSelected = GameState.moveSourceLane === lane;
           const isPlayerLaneSelected =
@@ -224,7 +232,7 @@ export default function Board({
             isHighlight = card !== null && !isInvokeBoardSelected;
           } else if (GameState.isAlliedTargetMode) {
             // 味方対象選択モード（処刑・選別・鼓舞・保護等）時は、封印状態に関わらず未選択の対象可能カードレーンをハイライトする
-            if (!isAlliedTargetSelected) {
+            if (!isAlliedTargetChosen) {
               isHighlight = Array.isArray(GameState.targetValidLanes)
                 ? GameState.targetValidLanes.includes(lane)
                 : card !== null;
@@ -234,7 +242,7 @@ export default function Board({
           } else if (GameState.isPlacementMode) {
             const tCard = GameState.placementToken;
             const checkEnv = GameState.placementCheckConstraints !== false; // フラグが明示的にfalseなら制約無視
-            if (isPlacementLaneSelected) {
+            if (isPlacementLaneChosen) {
               isHighlight = false;
             } else if (
               GameState.placementRestrictLanes &&

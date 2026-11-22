@@ -15,6 +15,7 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -96,7 +97,8 @@ CodeRabbit レビュー＆検証ワークフロー補助ツール
   --dir <path>          指定ディレクトリ配下の変更のみをレビュー
   --light               コンテキスト探索を抑えた軽量レビューを実行
   --config <path>       CodeRabbit 設定ファイル（既定: ${DEFAULT_CONFIG_PATH}）
-  --findings-only       新規レビューを実行せず、直近のローカルレビュー結果のみを再整形して出力
+  --findings-only       新規レビューを実行せず、CodeRabbit CLI の最新ローカル履歴を取得・整形して出力
+  --saved-only          CLI へ問い合わせず、このツールで保存済みの直近成功レポートを再表示
   --out-dir <dir>       結果ファイルの出力先ディレクトリ（既定: ${DEFAULT_OUT_DIR}）
 
 [verify オプション]
@@ -122,6 +124,7 @@ CodeRabbit レビュー＆検証ワークフロー補助ツール
  *   light: boolean,
  *   configPath: string,
  *   findingsOnly: boolean,
+ *   savedOnly: boolean,
  *   outDir: string
  * }} 解析済みオプション
  */
@@ -137,6 +140,7 @@ function parseReviewArgs(args) {
     light: false,
     configPath: DEFAULT_CONFIG_PATH,
     findingsOnly: false,
+    savedOnly: false,
     outDir: DEFAULT_OUT_DIR,
   };
 
@@ -170,6 +174,8 @@ function parseReviewArgs(args) {
       opts.configPath = arg.slice('--config='.length);
     } else if (arg === '--findings-only') {
       opts.findingsOnly = true;
+    } else if (arg === '--saved-only') {
+      opts.savedOnly = true;
     } else if (arg === '--out-dir' && i + 1 < args.length) {
       opts.outDir = args[++i];
     } else if (arg.startsWith('--out-dir=')) {
@@ -237,13 +243,14 @@ function parseVerifyArgs(args) {
  * @param {string} cmdPath - `.cmd` または `.bat` ラッパーの絶対パス
  * @returns {string | null} 解決できた Node.js エントリスクリプトの絶対パス（特定できない場合は null）
  */
-function resolveNodeEntryFromWindowsCmd(cmdPath) {
+export function resolveNodeEntryFromWindowsCmd(cmdPath) {
   try {
     const content = fs.readFileSync(cmdPath, 'utf8');
     const cmdDir = path.dirname(cmdPath);
-    // npm / pnpm / yarn 等の標準的な Windows .cmd シムに含まれる "%dp0%\...\*.js" 形式（引用付き空白パス／無引用の双方）を抽出
+    // npm / pnpm / yarn 等の標準的な Windows .cmd シムに含まれる "%dp0%\...\*.js" および "%~dp0\...\*.js" を抽出する
+    // ※ `%dp0%` を `%~dp0` より先に照合し、閉じる `%` を確実に消費する
     const match = content.match(
-      /"(?:%~?dp0\\?|%dp0%\\?)([^"\r\n]+?\.(?:c?js|mjs))"|(?:%~?dp0\\?|%dp0%\\?)([^\s"\r\n]+?\.(?:c?js|mjs))/i
+      /"(?:%dp0%\\?|%~dp0\\?)([^"\r\n]+?\.(?:c?js|mjs))"|(?:%dp0%\\?|%~dp0\\?)([^\s"\r\n]+?\.(?:c?js|mjs))/i
     );
     const rawRelScript = match ? match[1] || match[2] : null;
     if (!rawRelScript) return null;
@@ -847,18 +854,45 @@ function loadSavedSummaryReport(summaryJsonPath) {
 }
 
 /**
- * `--findings-only` 実行時に、保存済みの直近完了レポート（0件完了）が
- * 今回の指定対象スコープと一致するかを判定する。
+ * `coderabbit review findings` の出力テキストから ANSI と改行差を正規化した SHA-256 ダイジェストを算出する。
+ * 0 件完了レポート保存時点の CLI 履歴スナップショットと、`--findings-only` 再取得時の CLI 履歴を比較し、
+ * CLI 直接実行等で新しい指摘付きレビューが追加されたかを検知するために使用する。
+ *
+ * @param {string | null | undefined} text - `coderabbit review findings` の標準出力テキスト
+ * @returns {string | null} SHA-256 ハッシュ文字列（空テキスト時は null）
+ */
+export function computeFindingsDigest(text) {
+  const normalized = stripAnsi(String(text ?? ''))
+    .replace(/\r\n/g, '\n')
+    .trim();
+  if (!normalized) return null;
+  return createHash('sha256').update(normalized, 'utf8').digest('hex');
+}
+
+/**
+ * `--findings-only` 実行時に、保存済みの 0 件完了レポートと CLI の最新 `review findings` 出力を照合し、
+ * CLI 側に新しい指摘付きレビューが増えていない場合のみ 0 件完了レポートを維持すべきかを判定する。
  *
  * @param {object | null} savedReport - 保存済み `latest_summary.json` の内容
  * @param {object} opts - `parseReviewArgs` の解析済みオプション
- * @returns {boolean} 0件完了の保存済みレポートをそのまま維持すべきであれば true
+ * @param {string | null} currentCliFindingsHash - 今回 CLI から取得した `review findings` のダイジェスト（取得不可・空時は null）
+ * @returns {boolean} CLI 履歴に変化がなく 0 件完了レポートを維持すべきであれば true
  */
-function shouldKeepSavedZeroFindingReport(savedReport, opts) {
+export function shouldKeepSavedZeroFindingReport(
+  savedReport,
+  opts,
+  currentCliFindingsHash
+) {
   if (
     !savedReport ||
     savedReport.status !== 'completed' ||
     Number(savedReport.findingsCount) !== 0
+  ) {
+    return false;
+  }
+  // ベースライン照合用のキーを持たない旧形式レポートは CLI 履歴との同一性を証明できないため再利用しない
+  if (
+    !Object.prototype.hasOwnProperty.call(savedReport, 'baselineFindingsHash')
   ) {
     return false;
   }
@@ -886,7 +920,13 @@ function shouldKeepSavedZeroFindingReport(savedReport, opts) {
   if (opts.committed && !savedScope.committed) {
     return false;
   }
-  return true;
+
+  // 0 件保存時点の CLI 履歴ハッシュと現在の CLI 履歴ハッシュが完全一致する場合のみ 0 件を維持する
+  // （CLI を直接実行して新たな指摘付きレビューが生成された場合はハッシュ不一致となり最新指摘を採用する）
+  return (
+    (savedReport.baselineFindingsHash ?? null) ===
+    (currentCliFindingsHash ?? null)
+  );
 }
 
 /**
@@ -935,6 +975,36 @@ async function executeReviewCommand(rawArgs) {
   const absOutDir = path.resolve(PROJECT_ROOT, opts.outDir);
   fs.mkdirSync(absOutDir, { recursive: true });
 
+  const summaryMdPath = path.join(absOutDir, 'latest_summary.md');
+  const summaryJsonPath = path.join(absOutDir, 'latest_summary.json');
+  const findingsTxtPath = path.join(absOutDir, 'latest_findings.txt');
+  const agentJsonlPath = path.join(absOutDir, 'latest_agent.jsonl');
+  const failedAgentJsonlPath = path.join(absOutDir, 'last_failed_agent.jsonl');
+
+  // --saved-only 実行時: CLI へ問い合わせず、このツールで保存済みの直近成功レポートを再表示する
+  if (opts.savedOnly) {
+    const savedReport = loadSavedSummaryReport(summaryJsonPath);
+    if (!savedReport || savedReport.status !== 'completed') {
+      console.error(
+        `[エラー] 保存済みの完了済みレポートが見つかりません: ${path.relative(PROJECT_ROOT, summaryJsonPath)}`
+      );
+      process.exit(1);
+    }
+    const savedItems = Array.isArray(savedReport.items)
+      ? savedReport.items
+      : [];
+    console.log(
+      `[情報] 保存済みレポートを再表示します（生成日時: ${savedReport.generatedAt || '不明'} / モード: ${savedReport.mode || '不明'}）`
+    );
+    printReviewSummaryConsole(
+      savedItems,
+      summaryMdPath,
+      summaryJsonPath,
+      findingsTxtPath
+    );
+    return;
+  }
+
   // 1. CLI のインストール・認証ステータス確認
   const authRes = execSyncSafe('coderabbit', ['auth', 'status']);
   if (authRes.error && authRes.error.code === 'ENOENT') {
@@ -957,30 +1027,9 @@ async function executeReviewCommand(rawArgs) {
     process.exit(1);
   }
 
-  const summaryMdPath = path.join(absOutDir, 'latest_summary.md');
-  const summaryJsonPath = path.join(absOutDir, 'latest_summary.json');
-  const findingsTxtPath = path.join(absOutDir, 'latest_findings.txt');
-
-  // --findings-only 実行時、同一対象スコープの直近レビューが 0 件完了だった場合は
-  // `coderabbit review findings` の仕様（直近の「指摘あり」レビューを返す）による過去指摘の上書きを防ぎ 0 件を維持する
-  if (opts.findingsOnly) {
-    const savedReport = loadSavedSummaryReport(summaryJsonPath);
-    if (shouldKeepSavedZeroFindingReport(savedReport, opts)) {
-      console.log(
-        '[情報] 直近の完了済みレビューは指摘 0 件です。保存済みレポートを維持します。'
-      );
-      printReviewSummaryConsole(
-        [],
-        summaryMdPath,
-        summaryJsonPath,
-        findingsTxtPath
-      );
-      return;
-    }
-  }
-
   let completeEvent = null;
   let agentEvents = [];
+  let agentRawStdoutToWrite = null;
   let modeLabel = 'findings-only';
   let resolvedBase = null;
   let resolvedBaseCommit = null;
@@ -1028,40 +1077,86 @@ async function executeReviewCommand(rawArgs) {
     console.log(`[開始] ${modeLabel}`);
     const streamRes = await runCodeRabbitAgentStream(cliArgs);
 
-    const agentJsonlPath = path.join(absOutDir, 'latest_agent.jsonl');
-    fs.writeFileSync(agentJsonlPath, streamRes.rawStdout, 'utf8');
-
     if (streamRes.exitCode !== 0) {
+      // 失敗したレビューの途中出力は別名ファイルへ保存し、直近成功レビューの latest_agent.jsonl を保護する
+      if (streamRes.rawStdout) {
+        fs.writeFileSync(failedAgentJsonlPath, streamRes.rawStdout, 'utf8');
+      }
       console.error(
-        `[エラー] coderabbit review が終了コード ${streamRes.exitCode} で失敗しました。`
+        `[エラー] coderabbit review が終了コード ${streamRes.exitCode} で失敗しました。直近の成功レポートおよびログは保持されます。`
       );
+      if (streamRes.rawStdout) {
+        console.error(
+          `[情報] 失敗時の途中出力を保存しました: ${path.relative(PROJECT_ROOT, failedAgentJsonlPath)}`
+        );
+      }
       if (streamRes.rawStderr.trim()) {
         console.error(stripAnsi(streamRes.rawStderr).trim());
       }
       process.exit(streamRes.exitCode);
     }
 
+    agentRawStdoutToWrite = streamRes.rawStdout;
     agentEvents = streamRes.events;
     completeEvent =
       agentEvents.find((ev) => ev && ev.type === 'complete') || null;
   }
 
-  // 3. 今回のレビューで指摘 0 件と確定している場合は過去の findings キャッシュを読まずに 0 件出力する
+  // 3. 指摘内容の取得（0 件確定時は CLI の現在履歴ハッシュのみベースライン記録し、過去指摘での上書きを防ぐ）
   let headerInfo = '';
   let items = [];
   let findingsTextToWrite = null;
+  let baselineFindingsHash = undefined;
+
+  // ※ CodeRabbit CLI (v0.7.5) の `review findings` は `--dir` のみ対応（`--base` 非対応）
+  const findingsArgs = ['review', 'findings'];
+  if (opts.dir) {
+    findingsArgs.push('--dir', opts.dir);
+  }
 
   if (completeEvent && Number(completeEvent.findings) === 0) {
     headerInfo = 'Current review completed with 0 findings.';
     items = [];
     findingsTextToWrite = `${headerInfo}\n`;
+    // 0 件完了時点で CLI が保持している過去キャッシュのダイジェストを控えておき、
+    // 後続の --findings-only 実行時に「CLI 直接実行による新規指摘」と「過去の古い指摘」を区別できるようにする
+    const baselineRes = execSyncSafe('coderabbit', findingsArgs);
+    baselineFindingsHash =
+      !baselineRes.error && baselineRes.status === 0
+        ? computeFindingsDigest(baselineRes.stdout)
+        : null;
   } else {
-    // ※ CodeRabbit CLI (v0.7.5) の `review findings` は `--dir` のみ対応（`--base` 非対応）
-    const findingsArgs = ['review', 'findings'];
-    if (opts.dir) {
-      findingsArgs.push('--dir', opts.dir);
-    }
     const findingsRes = execSyncSafe('coderabbit', findingsArgs);
+    const currentCliFindingsHash =
+      !findingsRes.error && findingsRes.status === 0
+        ? computeFindingsDigest(findingsRes.stdout)
+        : null;
+
+    // --findings-only 実行時: CLI が正常応答し、その履歴ハッシュが 0 件完了保存時のベースラインと完全一致する場合のみ、
+    // 新しい指摘付きレビューが存在しないと確認できたため保存済みの 0 件完了レポートを維持する
+    // （CLI の実行エラー時はここを通らず下のエラー終了分岐へ進み、取得失敗を 0 件成功として誤報告しない）
+    if (opts.findingsOnly && !findingsRes.error && findingsRes.status === 0) {
+      const savedReport = loadSavedSummaryReport(summaryJsonPath);
+      if (
+        shouldKeepSavedZeroFindingReport(
+          savedReport,
+          opts,
+          currentCliFindingsHash
+        )
+      ) {
+        console.log(
+          '[情報] CLI の指摘履歴に変化がなく、直近の完了済みレビューは指摘 0 件です。保存済みレポートを維持します。'
+        );
+        printReviewSummaryConsole(
+          [],
+          summaryMdPath,
+          summaryJsonPath,
+          findingsTxtPath
+        );
+        return;
+      }
+    }
+
     const hasUsableAgentFallback =
       !opts.findingsOnly &&
       (completeEvent !== null ||
@@ -1085,7 +1180,10 @@ async function executeReviewCommand(rawArgs) {
           'Fallback: constructed from current review JSONL events (coderabbit review findings failed).';
         findingsTextToWrite = `${headerInfo}\n`;
       } else {
-        // フォールバック可能な今回の JSONL がない場合は既存レポートを上書きせずエラー終了する
+        // 取得失敗時は途中出力を別名保存し、既存の成功レポート一式（latest_*）を一切上書きせず終了する
+        if (agentRawStdoutToWrite) {
+          fs.writeFileSync(failedAgentJsonlPath, agentRawStdoutToWrite, 'utf8');
+        }
         console.error(
           `[エラー] coderabbit review findings の取得に失敗しました（終了コード: ${findingsRes.status}）。既存の成功レポートは保持されます。`
         );
@@ -1130,10 +1228,6 @@ async function executeReviewCommand(rawArgs) {
     }
   }
 
-  if (findingsTextToWrite !== null) {
-    fs.writeFileSync(findingsTxtPath, findingsTextToWrite, 'utf8');
-  }
-
   const generatedAt = new Date().toISOString();
   const reviewedFilesCount =
     completeEvent && Array.isArray(completeEvent.reviewedFiles)
@@ -1154,23 +1248,31 @@ async function executeReviewCommand(rawArgs) {
     items,
   });
 
+  const summaryPayload = {
+    status: 'completed',
+    generatedAt,
+    mode: modeLabel,
+    scope,
+    headerInfo,
+    reviewedFilesCount,
+    findingsCount: items.length,
+    items,
+  };
+  if (baselineFindingsHash !== undefined) {
+    summaryPayload.baselineFindingsHash = baselineFindingsHash;
+  }
+
+  // 全出力データが成功確定した段階で latest_* 一式をまとめて更新し、成功レポートとログの整合性を保つ
+  if (agentRawStdoutToWrite !== null) {
+    fs.writeFileSync(agentJsonlPath, agentRawStdoutToWrite, 'utf8');
+  }
+  if (findingsTextToWrite !== null) {
+    fs.writeFileSync(findingsTxtPath, findingsTextToWrite, 'utf8');
+  }
   fs.writeFileSync(summaryMdPath, summaryMd, 'utf8');
   fs.writeFileSync(
     summaryJsonPath,
-    JSON.stringify(
-      {
-        status: 'completed',
-        generatedAt,
-        mode: modeLabel,
-        scope,
-        headerInfo,
-        reviewedFilesCount,
-        findingsCount: items.length,
-        items,
-      },
-      null,
-      2
-    ),
+    JSON.stringify(summaryPayload, null, 2),
     'utf8'
   );
 
@@ -1341,7 +1443,14 @@ async function main() {
   process.exit(1);
 }
 
-main().catch((err) => {
-  console.error('[致命的エラー]', err?.message || err);
-  process.exit(1);
-});
+// 直接 CLI として実行された場合のみエントリポイントを起動する（単体テストからの import 時は自動実行しない）
+const isDirectCliExecution =
+  Boolean(process.argv[1]) &&
+  path.resolve(process.argv[1]) === path.resolve(__filename);
+
+if (isDirectCliExecution) {
+  main().catch((err) => {
+    console.error('[致命的エラー]', err?.message || err);
+    process.exit(1);
+  });
+}

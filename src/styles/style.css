@@ -1968,8 +1968,8 @@ h2 {
   box-shadow: 0 0 20px var(--color-blue) !important;
 }
 
+/* 場のカードの選択中ハイライトは位置を上に動かさず、青い枠・光彩のみで表示する */
 .card.board-selected {
-  transform: translateY(-10px);
   z-index: 10;
 }
 
