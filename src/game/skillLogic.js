@@ -1774,11 +1774,11 @@ export async function resolveActiveSkillEffect(
       // デッキを再シャッフル
       shuffleArray(d);
 
-      // それぞれ減った手札と同数（トークン含む）だけデッキから引き直す
+      // それぞれ減った手札と同数（トークン含む）だけ山札トップ（配列末尾）から引き直す
       const drawCount = removedHandCounts[p] || 0;
       for (let i = 0; i < drawCount; i++) {
         if (d.length > 0) {
-          const card = d.shift();
+          const card = d.pop();
           // 新しいUIDを割り当てる（同じカードが手元に戻ってきた時のKey重複エラーを防ぐため）
           card.uid = `${p}_${Math.floor(getSeededRandom() * 1000000000)}_${getSeededRandom().toString(36).substr(2, 5)}`;
           h.push(card);

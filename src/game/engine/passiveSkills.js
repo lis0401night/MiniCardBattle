@@ -16,6 +16,7 @@ import {
   syncCardStatuses,
 } from '../../utils/gameUtils.js';
 import {
+  cloneSimCard,
   damageCard,
   damageLeader,
   getDamageBlockType,
@@ -257,8 +258,10 @@ export function simulateDrawForSamsara(state, p) {
   }
 
   if (d.length > 0) {
-    const drawn = d.pop();
-    if (drawn) {
+    // 山札・墓地の浅いコピー要素が実戦 GameState を汚染しないよう、書き換え・手札追加前に独立複製する
+    const rawDrawn = d.pop();
+    if (rawDrawn) {
+      const drawn = cloneSimCard(rawDrawn);
       if (
         drawn.currentPower === undefined ||
         Number.isNaN(drawn.currentPower) ||

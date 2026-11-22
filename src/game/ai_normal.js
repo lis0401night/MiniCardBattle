@@ -438,6 +438,11 @@ function cloneCard(c) {
   if (Array.isArray(c.unionMaterials)) {
     copy.unionMaterials = c.unionMaterials.map(cloneCard);
   }
+  if (Array.isArray(c.statuses)) {
+    copy.statuses = c.statuses.map((st) =>
+      st && typeof st === 'object' ? { ...st } : st
+    );
+  }
   if (Array.isArray(c._pendingSimSkills)) {
     copy._pendingSimSkills = c._pendingSimSkills.map((p) =>
       p && typeof p === 'object'
@@ -474,7 +479,8 @@ function createSimConfigSnapshot(config) {
 /**
  * シミュレーション状態（simState）を高速に独立複製する。
  * リーダースキル先出し後の仮想状態（postLeaderSim）を後続の手札探索でそのまま再利用するために使用する。
- * 山札内のカード要素オブジェクトはシミュレーション中に直接書き換えられないため、山札配列はシャローコピーとする。
+ * 手札（playerHand / enemyHand）は祝福（bless）等で要素オブジェクトが更新されるため独立複製し、
+ * 山札・墓地配列はシャローコピーとする（手札等へ移動するエンジン経路側で都度 cloneSimCard で分離する）。
  *
  * @param {object|null} state - 複製元のシミュレーション状態オブジェクト
  * @returns {object|null} 複製されたシミュレーション状態オブジェクト
@@ -497,7 +503,7 @@ function cloneSimState(state) {
     enemySealedLanes: state.enemySealedLanes
       ? [...state.enemySealedLanes]
       : [0, 0, 0],
-    playerHand: state.playerHand ? [...state.playerHand] : [],
+    playerHand: state.playerHand ? state.playerHand.map(cloneCard) : [],
     enemyHand: state.enemyHand ? state.enemyHand.map(cloneCard) : [],
     playerDeck: state.playerDeck ? [...state.playerDeck] : [],
     enemyDeck: state.enemyDeck ? [...state.enemyDeck] : [],
@@ -794,6 +800,13 @@ function buildPhase2HandSubproblemKey(
 ) {
   const cardSkillIds = new Set();
   const visitedUnions = new Set();
+  /**
+   * 対象カードおよびその合体先カードが保有する全スキルIDを再帰的に収集する。
+   * 副作用として外側のクロージャ集合 `cardSkillIds`（収集先）と `visitedUnions`（循環防止用訪問済み集合）を更新する。
+   *
+   * @param {object|null|undefined} c - スキルIDを収集する対象カードオブジェクト
+   * @returns {void}
+   */
   const collect = (c) => {
     if (!c) return;
     const lists = [c.skills, c.choices, c.choices2, c.supremacySkills];
@@ -1295,7 +1308,9 @@ export function processActionSequence(
         enemyMaxHP: GameState.enemyMaxHP || 25,
         playerSP: GameState.playerSP || 0,
         enemySP: GameState.enemySP || 0,
-        playerHand: GameState.playerHand ? [...GameState.playerHand] : [],
+        playerHand: GameState.playerHand
+          ? GameState.playerHand.map(cloneCard)
+          : [],
         enemyHand: GameState.enemyHand
           ? GameState.enemyHand.map(cloneCard)
           : [],
@@ -1316,6 +1331,10 @@ export function processActionSequence(
         _actionQueue: [],
       };
     }
+
+    // 前段のアクション列（次元斬の連鎖等）から引き継いだ起動中断フラグをクリアし、
+    // 今回の processActionSequence 呼び出し内で起動消滅が発生した場合のみ再設定されるようにする
+    if (simState._abortedByStartup) delete simState._abortedByStartup;
 
     const preserveResolving = Boolean(simState._preserveResolvingOnStart);
     const skipPendingFlush = Boolean(simState._skipPendingFlush);
@@ -4789,6 +4808,13 @@ export function getBestSimulatedMove() {
       //          最短手数・最優先レーンの代表1件へ厳密集約する。
       // Phase 2: 集約済みの中間状態（postLeaderSim）を直接再利用して、パスおよび残存ユニーク手札の
       //          全分岐をシミュレーション評価する（リーダースキル再計算・既消費手札の無駄な再展開を完全排除）。
+      /**
+       * 次元斬（daemon_call）の同値状態集約・探索順ソートで用いるレーン優先順位を返す。
+       * 左レーン（0）を最優先（3）、右レーン（2）を次点（2）、中央レーン（1）を（1）とし、対象外の値は 0 を返す。
+       *
+       * @param {number} l - レーンインデックス（0: 左, 1: 中央, 2: 右）
+       * @returns {number} レーン優先度（大きいほど優先）
+       */
       const getDaemonLanePri = (l) =>
         l === 0 ? 3 : l === 2 ? 2 : l === 1 ? 1 : 0;
       const phase2Relevance = analyzePhase2ZoneRelevance(
@@ -6516,7 +6542,7 @@ export function buildInitialSimState() {
     enemyMaxHP: GameState.enemyMaxHP || 25,
     playerSP: GameState.playerSP || 0,
     enemySP: GameState.enemySP || 0,
-    playerHand: GameState.playerHand ? [...GameState.playerHand] : [],
+    playerHand: GameState.playerHand ? GameState.playerHand.map(cloneCard) : [],
     enemyHand: GameState.enemyHand ? GameState.enemyHand.map(cloneCard) : [],
     playerDeck: GameState.playerDeck ? [...GameState.playerDeck] : [],
     enemyDeck: GameState.enemyDeck ? [...GameState.enemyDeck] : [],

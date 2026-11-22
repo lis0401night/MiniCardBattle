@@ -47,33 +47,57 @@ const CORE_CARD_MASTER_MAP = new Map(
 );
 
 /**
- * カードマスタ定義を墓地復元用に高速ディープコピーする。
- * JSON.parse(JSON.stringify(masterData)) と同等の独立性（スキル・選択肢・覇道スキル配列の分離）を維持しつつ、
- * AI大量シミュレーション時の破棄コストを大幅に削減する。
+ * カードオブジェクトをシミュレーション用に高速ディープコピーする。
+ * 山札・墓地（浅いコピー）から手札等の可変ゾーンへ移動・書き換えする際や、
+ * マスタ定義からの墓地復元時に実戦 GameState / CARD_MASTER の参照汚染を防ぐために使用する。
  *
- * @param {object} masterData - CARD_MASTER のカード定義オブジェクト
- * @returns {object} 復元用の独立したカードオブジェクト
+ * @param {object|null|undefined} c - 複製元のカードまたはマスタ定義オブジェクト
+ * @returns {object|null} 複製された独立したカードオブジェクト（入力が falsy の場合は null）
  */
-function cloneMasterCardForGrave(masterData) {
-  const copy = { ...masterData };
-  if (Array.isArray(masterData.skills)) {
-    copy.skills = masterData.skills.map((s) =>
+export function cloneSimCard(c) {
+  if (!c) return null;
+  const copy = { ...c };
+  if (Array.isArray(c.skills)) {
+    copy.skills = c.skills.map((s) =>
       s && typeof s === 'object' ? { ...s } : s
     );
   }
-  if (Array.isArray(masterData.choices)) {
-    copy.choices = masterData.choices.map((s) =>
+  if (Array.isArray(c.choices)) {
+    copy.choices = c.choices.map((s) =>
       s && typeof s === 'object' ? { ...s } : s
     );
   }
-  if (Array.isArray(masterData.choices2)) {
-    copy.choices2 = masterData.choices2.map((s) =>
+  if (Array.isArray(c.choices2)) {
+    copy.choices2 = c.choices2.map((s) =>
       s && typeof s === 'object' ? { ...s } : s
     );
   }
-  if (Array.isArray(masterData.supremacySkills)) {
-    copy.supremacySkills = masterData.supremacySkills.map((s) =>
+  if (Array.isArray(c.supremacySkills)) {
+    copy.supremacySkills = c.supremacySkills.map((s) =>
       s && typeof s === 'object' ? { ...s } : s
+    );
+  }
+  if (Array.isArray(c.equippedCards)) {
+    copy.equippedCards = c.equippedCards.map(cloneSimCard);
+  }
+  if (Array.isArray(c.unionMaterials)) {
+    copy.unionMaterials = c.unionMaterials.map(cloneSimCard);
+  }
+  if (Array.isArray(c.statuses)) {
+    copy.statuses = c.statuses.map((st) =>
+      st && typeof st === 'object' ? { ...st } : st
+    );
+  }
+  if (Array.isArray(c._pendingSimSkills)) {
+    copy._pendingSimSkills = c._pendingSimSkills.map((p) =>
+      p && typeof p === 'object'
+        ? {
+            ...p,
+            targetLanes: Array.isArray(p.targetLanes)
+              ? [...p.targetLanes]
+              : p.targetLanes,
+          }
+        : p
     );
   }
   return copy;
@@ -411,7 +435,7 @@ export function quietDiscardCard(state, cardToSend, fallBackOwner) {
       CORE_CARD_MASTER_MAP.get(lookupId) ||
       CARD_MASTER.find((m) => m.id === lookupId);
     if (masterData) {
-      restoredCard = cloneMasterCardForGrave(masterData);
+      restoredCard = cloneSimCard(masterData);
       restoredCard.uid = c.uid;
       restoredCard.owner = cOwner;
       restoredCard.baseId = lookupId;

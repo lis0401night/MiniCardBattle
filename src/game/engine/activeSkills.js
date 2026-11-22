@@ -33,6 +33,7 @@ import {
   unmergeCardSkills,
 } from '../../utils/gameUtils.js';
 import {
+  cloneSimCard,
   damageCard,
   damageLeader,
   getBestSimulatedPlacementLane,
@@ -2067,7 +2068,9 @@ export function applyActiveSkillLogic(
         }
         for (let i = 0; i < actualDraw; i++) {
           if (myDeck.length > 0) {
-            myHand.push(myDeck.pop());
+            // 山札の浅いコピー要素が後続スキル（祝福等）で実戦 GameState を汚染しないよう独立複製して手札へ移す
+            const drawnCard = myDeck.pop();
+            if (drawnCard) myHand.push(cloneSimCard(drawnCard));
           }
         }
         events.push({ type: 'draw', side: owner, source: 'draw' });
@@ -2100,7 +2103,8 @@ export function applyActiveSkillLogic(
           const recovered = validDiscard[i];
           const dIdx = discard.indexOf(recovered);
           if (dIdx !== -1) discard.splice(dIdx, 1);
-          hand.push(recovered);
+          // 墓地の浅いコピー要素が後続スキルで実戦 GameState を汚染しないよう独立複製して手札へ加える
+          hand.push(cloneSimCard(recovered));
         }
         events.push({ type: 'salvage', side: owner, source: 'salvage' });
       }
@@ -2108,7 +2112,8 @@ export function applyActiveSkillLogic(
     }
     case 'shuffle': {
       // 【攪乱(shuffle)スキル処理】
-      // 召喚時、お互いの手札と墓地を全てデッキに戻し、お互いに減った手札と同数（トークン含む）のカードを引く（トークンは消滅）
+      // 汎用エンジン（AI評価用）では shuffle イベントの生成のみを行い、手札・墓地・山札の状態更新は行わない。
+      // 実戦における手札・墓地の山札戻し（トークン消滅）および減った手札と同数の引き直しは src/game/skillLogic.js が担当する。
       events.push({ type: 'shuffle', side: owner, source: 'shuffle' });
       break;
     }

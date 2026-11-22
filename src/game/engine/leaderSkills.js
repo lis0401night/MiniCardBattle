@@ -19,6 +19,7 @@ import {
   resolveStartupFade,
 } from '../../utils/gameUtils.js';
 import {
+  cloneSimCard,
   CONDEMNATION_AMOUNT,
   damageCard,
   damageLeader,
@@ -1916,13 +1917,15 @@ export function applyLeaderSkillLogic(
       [opDeck[i], opDeck[j]] = [opDeck[j], opDeck[i]];
     }
 
-    // 3. 自分4枚ドロー
+    // 3. 自分4枚ドロー（山札の浅いコピー要素を実戦から分離するため独立複製して手札へ移す）
     for (let i = 0; i < MY_DRAW_COUNT && myDeck.length > 0; i++) {
-      myHand.push(myDeck.pop());
+      const drawn = myDeck.pop();
+      if (drawn) myHand.push(cloneSimCard(drawn));
     }
     // 相手3枚ドロー
     for (let i = 0; i < OP_DRAW_COUNT && opDeck.length > 0; i++) {
-      opHand.push(opDeck.pop());
+      const drawn = opDeck.pop();
+      if (drawn) opHand.push(cloneSimCard(drawn));
     }
 
     // 4. 追加ターン1回（SP増加なし・攻撃なし）
@@ -2365,15 +2368,16 @@ export function applyLeaderSkillLogic(
         }
       }
 
-      // その後、山札トップ（配列末尾）からカードを4枚引く
+      // その後、山札トップ（配列末尾）からカードを4枚引く（実戦山札要素のuid等を直接書き換えないよう複製する）
       if (Array.isArray(hand)) {
         for (
           let i = 0;
           i < 4 && deck.length > 0 && hand.length < MAX_HAND_CAPACITY;
           i++
         ) {
-          const drawn = deck.pop();
-          if (drawn) {
+          const rawDrawn = deck.pop();
+          if (rawDrawn) {
+            const drawn = cloneSimCard(rawDrawn);
             drawn.uid = `${owner}_sim_dr_${Math.floor(getSeededRandom() * 1000000000)}`;
             hand.push(drawn);
           }
