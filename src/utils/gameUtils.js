@@ -26,6 +26,7 @@ import {
 } from './constants/skills.js';
 import { DECAYING_STATUS_IDS, STATUSES } from './constants/statuses.js';
 import { setCurrentScreen } from './errorReporter.js';
+import { renderSkillIconHtml } from './skillIconUtils.js';
 import {
   audioCtx,
   cleanupOldDecodedBgms,
@@ -1943,7 +1944,7 @@ export function getSkillBadgeInfo(sk) {
 function createStatusBadgeHtml(statusId, value = 1) {
   const def = STATUSES[statusId];
   if (!def) return '';
-  const iconStr = def.icon ? `${def.icon} ` : '';
+  const iconStr = def.icon ? renderSkillIconHtml(def.icon) : '';
   if (statusId === 'valkyria_guard') {
     return `<div class="card-skill ${def.badgeClass}">${iconStr}${def.name}</div>`;
   }
@@ -2255,8 +2256,9 @@ export function renderSkillTag(
       badges.push(item.html);
     } else if (item.type === 'skill') {
       const countSuffix = item.count > 1 ? ` * ${item.count}` : '';
+      const iconHtml = renderSkillIconHtml(item.icon);
       badges.push(
-        `<div class="card-skill">${item.icon} ${item.name}${item.value}${countSuffix}</div>`
+        `<div class="card-skill">${iconHtml}${item.name}${item.value}${countSuffix}</div>`
       );
     }
   }

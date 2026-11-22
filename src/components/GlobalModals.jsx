@@ -98,6 +98,7 @@ import {
 import { SOUNDS } from '../utils/sounds.js';
 import CardPreviewContent from './common/CardPreviewContent.jsx';
 import CardShineOverlay from './common/CardShineOverlay.jsx';
+import SkillIcon from './common/SkillIcon.jsx';
 
 const EXCHANGE_DISPLAY_TYPE_LABELS = {
   playmat: 'プレイマット',
@@ -4046,7 +4047,8 @@ export default function GlobalModals() {
                         minWidth: '120px',
                       }}
                     >
-                      {badgeInfo.icon} {badgeInfo.fullName}
+                      <SkillIcon icon={badgeInfo.icon} />
+                      <span>{badgeInfo.fullName}</span>
                     </div>
                     <p
                       className="preview-skill-desc"

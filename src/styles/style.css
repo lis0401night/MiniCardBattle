@@ -4520,3 +4520,24 @@ body.vfx-shake {
   transform: translateY(-2px);
   box-shadow: var(--bp-hover-shadow, var(--bp-base-shadow, none));
 }
+
+/* スキル・状態異常アイコン（Fluent Emoji 3D 共通スタイル） */
+.skill-emoji-icon {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  object-fit: contain;
+  vertical-align: -0.22em;
+  flex-shrink: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.skill-emoji-icon--trailing {
+  margin-right: 0.25em;
+}
+
+.skill-emoji-fallback {
+  display: inline-block;
+  line-height: 1;
+}

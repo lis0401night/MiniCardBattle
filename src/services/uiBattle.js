@@ -11,6 +11,7 @@ import {
   resolveCardSupremacySkills,
 } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
+import { renderSkillIconHtml } from '../utils/skillIconUtils.js';
 import { GameState } from '../state/gameState.js';
 import { showAlertModal } from './uiModals.js';
 
@@ -182,7 +183,7 @@ export function updateCardDetail(c) {
           const def = statusDef || STATUSES[sk.id];
           if (!def) return;
 
-          const iconPrefix = def.icon ? `${def.icon} ` : '';
+          const iconPrefix = def.icon ? renderSkillIconHtml(def.icon) : '';
           const valStr =
             def.id === 'valkyria_guard' &&
             (!sk.value || sk.value === 1) &&
@@ -210,7 +211,7 @@ export function updateCardDetail(c) {
           const skillName = badgeInfo.name;
           const val = badgeInfo.value;
           const skillIcon = badgeInfo.icon || s.icon;
-          const iconPrefix = skillIcon ? `${skillIcon} ` : '';
+          const iconPrefix = skillIcon ? renderSkillIconHtml(skillIcon) : '';
 
           // 合体(union)など、第2引数にスキルオブジェクト自体（targetId/summonId等）を必要とするdescに対応
           const skillEffect = resolveDesc(
@@ -237,6 +238,9 @@ export function updateCardDetail(c) {
               const cs = SKILLS[cho.id];
               if (cs) {
                 const choInfo = getSkillBadgeInfo(cho);
+                const choIconHtml = choInfo.icon
+                  ? renderSkillIconHtml(choInfo.icon)
+                  : '';
                 const cDesc = resolveDesc(
                   typeof cs.desc === 'function'
                     ? cs.desc(cho.value, cho)
@@ -244,7 +248,7 @@ export function updateCardDetail(c) {
                 );
                 subDetailsHtml += `
                                         <div style="margin-left: 10px; border-left: 2px solid #475569; padding-left: 10px; margin-top: 8px; margin-bottom: 8px;">
-                                            <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${choInfo.icon} ${choInfo.fullName}</div>
+                                            <div class="card-skill-tag" style="font-size: 0.75rem; padding: 1px 6px;">${choIconHtml}${choInfo.fullName}</div>
                                             <div class="skill-desc" style="font-size: 0.8rem; color: #94a3b8; padding-left: 0;">${cDesc}</div>
                                         </div>
                                     `;

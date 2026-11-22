@@ -78,7 +78,7 @@ export const SKILLS = {
   none: { name: '通常', icon: '', desc: () => '' },
   quick: {
     name: '速攻',
-    icon: '⚡',
+    icon: '🐆',
     desc: () => '召喚時、ただちに攻撃する。',
   },
   deadly: {
@@ -504,7 +504,7 @@ export const SKILLS = {
   },
   assemble: {
     name: '召集',
-    icon: '📜',
+    icon: '📣',
     desc: (val, sk) => {
       const isSelf = Boolean(
         sk?.self ||
@@ -691,7 +691,7 @@ export const SKILLS = {
   },
   reinforce: {
     name: '増援',
-    icon: '📣',
+    icon: '🪖',
     desc: (val) =>
       `召喚時、手札を${val || 1}枚まで捨て、同数自身と同じパワーのトークンを手札に加える。`,
   },
@@ -788,7 +788,7 @@ export const SKILLS = {
   },
   silence: {
     name: '忘却',
-    icon: '⚪',
+    icon: '🫧',
     /**
      * 「忘却」スキルの説明テキストを生成する。
      * 召喚時、正面のカードの全ての能力を無効化する。
@@ -1009,7 +1009,7 @@ export const SKILLS = {
   },
   substitute: {
     name: '身替',
-    icon: '🎭',
+    icon: '🪵',
     desc: () => '隣のレーンの味方に戦闘で受けるダメージを肩代わりさせる。',
   },
   adversity: {
@@ -1172,7 +1172,7 @@ export const SKILLS = {
   },
   burial: {
     name: '埋葬',
-    icon: '☠️',
+    icon: '⚱️',
     desc: (val) => `召喚時、相手のデッキの上から${val}枚墓地に送る。`,
   },
   recurse: {
@@ -1318,7 +1318,7 @@ export const SKILLS = {
   },
   unleash: {
     name: '解放',
-    icon: '⛓',
+    icon: '⛓️‍💥',
     /**
      * 「解放」スキルの説明テキストを生成する。
      * 召喚時、自身の「スタン」状態と「防御」をなくす。
@@ -1349,7 +1349,7 @@ export const SKILLS = {
   },
   invoke: {
     name: '招来',
-    icon: '🕯',
+    icon: '🔯',
     /**
      * 「招来」スキルの説明セグメントを生成する。
      * 召喚時、自分の手札と場のカードを望む数捨て、その合計パワー以下の「降臨」を持つカード1枚を

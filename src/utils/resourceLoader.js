@@ -20,6 +20,7 @@ import { getAllVoicePaths } from './constants/voices.js';
 import { STAGES, getStageImgUrl } from './constants/stages.js';
 import { PLAYMAT_MASTER, getPlaymatImgUrl } from './constants/playmats.js';
 import { AVAILABLE_ICONS, EXTRA_ICONS } from './constants/avatars.js';
+import { getAllSkillIconUrls } from './skillIconUtils.js';
 
 let isPreloaded = false;
 
@@ -190,6 +191,11 @@ export async function preloadAllGameResources(onProgress) {
   });
   asyncUrlsToLoad.add(appendVersionQuery('assets/icons/iconframe_gold.webp'));
   asyncUrlsToLoad.add(appendVersionQuery('assets/icons/iconframe_red.webp'));
+
+  // G. スキル・状態異常アイコン画像（Fluent Emoji 3D、起動完了後に静かに事前キャッシュ）
+  getAllSkillIconUrls().forEach((url) => {
+    if (url) asyncUrlsToLoad.add(url);
+  });
 
   // BGM と SE
   Object.values(SE_PATHS).forEach((path) => {

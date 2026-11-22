@@ -1,5 +1,13 @@
 import { GAME_VERSION } from '../../utils/constants/config.js';
 
+/**
+ * ゲーム内クレジット・ライセンス表記モーダルコンポーネント。
+ *
+ * @param {Object} props - コンポーネントプロパティ
+ * @param {boolean} props.visible - モーダル表示フラグ
+ * @param {Function} props.onClose - モーダルを閉じるハンドラ
+ * @returns {JSX.Element|null} クレジットモーダル要素
+ */
 export default function CreditModal({ visible, onClose }) {
   if (!visible) return null;
 
@@ -213,6 +221,29 @@ export default function CreditModal({ visible, onClose }) {
                     }}
                   >
                     http://game-hikidashi.com/
+                  </a>
+                </span>
+              </div>
+              <div>
+                ・Fluent Emoji（Microsoft Corporation / MIT License）
+                <br />
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    paddingLeft: '10px',
+                    display: 'inline-block',
+                  }}
+                >
+                  <a
+                    href="https://github.com/microsoft/fluentui-emoji"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#60a5fa',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    https://github.com/microsoft/fluentui-emoji
                   </a>
                 </span>
               </div>

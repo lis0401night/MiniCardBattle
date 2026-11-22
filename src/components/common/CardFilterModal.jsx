@@ -5,6 +5,7 @@ import { MAX_CARD_COPIES } from '../../utils/constants/config.js';
 import { SKILLS, SKILL_CATEGORIES } from '../../utils/constants/skills.js';
 import { playSound } from '../../utils/gameUtils.js';
 import { SOUNDS } from '../../utils/sounds.js';
+import SkillIcon from './SkillIcon.jsx';
 
 /**
  * カードフィルター設定モーダルコンポーネント
@@ -451,7 +452,7 @@ export default function CardFilterModal({
                                       transition: 'all 0.15s ease',
                                     }}
                                   >
-                                    <span>{skillDef.icon}</span>
+                                    <SkillIcon icon={skillDef.icon} />
                                     <span>{skillDef.name}</span>
                                   </div>
                                 );

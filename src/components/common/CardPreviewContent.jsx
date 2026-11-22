@@ -23,6 +23,7 @@ import {
 import { SOUNDS } from '../../utils/sounds.js';
 import CardShineOverlay from './CardShineOverlay.jsx';
 import PackCoverImage from './PackCoverImage.jsx';
+import SkillIcon from './SkillIcon.jsx';
 
 /**
  * カード・スキン・プレイマット・アイコン・パックの共通プレビュー表示コンポーネント。
@@ -589,7 +590,8 @@ function CardPreviewContent({
                           zIndex: 10,
                         }}
                       >
-                        ⚔️装備中
+                        <SkillIcon icon="⚔️" trailingSpace />
+                        装備中
                       </div>
                     )}
                 </>
@@ -1078,7 +1080,7 @@ function CardPreviewContent({
                       return (
                         <div key={idx} className="preview-skill-item">
                           <div className={`preview-skill-badge ${badgeClass}`}>
-                            {def.icon ? `${def.icon} ` : ''}
+                            <SkillIcon icon={def.icon} trailingSpace />
                             {def.name}
                             {val}
                           </div>
@@ -1144,7 +1146,8 @@ function CardPreviewContent({
                                 }}
                               >
                                 <span>
-                                  {s.icon} {s.name}
+                                  <SkillIcon icon={s.icon} trailingSpace />
+                                  {s.name}
                                   {val}
                                 </span>
                                 <span
@@ -1204,7 +1207,15 @@ function CardPreviewContent({
                                     >
                                       {(() => {
                                         const cInfo = getSkillBadgeInfo(cho);
-                                        return `${cInfo.icon} ${cInfo.fullName}`;
+                                        return (
+                                          <>
+                                            <SkillIcon
+                                              icon={cInfo.icon}
+                                              trailingSpace
+                                            />
+                                            {cInfo.fullName}
+                                          </>
+                                        );
                                       })()}
                                     </div>
                                     <p
@@ -1231,7 +1242,8 @@ function CardPreviewContent({
                     return (
                       <div key={idx} className="preview-skill-item">
                         <div className="preview-skill-badge">
-                          {badgeInfo.icon} {badgeInfo.fullName}
+                          <SkillIcon icon={badgeInfo.icon} trailingSpace />
+                          {badgeInfo.fullName}
                         </div>
                         <p className="preview-skill-desc">
                           {renderDescContent(desc)}

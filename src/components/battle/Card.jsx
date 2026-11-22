@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import CardShineOverlay from '../common/CardShineOverlay.jsx';
+import SkillIcon from '../common/SkillIcon.jsx';
 import {
   checkIsShineActive,
   getCardImgUrl,
@@ -124,7 +125,8 @@ export default function Card({
             zIndex: 10,
           }}
         >
-          ⚔️装備中
+          <SkillIcon icon="⚔️" trailingSpace />
+          装備中
         </div>
       )}
       <div className="card-power">
