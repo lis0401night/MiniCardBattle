@@ -1732,11 +1732,17 @@ export async function resolveActiveSkillEffect(
       processOrder = getIsHost() ? ['blue', 'red'] : ['red', 'blue'];
     }
 
+    // 各陣営の手札から減った枚数（トークンを含む戻す直前の手札枚数）を記録
+    const removedHandCounts = { blue: 0, red: 0 };
+
     // お互いの手札と墓地をデッキに戻す（捨てずに直接戻す。トークンはデッキに紛れないよう除外・消滅）
     processOrder.forEach((p) => {
       const h = p === 'blue' ? GameState.playerHand : GameState.enemyHand;
       const g = p === 'blue' ? GameState.playerDiscard : GameState.enemyDiscard;
       const d = p === 'blue' ? GameState.playerDeck : GameState.enemyDeck;
+
+      // トークンも含めた元の手札枚数を記録（後続の引き直し枚数に使用）
+      removedHandCounts[p] = h.length;
 
       // 手札の全カードをデッキに戻す（トークンは除外）
       while (h.length > 0) {
@@ -1768,8 +1774,9 @@ export async function resolveActiveSkillEffect(
       // デッキを再シャッフル
       shuffleArray(d);
 
-      // 互いに3枚引く
-      for (let i = 0; i < 3; i++) {
+      // それぞれ減った手札と同数（トークン含む）だけデッキから引き直す
+      const drawCount = removedHandCounts[p] || 0;
+      for (let i = 0; i < drawCount; i++) {
         if (d.length > 0) {
           const card = d.shift();
           // 新しいUIDを割り当てる（同じカードが手元に戻ってきた時のKey重複エラーを防ぐため）

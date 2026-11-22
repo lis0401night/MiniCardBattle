@@ -47,6 +47,64 @@ Vanilla JS で構築されたミニカードバトルゲームをベースに、
    ```
    ESLintによるコードチェックのみを行います。エラーや警告を確認したい場合に使用します。
 
+## CodeRabbit CLI によるコードレビューと検証ワークフロー
+
+`.coderabbit.yaml` のプロジェクトルールを用いたローカルコードレビューの実行、指摘事項の抽出、および修正後の一括検証を行うための仕組み（`scripts/coderabbit_workflow.js` および `.agents/skills/coderabbit-review/`）が用意されています。
+
+### 1. 事前準備
+
+CodeRabbit CLI がインストールされ、認証済みである必要があります。
+
+```bash
+# 認証状態の確認
+coderabbit auth status
+
+# 未ログインの場合はログインを実行
+coderabbit auth login
+```
+
+### 2. Antigravity（AI エージェント）からの実行方法
+
+チャット欄からワークスペーススキル `/coderabbit-review` を呼び出すと、「CLIレビュー実行 ➔ 正本マスタ（`src/utils/constants/`）と照合した対応要否の一次報告（承認ゲート） ➔ 承認後の修正・差分セルフレビュー ➔ 一括検証」までを順を追って実行します。
+
+- **既定（`review` ブランチとの比較）**: `/coderabbit-review`（または「CodeRabbitレビューをして」）
+- **`main` ブランチとの比較**: 「`main` と比較して `/coderabbit-review` を実行して」
+- **未コミット変更のみを対象**: 「未コミット分だけ `/coderabbit-review` をして」
+
+### 3. ターミナルからの直接実行方法
+
+1. **レビューの実行と指摘サマリーの出力**
+
+   ```bash
+   # 既定（review ブランチとの差分をレビュー）
+   npm run review:cr
+
+   # main ブランチとの差分をレビュー
+   npm run review:cr -- --base main
+
+   # ステージ済み・未コミットの追跡変更のみをレビュー
+   npm run review:cr -- --uncommitted
+
+   # コミット済み変更のみをレビュー
+   npm run review:cr -- --committed --base review
+
+   # 新規レビューを実行せず、直近のローカルレビュー結果のみを再整形して出力
+   npm run review:findings
+   ```
+
+   実行すると、Git 管理外の `logs/coderabbit/` ディレクトリに以下のファイルが出力されます（全オプションは `node scripts/coderabbit_workflow.js --help` で確認できます）。
+   - `logs/coderabbit/latest_summary.md`: 重要度順の指摘一覧テーブルおよび詳細本文
+   - `logs/coderabbit/latest_summary.json`: 構造化された指摘データ（JSON）
+   - `logs/coderabbit/latest_findings.txt`: `coderabbit review findings` の詳細原文
+
+2. **修正後の一括検証（Prettier + ESLint + ユニットテスト全件 + 本番ビルド）**
+
+   画像WebP変換や音声圧縮を伴う `npm run format` で別作業中のアセットに干渉しないよう、**指定した変更ファイルのみに Prettier** を適用した上で、ESLint・既存テスト（`scripts/test_*.js`）・本番ビルドを一括検証します。
+
+   ```bash
+   npm run review:verify -- src/game/ai_normal.js src/styles/style.css
+   ```
+
 ## 本番環境用ビルド手順
 
 本番環境のサーバー等にデプロイするために、ファイルを最適化して出力する手順です。

@@ -41,6 +41,44 @@ export const BLOCK_TYPE_EVENT_MAP = {
   dodge: 'dodge_block',
 };
 
+/** CARD_MASTER のID→定義オブジェクト高速参照マップ（O(1) 検索） */
+const CORE_CARD_MASTER_MAP = new Map(
+  CARD_MASTER.map((cardDef) => [cardDef.id, cardDef])
+);
+
+/**
+ * カードマスタ定義を墓地復元用に高速ディープコピーする。
+ * JSON.parse(JSON.stringify(masterData)) と同等の独立性（スキル・選択肢・覇道スキル配列の分離）を維持しつつ、
+ * AI大量シミュレーション時の破棄コストを大幅に削減する。
+ *
+ * @param {object} masterData - CARD_MASTER のカード定義オブジェクト
+ * @returns {object} 復元用の独立したカードオブジェクト
+ */
+function cloneMasterCardForGrave(masterData) {
+  const copy = { ...masterData };
+  if (Array.isArray(masterData.skills)) {
+    copy.skills = masterData.skills.map((s) =>
+      s && typeof s === 'object' ? { ...s } : s
+    );
+  }
+  if (Array.isArray(masterData.choices)) {
+    copy.choices = masterData.choices.map((s) =>
+      s && typeof s === 'object' ? { ...s } : s
+    );
+  }
+  if (Array.isArray(masterData.choices2)) {
+    copy.choices2 = masterData.choices2.map((s) =>
+      s && typeof s === 'object' ? { ...s } : s
+    );
+  }
+  if (Array.isArray(masterData.supremacySkills)) {
+    copy.supremacySkills = masterData.supremacySkills.map((s) =>
+      s && typeof s === 'object' ? { ...s } : s
+    );
+  }
+  return copy;
+}
+
 /**
  * カードへのダメージのブロック判定を行い、ブロック時は対応するイベントを積む
  *
@@ -368,12 +406,15 @@ export function quietDiscardCard(state, cardToSend, fallBackOwner) {
     const cOwner = c.puppetOriginalOwner || c.owner || defaultOwner;
     const cDiscardPile =
       cOwner === 'blue' ? state.playerDiscard : state.enemyDiscard;
-    const masterData = CARD_MASTER.find((m) => m.id === (c.baseId || c.id));
+    const lookupId = c.baseId || c.id;
+    const masterData =
+      CORE_CARD_MASTER_MAP.get(lookupId) ||
+      CARD_MASTER.find((m) => m.id === lookupId);
     if (masterData) {
-      restoredCard = JSON.parse(JSON.stringify(masterData));
+      restoredCard = cloneMasterCardForGrave(masterData);
       restoredCard.uid = c.uid;
       restoredCard.owner = cOwner;
-      restoredCard.baseId = c.baseId || c.id;
+      restoredCard.baseId = lookupId;
       if (c.isPremium !== undefined) restoredCard.isPremium = c.isPremium;
       restoredCard.basePower = restoredCard.power;
       restoredCard.currentPower = restoredCard.power;

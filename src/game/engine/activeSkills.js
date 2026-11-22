@@ -2108,7 +2108,7 @@ export function applyActiveSkillLogic(
     }
     case 'shuffle': {
       // 【攪乱(shuffle)スキル処理】
-      // 召喚時、お互いの手札と墓地を全てデッキに戻し、お互いにカードを3枚引く（トークンは消滅）
+      // 召喚時、お互いの手札と墓地を全てデッキに戻し、お互いに減った手札と同数（トークン含む）のカードを引く（トークンは消滅）
       events.push({ type: 'shuffle', side: owner, source: 'shuffle' });
       break;
     }

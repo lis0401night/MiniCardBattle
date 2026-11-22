@@ -1,7 +1,7 @@
 {
   "name": "mini-card-battle",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "scripts": {
     "sync-version": "node sync_version.js && node scripts/generate_card_thumbnails.js && node scripts/compress_audio_all.js",
@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "format": "node scripts/convert_assets_to_webp.js && node scripts/generate_card_thumbnails.js && node scripts/compress_audio_all.js && eslint --fix . && prettier --write .",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "review:cr": "node scripts/coderabbit_workflow.js review",
+    "review:findings": "node scripts/coderabbit_workflow.js review --findings-only",
+    "review:verify": "node scripts/coderabbit_workflow.js verify"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.10",
