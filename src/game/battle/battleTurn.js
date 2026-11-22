@@ -259,58 +259,77 @@ export async function handleMoveSkills(owner) {
       if (possibleLanes.length === 0) continue;
 
       let successMove = false;
-      while (!successMove) {
+      try {
+        // 自分の「移動」発動中は、どのカードが移動対象かを明示するため移動元レーンを青枠ハイライトする
         if (owner === 'blue') {
-          GameState.placementMessage = `移動するレーンを選んでください`;
-          if (updateBattleUIHook) updateBattleUIHook();
+          GameState.moveSourceLane = i;
         }
-
-        const targetIdx = await waitPlayerLaneSelection(
-          1,
-          owner,
-          c,
-          false,
-          possibleLanes,
-          false,
-          true,
-          '移動完了'
-        );
-
-        if (owner === 'blue') {
-          GameState.placementMessage = null;
-        }
-        if (!targetIdx || targetIdx.length === 0) {
-          // 移動選択自体をキャンセルした場合は移動を終了
-          break;
-        }
-        const target = targetIdx[0];
-        if (target !== i) {
-          // 根本的リファクタリング：移動先レーンに既存カードがある場合の上書き確認
-          const proceed = await confirmOverwrittenLane(owner, c, target);
-          if (!proceed) {
-            await sleep(200);
-            continue; // キャンセルされた場合はレーン選択からやり直す
+        while (!successMove) {
+          if (owner === 'blue') {
+            GameState.placementMessage = `移動するレーンを選んでください`;
+            if (updateBattleUIHook) updateBattleUIHook();
           }
 
-          // 演出（元の位置でポップアップ表示）
-          const fromEl = document.querySelector(
-            `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`
+          const targetIdx = await waitPlayerLaneSelection(
+            1,
+            owner,
+            c,
+            false,
+            possibleLanes,
+            false,
+            true,
+            '移動完了'
           );
-          if (fromEl) {
-            createDamagePopup(fromEl, '移動', '#facc15');
-            await sleep(250);
-          }
 
-          // AI 経路と同一の解決ロジックを使用し、挙動の非対称を防ぐ
-          await resolveMoveDestination(owner, b, i, target, movedIds);
-          playSound(SOUNDS.sePlace);
-          await cleanupDestroyedCards();
-          await sleep(100);
-          renderBoard();
-          successMove = true;
-        } else {
-          // 同じレーンをクリックした場合は何もせず移動終了
-          successMove = true;
+          if (owner === 'blue') {
+            GameState.placementMessage = null;
+          }
+          if (!targetIdx || targetIdx.length === 0) {
+            // 移動選択自体をキャンセルした場合は移動を終了
+            break;
+          }
+          const target = targetIdx[0];
+          if (target !== i) {
+            // 根本的リファクタリング：移動先レーンに既存カードがある場合の上書き確認
+            const proceed = await confirmOverwrittenLane(owner, c, target);
+            if (!proceed) {
+              await sleep(200);
+              continue; // キャンセルされた場合はレーン選択からやり直す
+            }
+
+            // 移動確定後は移動アニメーション前に移動元ハイライトを解除する
+            if (owner === 'blue') {
+              GameState.moveSourceLane = null;
+              if (updateBattleUIHook) updateBattleUIHook();
+            }
+
+            // 演出（元の位置でポップアップ表示）
+            const fromEl = document.querySelector(
+              `#${owner === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${i}"] .card`
+            );
+            if (fromEl) {
+              createDamagePopup(fromEl, '移動', '#facc15');
+              await sleep(250);
+            }
+
+            // AI 経路と同一の解決ロジックを使用し、挙動の非対称を防ぐ
+            await resolveMoveDestination(owner, b, i, target, movedIds);
+            playSound(SOUNDS.sePlace);
+            await cleanupDestroyedCards();
+            await sleep(100);
+            renderBoard();
+            successMove = true;
+          } else {
+            // 同じレーンをクリックした場合は何もせず移動終了
+            successMove = true;
+          }
+        }
+      } finally {
+        if (owner === 'blue') {
+          const hadHighlight = GameState.moveSourceLane !== null;
+          GameState.moveSourceLane = null;
+          GameState.placementMessage = null;
+          if (hadHighlight && updateBattleUIHook) updateBattleUIHook();
         }
       }
     }

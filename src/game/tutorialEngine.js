@@ -1583,6 +1583,39 @@ export function filterPlacementLaneClick(laneIndex) {
 }
 
 /**
+ * 複数レーン選択モードで選択済みレーンがトグル解除された際に、
+ * チュートリアルで指定されていた元の配置・対象レーン候補を未選択状態へ復元する。
+ * これによりチュートリアル中に一度選んだ指定レーンを解除しても、再選択できなくなる進行不能を防ぐ。
+ *
+ * @param {number} laneIndex - トグル解除されたレーンインデックス (0〜2)
+ * @returns {void}
+ */
+export function restoreTutorialPlacementTargetLane(laneIndex) {
+  if (!isTutorialMode() || !GameState.tutorial) return;
+
+  const initialSingle = GameState.tutorial.initialPlacementTargetLane;
+  if (
+    initialSingle !== undefined &&
+    initialSingle !== null &&
+    initialSingle === laneIndex &&
+    (GameState.tutorial.placementTargetLane === null ||
+      GameState.tutorial.placementTargetLane === undefined)
+  ) {
+    GameState.tutorial.placementTargetLane = laneIndex;
+  }
+
+  const initialLanes = GameState.tutorial.initialPlacementTargetLanes;
+  if (Array.isArray(initialLanes) && initialLanes.includes(laneIndex)) {
+    const currentLanes = Array.isArray(GameState.tutorial.placementTargetLanes)
+      ? GameState.tutorial.placementTargetLanes
+      : [];
+    if (!currentLanes.includes(laneIndex)) {
+      GameState.tutorial.placementTargetLanes = [...currentLanes, laneIndex];
+    }
+  }
+}
+
+/**
  * ターン終了ボタンをチュートリアルでフィルタリング
  * @returns {boolean} true = ブロック
  */
@@ -1956,11 +1989,15 @@ export async function runTutorialFlow() {
         // レーン制限フラグを設定（SP消費後も配置完了まで維持）
         if (step.targetLane !== undefined) {
           GameState.tutorial.placementTargetLane = step.targetLane;
+          GameState.tutorial.initialPlacementTargetLane = step.targetLane;
           GameState.tutorial.placementBlockMessage =
             step.placementBlockMessage || step.blockMessage;
         }
         if (Array.isArray(step.targetLanes)) {
           GameState.tutorial.placementTargetLanes = [...step.targetLanes];
+          GameState.tutorial.initialPlacementTargetLanes = [
+            ...step.targetLanes,
+          ];
           GameState.tutorial.placementBlockMessage =
             step.targetLanesBlockMessage ||
             step.placementBlockMessage ||

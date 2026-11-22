@@ -701,18 +701,37 @@ export default function BattleScreen() {
             リーダースキル
           </button>
           {GameState.isPlacementMode ? (
-            <button
-              id="btn-end-turn"
-              className="action-btn"
-              style={{ background: '#ef4444', borderColor: '#dc2626' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                playSound(SOUNDS.seClick);
-                if (window.finishPlacement) window.finishPlacement();
-              }}
-            >
-              {GameState.placementButtonText || '配置完了'}
-            </button>
+            (() => {
+              const isPlacementConfirmDisabled =
+                !GameState.isPlacementCancelable &&
+                (GameState.placementSelectedLanes?.length || 0) <
+                  (GameState.placementCount || 0);
+              return (
+                <button
+                  id="btn-end-turn"
+                  className="action-btn"
+                  disabled={isPlacementConfirmDisabled}
+                  style={{
+                    background: isPlacementConfirmDisabled
+                      ? '#475569'
+                      : '#ef4444',
+                    color: isPlacementConfirmDisabled ? '#94a3b8' : '#fff',
+                    borderColor: isPlacementConfirmDisabled
+                      ? '#334155'
+                      : '#dc2626',
+                    pointerEvents: isPlacementConfirmDisabled ? 'none' : 'auto',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isPlacementConfirmDisabled) return;
+                    playSound(SOUNDS.seClick);
+                    if (window.finishPlacement) window.finishPlacement();
+                  }}
+                >
+                  {GameState.placementButtonText || '配置完了'}
+                </button>
+              );
+            })()
           ) : GameState.isInvokeSelectMode ? (
             <button
               id="btn-end-turn"
@@ -728,136 +747,104 @@ export default function BattleScreen() {
               選択完了
             </button>
           ) : GameState.isDiscardingMode ? (
-            <button
-              id="btn-end-turn"
-              className="action-btn"
-              style={{
-                background:
-                  GameState.isDiscardingExact &&
-                  GameState.discardSelectedIndices.length !==
-                    Math.min(
-                      GameState.playerHand.length,
-                      GameState.discardMaxCount
-                    )
-                    ? '#475569'
-                    : '#ef4444',
-                color:
-                  GameState.isDiscardingExact &&
-                  GameState.discardSelectedIndices.length !==
-                    Math.min(
-                      GameState.playerHand.length,
-                      GameState.discardMaxCount
-                    )
-                    ? '#94a3b8'
-                    : '#fff',
-                borderColor:
-                  GameState.isDiscardingExact &&
-                  GameState.discardSelectedIndices.length !==
-                    Math.min(
-                      GameState.playerHand.length,
-                      GameState.discardMaxCount
-                    )
-                    ? '#334155'
-                    : '#dc2626',
-                pointerEvents:
-                  GameState.isDiscardingExact &&
-                  GameState.discardSelectedIndices.length !==
-                    Math.min(
-                      GameState.playerHand.length,
-                      GameState.discardMaxCount
-                    )
-                    ? 'none'
-                    : 'auto',
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                playSound(SOUNDS.seClick);
-                if (isTutorialMode() && filterFinishHandSelection()) return;
-                if (window.finishHandSelection) window.finishHandSelection();
-              }}
-            >
-              選択完了
-            </button>
+            (() => {
+              const isDiscardConfirmDisabled =
+                GameState.isDiscardingExact &&
+                GameState.discardSelectedIndices.length !==
+                  Math.min(
+                    GameState.playerHand.length,
+                    GameState.discardMaxCount
+                  );
+              return (
+                <button
+                  id="btn-end-turn"
+                  className="action-btn"
+                  disabled={isDiscardConfirmDisabled}
+                  style={{
+                    background: isDiscardConfirmDisabled
+                      ? '#475569'
+                      : '#ef4444',
+                    color: isDiscardConfirmDisabled ? '#94a3b8' : '#fff',
+                    borderColor: isDiscardConfirmDisabled
+                      ? '#334155'
+                      : '#dc2626',
+                    pointerEvents: isDiscardConfirmDisabled ? 'none' : 'auto',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isDiscardConfirmDisabled) return;
+                    playSound(SOUNDS.seClick);
+                    if (isTutorialMode() && filterFinishHandSelection()) return;
+                    if (window.finishHandSelection)
+                      window.finishHandSelection();
+                  }}
+                >
+                  選択完了
+                </button>
+              );
+            })()
           ) : GameState.isEnemyTargetMode ? (
-            <button
-              id="btn-end-turn"
-              className="action-btn"
-              style={{
-                background:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? '#475569'
-                    : '#ef4444',
-                color:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? '#94a3b8'
-                    : '#fff',
-                borderColor:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? '#334155'
-                    : '#dc2626',
-                pointerEvents:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? 'none'
-                    : 'auto',
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                playSound(SOUNDS.seClick);
-                if (isTutorialMode() && filterFinishEnemyTargetSelection())
-                  return;
-                if (window.finishEnemyTargetSelection)
-                  window.finishEnemyTargetSelection();
-              }}
-            >
-              選択完了
-            </button>
+            (() => {
+              const isEnemyConfirmDisabled =
+                !GameState.isTargetCancelable &&
+                (GameState.targetSelectedLanes?.length || 0) <
+                  (GameState.targetMaxCount || 0);
+              return (
+                <button
+                  id="btn-end-turn"
+                  className="action-btn"
+                  disabled={isEnemyConfirmDisabled}
+                  style={{
+                    background: isEnemyConfirmDisabled ? '#475569' : '#ef4444',
+                    color: isEnemyConfirmDisabled ? '#94a3b8' : '#fff',
+                    borderColor: isEnemyConfirmDisabled ? '#334155' : '#dc2626',
+                    pointerEvents: isEnemyConfirmDisabled ? 'none' : 'auto',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isEnemyConfirmDisabled) return;
+                    playSound(SOUNDS.seClick);
+                    if (isTutorialMode() && filterFinishEnemyTargetSelection())
+                      return;
+                    if (window.finishEnemyTargetSelection)
+                      window.finishEnemyTargetSelection();
+                  }}
+                >
+                  選択完了
+                </button>
+              );
+            })()
           ) : GameState.isAlliedTargetMode ? (
-            <button
-              id="btn-end-turn"
-              className="action-btn"
-              style={{
-                background:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? '#475569'
-                    : '#ef4444',
-                color:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? '#94a3b8'
-                    : '#fff',
-                borderColor:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? '#334155'
-                    : '#dc2626',
-                pointerEvents:
-                  !GameState.isTargetCancelable &&
-                  GameState.targetSelectedLanes.length <
-                    GameState.targetMaxCount
-                    ? 'none'
-                    : 'auto',
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                playSound(SOUNDS.seClick);
-                if (window.finishAlliedSelection)
-                  window.finishAlliedSelection();
-              }}
-            >
-              選択完了
-            </button>
+            (() => {
+              const isAlliedConfirmDisabled =
+                !GameState.isTargetCancelable &&
+                (GameState.targetSelectedLanes?.length || 0) <
+                  (GameState.targetMaxCount || 0);
+              return (
+                <button
+                  id="btn-end-turn"
+                  className="action-btn"
+                  disabled={isAlliedConfirmDisabled}
+                  style={{
+                    background: isAlliedConfirmDisabled ? '#475569' : '#ef4444',
+                    color: isAlliedConfirmDisabled ? '#94a3b8' : '#fff',
+                    borderColor: isAlliedConfirmDisabled
+                      ? '#334155'
+                      : '#dc2626',
+                    pointerEvents: isAlliedConfirmDisabled ? 'none' : 'auto',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isAlliedConfirmDisabled) return;
+                    playSound(SOUNDS.seClick);
+                    if (window.finishAlliedSelection)
+                      window.finishAlliedSelection();
+                  }}
+                >
+                  選択完了
+                </button>
+              );
+            })()
           ) : (
             <button
               id="btn-end-turn"

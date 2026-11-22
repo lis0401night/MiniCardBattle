@@ -129,20 +129,28 @@ export default function Board({
             selectedBoardLaneIndex === lane && selectedBoardSide === 'enemy';
           const isSealed =
             GameState.enemySealedLanes && GameState.enemySealedLanes[lane] > 0;
-          let isEnemyHighlight = false;
-          if (
+          const isEnemyTargetSelected =
             GameState.isEnemyTargetMode &&
-            !GameState.targetSelectedLanes?.includes(lane)
-          ) {
-            if (GameState.isEnemyTargetAllowEmpty || card !== null) {
+            Boolean(GameState.targetSelectedLanes?.includes(lane));
+          let isEnemyHighlight = false;
+          if (GameState.isEnemyTargetMode && !isEnemyTargetSelected) {
+            if (Array.isArray(GameState.targetValidLanes)) {
+              isEnemyHighlight = GameState.targetValidLanes.includes(lane);
+            } else if (GameState.isEnemyTargetAllowEmpty || card !== null) {
               isEnemyHighlight = true;
             }
           }
+          const enemyCardClassNames = [
+            isSelected ? 'selected' : '',
+            isEnemyTargetSelected ? 'board-selected' : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <div
               key={`enemy-lane-${lane}`}
-              className={`cell ${isSealed ? 'sealed' : ''} ${isEnemyHighlight ? 'highlight' : ''}`}
+              className={`cell${isSealed ? ' sealed' : ''}${isEnemyHighlight ? ' highlight' : ''}${isEnemyTargetSelected ? ' lane-selected' : ''}`}
               data-lane={lane}
               onClick={() => {
                 if (isSealed && window.handleEnemyLaneClick) {
@@ -160,7 +168,7 @@ export default function Board({
                   cardObj={card}
                   isBoard={true}
                   isValkyriaGuardActive={isEnemyGuardActive}
-                  className={isSelected ? 'selected' : ''}
+                  className={enemyCardClassNames}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (isSealed && window.handleEnemyLaneClick) {
@@ -187,7 +195,24 @@ export default function Board({
             GameState.playerSealedLanes &&
             GameState.playerSealedLanes[lane] > 0;
 
-          // ハイライト(配置可能)判定
+          const isInvokeBoardSelected =
+            GameState.isInvokeSelectMode &&
+            Boolean(GameState.targetSelectedLanes?.includes(lane));
+          const isAlliedTargetSelected =
+            GameState.isAlliedTargetMode &&
+            Boolean(GameState.targetSelectedLanes?.includes(lane));
+          const isPlacementLaneSelected =
+            GameState.isPlacementMode &&
+            Boolean(GameState.placementSelectedLanes?.includes(lane));
+          // ターン開始時の「移動（move）」発動中、現在移動させようとしている移動元カード（レーン）を青枠ハイライトする
+          const isMoveSourceSelected = GameState.moveSourceLane === lane;
+          const isPlayerLaneSelected =
+            isInvokeBoardSelected ||
+            isAlliedTargetSelected ||
+            isPlacementLaneSelected ||
+            isMoveSourceSelected;
+
+          // ハイライト(選択・配置可能)判定
           let isHighlight = false;
           const selectedCard =
             GameState.selectedCardIndex !== null && GameState.playerHand
@@ -196,14 +221,20 @@ export default function Board({
 
           if (GameState.isInvokeSelectMode) {
             // 「招来」の破棄対象選択モード時は、カードが存在し未選択の自陣レーンをハイライトする
-            isHighlight =
-              card !== null && !GameState.targetSelectedLanes?.includes(lane);
+            isHighlight = card !== null && !isInvokeBoardSelected;
+          } else if (GameState.isAlliedTargetMode) {
+            // 味方対象選択モード（処刑・選別・鼓舞・保護等）時は、封印状態に関わらず未選択の対象可能カードレーンをハイライトする
+            if (!isAlliedTargetSelected) {
+              isHighlight = Array.isArray(GameState.targetValidLanes)
+                ? GameState.targetValidLanes.includes(lane)
+                : card !== null;
+            }
           } else if (isSealed) {
-            isHighlight = false; // 封印されていたらハイライトしない
+            isHighlight = false; // 封印されていたら配置・召喚ハイライトしない
           } else if (GameState.isPlacementMode) {
             const tCard = GameState.placementToken;
             const checkEnv = GameState.placementCheckConstraints !== false; // フラグが明示的にfalseなら制約無視
-            if (GameState.placementSelectedLanes?.includes(lane)) {
+            if (isPlacementLaneSelected) {
               isHighlight = false;
             } else if (
               GameState.placementRestrictLanes &&
@@ -233,12 +264,9 @@ export default function Board({
               );
           }
 
-          const isInvokeBoardSelected =
-            GameState.isInvokeSelectMode &&
-            GameState.targetSelectedLanes?.includes(lane);
           const cardClassNames = [
             isSelected ? 'selected' : '',
-            isInvokeBoardSelected ? 'board-selected' : '',
+            isPlayerLaneSelected ? 'board-selected' : '',
           ]
             .filter(Boolean)
             .join(' ');
@@ -246,7 +274,7 @@ export default function Board({
           return (
             <div
               key={`player-lane-${lane}`}
-              className={`cell${isHighlight ? ' highlight' : ''}${isSealed ? ' sealed' : ''}`}
+              className={`cell${isHighlight ? ' highlight' : ''}${isPlayerLaneSelected ? ' lane-selected' : ''}${isSealed ? ' sealed' : ''}`}
               data-lane={lane}
               // 配置モード時などのCellクリックに対応したい場合はここで onCellClick を呼ぶ
               onClick={() => {

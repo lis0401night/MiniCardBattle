@@ -14,7 +14,11 @@ import {
 } from '../ai.js';
 import { getAIDiscardIndices } from '../../utils/aiDiscardLogic.js';
 import { applyActiveSkillLogic, calculateCombatPhase } from '../engine.js';
-import { isTutorialMode, filterPlacementLaneClick } from '../tutorialEngine.js';
+import {
+  isTutorialMode,
+  filterPlacementLaneClick,
+  restoreTutorialPlacementTargetLane,
+} from '../tutorialEngine.js';
 import { GameState } from '../../state/gameState.js';
 import {
   checkIsEasyAI,
@@ -520,21 +524,45 @@ export async function waitPlayerLaneSelection(
 
   // プレイヤーの場合：手動選択
   return new Promise((resolve) => {
+    const placementCtx = {
+      board,
+      sealedLanes,
+      tokenLanes,
+      checkConstraints,
+      tokenCard,
+      owner,
+    };
+    const validLanes = [0, 1, 2].filter((lane) =>
+      isPlacementCandidateLane(lane, placementCtx)
+    );
+    const effectiveMaxCount = Math.min(count, validLanes.length);
+    // 必要選択数が1以下（または合法候補が1レーン以下）の場合は従来の1タップ即決定を維持し、
+    // 2レーン以上選択できる場合のみトグル選択／解除＋完了ボタン確定モードにする
+    const isMultiSelect = effectiveMaxCount > 1;
+
     GameState.isPlacementMode = true;
-    GameState.placementCount = count;
+    GameState.placementCount = effectiveMaxCount;
     GameState.placementToken = tokenCard || null;
     GameState.placementSelectedLanes = [];
+    GameState.placementValidLanes = [...validLanes];
+    GameState.isPlacementCancelable = canCancel;
     GameState.placementCheckConstraints = checkConstraints;
     GameState.placementButtonText = buttonText;
     GameState.placementRestrictLanes = tokenLanes || null;
     GameState.selectedCardIndex = null; // 配置モード開始時に手札の選択解除
     updateCardDetail(null);
 
-    // 【多重実行防止】カウント到達時の setTimeout と「配置終了」ボタンの
+    // 【多重実行防止】カウント到達時の setTimeout と「配置完了」ボタンの
     // 両方から cleanUp が呼ばれうるため、実行済みフラグで再入を防ぐ。
     // 2回目の実行を許すと、空の選択結果がオンライン相手へ再送信される。
     let isCleanedUp = false;
 
+    /**
+     * 配置選択モードを確定・終了し、最終的な選択レーン配列をオンライン同期して返す。
+     * トグル操作中の途中経過は送信せず、確定時の最終配列のみを1回だけ送信する。
+     *
+     * @returns {Promise<number[]>} 重複排除・合法性検証済みの最終選択レーン配列
+     */
     const cleanUp = async () => {
       if (isCleanedUp) return [];
       isCleanedUp = true;
@@ -542,30 +570,30 @@ export async function waitPlayerLaneSelection(
         stopOnlineTimer();
       }
 
-      // キャンセル不可（!canCancel）で未選択枠が残っている場合、有効レーンから補完する
-      if (!canCancel && GameState.placementSelectedLanes.length < count) {
-        const placementCtx = {
-          board,
-          sealedLanes,
-          tokenLanes,
-          checkConstraints,
-          tokenCard,
-          owner,
-        };
+      // キャンセル不可（!canCancel）で未選択枠が残っている場合（タイムアウト時等）、有効レーンから決定論的に補完する
+      if (
+        !canCancel &&
+        GameState.placementSelectedLanes.length < effectiveMaxCount
+      ) {
         GameState.placementSelectedLanes = fillRemainingPlacementLanes(
           GameState.placementSelectedLanes,
-          count,
+          effectiveMaxCount,
           placementCtx
         );
       }
 
+      const result = [...new Set(GameState.placementSelectedLanes)]
+        .filter((lane) => validLanes.includes(lane))
+        .slice(0, effectiveMaxCount);
+
       GameState.isPlacementMode = false;
       GameState.placementCount = 0;
       GameState.placementToken = null;
+      GameState.placementValidLanes = null;
+      GameState.isPlacementCancelable = false;
       GameState.placementCheckConstraints = true;
       GameState.placementButtonText = '配置完了';
       GameState.placementRestrictLanes = null;
-      const result = [...GameState.placementSelectedLanes];
       GameState.placementSelectedLanes = [];
       window.handlePlacementLaneClick = null;
       window.finishPlacement = null;
@@ -573,7 +601,7 @@ export async function waitPlayerLaneSelection(
       battleEvents.off('PLACEMENT_LANE_CLICK', onPlacementLaneClick);
       updateCardDetail(null);
 
-      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      // 【オンライン同期】確定した最終選択結果のみを順番・種類付きで相手端末へ1回だけ送信（オフライン時は何もしない）
       await submitLocalChoice(CHOICE_KIND.LANE, result);
 
       if (updateBattleUIHook) updateBattleUIHook();
@@ -591,7 +619,14 @@ export async function waitPlayerLaneSelection(
       });
     }
 
+    /**
+     * 配置・召喚の完了ボタン押下時ハンドラ。
+     * キャンセル不可かつ必要数未達（トグル解除直後等）の場合は確定送信をブロックする。
+     *
+     * @returns {Promise<void>}
+     */
     const onFinishPlacement = async () => {
+      if (isCleanedUp) return;
       // チュートリアル中はまだ配置先がある場合ブロック
       if (isTutorialMode()) {
         const t = GameState.tutorial;
@@ -605,14 +640,40 @@ export async function waitPlayerLaneSelection(
           return;
         }
       }
+      // キャンセル不可で必要枚数に満たない場合は、不完全な選択配列の確定・オンライン送信を防ぐ
+      if (
+        !canCancel &&
+        GameState.placementSelectedLanes.length < effectiveMaxCount
+      ) {
+        playSound(SOUNDS.seDamage);
+        return;
+      }
       playSound(SOUNDS.seClick);
       resolve(await cleanUp());
     };
 
+    /**
+     * 自陣レーンクリック時の選択／トグル解除ハンドラ。
+     *
+     * @param {number} laneIndex - クリックされたレーンインデックス (0〜2)
+     * @returns {Promise<void>}
+     */
     const onPlacementLaneClick = async (laneIndex) => {
-      // 連打防止: count分のレーンが既に選択済みなら追加クリックを無視
-      if (GameState.placementSelectedLanes.length >= count) return;
-      if (GameState.placementSelectedLanes.includes(laneIndex)) return;
+      if (isCleanedUp) return;
+
+      // すでに選択済みのレーンを再クリックした場合：複数選択時のみトグル解除する
+      const existingPos = GameState.placementSelectedLanes.indexOf(laneIndex);
+      if (existingPos >= 0) {
+        if (!isMultiSelect) return;
+        GameState.placementSelectedLanes.splice(existingPos, 1);
+        restoreTutorialPlacementTargetLane(laneIndex);
+        playSound(SOUNDS.seClick);
+        if (updateBattleUIHook) updateBattleUIHook();
+        return;
+      }
+
+      // 連打防止・上限ガード: effectiveMaxCount 分のレーンが既に選択済みなら新規追加を無視
+      if (GameState.placementSelectedLanes.length >= effectiveMaxCount) return;
       if (sealedLanes[laneIndex] > 0) {
         playSound(SOUNDS.seDamage);
         return;
@@ -681,8 +742,14 @@ export async function waitPlayerLaneSelection(
       GameState.placementSelectedLanes.push(laneIndex);
       if (updateBattleUIHook) updateBattleUIHook();
 
-      if (GameState.placementSelectedLanes.length >= count) {
+      // 1レーンのみ選択するケースでは現行どおりタップ即決定（遅延確定）を維持し、
+      // 複数レーン選択時は完了ボタン押下までトグルによる選び直しを許可する
+      if (
+        !isMultiSelect &&
+        GameState.placementSelectedLanes.length >= effectiveMaxCount
+      ) {
         setTimeout(async () => {
+          if (isCleanedUp) return;
           resolve(await cleanUp());
         }, PLACEMENT_CONFIRM_DELAY_MS);
       }
@@ -690,7 +757,7 @@ export async function waitPlayerLaneSelection(
 
     // 【移行措置】battleEvents への完全移行が完了するまで、旧 window グローバル経由の
     // 呼び出しも受け付ける。UI 側が両方を発火した場合でも、onPlacementLaneClick の
-    // 重複ガード（L396-397）と cleanUp の isCleanedUp フラグにより二重処理を防ぐ。
+    // 重複ガードと cleanUp の isCleanedUp フラグにより二重処理を防ぐ。
     window.finishPlacement = onFinishPlacement;
     window.handlePlacementLaneClick = onPlacementLaneClick;
     battleEvents.on('PLACEMENT_FINISH', onFinishPlacement);
@@ -979,9 +1046,15 @@ export async function waitPlayerEnemyLaneSelection(
   }
 
   return new Promise((resolve) => {
+    const effectiveMaxCount = Math.min(count, validLanes.length);
+    // 必要選択数が1以下（または有効候補が1レーン以下）の場合は従来の1タップ即決定を維持し、
+    // 2レーン以上選択できる場合のみトグル選択／解除＋完了ボタン確定モードにする
+    const isMultiSelect = effectiveMaxCount > 1;
+
     GameState.isEnemyTargetMode = true;
-    GameState.targetMaxCount = count;
+    GameState.targetMaxCount = effectiveMaxCount;
     GameState.targetSelectedLanes = [];
+    GameState.targetValidLanes = [...validLanes];
     GameState.isTargetCancelable = canCancel;
     GameState.isEnemyTargetAllowEmpty = allowEmpty;
 
@@ -992,6 +1065,10 @@ export async function waitPlayerEnemyLaneSelection(
     }
 
     let isCleanedUp = false;
+    /**
+     * 敵レーン選択モードのUI状態・タイマー・イベントリスナーをすべて解除する。
+     * @returns {void}
+     */
     const cleanUp = () => {
       if (isCleanedUp) return;
       isCleanedUp = true;
@@ -1000,6 +1077,7 @@ export async function waitPlayerEnemyLaneSelection(
       }
       GameState.isEnemyTargetMode = false;
       GameState.targetSelectedLanes = [];
+      GameState.targetValidLanes = null;
       GameState.targetMaxCount = 0;
       GameState.isEnemyTargetAllowEmpty = false;
       GameState.isTargetCancelable = false;
@@ -1008,7 +1086,7 @@ export async function waitPlayerEnemyLaneSelection(
       battleEvents.off('ENEMY_LANE_CLICK', onEnemyLaneClick);
       battleEvents.off(
         'ENEMY_TARGET_SELECTION_FINISH',
-        onFinishEnemyTargetSelection
+        onFinishEnemyTargetSelectionByUser
       );
       updateCardDetail(null);
     };
@@ -1021,21 +1099,40 @@ export async function waitPlayerEnemyLaneSelection(
           if (isCleanedUp) return;
           if (!canCancel) {
             for (const lane of validLanes) {
-              if (GameState.targetSelectedLanes.length >= count) break;
+              if (GameState.targetSelectedLanes.length >= effectiveMaxCount)
+                break;
               if (!GameState.targetSelectedLanes.includes(lane)) {
                 GameState.targetSelectedLanes.push(lane);
               }
             }
           }
-          onFinishEnemyTargetSelection();
+          onFinishEnemyTargetSelection(true);
         },
       });
     }
 
+    /**
+     * 敵陣レーンクリック時の選択／トグル解除ハンドラ。
+     *
+     * @param {number} laneIndex - クリックされた敵陣レーンインデックス (0〜2)
+     * @returns {void}
+     */
     const onEnemyLaneClick = (laneIndex) => {
       if (isCleanedUp) return;
-      // 連打防止: count分のレーンが既に選択済みなら追加クリックを無視
-      if (GameState.targetSelectedLanes.length >= count) return;
+
+      // すでに選択済みのレーンを再クリックした場合：複数選択時のみトグル解除する
+      const existingPos = GameState.targetSelectedLanes.indexOf(laneIndex);
+      if (existingPos >= 0) {
+        if (!isMultiSelect) return;
+        GameState.targetSelectedLanes.splice(existingPos, 1);
+        restoreTutorialPlacementTargetLane(laneIndex);
+        playSound(SOUNDS.seClick);
+        if (updateBattleUIHook) updateBattleUIHook();
+        return;
+      }
+
+      // 連打防止・上限ガード: effectiveMaxCount 分のレーンが既に選択済みなら新規追加を無視
+      if (GameState.targetSelectedLanes.length >= effectiveMaxCount) return;
       if (!validLanes.includes(laneIndex)) {
         playSound(SOUNDS.seDamage);
         return;
@@ -1046,53 +1143,83 @@ export async function waitPlayerEnemyLaneSelection(
         return;
 
       playSound(SOUNDS.seClick);
+      GameState.targetSelectedLanes.push(laneIndex);
+      if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
 
-      if (!GameState.targetSelectedLanes.includes(laneIndex)) {
-        GameState.targetSelectedLanes.push(laneIndex);
-        if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライト更新
-
-        if (GameState.targetSelectedLanes.length >= count) {
-          setTimeout(() => {
-            // 自身の選択が既に終了している場合は確定しない（後続の選択待ちを誤確定させないため）
-            if (isCleanedUp) return;
-            onFinishEnemyTargetSelection();
-          }, 300);
-        }
+      // 1レーン選択時は現行どおり300ms後に即決定し、複数レーン選択時は完了ボタン押下まで待機する
+      if (
+        !isMultiSelect &&
+        GameState.targetSelectedLanes.length >= effectiveMaxCount
+      ) {
+        setTimeout(() => {
+          // 自身の選択が既に終了している場合は確定しない（後続の選択待ちを誤確定させないため）
+          if (isCleanedUp) return;
+          onFinishEnemyTargetSelection(true);
+        }, 300);
       }
     };
 
-    const onFinishEnemyTargetSelection = async () => {
+    /**
+     * 敵レーン選択の確定・オンライン送信を行う内部完了処理。
+     * トグル解除後に不足した状態で手動確定された場合は送信をブロックする。
+     *
+     * @param {boolean} [allowAutoFill=false] - タイムアウトや1枠自動確定など強制補完を許容する経路なら true
+     * @returns {Promise<void>}
+     */
+    const onFinishEnemyTargetSelection = async (allowAutoFill = false) => {
       if (isCleanedUp) return;
+      // キャンセル不可かつ必要数未達での手動確定（トグル解除直後の誤押下等）をブロック
+      if (
+        !allowAutoFill &&
+        !canCancel &&
+        GameState.targetSelectedLanes.length < effectiveMaxCount
+      ) {
+        playSound(SOUNDS.seDamage);
+        return;
+      }
       playSound(SOUNDS.seClick);
 
-      // キャンセル不可かつ未選択の場合、有効レーンから補完
+      // キャンセル不可で未達（タイムアウト等）の場合、有効レーンから決定論的に補完
       if (
         !canCancel &&
-        GameState.targetSelectedLanes.length === 0 &&
+        GameState.targetSelectedLanes.length < effectiveMaxCount &&
         validLanes.length > 0
       ) {
         for (const lane of validLanes) {
-          if (GameState.targetSelectedLanes.length >= count) break;
-          GameState.targetSelectedLanes.push(lane);
+          if (GameState.targetSelectedLanes.length >= effectiveMaxCount) break;
+          if (!GameState.targetSelectedLanes.includes(lane)) {
+            GameState.targetSelectedLanes.push(lane);
+          }
         }
       }
 
-      const result = [...GameState.targetSelectedLanes];
+      const result = [...new Set(GameState.targetSelectedLanes)]
+        .filter((lane) => validLanes.includes(lane))
+        .slice(0, effectiveMaxCount);
       cleanUp();
 
-      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      // 【オンライン同期】確定した最終選択結果のみを順番・種類付きで相手端末へ1回だけ送信（オフライン時は何もしない）
       await submitLocalChoice(CHOICE_KIND.ENEMY_LANE, result);
 
       if (updateBattleUIHook) updateBattleUIHook();
       resolve(result);
     };
 
+    /**
+     * ユーザー操作（「選択完了」ボタン／イベント）から確定処理を呼び出すラッパー。
+     * イベント引数が allowAutoFill に誤混入するのを防ぐ。
+     *
+     * @returns {Promise<void>}
+     */
+    const onFinishEnemyTargetSelectionByUser = () =>
+      onFinishEnemyTargetSelection(false);
+
     window.handleEnemyLaneClick = onEnemyLaneClick;
-    window.finishEnemyTargetSelection = onFinishEnemyTargetSelection;
+    window.finishEnemyTargetSelection = onFinishEnemyTargetSelectionByUser;
     battleEvents.on('ENEMY_LANE_CLICK', onEnemyLaneClick);
     battleEvents.on(
       'ENEMY_TARGET_SELECTION_FINISH',
-      onFinishEnemyTargetSelection
+      onFinishEnemyTargetSelectionByUser
     );
 
     if (updateBattleUIHook) updateBattleUIHook();
@@ -1177,18 +1304,24 @@ export async function waitPlayerAlliedLaneSelection(
 
   // 【フェーズ 3】プレイヤーが画面上で手動選択を行う場合
   return new Promise((resolve) => {
+    const effectiveMaxCount = Math.min(count, occupiedLanes.length);
+    // 必要選択数が1以下（または対象カードが1枚以下）の場合は従来の1タップ即決定を維持し、
+    // 2レーン以上選択できる場合のみトグル選択／解除＋完了ボタン確定モードにする
+    const isMultiSelect = effectiveMaxCount > 1;
+
     // グローバル状態に自分のカード/レーン選択モードであることを設定する
     GameState.isAlliedTargetMode = true;
-    GameState.targetMaxCount = count;
+    GameState.targetMaxCount = effectiveMaxCount;
     GameState.targetSelectedLanes = [];
+    GameState.targetValidLanes = [...occupiedLanes];
     GameState.isTargetCancelable = canCancel;
     updateCardDetail(null);
 
-    /**
-     * 自分のカードやレーンがクリックされた時のイベントハンドラ
-     * @param {number} laneIndex - クリックされたレーンインデックス
-     */
     let isCleanedUp = false;
+    /**
+     * 味方レーン選択モードのUI状態・タイマー・イベントリスナーをすべて解除する。
+     * @returns {void}
+     */
     const cleanUp = () => {
       if (isCleanedUp) return;
       isCleanedUp = true;
@@ -1197,12 +1330,16 @@ export async function waitPlayerAlliedLaneSelection(
       }
       GameState.isAlliedTargetMode = false;
       GameState.targetSelectedLanes = [];
+      GameState.targetValidLanes = null;
       GameState.targetMaxCount = 0;
       GameState.isTargetCancelable = false;
       window.handleAlliedLaneClick = null;
       window.finishAlliedSelection = null;
       battleEvents.off('ALLIED_LANE_CLICK', onAlliedLaneClick);
-      battleEvents.off('ALLIED_SELECTION_FINISH', onFinishAlliedSelection);
+      battleEvents.off(
+        'ALLIED_SELECTION_FINISH',
+        onFinishAlliedSelectionByUser
+      );
       updateCardDetail(null);
     };
 
@@ -1214,79 +1351,118 @@ export async function waitPlayerAlliedLaneSelection(
           if (isCleanedUp) return;
           if (!canCancel) {
             for (const lane of occupiedLanes) {
-              if (GameState.targetSelectedLanes.length >= count) break;
+              if (GameState.targetSelectedLanes.length >= effectiveMaxCount)
+                break;
               if (!GameState.targetSelectedLanes.includes(lane)) {
                 GameState.targetSelectedLanes.push(lane);
               }
             }
           }
-          onFinishAlliedSelection();
+          onFinishAlliedSelection(true);
         },
       });
     }
 
     /**
-     * 自分のカードやレーンがクリックされた時のイベントハンドラ
-     * @param {number} laneIndex - クリックされたレーンインデックス
+     * 自分のカードやレーンがクリックされた時の選択／トグル解除イベントハンドラ。
+     *
+     * @param {number} laneIndex - クリックされた自陣レーンインデックス (0〜2)
+     * @returns {void}
      */
     const onAlliedLaneClick = (laneIndex) => {
       if (isCleanedUp) return;
-      // 連打防止: 目標数のレーンが既に選択済みなら追加クリックを無視
-      if (GameState.targetSelectedLanes.length >= count) return;
+
+      // すでに選択済みのレーンを再クリックした場合：複数選択時のみトグル解除する
+      const existingPos = GameState.targetSelectedLanes.indexOf(laneIndex);
+      if (existingPos >= 0) {
+        if (!isMultiSelect) return;
+        GameState.targetSelectedLanes.splice(existingPos, 1);
+        playSound(SOUNDS.seClick);
+        if (updateBattleUIHook) updateBattleUIHook();
+        return;
+      }
+
+      // 連打防止・上限ガード: 目標数のレーンが既に選択済みなら新規追加を無視
+      if (GameState.targetSelectedLanes.length >= effectiveMaxCount) return;
       // 対象レーンにカードがない、または範囲外・不正なレーンの場合は処理をスキップ
       if (!occupiedLanes.includes(laneIndex)) return;
       playSound(SOUNDS.seClick);
 
-      // まだ選択されていないレーンであれば選択リストに追加する
-      if (!GameState.targetSelectedLanes.includes(laneIndex)) {
-        GameState.targetSelectedLanes.push(laneIndex);
-        if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライトのUI表示を更新
+      GameState.targetSelectedLanes.push(laneIndex);
+      if (updateBattleUIHook) updateBattleUIHook(); // 選択ハイライトのUI表示を更新
 
-        // 規定枚数（目標数）の選択が完了した場合
-        if (GameState.targetSelectedLanes.length >= count) {
-          // タップ決定演出のために300ms待ってから、非同期で決定処理を呼び出す
-          setTimeout(() => {
-            // 自身の選択が既に終了している場合は確定しない（後続の選択待ちを誤確定させないため）
-            if (isCleanedUp) return;
-            onFinishAlliedSelection();
-          }, 300);
-        }
+      // 1レーン選択時は現行どおり300ms後に即決定し、複数レーン選択時は「選択完了」ボタン押下まで待機する
+      if (
+        !isMultiSelect &&
+        GameState.targetSelectedLanes.length >= effectiveMaxCount
+      ) {
+        // タップ決定演出のために300ms待ってから、非同期で決定処理を呼び出す
+        setTimeout(() => {
+          // 自身の選択が既に終了している場合は確定しない（後続の選択待ちを誤確定させないため）
+          if (isCleanedUp) return;
+          onFinishAlliedSelection(true);
+        }, 300);
       }
     };
 
     /**
-     * 選択処理を確定させ、画面上の選択モードを解除するクリーンアップ兼決定関数
+     * 選択処理を確定させ、最終的な選択配列をオンライン同期した上で選択モードを解除する。
+     * キャンセル不可かつ必要数未達（トグル解除直後等）の手動確定はブロックする。
+     *
+     * @param {boolean} [allowAutoFill=false] - タイムアウトや1枠自動確定など強制補完を許容する経路なら true
+     * @returns {Promise<void>}
      */
-    const onFinishAlliedSelection = async () => {
+    const onFinishAlliedSelection = async (allowAutoFill = false) => {
       if (isCleanedUp) return;
+      // キャンセル不可かつ必要枚数未達での手動確定（トグル解除直後の誤送信等）をブロック
+      if (
+        !allowAutoFill &&
+        !canCancel &&
+        GameState.targetSelectedLanes.length < effectiveMaxCount
+      ) {
+        playSound(SOUNDS.seDamage);
+        return;
+      }
       playSound(SOUNDS.seClick);
 
-      // キャンセル不可かつ未選択の場合、有効レーンから補完
+      // キャンセル不可で未達（タイムアウト等）の場合、有効レーンから決定論的に補完
       if (
         !canCancel &&
-        GameState.targetSelectedLanes.length === 0 &&
+        GameState.targetSelectedLanes.length < effectiveMaxCount &&
         occupiedLanes.length > 0
       ) {
         for (const lane of occupiedLanes) {
-          if (GameState.targetSelectedLanes.length >= count) break;
-          GameState.targetSelectedLanes.push(lane);
+          if (GameState.targetSelectedLanes.length >= effectiveMaxCount) break;
+          if (!GameState.targetSelectedLanes.includes(lane)) {
+            GameState.targetSelectedLanes.push(lane);
+          }
         }
       }
 
-      const result = [...GameState.targetSelectedLanes];
+      const result = [...new Set(GameState.targetSelectedLanes)]
+        .filter((lane) => occupiedLanes.includes(lane))
+        .slice(0, effectiveMaxCount);
       cleanUp();
 
-      // 【オンライン同期】選択結果を順番・種類付きで相手端末へ送信（オフライン時は何もしない）
+      // 【オンライン同期】確定した最終選択結果のみを順番・種類付きで相手端末へ1回だけ送信（オフライン時は何もしない）
       await submitLocalChoice(CHOICE_KIND.ALLIED_LANE, result);
 
       if (updateBattleUIHook) updateBattleUIHook(); // UIハイライト等の状態更新をトリガー
       resolve(result); // 非同期の呼び出し元へ選択結果配列を返却する
     };
 
+    /**
+     * ユーザー操作（「選択完了」ボタン／イベント）から確定処理を呼び出すラッパー。
+     * イベント引数が allowAutoFill に誤混入するのを防ぐ。
+     *
+     * @returns {Promise<void>}
+     */
+    const onFinishAlliedSelectionByUser = () => onFinishAlliedSelection(false);
+
     window.handleAlliedLaneClick = onAlliedLaneClick;
-    window.finishAlliedSelection = onFinishAlliedSelection;
+    window.finishAlliedSelection = onFinishAlliedSelectionByUser;
     battleEvents.on('ALLIED_LANE_CLICK', onAlliedLaneClick);
-    battleEvents.on('ALLIED_SELECTION_FINISH', onFinishAlliedSelection);
+    battleEvents.on('ALLIED_SELECTION_FINISH', onFinishAlliedSelectionByUser);
 
     if (updateBattleUIHook) updateBattleUIHook();
   });

@@ -1106,9 +1106,17 @@ export function cleanupBattleState() {
   GameState.placementCount = 0;
   GameState.placementToken = null;
   GameState.placementSelectedLanes = [];
+  GameState.placementValidLanes = null;
+  GameState.isPlacementCancelable = false;
+  GameState.moveSourceLane = null;
   GameState.isEnemyTargetMode = false;
   GameState.isAlliedTargetMode = false;
   GameState.isInvokeSelectMode = false;
+  GameState.targetMaxCount = 0;
+  GameState.targetSelectedLanes = [];
+  GameState.targetValidLanes = null;
+  GameState.isTargetCancelable = false;
+  GameState.isEnemyTargetAllowEmpty = false;
   GameState.enemyTargetSkillId = null;
   GameState.targetSelectResolve = null;
   GameState.isDiscardingMode = false;
