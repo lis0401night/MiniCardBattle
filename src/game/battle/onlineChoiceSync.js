@@ -19,6 +19,7 @@
 import { GameState } from '../../state/gameState.js';
 import { sendOnlineAction } from '../../services/multiplayer.js';
 import { checkIsOnlineMode } from '../../utils/gameUtils.js';
+import { setWaitingOpponentChoice } from './thinkingState.js';
 
 /** アクション処理の外側（マリガン等）で発生する選択に使用するスコープ名 */
 export const NO_CHOICE_SCOPE = '__no_action__';
@@ -184,6 +185,7 @@ function tryDeliverRemoteChoice() {
     if (entry.legacy) {
       queue.splice(i, 1);
       waitingRequest = null;
+      setWaitingOpponentChoice(false);
       req.resolve(entry.data);
       return;
     }
@@ -233,6 +235,7 @@ function tryDeliverRemoteChoice() {
     }
     queue.splice(i, 1);
     waitingRequest = null;
+    setWaitingOpponentChoice(false);
     req.resolve(entry.data);
     return;
   }
@@ -275,6 +278,10 @@ export function waitRemoteChoice(kind) {
     const seq = incrementScopeCounter(consumedSeqByScope, scope);
     waitingRequest = { scope, seq, kind, resolve };
     tryDeliverRemoteChoice();
+    // 先行到着した選択で即座に解決しなかった場合のみ、相手選択待機状態を有効化してUIへ反映する
+    if (waitingRequest) {
+      setWaitingOpponentChoice(true);
+    }
   });
 }
 
@@ -288,6 +295,7 @@ export function resolveRemoteChoiceWait(fallbackValue) {
   if (!waitingRequest) return false;
   const req = waitingRequest;
   waitingRequest = null;
+  setWaitingOpponentChoice(false);
   req.resolve(fallbackValue);
   return true;
 }
@@ -303,5 +311,6 @@ export function resetOnlineChoiceSync() {
   consumedSeqByScope.clear();
   finishedScopes.clear();
   waitingRequest = null;
+  setWaitingOpponentChoice(false);
   GameState.pendingChoices = [];
 }

@@ -212,6 +212,8 @@ export async function processActionQueue() {
   if (isQueueProcessing) return;
   isQueueProcessing = true;
   GameState.isProcessing = true;
+  // オンライン対戦で相手アクションを受信・処理開始した瞬間に「思考中・・・」から「ENEMY TURN」へ切り替える
+  if (updateBattleUIHook) updateBattleUIHook();
 
   try {
     while (GameState.actionQueue.length > 0) {

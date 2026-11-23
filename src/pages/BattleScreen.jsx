@@ -57,6 +57,7 @@ import {
 } from '../game/tutorialEngine.js';
 import { openCardPreview } from '../services/uiGallery.js';
 import { BATTLE_PHASE } from '../game/battle/phases/phaseTypes.js';
+import { checkIsOpponentThinking } from '../game/battle/thinkingState.js';
 
 /**
  * バトル画面全体の表示・入力制御を行うメインページコンポーネント。
@@ -582,43 +583,54 @@ export default function BattleScreen() {
       />
 
       <div className="turn-area">
-        <div
-          id="turn-status"
-          style={{
-            color:
-              GameState.battlePhase === BATTLE_PHASE.MULLIGAN
-                ? '#fff'
-                : GameState.lastBattleResult === 'win'
-                  ? '#facc15'
-                  : GameState.lastBattleResult === 'lose'
-                    ? '#fff'
+        {(() => {
+          // CPU戦・オンライン戦の双方で相手思考中（メイン待機＋選択・割り込み待ち）を統一判定する
+          const isOpponentThinking = checkIsOpponentThinking(GameState);
+          const turnStatusColor =
+            GameState.battlePhase === BATTLE_PHASE.MULLIGAN
+              ? '#fff'
+              : GameState.lastBattleResult === 'win'
+                ? '#facc15'
+                : GameState.lastBattleResult === 'lose'
+                  ? '#fff'
+                  : isOpponentThinking
+                    ? 'var(--color-red)'
                     : GameState.currentTurn === 'player'
                       ? 'var(--color-blue)'
                       : GameState.currentTurn === 'enemy'
                         ? 'var(--color-red)'
-                        : '#facc15',
-            fontSize: '16px',
-          }}
-        >
-          {GameState.battlePhase === BATTLE_PHASE.MULLIGAN &&
-          GameState.placementMessage
-            ? GameState.placementMessage
-            : GameState.battlePhase === BATTLE_PHASE.MULLIGAN
-              ? 'MULLIGAN'
-              : GameState.lastBattleResult === 'win'
-                ? 'YOU WIN!'
-                : GameState.lastBattleResult === 'lose'
-                  ? 'YOU LOSE...'
-                  : GameState.lastBattleResult === 'draw'
-                    ? 'DRAW'
-                    : GameState.currentTurn === 'player'
-                      ? 'YOUR TURN'
-                      : GameState.currentTurn === 'enemy'
-                        ? GameState.isAIThinking
-                          ? '思考中・・・'
-                          : 'ENEMY TURN'
-                        : ''}
-        </div>
+                        : '#facc15';
+          const turnStatusText =
+            GameState.battlePhase === BATTLE_PHASE.MULLIGAN &&
+            GameState.placementMessage
+              ? GameState.placementMessage
+              : GameState.battlePhase === BATTLE_PHASE.MULLIGAN
+                ? 'MULLIGAN'
+                : GameState.lastBattleResult === 'win'
+                  ? 'YOU WIN!'
+                  : GameState.lastBattleResult === 'lose'
+                    ? 'YOU LOSE...'
+                    : GameState.lastBattleResult === 'draw'
+                      ? 'DRAW'
+                      : isOpponentThinking
+                        ? '思考中・・・'
+                        : GameState.currentTurn === 'player'
+                          ? 'YOUR TURN'
+                          : GameState.currentTurn === 'enemy'
+                            ? 'ENEMY TURN'
+                            : '';
+          return (
+            <div
+              id="turn-status"
+              style={{
+                color: turnStatusColor,
+                fontSize: '16px',
+              }}
+            >
+              {turnStatusText}
+            </div>
+          );
+        })()}
         {GameState.enemyConfig?.leaderSkill && (
           <button
             className="action-btn enemy-skill-btn"

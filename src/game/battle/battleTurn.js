@@ -472,6 +472,8 @@ function transitionAfterTurnStart(owner) {
     if (!getIsQueueProcessing()) {
       GameState.isProcessing = false;
     }
+    // 敵ターンのメインフェイズ（思考・行動入力待ち）へ遷移したことを明示する
+    GameState.battlePhase = BATTLE_PHASE.MAIN_ACTION;
     // オンライン対戦時：相手のメインフェイズタイマー（60秒）を開始
     if (checkIsOnlineMode(GameState.gameMode)) {
       startOnlineTimer({
@@ -579,6 +581,8 @@ const TURN_PHASES = [
 export async function startTurn(owner) {
   if (GameState.isBattleEnded) return;
   GameState.isProcessing = true;
+  // ターン開始演出（スタン減算・契約・移動・ドロー等）中はメイン入力待ちフェイズではないことを明示
+  GameState.battlePhase = BATTLE_PHASE.BATTLE;
 
   GameState.currentTurn = owner === 'blue' ? 'player' : 'enemy';
   if (updateBattleUIHook) updateBattleUIHook();

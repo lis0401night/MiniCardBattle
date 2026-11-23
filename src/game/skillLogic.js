@@ -11,10 +11,10 @@ import { GameState } from '../state/gameState.js';
 import { CARD_MASTER } from '../utils/constants/cards.js';
 import { CHARACTERS, getSkinImage } from '../utils/constants/characters.js';
 import {
-  AI_THINKING_DURATION,
   PLACE_ANIMATION_DURATION,
   VALKYRIA_GUARD_POPUP_COLOR,
 } from '../utils/constants/config.js';
+import { waitAIThinkingDelay } from './battle/thinkingState.js';
 import {
   ACTIVE_SKILLS,
   PASSIVE_SKILLS,
@@ -1157,7 +1157,7 @@ export async function resolveActiveSkillEffect(
         chosenBoardLanes.length > 0 ||
         aiPlan.summonZone !== null
       ) {
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       }
     } else {
       const sacSelection = await waitPlayerInvokeSacrificeSelection(o);
@@ -1708,7 +1708,7 @@ export async function resolveActiveSkillEffect(
     const selectedIndices = await waitPlayerHandSelection(count, o);
     if (o === 'red' && selectedIndices && selectedIndices.length > 0) {
       // AIの思考時間を演出
-      await sleep(AI_THINKING_DURATION);
+      await waitAIThinkingDelay();
     }
     if (selectedIndices && selectedIndices.length > 0) {
       selectedIndices.sort((a, b) => b - a);
@@ -2955,7 +2955,7 @@ export async function resolveActiveSkillEffect(
           }
         }
         // AIの思考時間を演出
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       } else {
         const promptDesc =
           Array.isArray(targetIds) && targetIds.length > 0
@@ -3163,7 +3163,7 @@ export async function resolveActiveSkillEffect(
           }
         }
         // AIの思考時間を演出
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       } else {
         // プレイヤー: 復活と同じ選択モーダルを使用
         selectedCard = await waitPlayerDiscardSelection(
@@ -3337,7 +3337,7 @@ export async function resolveActiveSkillEffect(
     );
     if (o === 'red' && discardIndices && discardIndices.length > 0) {
       // AIの思考時間を演出
-      await sleep(AI_THINKING_DURATION);
+      await waitAIThinkingDelay();
     }
     if (discardIndices && discardIndices.length > 0) {
       // 後ろから削除するためにインデックスを降順ソート
@@ -3362,7 +3362,7 @@ export async function resolveActiveSkillEffect(
         );
         if (o === 'red' && selectedResult) {
           // AIの思考時間を演出
-          await sleep(AI_THINKING_DURATION);
+          await waitAIThinkingDelay();
         }
 
         const cardsToProcess = Array.isArray(selectedResult)
@@ -3440,7 +3440,7 @@ export async function resolveActiveSkillEffect(
       );
       if (o === 'red' && selectedCard) {
         // AIの思考時間を演出
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       }
 
       if (selectedCard) {
@@ -3488,7 +3488,7 @@ export async function resolveActiveSkillEffect(
           );
           if (o === 'red' && discardIndices && discardIndices.length > 0) {
             // AIの思考時間を演出
-            await sleep(AI_THINKING_DURATION);
+            await waitAIThinkingDelay();
           }
           if (discardIndices && discardIndices.length > 0) {
             const discardIdx = discardIndices[0];
@@ -3579,7 +3579,7 @@ export async function resolveActiveSkillEffect(
 
       if (o === 'red' && selectedCard) {
         // AIの思考時間を演出
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       }
 
       if (selectedCard) {
@@ -3627,8 +3627,8 @@ export async function resolveActiveSkillEffect(
               GameState.placementMessage = null;
             }
 
-            if (GameState.gameMode !== 'online' && o !== 'blue') {
-              await sleep(600); // 敵AIの場合のみ間を空ける
+            if (!checkIsOnlineMode(GameState.gameMode) && o !== 'blue') {
+              await waitAIThinkingDelay(600); // 敵AIの場合のみ思考ディレイを挟む
             }
 
             if (!selectedLanes || selectedLanes.length === 0) {
@@ -3695,7 +3695,7 @@ export async function resolveActiveSkillEffect(
     );
     if (o === 'red' && selectedHandIndices && selectedHandIndices.length > 0) {
       // AIの思考時間を演出
-      await sleep(AI_THINKING_DURATION);
+      await waitAIThinkingDelay();
     }
     let discardedCount = 0;
 
@@ -3756,7 +3756,7 @@ export async function resolveActiveSkillEffect(
     const discardIndices = await waitPlayerHandSelection(val, o, true);
     if (o === 'red' && discardIndices && discardIndices.length > 0) {
       // AIの思考時間を演出
-      await sleep(AI_THINKING_DURATION);
+      await waitAIThinkingDelay();
     }
     if (discardIndices && discardIndices.length > 0) {
       const h = o === 'blue' ? GameState.playerHand : GameState.enemyHand;
@@ -4066,7 +4066,7 @@ export async function resolveActiveSkillEffect(
           selectedOppLane = pLanes[0];
         }
         // AIの思考時間を演出
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       } else {
         // プレイヤーの場合
         const pLanes = await waitPlayerEnemyLaneSelection(
@@ -4302,7 +4302,7 @@ export async function resolveActiveSkillEffect(
           );
         }
         // AIの思考時間を演出
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
         // React DOMコミットを確実にするため、再描画してから少し待つ
         renderBoard();
         await sleep(100);
@@ -4414,7 +4414,7 @@ export async function resolveActiveSkillEffect(
           // Normal以上: 常に最新の盤面状況に基づき直前シミュレーションで破壊対象レーン配列を評価決定
           selectedLanes = evaluateAdhocExecuteChoice(myBoard, selectCount, o);
         }
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
         // React DOMコミットを確実にするため、再描画してから少し待つ
         renderBoard();
         await sleep(100);
@@ -4635,7 +4635,7 @@ export async function resolveActiveSkillEffect(
             bestLane !== null ? bestLane : otherOccupiedLanes[0],
           ];
         }
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       } else {
         // プレイヤーの場合：自身を除外した自陣レーンから1体を選択させる
         selectedLanes = await waitPlayerAlliedLaneSelection(1, o, false, [l]);
@@ -4707,7 +4707,7 @@ export async function resolveActiveSkillEffect(
           const bestLane = evaluateAdhocProtectionChoice(myBoard, o);
           selectedLanes = [bestLane !== null ? bestLane : occupiedLanes[0]];
         }
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       } else {
         // プレイヤーの場合：味方カード1枚を選択させる（自身[l]も対象に含めるため除外リストは空）
         selectedLanes = await waitPlayerAlliedLaneSelection(1, o, false, []);

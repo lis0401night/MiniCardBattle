@@ -14,6 +14,7 @@ import {
 } from '../../utils/constants/config.js';
 import {
   checkIsFortuneMode,
+  checkIsOnlineMode,
   getFortuneEnemyCharId,
 } from '../../utils/gameUtils.js';
 import {
@@ -69,6 +70,7 @@ import {
   HANDICAP_TYPES,
 } from '../../utils/constants/fortuneHandicaps.js';
 import { evaluateBestTriggerMove } from '../ai.js';
+import { waitAIThinkingDelay } from './thinkingState.js';
 
 /**
  * 2枚のカードを合体させた新しいカードインスタンスを生成する共通ヘルパー関数。
@@ -555,7 +557,7 @@ export async function checkAndTriggerCounter(
 
   if (
     triggerOwner === 'red' &&
-    GameState.gameMode !== 'online' &&
+    !checkIsOnlineMode(GameState.gameMode) &&
     GameState.gameMode !== 'pvp'
   ) {
     // 【敵AIの場合】
@@ -566,7 +568,7 @@ export async function checkAndTriggerCounter(
     }
     selectedIdx = decision.cardIdx;
     chosenLane = decision.laneIdx;
-    await sleep(300);
+    await waitAIThinkingDelay(300);
   } else {
     // 【プレイヤーの場合（オンライン/PVPのターンプレイヤー含む）】
     const promptMsg = '誘発: 召喚するカードを1枚選んでください';

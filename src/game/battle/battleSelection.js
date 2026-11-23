@@ -26,7 +26,6 @@ import {
   hasSkill,
   getSeededRandom,
   shuffleArray,
-  sleep,
   playSound,
   matchesUnionMaterial,
 } from '../../utils/gameUtils.js';
@@ -36,10 +35,8 @@ import {
   renderHand,
   updateCardDetail,
 } from '../../services/uiBattle.js';
-import {
-  AI_THINKING_DURATION,
-  PLACEMENT_CONFIRM_DELAY_MS,
-} from '../../utils/constants/config.js';
+import { PLACEMENT_CONFIRM_DELAY_MS } from '../../utils/constants/config.js';
+import { waitAIThinkingDelay } from './thinkingState.js';
 import {
   closeConfirmModal,
   showAlertModal,
@@ -2235,7 +2232,7 @@ export async function waitSkillChoice(
     // 【命令スキル】AIが相手のスキル選択肢から選ぶ
     // カードオーナー（プレイヤー）がforceカードを出し、AIがどのスキルを発動させるか決定する
     if (isForce) {
-      await sleep(AI_THINKING_DURATION);
+      await waitAIThinkingDelay();
 
       // Easy AI: ランダム選択
       if (checkIsEasyAI()) {
@@ -2338,7 +2335,7 @@ export async function waitSkillChoice(
       return shuffled.slice(0, Math.min(maxChoices, choices.length));
     } else {
       // Normal以上: 常に最新盤面に基づいた直前全通りシミュレーションで最善の選択肢を決定
-      if (GameState.gameMode !== 'online') await sleep(AI_THINKING_DURATION);
+      if (!checkIsOnlineMode(GameState.gameMode)) await waitAIThinkingDelay();
       return evaluateAdhocSkillChoice(
         card,
         choices,

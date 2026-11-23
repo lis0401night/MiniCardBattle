@@ -89,7 +89,8 @@ export const GameState = {
   difficulty: DIFFICULTY.EASY,
   storyDifficulty: DIFFICULTY.EASY,
   isProcessing: false,
-  isAIThinking: false, // AIのシミュレーション計算中のみtrue（「思考中」UI表示用）
+  isAIThinking: false, // AIの思考・スキル選択ディレイ中のみtrue（「思考中・・・」UI表示用）
+  isWaitingOpponentChoice: false, // オンライン対戦で相手の選択（waitRemoteChoice）待機中のみtrue（「思考中・・・」UI表示用）
   selectedCardIndex: null,
   fortuneHandicaps: (() => {
     try {

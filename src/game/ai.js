@@ -32,17 +32,7 @@ import {
 } from './battle/index.js';
 import { isGraveKeeperActive } from './engine.js';
 import { activateLeaderSkill } from './leaderSkills.js';
-
-import { updateBattleUIHook } from '../services/uiBattle.js';
-
-// AI状態をバトルUIへ通知し、UIフックの例外でAI処理を中断しない。
-const notifyBattleUI = () => {
-  try {
-    if (updateBattleUIHook) updateBattleUIHook();
-  } catch (uiError) {
-    console.error('バトルUIの更新に失敗しました:', uiError);
-  }
-};
+import { beginAIThinking, endAIThinking } from './battle/thinkingState.js';
 
 /**
  * ミニカードバトル - 敵AIロジック（シミュレーション・オーバーホール版）
@@ -55,8 +45,15 @@ export async function executeEnemyAI() {
   if (GameState.appState !== 'battle' || GameState.isBattleEnded) return;
 
   GameState.isProcessing = true;
-  GameState.isAIThinking = true; // 「思考中・・・」UI表示開始
-  notifyBattleUI();
+  // 参照カウント方式でメイン思考中フラグを開始（強制スキル内の思考ディレイとネストしても破綻させない）
+  beginAIThinking();
+  let hasEndedMainThinking = false;
+  const finishMainThinking = () => {
+    if (!hasEndedMainThinking) {
+      hasEndedMainThinking = true;
+      endAIThinking();
+    }
+  };
   try {
     await sleep(AI_THINKING_DURATION);
 
@@ -190,8 +187,7 @@ export async function executeEnemyAI() {
         // 中級以上 (ai_normal.js)
         GameState.aiDecision = getNormalDecision();
       }
-      GameState.isAIThinking = false; // シミュレーション計算完了、「思考中」UI表示終了
-      notifyBattleUI();
+      finishMainThinking(); // シミュレーション計算完了、「思考中・・・」UI表示終了
       decision = GameState.aiDecision;
 
       // 選んだ手が「スキル使用」を伴う場合、実行する（必ず先出し）
@@ -258,8 +254,7 @@ export async function executeEnemyAI() {
   } catch (e) {
     console.error('AI Error:', e);
   } finally {
-    GameState.isAIThinking = false; // 例外発生時もフラグを確実にリセット
-    notifyBattleUI();
+    finishMainThinking(); // 例外発生時や行動不能時も参照カウントを確実にデクリメントしてリセット
     if (!GameState.isBattleEnded) {
       try {
         // 【CodeRabbit指摘反映】競合防止のため、非同期のターン終了処理（endTurnLogic）が完全に完了した後に処理中フラグを解除する

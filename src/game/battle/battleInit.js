@@ -103,6 +103,7 @@ import {
   getLastProcessedActionKey,
 } from './battleQueue.js';
 import { resetOnlineChoiceSync } from './onlineChoiceSync.js';
+import { resetThinkingState } from './thinkingState.js';
 import { checkWinCondition } from './battleResult.js';
 import { waitPlayerHandSelection } from './battleSelection.js';
 import { endTurnLogic, startTurn } from './battleTurn.js';
@@ -289,8 +290,9 @@ export function clearBattleStateData() {
   // アンジェのリーダースキル「戦乙女の加護」状態を初期化
   GameState.valkyriaGuardBlue = 0;
   GameState.valkyriaGuardRed = 0;
-  // オンライン対戦タイマーを完全に停止・解放
+  // オンライン対戦タイマーおよび相手思考中状態を完全に停止・解放
   cleanupOnlineTimer();
+  resetThinkingState();
 }
 
 /**
@@ -1008,8 +1010,9 @@ export function initBattleState() {
     GameState.isDiscardingExact = false;
 
     // --- グローバルコールバック・リゾルバの確実なリセット ---
-    // オンライン選択同期（受信キュー・待機中の選択・選択の順番カウンタ）を初期化
+    // オンライン選択同期（受信キュー・待機中の選択・選択の順番カウンタ）および思考中状態を初期化
     resetOnlineChoiceSync();
+    resetThinkingState();
     // 前回バトルの残留リスナー（リタイア・切断・例外で cleanUp に到達しなかった分）を一括解除する
     battleEvents.clearAll();
     window.finishHandSelection = null;

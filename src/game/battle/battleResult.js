@@ -10,6 +10,7 @@ import {
 } from '../../services/uiBattle.js';
 import { dispatchBattleAction } from './battleQueue.js';
 import { resetOnlineChoiceSync } from './onlineChoiceSync.js';
+import { resetThinkingState } from './thinkingState.js';
 import { battleEvents } from './events/battleEventEmitter.js';
 import {
   checkIsBattleRewardEligible,
@@ -1125,8 +1126,9 @@ export function cleanupBattleState() {
   GameState.isDiscardingExact = false;
 
   // 3. グローバルコールバック・リゾルバ・イベントリスナーの解除
-  // オンライン選択同期（受信キュー・待機中の選択・選択の順番カウンタ）を初期化
+  // オンライン選択同期（受信キュー・待機中の選択・選択の順番カウンタ）および思考中状態を初期化
   resetOnlineChoiceSync();
+  resetThinkingState();
   battleEvents.clearAll();
   window.finishHandSelection = null;
   window.handlePlacementLaneClick = null;

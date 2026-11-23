@@ -15,6 +15,7 @@ import {
   MAX_HAND_CAPACITY,
   VALKYRIA_GUARD_POPUP_COLOR,
 } from '../utils/constants/config.js';
+import { waitAIThinkingDelay } from './battle/thinkingState.js';
 import { playCardVoice } from '../utils/constants/voices.js';
 import {
   applyEquipment,
@@ -424,7 +425,7 @@ export async function executeLeaderSkillAction(
         }
       }
       if (selectedCard) {
-        await sleep(AI_THINKING_DURATION);
+        await waitAIThinkingDelay();
       }
     } else {
       selectedCard = await waitPlayerDiscardSelection(
@@ -625,7 +626,7 @@ export async function executeLeaderSkillAction(
             validCards[0];
         }
         if (selectedCard) {
-          await sleep(AI_THINKING_DURATION);
+          await waitAIThinkingDelay();
         }
       } else {
         // 手札・墓地を山札へ戻した後のため、カード選択自体のキャンセルは不可（false）とする
