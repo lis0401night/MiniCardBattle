@@ -1,32 +1,13 @@
 /**
  * クイックマッチCPU対戦定義：流浪の射手 リナ
- * デフォルトスキン、リナ専用プレイマット・ステージ、ハード難易度デッキ
+ * デフォルトスキン、リナ専用プレイマット・ステージ、通常対戦ハードと同一のデッキ構成
  */
+import elfDeck from '../elf.js';
+
 export default {
   characterId: 'elf',
   skin: 'default',
   playmat: 'elf',
   stage: 'elf',
-  deck: [
-    'wolf',
-    'wolf',
-    'caller',
-    'caller',
-    'thief',
-    'thief',
-    'highelf',
-    'highelf',
-    'ranger',
-    'ranger',
-    'darkelf',
-    'darkelf',
-    'darkelf',
-    'darkelf',
-    'centaur',
-    'centaur',
-    'splite',
-    'splite',
-    'bear',
-    'bear',
-  ],
+  deck: [...elfDeck.hard],
 };

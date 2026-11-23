@@ -3,6 +3,7 @@
  */
 
 import { GameState } from '../state/gameState.js';
+import { CARD_MASTER } from './constants/cards.js';
 
 /**
  * カード配列（文字列またはオブジェクト）を { id, isPremium, isShine } の配列構造に正規化する。
@@ -47,6 +48,72 @@ export function toDeckObjects(
           : shineList.includes(cId);
 
       return { id: cId, isPremium: isPrem, isShine: isShn };
+    })
+    .filter(Boolean);
+}
+
+/**
+ * デッキ配列（カードID文字列またはカードオブジェクト混在）を、
+ * CARD_MASTER に基づく完全なカードオブジェクト配列へ正規化する。
+ * 相手デッキへの自プレイヤー設定漏洩を防ぐため、`isSelfDeck` が true の場合のみ
+ * 対象デッキまたは GameState のプレミアム／シャイン設定をフォールバック参照する。
+ *
+ * @param {Array<string|Object>} rawDeck - カードオブジェクトまたはカードID文字列の配列
+ * @param {Object} [options={}] - 正規化オプション
+ * @param {boolean} [options.isSelfDeck=false] - 自プレイヤーのデッキかどうか（false の場合は未指定の装飾を false 固定にする）
+ * @param {Object|null} [options.activeDeck=null] - 自デッキ参照時に優先するデッキ定義オブジェクト（省略時は選択中デッキを参照）
+ * @returns {Array<Object>} 正規化されたカードオブジェクト配列
+ */
+export function normalizeDeckCardTemplates(
+  rawDeck,
+  { isSelfDeck = false, activeDeck = null } = {}
+) {
+  if (!Array.isArray(rawDeck)) return [];
+  const resolvedActiveDeck = isSelfDeck
+    ? activeDeck || GameState.decks?.[GameState.currentDeckIndex] || null
+    : null;
+
+  return rawDeck
+    .map((c) => {
+      if (!c) return null;
+      const actualId =
+        typeof c === 'string'
+          ? c
+          : typeof c?.baseId === 'string' && c.baseId.length > 0
+            ? c.baseId
+            : typeof c?.id === 'string' && c.id.length > 0
+              ? c.id
+              : null;
+      if (!actualId) return null;
+      const template = CARD_MASTER.find((m) => m.id === actualId);
+      if (!template) return null;
+
+      // 相手側デッキではカードオブジェクトに明示されていない限り自プレイヤー設定を参照せず通常版（false）に固定する
+      const isPremium =
+        typeof c === 'object' && typeof c.isPremium === 'boolean'
+          ? c.isPremium
+          : isSelfDeck
+            ? Array.isArray(resolvedActiveDeck?.premiumCards)
+              ? resolvedActiveDeck.premiumCards.includes(actualId)
+              : (GameState.premiumCards || []).includes(actualId)
+            : false;
+      const isShine =
+        typeof c === 'object' && typeof c.isShine === 'boolean'
+          ? c.isShine
+          : isSelfDeck
+            ? Array.isArray(resolvedActiveDeck?.shineCards)
+              ? resolvedActiveDeck.shineCards.includes(actualId)
+              : (GameState.shineCards || []).includes(actualId)
+            : false;
+
+      return {
+        ...template,
+        ...(typeof c === 'object' ? c : {}),
+        // 過去バトルのインスタンスID（blue_... 等）が混入していても必ずマスタIDへ正規化する
+        id: template.id,
+        isPremium,
+        isShine,
+      };
     })
     .filter(Boolean);
 }

@@ -1505,7 +1505,12 @@ export async function executeRejoinBattle(session, roomData) {
     GameState.enemyConfig = {
       ...(CHARACTERS[opCharId] || CHARACTERS.dragon),
       ...opLeaderObj,
-      deck: toDeckObjects(opData?.leaderConfig?.deck || opLeaderObj.deck),
+      // 相手側デッキに自プレイヤーのプレミアム／シャイン設定が混入しないよう空リストを明示指定する
+      deck: toDeckObjects(
+        opData?.leaderConfig?.deck || opLeaderObj.deck,
+        [],
+        []
+      ),
     };
 
     const mySkin = myData?.leaderConfig?.skin || 'default';

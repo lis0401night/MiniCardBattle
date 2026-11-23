@@ -38,25 +38,30 @@ export const QUICK_CPU_CONFIGS = {
 };
 
 /**
- * クイックマッチCPU対戦用のキャラクターID一覧
+ * クイックマッチCPU対戦用のキャラクターID一覧（複数スキン登録時も重複を除外）
  * @type {string[]}
  */
-export const QUICK_CPU_CHARACTER_IDS = Object.keys(QUICK_CPU_CONFIGS);
+export const QUICK_CPU_CHARACTER_IDS = Array.from(
+  new Set(Object.values(QUICK_CPU_CONFIGS).map((cfg) => cfg.characterId))
+);
 
 /**
  * クイックマッチCPU対戦用の設定をランダムに抽選して取得する。
- * プレイヤーと同じキャラクターは可能な限り避けて選定する。
- * @param {string} [playerCharId=null] - プレイヤーが使用しているキャラクターID
+ * 同一キャラクターの別スキン＋別デッキ設定が追加された場合も正しく除外できるよう、
+ * キー名ではなく各設定の `characterId` プロパティでプレイヤーキャラとの被りを判定する。
+ *
+ * @param {string|null} [playerCharId=null] - プレイヤーが使用しているキャラクターID
  * @returns {{ characterId: string, skin: string, playmat: string, stage: string, deck: string[] }} 選択されたCPU設定
  */
 export function getRandomQuickCpuConfig(playerCharId = null) {
-  let candidates = QUICK_CPU_CHARACTER_IDS;
+  let candidates = Object.values(QUICK_CPU_CONFIGS);
   if (playerCharId && candidates.length > 1) {
-    const filtered = candidates.filter((id) => id !== playerCharId);
+    const filtered = candidates.filter(
+      (cfg) => cfg.characterId !== playerCharId
+    );
     if (filtered.length > 0) {
       candidates = filtered;
     }
   }
-  const chosenId = candidates[Math.floor(Math.random() * candidates.length)];
-  return QUICK_CPU_CONFIGS[chosenId];
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }

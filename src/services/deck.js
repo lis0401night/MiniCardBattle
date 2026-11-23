@@ -119,10 +119,10 @@ function applySkinToPlayerConfig() {
 export function generateDeck(owner, config, sessionId) {
   let deck = [];
 
-  // オンラインモードおよびクイックマッチCPU対戦：事前に渡された専用デッキ配列（config.deck）を使用する
+  // オンライン対人モード：事前に送受信された専用デッキ配列（config.deck）を使用する
+  // ※ クイックマッチCPU戦（online_quick_cpu）は他CPUモードと同じ後続の共通パスで生成する
   if (
-    (checkIsOnlineMode(GameState.gameMode) ||
-      GameState.gameMode === 'online_quick_cpu') &&
+    checkIsOnlineMode(GameState.gameMode) &&
     config &&
     Array.isArray(config.deck) &&
     config.deck.length > 0
@@ -277,10 +277,19 @@ export function generateDeck(owner, config, sessionId) {
           recipe = ENEMY_DECKS[charId] || ENEMY_DECKS.android;
         }
       } else if (GameState.gameMode === 'online_quick_cpu') {
-        // クイックマッチCPU対戦フォールバック：QUICK_CPU_CONFIGSから該当キャラ専用デッキを取得
-        const quickCpuConfig =
-          QUICK_CPU_CONFIGS[config?.id] || QUICK_CPU_CONFIGS.android;
-        recipe = quickCpuConfig?.deck || QUICK_CPU_CONFIGS.android.deck;
+        // クイックマッチCPU対戦：抽選されたスキン別設定のデッキ（config.deck）を優先し、
+        // 未設定時のみ QUICK_CPU_CONFIGS から該当キャラの定義へフォールバックする
+        if (Array.isArray(config?.deck) && config.deck.length > 0) {
+          recipe = config.deck;
+        } else {
+          const quickCpuConfig =
+            QUICK_CPU_CONFIGS[config?.id] ||
+            Object.values(QUICK_CPU_CONFIGS).find(
+              (c) => c.characterId === config?.id
+            ) ||
+            QUICK_CPU_CONFIGS.android;
+          recipe = quickCpuConfig?.deck || QUICK_CPU_CONFIGS.android.deck;
+        }
       } else {
         recipe = ENEMY_DECKS[recipeId] || ENEMY_DECKS.android;
       }

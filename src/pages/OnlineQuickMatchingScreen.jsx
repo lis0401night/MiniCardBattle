@@ -17,7 +17,6 @@ import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
 import { resolveValidIconId } from '../utils/constants/avatars.js';
 import { getQuickRating } from '../utils/constants/battlePass.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   CHARACTERS,
   getPlayerIconPath,
@@ -29,6 +28,7 @@ import {
   PROFILE_ICON_KEY,
 } from '../utils/constants/config.js';
 import { getRandomQuickCpuConfig } from '../utils/constants/enemy_decks/quick_cpu/index.js';
+import { normalizeDeckCardTemplates } from '../utils/deckUtils.js';
 import {
   getOrCreateUUID,
   playSound,
@@ -39,50 +39,6 @@ import { SOUNDS } from '../utils/sounds.js';
 
 /** マッチングタイムアウト時間（ミリ秒: 60秒） */
 const MATCHING_TIMEOUT_MS = 60000;
-
-/**
- * デッキ配列を完全なカードオブジェクト配列に正規化する内部ヘルパー
- * @param {Array} rawDeck - カードオブジェクトまたはID文字列の配列
- * @returns {Array<Object>} 正規化されたカードオブジェクト配列
- */
-const normalizeDeckCards = (rawDeck) => {
-  if (!Array.isArray(rawDeck)) return [];
-  const currentActiveDeck = GameState.decks?.[GameState.currentDeckIndex];
-  return rawDeck
-    .map((c) => {
-      if (!c) return null;
-      const actualId =
-        typeof c === 'string'
-          ? c
-          : typeof c?.baseId === 'string' && c.baseId.length > 0
-            ? c.baseId
-            : typeof c?.id === 'string' && c.id.length > 0
-              ? c.id
-              : null;
-      if (!actualId) return null;
-      const template = CARD_MASTER.find((m) => m.id === actualId);
-      if (!template) return null;
-      const isPremium =
-        typeof c === 'object' && typeof c.isPremium === 'boolean'
-          ? c.isPremium
-          : currentActiveDeck?.premiumCards
-            ? currentActiveDeck.premiumCards.includes(actualId)
-            : (GameState.premiumCards || []).includes(actualId);
-      const isShine =
-        typeof c === 'object' && typeof c.isShine === 'boolean'
-          ? c.isShine
-          : currentActiveDeck?.shineCards
-            ? currentActiveDeck.shineCards.includes(actualId)
-            : (GameState.shineCards || []).includes(actualId);
-      return {
-        ...template,
-        ...(typeof c === 'object' ? c : {}),
-        isPremium,
-        isShine,
-      };
-    })
-    .filter(Boolean);
-};
 
 /**
  * クイックマッチ待機画面コンポーネント
@@ -162,11 +118,15 @@ export default function OnlineQuickMatchingScreen() {
       // プレイヤー・対戦相手の情報をGameStateに反映
       GameState.playerConfig = {
         ...meData.leaderConfig.leaderConfig,
-        deck: normalizeDeckCards(meData.leaderConfig.deck),
+        deck: normalizeDeckCardTemplates(meData.leaderConfig.deck, {
+          isSelfDeck: true,
+        }),
       };
       GameState.enemyConfig = {
         ...opData.leaderConfig.leaderConfig,
-        deck: normalizeDeckCards(opData.leaderConfig.deck),
+        deck: normalizeDeckCardTemplates(opData.leaderConfig.deck, {
+          isSelfDeck: false,
+        }),
       };
 
       GameState.playerConfig.playmat = meData.leaderConfig.playmat || null;
@@ -307,7 +267,9 @@ export default function OnlineQuickMatchingScreen() {
         GameState.playerConfig?.deck ||
         GameState.decks?.[GameState.currentDeckIndex]?.cards ||
         [];
-      const activeDeckCards = normalizeDeckCards(rawDeckCards);
+      const activeDeckCards = normalizeDeckCardTemplates(rawDeckCards, {
+        isSelfDeck: true,
+      });
 
       GameState.playerConfig = {
         ...GameState.playerConfig,
@@ -321,9 +283,11 @@ export default function OnlineQuickMatchingScreen() {
       const enemyCharTemplate =
         CHARACTERS[cpuConfig.characterId] || CHARACTERS.android;
 
+      // CPUデッキは他CPUモードと同じ generateDeck の共通パスで生成するため、
+      // 抽選されたレシピ配列（カードID文字列配列）をそのまま渡して通常版固定を担保する
       GameState.enemyConfig = {
         ...enemyCharTemplate,
-        deck: normalizeDeckCards(cpuConfig.deck),
+        deck: Array.isArray(cpuConfig.deck) ? [...cpuConfig.deck] : [],
       };
 
       // 4. 難易度およびAIレベルの設定（ハード設定）
@@ -331,8 +295,9 @@ export default function OnlineQuickMatchingScreen() {
       GameState.aiLevel = AI_LEVEL.HARD;
 
       // 5. スキン・プレイマット・ステージ情報の設定
+      // 前モードの敵スキン設定が残存してトークン画像等に漏洩しないよう明示的にリセットする
       GameState.playerSkins = GameState.playerSkins || {};
-      GameState.enemySkins = GameState.enemySkins || {};
+      GameState.enemySkins = {};
       GameState.playerSkins[GameState.playerConfig.id] =
         GameState.playerSkins[GameState.playerConfig.id] || 'default';
       GameState.enemySkins[GameState.enemyConfig.id] =
@@ -442,7 +407,9 @@ export default function OnlineQuickMatchingScreen() {
       GameState.decks?.[GameState.currentDeckIndex]?.cards ||
       [];
 
-    const activeDeckCards = normalizeDeckCards(rawDeckCards);
+    const activeDeckCards = normalizeDeckCardTemplates(rawDeckCards, {
+      isSelfDeck: true,
+    });
 
     const myLeaderConfig = {
       leaderConfig: { ...GameState.playerConfig },

@@ -22,13 +22,13 @@ import {
 } from '../services/uiMainCore.js';
 import { showAlertModal } from '../services/uiModals.js';
 import { GameState } from '../state/gameState.js';
-import { CARD_MASTER } from '../utils/constants/cards.js';
 import {
   CHARACTERS,
   getSkinImage,
   getPlayerIconPath,
   getIconFramePath,
 } from '../utils/constants/characters.js';
+import { normalizeDeckCardTemplates } from '../utils/deckUtils.js';
 import { playSound, stopAllBGM } from '../utils/gameUtils.js';
 import { SOUNDS } from '../utils/sounds.js';
 import {
@@ -93,20 +93,10 @@ export default function OnlineLobbyScreen() {
         const selLeaderId = activeDeck.leaderId || 'android';
         const chara = CHARACTERS[selLeaderId] || CHARACTERS.android;
 
-        const deckCards = (activeDeck.cards || [])
-          .map((cardId) => {
-            // 古いセーブデータ互換性（カードがオブジェクトになっている場合等）
-            const actualId = typeof cardId === 'object' ? cardId.id : cardId;
-            const isPremium = activeDeck.premiumCards
-              ? activeDeck.premiumCards.includes(actualId)
-              : (GameState.premiumCards || []).includes(actualId);
-            const isShine = activeDeck.shineCards
-              ? activeDeck.shineCards.includes(actualId)
-              : (GameState.shineCards || []).includes(actualId);
-            const template = CARD_MASTER.find((c) => c.id === actualId);
-            return template ? { ...template, isPremium, isShine } : null;
-          })
-          .filter(Boolean);
+        const deckCards = normalizeDeckCardTemplates(activeDeck.cards || [], {
+          isSelfDeck: true,
+          activeDeck,
+        });
 
         const selSkin = activeDeck.playerSkins
           ? activeDeck.playerSkins[selLeaderId]
@@ -177,11 +167,15 @@ export default function OnlineLobbyScreen() {
 
       GameState.playerConfig = {
         ...meData.leaderConfig.leaderConfig,
-        deck: meData.leaderConfig.deck,
+        deck: normalizeDeckCardTemplates(meData.leaderConfig.deck, {
+          isSelfDeck: true,
+        }),
       };
       GameState.enemyConfig = {
         ...opData.leaderConfig.leaderConfig,
-        deck: opData.leaderConfig.deck,
+        deck: normalizeDeckCardTemplates(opData.leaderConfig.deck, {
+          isSelfDeck: false,
+        }),
       };
 
       GameState.playerConfig.playmat = meData.leaderConfig.playmat || null;

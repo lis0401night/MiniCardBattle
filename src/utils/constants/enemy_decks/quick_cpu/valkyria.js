@@ -1,32 +1,13 @@
 /**
- * クイックマッチCPU対戦定義：運命の戦乙女 アンジェ
- * デフォルトスキン、アンジェ専用プレイマット・ステージ、ハード難易度（装備速攻）デッキ
+ * クイックマッチCPU対戦定義：紅蓮の翼 アンジェ
+ * デフォルトスキン、アンジェ専用プレイマット・ステージ、運命の邂逅と同一のデッキ構成
  */
+import valkyriaFortuneDeck from '../event_fortune/valkyria.js';
+
 export default {
   characterId: 'valkyria',
   skin: 'default',
   playmat: 'valkyria',
   stage: 'valkyria',
-  deck: [
-    'dwarf',
-    'dwarf',
-    'dwarf',
-    'dwarf',
-    'berserkir',
-    'berserkir',
-    'berserkir',
-    'berserkir',
-    'elephant',
-    'elephant',
-    'elephant',
-    'elephant',
-    'gungnir',
-    'gungnir',
-    'gungnir',
-    'gungnir',
-    'thor',
-    'thor',
-    'gleipnir',
-    'gleipnir',
-  ],
+  deck: [...valkyriaFortuneDeck],
 };
