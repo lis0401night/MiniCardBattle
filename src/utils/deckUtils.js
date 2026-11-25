@@ -72,6 +72,21 @@ export function normalizeDeckCardTemplates(
   const resolvedActiveDeck = isSelfDeck
     ? activeDeck || GameState.decks?.[GameState.currentDeckIndex] || null
     : null;
+  // 破損データ等で非配列（{} 等）が入っていた場合でも TypeError を起こさないよう配列検査してから解決する
+  const fallbackPremList = isSelfDeck
+    ? Array.isArray(resolvedActiveDeck?.premiumCards)
+      ? resolvedActiveDeck.premiumCards
+      : Array.isArray(GameState.premiumCards)
+        ? GameState.premiumCards
+        : []
+    : [];
+  const fallbackShineList = isSelfDeck
+    ? Array.isArray(resolvedActiveDeck?.shineCards)
+      ? resolvedActiveDeck.shineCards
+      : Array.isArray(GameState.shineCards)
+        ? GameState.shineCards
+        : []
+    : [];
 
   return rawDeck
     .map((c) => {
@@ -92,19 +107,11 @@ export function normalizeDeckCardTemplates(
       const isPremium =
         typeof c === 'object' && typeof c.isPremium === 'boolean'
           ? c.isPremium
-          : isSelfDeck
-            ? Array.isArray(resolvedActiveDeck?.premiumCards)
-              ? resolvedActiveDeck.premiumCards.includes(actualId)
-              : (GameState.premiumCards || []).includes(actualId)
-            : false;
+          : fallbackPremList.includes(actualId);
       const isShine =
         typeof c === 'object' && typeof c.isShine === 'boolean'
           ? c.isShine
-          : isSelfDeck
-            ? Array.isArray(resolvedActiveDeck?.shineCards)
-              ? resolvedActiveDeck.shineCards.includes(actualId)
-              : (GameState.shineCards || []).includes(actualId)
-            : false;
+          : fallbackShineList.includes(actualId);
 
       return {
         ...template,

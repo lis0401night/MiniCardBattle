@@ -485,8 +485,8 @@ async function executeGroupDestruction(targets) {
         );
       }
     } else {
-      // React State経由でアニメーションクラスを付与
-      t.card.animClass = 'anim-shake anim-card-destroy';
+      // React State経由で揺れアニメーションクラスを付与
+      t.card.animClass = 'anim-shake';
 
       if (tgtEl) {
         createDamagePopup(tgtEl, '破壊', '#ef4444');
@@ -510,6 +510,7 @@ async function executeGroupDestruction(targets) {
   const destroyedSides = [];
   for (let t of targets) {
     if (canCardBeDestroyed(GameState, t.card, t.side)) {
+      delete t.card.animClass;
       const eB =
         t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
       if (!(await discardCard(t.side, t.card, t.lane, true))) eB[t.lane] = null;
@@ -561,11 +562,15 @@ export async function resolveActiveSkillEffect(
     (Array.isArray(c?.skills) ? c.skills.find((s) => s.id === skillId) : null);
   const popupBoard =
     o === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
-  const popupLane = c ? popupBoard.indexOf(c) : l;
+  // スキル解決途中でカード自身が破壊・離脱した場合（例：慈悲なき提督の自身処刑後の使役）も
+  // 発動元レーン上にポップアップを表示できるよう、盤面に見つからない場合は元のレーン l を使用する。
+  // また、カード要素（.card）ではなくレーン要素（.cell）を直接参照することで、カード不在時も同一位置に表示する。
+  const currentCardLane = c ? popupBoard.indexOf(c) : -1;
+  const popupLane = currentCardLane !== -1 ? currentCardLane : l;
   const cEl =
-    popupLane !== -1
+    popupLane !== null && popupLane !== undefined && popupLane !== -1
       ? document.querySelector(
-          `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${popupLane}"] .card`
+          `#${o === 'blue' ? 'player' : 'enemy'}-lanes .cell[data-lane="${popupLane}"]`
         )
       : null;
 
@@ -1528,7 +1533,8 @@ export async function resolveActiveSkillEffect(
     playSkillSound(skillId);
     if (cEl) {
       createDamagePopup(cEl, '変身', '#facc15');
-      cEl.classList.add('anim-shake');
+      const cardEl = cEl.querySelector('.card');
+      if (cardEl) cardEl.classList.add('anim-shake');
       await sleep(300);
     }
 
@@ -2537,9 +2543,13 @@ export async function resolveActiveSkillEffect(
 
           // 装備脱着の結果としてパワーが0以下になった場合は、ステータス低下による消滅（墓地送り）処理を行う
           if (targetCard.currentPower <= 0) {
+            // パワー低下後の数値と揺れアニメーションを盤面へ反映してから除去する
+            targetCard.animClass = 'anim-shake';
+            renderBoard();
             playCardVoice(targetCard, 'death');
             playSound(SOUNDS.seDestroy);
             await sleep(400);
+            delete targetCard.animClass;
 
             const eB =
               t.side === 'blue' ? GameState.playerBoard : GameState.enemyBoard;
@@ -2565,19 +2575,6 @@ export async function resolveActiveSkillEffect(
 
       renderBoard();
       await sleep(500);
-
-      for (let t of targets) {
-        if (hasSkill(t.card, 'immune')) continue;
-
-        const sidePrefix = t.side === 'blue' ? 'player' : 'enemy';
-        const tgtEl = document.querySelector(
-          `#${sidePrefix}-lanes .cell[data-lane="${t.lane}"] .card`
-        );
-        if (tgtEl) {
-          tgtEl.classList.remove('anim-shake');
-          tgtEl.classList.remove('anim-card-destroy');
-        }
-      }
     }
   } else if (skillId === 'crush') {
     const targets = [];
@@ -4347,7 +4344,6 @@ export async function resolveActiveSkillEffect(
                 tgtEl.classList.remove('anim-shake');
                 void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
                 tgtEl.classList.add('anim-shake');
-                tgtEl.classList.add('anim-card-destroy');
                 createDamagePopup(tgtEl, '破壊', '#991b1b');
               }
               if (targetCard.voiceCategory) {
@@ -4469,7 +4465,6 @@ export async function resolveActiveSkillEffect(
                 tgtEl.classList.remove('anim-shake');
                 void tgtEl.offsetWidth; // リフローを発生させてアニメーションを再トリガー
                 tgtEl.classList.add('anim-shake');
-                tgtEl.classList.add('anim-card-destroy');
                 createDamagePopup(tgtEl, '破壊', '#991b1b');
               }
               if (targetCard.voiceCategory) {
@@ -4986,7 +4981,7 @@ export async function triggerStartTurnPassive(owner, lane) {
     } else if (skId === 'samsara') {
       // 【輪廻（samsara）】ターン開始時、お互いの手札を全て破棄し、お互いにカードを3枚引く
       const cEl = document.querySelector(
-        `#${side}-lanes .cell[data-lane="${lane}"] .card`
+        `#${side}-lanes .cell[data-lane="${lane}"]`
       );
       if (cEl) {
         createDamagePopup(cEl, '輪廻', '#facc15');

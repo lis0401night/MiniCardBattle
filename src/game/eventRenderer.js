@@ -868,8 +868,9 @@ export async function playEvents(events) {
       }
       case 'skill_popup': {
         const atkPfx = ev.side === 'blue' ? 'player' : 'enemy';
+        // カードが破壊・離脱済みでも発動元レーン上に表示できるよう、レーン要素（.cell）を直接参照する
         const cEl = document.querySelector(
-          `#${atkPfx}-lanes .cell[data-lane="${ev.lane}"] .card`
+          `#${atkPfx}-lanes .cell[data-lane="${ev.lane}"]`
         );
         if (cEl) {
           createDamagePopup(cEl, ev.skillName, ev.color || '#facc15');

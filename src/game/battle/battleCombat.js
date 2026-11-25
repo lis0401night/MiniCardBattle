@@ -1103,21 +1103,27 @@ export async function cleanupDestroyedCards(excludeCard = null) {
         playCardVoice(item.card, 'death');
       }
     });
-    // その後に揺らす
+    // その後に揺らす（未コミットの「虚空」トークン等でも確実に再生されるよう React State 経由で付与し、
+    // すでにDOM上で揺れていたカードも再発火できるよう既存クラスのみリセットする）
     destroyedItems.forEach((item) => {
       if (item.el) {
-        // アニメーションを再トリガーするために一度クラスを外してリフロー
         item.el.classList.remove('anim-shake');
         void item.el.offsetWidth;
-        item.el.classList.add('anim-shake');
+      }
+      if (item.card) {
+        item.card.animClass = 'anim-shake';
       }
     });
+    renderBoard();
     playSound(SOUNDS.seDamage);
     await sleep(400);
 
     // 実際の除去処理
     const retaliateOwners = [];
     for (const item of destroyedItems) {
+      if (item.card) {
+        delete item.card.animClass;
+      }
       if (item.board[item.index] !== item.card) continue;
       item.board[item.index] = null;
       await discardCard(item.owner, item.card, item.index);

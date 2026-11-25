@@ -156,10 +156,8 @@ export default function Board({
               className={`cell${isSealed ? ' sealed' : ''}${isEnemyHighlight ? ' highlight' : ''}${isEnemyTargetSelected ? ' lane-selected' : ''}`}
               data-lane={lane}
               onClick={() => {
-                if (isSealed && window.handleEnemyLaneClick) {
-                  showAlertModal('封印されています');
-                  return;
-                }
+                // 封印は召喚・配置・移動の制限であり、敵カード・敵レーンを対象選択するスキルでは
+                // 封印中の相手レーンも選択可能なため、ここでは封印ブロックを行わない
                 if (!card) {
                   onCellClick(lane, 'enemy', null);
                 }
@@ -174,10 +172,6 @@ export default function Board({
                   className={enemyCardClassNames}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (isSealed && window.handleEnemyLaneClick) {
-                      showAlertModal('封印されています');
-                      return;
-                    }
                     onCellClick(lane, 'enemy', card);
                   }}
                   onLongPress={(card) => onCardLongPress(card, lane + 3)}
