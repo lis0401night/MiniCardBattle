@@ -45,13 +45,14 @@ export async function executeEnemyAI() {
   if (GameState.appState !== 'battle' || GameState.isBattleEnded) return;
 
   GameState.isProcessing = true;
-  // 参照カウント方式でメイン思考中フラグを開始（強制スキル内の思考ディレイとネストしても破綻させない）
-  beginAIThinking();
+  // 参照カウント方式でメイン思考中フラグを開始（強制スキル内の思考ディレイとネストしても破綻させず、
+  // 世代番号を保持して対戦リセット後の誤減算も防止する）
+  const thinkingGeneration = beginAIThinking();
   let hasEndedMainThinking = false;
   const finishMainThinking = () => {
     if (!hasEndedMainThinking) {
       hasEndedMainThinking = true;
-      endAIThinking();
+      endAIThinking(thinkingGeneration);
     }
   };
   try {

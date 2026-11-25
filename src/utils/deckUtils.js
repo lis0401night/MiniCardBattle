@@ -114,8 +114,9 @@ export function normalizeDeckCardTemplates(
           : fallbackShineList.includes(actualId);
 
       return {
-        ...template,
+        // 既存オブジェクト固有の属性（uid等）を保持しつつ、マスタと同名の古い値（name/power等）は最新マスタで上書きする
         ...(typeof c === 'object' ? c : {}),
+        ...template,
         // 過去バトルのインスタンスID（blue_... 等）が混入していても必ずマスタIDへ正規化する
         id: template.id,
         isPremium,

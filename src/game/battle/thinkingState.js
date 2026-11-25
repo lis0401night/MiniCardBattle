@@ -16,6 +16,9 @@ import { BATTLE_PHASE } from './phases/phaseTypes.js';
 /** AI思考中フラグのネスト（入れ子）を安全に扱うための参照カウンタ */
 let aiThinkingDepth = 0;
 
+/** 対戦リセット前後を識別し、古い待機による次戦カウンタ誤減算を防ぐための世代番号 */
+let thinkingGeneration = 0;
+
 /**
  * バトル画面UIへ状態変更を安全に通知する。
  * UIフック未登録や例外発生時でもバトル進行ロジックを中断させない。
@@ -35,7 +38,7 @@ function notifyBattleUI() {
  * 参照カウントを加算するため、メイン思考中に強制発動スキル等の思考ディレイが
  * ネストして終了しても外側の思考中表示が途中で消えることを防ぐ。
  *
- * @returns {void}
+ * @returns {number} この思考区間が属するリセット世代番号（`endAIThinking` へ渡すことで旧世代の誤減算を防止）
  */
 export function beginAIThinking() {
   aiThinkingDepth += 1;
@@ -43,15 +46,21 @@ export function beginAIThinking() {
     GameState.isAIThinking = true;
     notifyBattleUI();
   }
+  return thinkingGeneration;
 }
 
 /**
  * CPU（AI）の思考中区間を終了する。
  * すべてのネスト区間が終了して参照カウントが 0 になった時点で `GameState.isAIThinking` を false に戻す。
+ * 世代番号が指定された場合は、現在の世代と一致するときのみ減算を行う。
  *
+ * @param {number|null} [generation=null] - `beginAIThinking` が返したリセット世代番号
  * @returns {void}
  */
-export function endAIThinking() {
+export function endAIThinking(generation = null) {
+  if (generation !== null && generation !== thinkingGeneration) {
+    return;
+  }
   aiThinkingDepth = Math.max(0, aiThinkingDepth - 1);
   const nextThinking = aiThinkingDepth > 0;
   if (GameState.isAIThinking !== nextThinking) {
@@ -76,11 +85,11 @@ export async function waitAIThinkingDelay(durationMs = AI_THINKING_DURATION) {
     return;
   }
 
-  beginAIThinking();
+  const generation = beginAIThinking();
   try {
     await sleep(durationMs);
   } finally {
-    endAIThinking();
+    endAIThinking(generation);
   }
 }
 
@@ -106,6 +115,7 @@ export function setWaitingOpponentChoice(isWaiting) {
  * @returns {void}
  */
 export function resetThinkingState() {
+  thinkingGeneration += 1;
   aiThinkingDepth = 0;
   GameState.isAIThinking = false;
   GameState.isWaitingOpponentChoice = false;
